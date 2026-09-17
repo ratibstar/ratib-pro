@@ -111,42 +111,6 @@ final class ErpAgent
             ], $gov, $ctx, $requestId);
         }
 
-        if (($turn['mode'] ?? '') === 'confirm_dry_run') {
-            ErpActionPlanner::clearPendingState($scopeKey);
-            $gov = ErpGovernanceLayer::evaluate($message, array_merge($intent, ['write_intent' => true]), $ctx, $this->config, null, true);
-            $gov['execution_level'] = ErpGovernanceLayer::LEVEL_CONFIRMED_WRITE;
-            $gov['confirmation']['required'] = false;
-            $gov['policy']['confirmation_required'] = false;
-            return $this->finalizeWithGovernance([
-                'response' => (string) ($turn['response'] ?? ''),
-                'tool_calls' => [],
-                'pending_confirmations' => [],
-                'audit' => [],
-                'domain' => 'action',
-                'agent' => self::AGENT_ID,
-                'action' => [
-                    'plan' => null,
-                    'results' => [[
-                        'tool' => 'controlled_test',
-                        'success' => true,
-                        'error_code' => null,
-                        'verification' => is_array($turn['verification'] ?? null) ? $turn['verification'] : [
-                            'verified' => true,
-                            'dry_run' => true,
-                            'wrote' => false,
-                        ],
-                    ]],
-                    'partial' => false,
-                ],
-                'observability' => [
-                    'success' => true,
-                    'duration_ms' => 0,
-                    'conversation_phase' => 'confirmed_dry_run',
-                ],
-                '_started_at' => microtime(true),
-            ], $gov, $ctx, $requestId);
-        }
-
         if (($turn['mode'] ?? '') === 'collect') {
             ErpActionPlanner::savePendingState($scopeKey, is_array($turn['pending'] ?? null) ? $turn['pending'] : []);
             $gov = ErpGovernanceLayer::evaluate($message, array_merge($intent, ['write_intent' => true]), $ctx, $this->config, [
@@ -1148,8 +1112,8 @@ final class ErpAgent
         $ar = $ctx->normalizedLocale() === 'ar';
         $code = (string) ($bound['code'] ?? 'boundary');
         $msg = $ar
-            ? 'تم إيقاف التنفيذ بسبب حد الحوكمة: ' . $code
-            : 'Execution stopped due to governance boundary: ' . $code;
+            ? 'تم إيقاف التنفيذ بسبب حد الحوكمة: ' . ErpActionPlanner::labelGovToken($code, true)
+            : 'Execution stopped due to governance boundary: ' . ErpActionPlanner::labelGovToken($code, false);
         $result = [
             'response' => $msg,
             'tool_calls' => [],

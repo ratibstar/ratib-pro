@@ -389,7 +389,11 @@ final class ErpActionPlanner
         $args = is_array($draft['arguments'] ?? null) ? $draft['arguments'] : [];
         $notes = (string) ($args['notes'] ?? '');
         $dryRun = !empty($draft['dry_run'])
-            || self::match($message, '/(مثال\s*فقط|ليس\s*حقيق|مو\s*حقيق|للتجربة|dry\s*run|test\s*only|not\s*real|example\s*only)/ui');
+            || self::match(
+                $message,
+                '/(مثال\s*فقط|ليس\s*حقيق|مو\s*حقيق|ليس\s*للتنفيذ|dry\s*run|test\s*only|not\s*real|example\s*only)/ui'
+            );
+        // "طلب شراء تجريبي" = real draft write — never treat تجريبي alone as dry-run skip
 
         // Priority — current message wins (بأولوية متوسطة / عاجل / …)
         if (self::match($message, '/(?:بأولوية|اولوية|أولوية|priority)\s*(عاجل|عالية|عالي|high|urgent)/ui')
@@ -498,7 +502,8 @@ final class ErpActionPlanner
         }
 
         if ($dryRun) {
-            $notes = trim($notes . "\n[controlled_test_dry_run]");
+            // Soft note only — still creates a real draft; never invents supplier_id
+            $notes = trim($notes . "\n[test_draft_note]");
         }
         if ($notes !== '') {
             $args['notes'] = mb_substr($notes, 0, 500);
@@ -517,7 +522,9 @@ final class ErpActionPlanner
 
         $draft['tool'] = 'create_draft_purchase_request';
         $draft['arguments'] = $args;
-        $draft['dry_run'] = $dryRun;
+        // Keep flag for notes/UX only — Confirm always executes real tool
+        $draft['dry_run'] = false;
+        $draft['test_draft_note'] = $dryRun || !empty($draft['test_draft_note']);
         $draft['missing'] = $missing;
         $draft['collecting'] = true;
         $draft['ready'] = $missing === [];
@@ -690,21 +697,16 @@ final class ErpActionPlanner
             && $confirmedWrites === []
         ) {
             // Allow marking controlled test while proposal is open
-            if (self::match($message, '/(مثال\s*فقط|ليس\s*حقيق|مو\s*حقيق|للتجربة|dry\s*run|test\s*only|not\s*real|example\s*only)/ui')) {
+            if (self::match($message, '/(مثال\s*فقط|ليس\s*حقيق|مو\s*حقيق|ليس\s*للتنفيذ|dry\s*run|test\s*only|not\s*real|example\s*only)/ui')) {
                 if (!is_array($pending['draft'] ?? null)) {
                     $pending['draft'] = [];
                 }
-                $pending['draft']['dry_run'] = true;
+                // Metadata only — confirm still executes real create_draft_purchase_request
+                $pending['draft']['dry_run_note'] = true;
                 $args = is_array($pending['draft']['arguments'] ?? null) ? $pending['draft']['arguments'] : [];
-                $notes = trim((string) ($args['notes'] ?? '') . "\n[controlled_test_dry_run]");
+                $notes = trim((string) ($args['notes'] ?? '') . "\n[test_draft_note]");
                 $args['notes'] = mb_substr($notes, 0, 500);
                 $pending['draft']['arguments'] = $args;
-                if (is_array($pending['action_plan'] ?? null)) {
-                    $pending['action_plan']['recommendations'] = [[
-                        'message' => 'controlled_test_notes_only_no_fake_supplier_id',
-                        'domain' => 'procurement',
-                    ]];
-                }
             }
             return [
                 'mode' => 'propose',
@@ -803,9 +805,7 @@ final class ErpActionPlanner
                 'domains' => ['procurement'],
                 'actions' => [$action],
                 'unsupported' => [],
-                'recommendations' => !empty($draft['dry_run'])
-                    ? [['message' => 'controlled_test_notes_only_no_fake_supplier_id', 'domain' => 'procurement']]
-                    : [],
+                'recommendations' => [],
                 'requires_confirmation' => true,
                 'evidence_first' => true,
                 'auto_execute' => false,
@@ -857,36 +857,43 @@ final class ErpActionPlanner
      */
     private static function buildConfirmTurn(array $pending, array $keys, ProcurementAgentContext $ctx, bool $ar): array
     {
-        if (!empty($pending['draft']['dry_run'])) {
-            $summary = (string) ($pending['draft']['arguments']['title'] ?? $pending['intent'] ?? 'draft');
-            return [
-                'mode' => 'confirm_dry_run',
-                'pending' => [],
-                'confirmed_writes' => [],
-                'action_plan' => null,
-                'clear_pending' => true,
-                'response' => $ar
-                    ? ("تم تأكيد التجربة المضبوطة لـ «{$summary}» بدون كتابة حقيقية في النظام. لم يُنشأ سجل.")
-                    : ("Controlled test confirmed for «{$summary}» with no real write. No record was created."),
-                'verification' => [
-                    'verified' => true,
-                    'dry_run' => true,
-                    'wrote' => false,
-                    'message' => 'controlled_test_confirmed_no_write',
-                ],
-            ];
-        }
-
+        // Confirm always executes the pending snapshot via ActionPlanner/Governance.
+        // dry_run is metadata only (no fake supplier ids) — never a controlled_test substitute.
         $plan = null;
         if (!empty($pending['action_plan']) && is_array($pending['action_plan'])) {
             $plan = $pending['action_plan'];
-        } elseif (!empty($pending['draft']['ready'])) {
+            // Strip dry-run recommendation noise from user-facing plan copy
+            if (isset($plan['recommendations']) && is_array($plan['recommendations'])) {
+                $plan['recommendations'] = array_values(array_filter(
+                    $plan['recommendations'],
+                    static function ($rec): bool {
+                        if (!is_array($rec)) {
+                            return false;
+                        }
+                        $msg = (string) ($rec['message'] ?? '');
+                        return $msg !== '' && !str_contains($msg, 'controlled_test');
+                    }
+                ));
+            }
+        } elseif (!empty($pending['draft']['ready']) || !empty($pending['parameter_snapshot'])) {
+            $args = is_array($pending['draft']['arguments'] ?? null)
+                ? $pending['draft']['arguments']
+                : [];
+            if ($args === [] && is_array($pending['parameter_snapshot'] ?? null)) {
+                $snap = $pending['parameter_snapshot'];
+                $args = [
+                    'title' => (string) ($snap['title'] ?? 'طلب شراء'),
+                    'priority' => (string) ($snap['priority'] ?? 'medium'),
+                    'line_items' => is_array($snap['line_items'] ?? null) ? $snap['line_items'] : [],
+                ];
+            }
             $action = self::makeAction(
                 'create_draft_purchase_request',
-                is_array($pending['draft']['arguments'] ?? null) ? $pending['draft']['arguments'] : [],
+                $args,
                 $ctx,
                 'create_pr_from_conversation'
             );
+            $action['action_id'] = (string) ($pending['action_id'] ?? '');
             $plan = [
                 'intent' => (string) ($pending['intent'] ?? 'create_draft_purchase_request'),
                 'domains' => ['procurement'],
@@ -928,22 +935,101 @@ final class ErpActionPlanner
             ? $pending['action_plan']['actions'][0]['arguments']
             : (is_array($pending['draft']['arguments'] ?? null) ? $pending['draft']['arguments'] : []);
         $summary = (string) ($snap['title'] ?? $args['title'] ?? '');
-        $prio = (string) ($snap['priority'] ?? $args['priority'] ?? 'medium');
+        $prioRaw = (string) ($snap['priority'] ?? $args['priority'] ?? 'medium');
+        $prio = self::labelPriority($prioRaw, $ar);
         $lines = is_array($snap['line_items'] ?? null) ? $snap['line_items']
             : (is_array($args['line_items'] ?? null) ? $args['line_items'] : []);
         $lineTxt = '';
         if ($lines !== [] && is_array($lines[0])) {
             $name = (string) ($lines[0]['item_name'] ?? $lines[0]['description'] ?? '');
-            $lineTxt = ($ar ? ' — صنف: ' : ' — item: ')
-                . $name
-                . ' × ' . (string) ($lines[0]['quantity'] ?? '');
+            $qty = (string) ($lines[0]['quantity'] ?? '');
+            $lineTxt = $ar
+                ? ("\n- الصنف: {$name}\n- الكمية: {$qty}")
+                : ("\n- Item: {$name}\n- Quantity: {$qty}");
         }
-        $dry = !empty($pending['draft']['dry_run'])
-            ? ($ar ? ' (تجربة مضبوطة — بدون مورد وهمي)' : ' (controlled test — no fake supplier)')
-            : '';
         return $ar
-            ? ("سأقوم بإنشاء مسودة طلب شراء:\n- العنوان: {$summary}\n- الأولوية: {$prio}{$lineTxt}{$dry}\n\nللتأكيد اكتب: انشئ / نعم / موافق\nللإلغاء: لا")
-            : ("I will create a draft purchase request:\n- Title: {$summary}\n- Priority: {$prio}{$lineTxt}{$dry}\n\nConfirm with: create / yes / ok\nCancel with: no");
+            ? ("سأقوم بإنشاء مسودة طلب شراء:\n- العنوان: {$summary}\n- الأولوية: {$prio}{$lineTxt}\n\nللتأكيد اضغط تأكيد أو اكتب: نعم / موافق\nللإلغاء: لا")
+            : ("I will create a draft purchase request:\n- Title: {$summary}\n- Priority: {$prio}{$lineTxt}\n\nConfirm with the Confirm button or: yes / ok\nCancel with: no");
+    }
+
+    public static function labelPriority(string $priority, bool $ar): string
+    {
+        $p = strtolower(trim($priority));
+        if (!$ar) {
+            return match ($p) {
+                'high' => 'High',
+                'low' => 'Low',
+                default => 'Medium',
+            };
+        }
+        return match ($p) {
+            'high' => 'عالية',
+            'low' => 'منخفضة',
+            default => 'متوسطة',
+        };
+    }
+
+    public static function labelTool(string $tool, bool $ar): string
+    {
+        $key = 'ai_tool_' . $tool;
+        $tr = __($key);
+        if (is_string($tr) && $tr !== '' && $tr !== $key) {
+            return $tr;
+        }
+        return $tool;
+    }
+
+    public static function labelGovToken(string $token, bool $ar): string
+    {
+        $mapAr = [
+            'LOW' => 'منخفضة',
+            'MEDIUM' => 'متوسطة',
+            'HIGH' => 'عالية',
+            'CRITICAL' => 'حرجة',
+            'READ_ONLY' => 'قراءة فقط',
+            'ANALYSIS_ONLY' => 'تحليل فقط',
+            'CONFIRMED_WRITE' => 'كتابة بعد التأكيد',
+            'APPROVED_WRITE' => 'كتابة بعد الموافقة',
+            'controlled_autonomy_disabled_by_default' => 'الاستقلالية المتحكم بها موقوفة افتراضيًا',
+            'confirmation_still_required' => 'ما زال التأكيد مطلوبًا',
+            'confirmation_policy_blocks_unattended_write' => 'سياسة التأكيد تمنع الكتابة غير المراقبة',
+            'sensitive_actions_never_autonomous' => 'الإجراءات الحساسة لا تُنفَّذ تلقائيًا',
+            'empty_autonomy_allowlist' => 'قائمة الاستقلالية فارغة',
+            'tool_not_in_autonomy_allowlist' => 'الأداة غير مدرجة في قائمة الاستقلالية',
+            'confirmation_required' => 'يتطلب تأكيد المستخدم',
+            'controlled_test' => 'اختبار مضبوط',
+            'create_draft_purchase_request' => 'إنشاء مسودة طلب شراء',
+            'duplicate_action' => 'إجراء مكرر',
+            'tool_exception' => 'تعذر تنفيذ الأداة',
+            'verification_incomplete' => 'التحقق غير مكتمل',
+        ];
+        $mapEn = [
+            'LOW' => 'Low',
+            'MEDIUM' => 'Medium',
+            'HIGH' => 'High',
+            'CRITICAL' => 'Critical',
+            'READ_ONLY' => 'Read only',
+            'ANALYSIS_ONLY' => 'Analysis only',
+            'CONFIRMED_WRITE' => 'Confirmed write',
+            'APPROVED_WRITE' => 'Approved write',
+            'controlled_autonomy_disabled_by_default' => 'Controlled autonomy disabled by default',
+            'confirmation_still_required' => 'Confirmation still required',
+            'confirmation_policy_blocks_unattended_write' => 'Confirmation policy blocks unattended write',
+            'sensitive_actions_never_autonomous' => 'Sensitive actions are never autonomous',
+            'empty_autonomy_allowlist' => 'Autonomy allowlist is empty',
+            'tool_not_in_autonomy_allowlist' => 'Tool is not on the autonomy allowlist',
+            'confirmation_required' => 'User confirmation required',
+            'controlled_test' => 'Controlled test',
+            'create_draft_purchase_request' => 'Create draft purchase request',
+            'duplicate_action' => 'Duplicate action',
+            'tool_exception' => 'Tool execution failed',
+            'verification_incomplete' => 'Verification incomplete',
+        ];
+        $key = trim($token);
+        if ($ar) {
+            return $mapAr[$key] ?? $mapAr[strtoupper($key)] ?? $mapAr[strtolower($key)] ?? $key;
+        }
+        return $mapEn[$key] ?? $mapEn[strtoupper($key)] ?? $mapEn[strtolower($key)] ?? $key;
     }
 
     public static function confirmKey(string $tool, array $arguments): string
@@ -1288,10 +1374,11 @@ final class ErpActionPlanner
                 : 'Action plan requires confirmation before execution (recommendation is not execution):';
             foreach ($pending as $i => $p) {
                 $n = $i + 1;
-                $summary = (string) (($p['impact_preview']['summary'] ?? null) ?: ($p['tool'] ?? ''));
+                $tool = (string) ($p['tool'] ?? '');
+                $summary = (string) (($p['impact_preview']['summary'] ?? null) ?: self::labelTool($tool, $ar));
                 $lines[] = $ar
-                    ? "{$n}) {$summary} — الصلاحية: " . (string) ($p['permission'] ?? '') . " — التأكيد مطلوب"
-                    : "{$n}) {$summary} — permission: " . (string) ($p['permission'] ?? '') . " — confirmation required";
+                    ? "{$n}) {$summary} — التأكيد مطلوب"
+                    : "{$n}) {$summary} — confirmation required";
             }
         }
 
@@ -1302,10 +1389,62 @@ final class ErpActionPlanner
             foreach ($results as $i => $r) {
                 $n = $i + 1;
                 $ok = !empty($r['success']);
+                $tool = (string) ($r['tool'] ?? '');
+                $toolLabel = self::labelTool($tool, $ar);
                 $ver = is_array($r['verification'] ?? null) ? $r['verification'] : [];
+                $data = is_array($r['data'] ?? null) ? $r['data'] : [];
+
+                if ($ok && $tool === 'create_draft_purchase_request') {
+                    $reqNo = (string) ($data['request_no'] ?? '');
+                    $id = (string) ($data['id'] ?? '');
+                    $snap = is_array($plan['parameter_snapshot'] ?? null) ? $plan['parameter_snapshot'] : [];
+                    $args = is_array($plan['actions'][0]['arguments'] ?? null) ? $plan['actions'][0]['arguments'] : [];
+                    $prio = self::labelPriority((string) ($snap['priority'] ?? $args['priority'] ?? 'medium'), $ar);
+                    $line0 = is_array($snap['line_items'][0] ?? null) ? $snap['line_items'][0]
+                        : (is_array($args['line_items'][0] ?? null) ? $args['line_items'][0] : []);
+                    $item = (string) ($line0['item_name'] ?? $line0['description'] ?? '');
+                    $qty = (string) ($line0['quantity'] ?? '');
+                    if ($ar) {
+                        $lines[] = 'تم إنشاء مسودة طلب الشراء بنجاح.';
+                        if ($reqNo !== '') {
+                            $lines[] = 'رقم الطلب: ' . $reqNo;
+                        } elseif ($id !== '') {
+                            $lines[] = 'المعرّف: ' . $id;
+                        }
+                        if ($item !== '') {
+                            $lines[] = 'الصنف: ' . $item;
+                        }
+                        if ($qty !== '') {
+                            $lines[] = 'الكمية: ' . $qty;
+                        }
+                        $lines[] = 'الأولوية: ' . $prio;
+                        $lines[] = !empty($ver['verified'])
+                            ? 'التحقق: تم التحقق من الحالة بعد التنفيذ.'
+                            : 'التحقق: قيد المراجعة.';
+                    } else {
+                        $lines[] = 'Draft purchase request created successfully.';
+                        if ($reqNo !== '') {
+                            $lines[] = 'Request number: ' . $reqNo;
+                        } elseif ($id !== '') {
+                            $lines[] = 'ID: ' . $id;
+                        }
+                        if ($item !== '') {
+                            $lines[] = 'Item: ' . $item;
+                        }
+                        if ($qty !== '') {
+                            $lines[] = 'Quantity: ' . $qty;
+                        }
+                        $lines[] = 'Priority: ' . $prio;
+                        $lines[] = !empty($ver['verified'])
+                            ? 'Verification: post-action state verified.'
+                            : 'Verification: pending review.';
+                    }
+                    continue;
+                }
+
                 $lines[] = $ar
-                    ? "{$n}) " . (string) ($r['tool'] ?? '') . ' → ' . ($ok ? 'نجاح' : 'فشل')
-                    : "{$n}) " . (string) ($r['tool'] ?? '') . ' → ' . ($ok ? 'success' : 'failed');
+                    ? "{$n}) {$toolLabel} → " . ($ok ? 'نجاح' : 'فشل')
+                    : "{$n}) {$toolLabel} → " . ($ok ? 'success' : 'failed');
                 if (!empty($ver['incomplete'])) {
                     $lines[] = $ar
                         ? '   التحقق غير مكتمل — لا يُعلن نجاحاً نهائياً.'
@@ -1314,7 +1453,7 @@ final class ErpActionPlanner
                     $lines[] = $ar ? '   تم التحقق من الحالة بعد التنفيذ.' : '   Post-action state verified.';
                 }
                 if (!empty($r['error_code'])) {
-                    $lines[] = ($ar ? '   خطأ: ' : '   Error: ') . (string) $r['error_code'];
+                    $lines[] = ($ar ? '   خطأ: ' : '   Error: ') . self::labelGovToken((string) $r['error_code'], $ar);
                 }
             }
         }
@@ -1324,14 +1463,18 @@ final class ErpActionPlanner
                 continue;
             }
             $lines[] = $ar
-                ? 'عملية غير متاحة عبر الوكيل: ' . (string) ($u['requested'] ?? '') . ' (' . (string) ($u['reason'] ?? '') . ')'
-                : 'Action unavailable via agent: ' . (string) ($u['requested'] ?? '') . ' (' . (string) ($u['reason'] ?? '') . ')';
+                ? 'عملية غير متاحة عبر الوكيل: ' . (string) ($u['requested'] ?? '')
+                : 'Action unavailable via agent: ' . (string) ($u['requested'] ?? '');
         }
         foreach (($plan['recommendations'] ?? []) as $rec) {
             if (!is_array($rec)) {
                 continue;
             }
-            $lines[] = ($ar ? 'توصية (بدون تنفيذ): ' : 'Recommendation (no write): ') . (string) ($rec['message'] ?? '');
+            $msg = (string) ($rec['message'] ?? '');
+            if ($msg === '' || str_contains($msg, 'controlled_test')) {
+                continue;
+            }
+            $lines[] = ($ar ? 'توصية: ' : 'Recommendation: ') . $msg;
         }
 
         if ($lines === []) {
@@ -1339,10 +1482,6 @@ final class ErpActionPlanner
                 ? 'لا يوجد إجراء كتابة مدعوم لهذا الطلب.'
                 : 'No supported write action for this request.';
         }
-
-        $lines[] = $ar
-            ? 'ملاحظة: لا تنفيذ تلقائي. كل كتابة تمر عبر الصلاحية والسياسة والتأكيد والتدقيق.'
-            : 'Note: no auto-execution. Every write requires authorization, policy, confirmation, and audit.';
 
         return implode("\n", $lines);
     }

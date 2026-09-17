@@ -443,14 +443,21 @@ final class ErpGovernanceLayer
     public static function formatGovernanceSummary(array $governance, array $trace, ProcurementAgentContext $ctx): string
     {
         $ar = $ctx->normalizedLocale() === 'ar';
+        $label = static function (string $token) use ($ar): string {
+            return ErpActionPlanner::labelGovToken($token, $ar);
+        };
         $lines = [];
         $lines[] = $ar ? 'حوكمة التنفيذ:' : 'Execution governance:';
-        $lines[] = ($ar ? '- المخاطر: ' : '- Risk: ') . (string) ($governance['risk'] ?? '');
-        $lines[] = ($ar ? '- مستوى التنفيذ: ' : '- Execution level: ') . (string) ($governance['execution_level'] ?? '');
+        $risk = (string) ($governance['risk'] ?? '');
+        $level = (string) ($governance['execution_level'] ?? '');
+        $lines[] = ($ar ? '- المخاطر: ' : '- Risk: ') . ($risk !== '' ? $label($risk) : '');
+        $lines[] = ($ar ? '- مستوى التنفيذ: ' : '- Execution level: ') . ($level !== '' ? $label($level) : '');
         if (!empty($governance['controlled_autonomy']['blocked'])) {
+            $reason = (string) ($governance['controlled_autonomy']['reason'] ?? '');
+            $reasonLabel = $reason !== '' ? $label($reason) : '';
             $lines[] = $ar
-                ? '- الاستقلالية المتحكم بها: موقوفة (' . (string) ($governance['controlled_autonomy']['reason'] ?? '') . ')'
-                : '- Controlled autonomy: blocked (' . (string) ($governance['controlled_autonomy']['reason'] ?? '') . ')';
+                ? '- الاستقلالية المتحكم بها: موقوفة' . ($reasonLabel !== '' ? ' (' . $reasonLabel . ')' : '')
+                : '- Controlled autonomy: blocked' . ($reasonLabel !== '' ? ' (' . $reasonLabel . ')' : '');
         }
         if (!empty($governance['confirmation']['required'])) {
             $lines[] = $ar ? '- يلزم تأكيد المستخدم قبل الكتابة.' : '- User confirmation required before write.';
@@ -459,10 +466,18 @@ final class ErpGovernanceLayer
             $lines[] = $ar ? '- يلزم مسار الموافقة الحالي للعملية الحساسة.' : '- Existing approval workflow required for sensitive action.';
         }
         if (!empty($trace['executed'])) {
-            $lines[] = ($ar ? '- تم التنفيذ: ' : '- Executed: ') . implode(', ', $trace['executed']);
+            $execLabels = array_map(
+                static fn($t) => ErpActionPlanner::labelTool((string) $t, $ar),
+                is_array($trace['executed']) ? $trace['executed'] : []
+            );
+            $lines[] = ($ar ? '- تم التنفيذ: ' : '- Executed: ') . implode(', ', $execLabels);
         }
         if (!empty($trace['not_executed'])) {
-            $lines[] = ($ar ? '- لم يُنفَّذ: ' : '- Not executed: ') . implode(', ', $trace['not_executed']);
+            $skipLabels = array_map(
+                static fn($t) => ErpActionPlanner::labelTool((string) $t, $ar),
+                is_array($trace['not_executed']) ? $trace['not_executed'] : []
+            );
+            $lines[] = ($ar ? '- لم يُنفَّذ: ' : '- Not executed: ') . implode(', ', $skipLabels);
         }
         if (!empty($trace['partial'])) {
             $lines[] = $ar ? '- حالة جزئية: تم إيقاف الإجراءات التابعة.' : '- Partial: dependent actions stopped.';

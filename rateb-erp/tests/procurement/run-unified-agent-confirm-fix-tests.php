@@ -197,6 +197,30 @@ $executed = !empty($r2['action']['results'][0]['success'])
 $executed ? $pass('EXECUTION') : $fail('EXECUTION', mb_substr((string) ($r2['response'] ?? ''), 0, 200));
 $executed ? $pass('VERIFICATION') : $fail('VERIFICATION');
 
+// Real execution — never controlled_test
+$resp2 = (string) ($r2['response'] ?? '');
+$noCt = stripos($resp2, 'controlled_test') === false
+    && stripos($resp2, 'التجربة المضبوطة') === false
+    && stripos($blob2, '"tool":"controlled_test"') === false;
+$noCt ? $pass('NO CONTROLLED TEST FALLBACK') : $fail('NO CONTROLLED TEST FALLBACK', mb_substr($resp2, 0, 180));
+$hasRecord = stripos($resp2, 'رقم الطلب') !== false
+    || stripos($resp2, 'Request number') !== false
+    || stripos($blob2, 'request_no') !== false
+    || stripos($resp2, 'تم إنشاء مسودة') !== false;
+$hasRecord ? $pass('RECORD CREATION') : $fail('RECORD CREATION', mb_substr($resp2, 0, 200));
+($executed && $noCt && $hasRecord) ? $pass('REAL EXECUTION') : $fail('REAL EXECUTION');
+
+// AR language — no raw English governance tokens in user text
+$arLeak = preg_match('/\b(CONFIRMED_WRITE|READ_ONLY|controlled_autonomy_disabled_by_default|confirmation_required|controlled_test)\b/', $resp2) === 1;
+!$arLeak
+    ? $pass('AR LANGUAGE') : $fail('AR LANGUAGE', mb_substr($resp2, 0, 220));
+
+// EN language labels
+$prioEn = ErpActionPlanner::labelPriority('medium', false);
+$lvlEn = ErpActionPlanner::labelGovToken('CONFIRMED_WRITE', false);
+($prioEn === 'Medium' && $lvlEn === 'Confirmed write')
+    ? $pass('EN LANGUAGE') : $fail('EN LANGUAGE', $prioEn . '/' . $lvlEn);
+
 // Duplicate confirm
 $r3 = $agent->process([
     'message' => 'تأكيد',

@@ -144,7 +144,7 @@ $confirm = ErpActionPlanner::resolveConversationTurn('انشئ', $ctx, $hist, Er
 (($confirm['mode'] ?? '') === 'confirm' && !empty($confirm['confirmed_writes']))
     ? $pass('CONFIRMATION') : $fail('CONFIRMATION', json_encode(['mode' => $confirm['mode'] ?? null, 'keys' => $confirm['confirmed_writes'] ?? []]));
 
-// Dry-run confirm must not produce write keys
+// Explicit example-only phrase must still produce a real confirmable write (no controlled_test skip)
 ErpActionPlanner::clearPendingState($scope);
 $histDry = [];
 $pendDry = [];
@@ -155,7 +155,7 @@ foreach (['اعمل طلب شراء', 'شراء مواد بطاطس 3', 'مثا�
 }
 ErpActionPlanner::savePendingState($scope, $pendDry);
 $dryConf = ErpActionPlanner::resolveConversationTurn('انشئ', $ctx, $histDry, ErpActionPlanner::loadPendingState($scope), []);
-(($dryConf['mode'] ?? '') === 'confirm_dry_run' && empty($dryConf['confirmed_writes']))
+(($dryConf['mode'] ?? '') === 'confirm' && !empty($dryConf['confirmed_writes']) && is_array($dryConf['action_plan']))
     ? $pass('CONFIRMATION SEMANTICS') : $fail('CONFIRMATION SEMANTICS', json_encode($dryConf['mode'] ?? null));
 
 // Rejection
