@@ -5,6 +5,198 @@
 (function (root, doc) {
     'use strict';
 
+    function installVoiceFeatures(api) {
+        if (!api) return;
+        var rootNode = doc.getElementById('ratebAiRoot');
+        var inputBtn = doc.getElementById('aiVoiceInputBtn');
+        var stopBtn = doc.getElementById('aiVoiceStopBtn');
+        var modeBtn = doc.getElementById('aiVoiceModeBtn');
+        // Soft-nav replaces these nodes via main.innerHTML while window.ratebAi survives.
+        // Only skip when already bound to the *current* button elements.
+        if (api.__ratebVoiceBound
+            && api.__ratebVoiceInputBtn === inputBtn
+            && api.__ratebVoiceStopBtn === stopBtn
+            && api.__ratebVoiceModeBtn === modeBtn
+            && inputBtn) {
+            return;
+        }
+
+        var languageSelect = doc.getElementById('aiVoiceLanguage');
+        var status = doc.getElementById('aiVoiceStatus');
+        var messages = doc.getElementById('aiMessages');
+        var Recognition = root.SpeechRecognition || root.webkitSpeechRecognition;
+        var recognition = null;
+        var listening = false;
+        var speaking = false;
+        var voiceMode = false;
+        var waitingForVoiceReply = false;
+
+        if (!inputBtn || !stopBtn || !modeBtn || !languageSelect || !status || !messages) return;
+
+        function setStatus(state, detail) {
+            var labels = {
+                ready: 'Ready',
+                listening: 'Listening / جاري الاستماع',
+                processing: 'Processing / جاري المعالجة',
+                speaking: 'Speaking / جاري الرد'
+            };
+            status.textContent = detail || labels[state] || state;
+            status.setAttribute('data-state', state);
+        }
+
+        function setStopVisible(visible) {
+            stopBtn.classList.toggle('is-hidden', !visible);
+        }
+
+        function stopSpeaking() {
+            if (root.speechSynthesis) root.speechSynthesis.cancel();
+            speaking = false;
+            if (!listening) setStatus('ready');
+        }
+
+        function speak(text, continueListening) {
+            var content = String(text || '').trim();
+            if (!content || !root.speechSynthesis || !root.SpeechSynthesisUtterance) return;
+            stopSpeaking();
+            var utterance = new root.SpeechSynthesisUtterance(content);
+            utterance.lang = languageSelect.value || 'en-US';
+            utterance.onstart = function () {
+                speaking = true;
+                setStatus('speaking');
+                setStopVisible(true);
+            };
+            utterance.onend = function () {
+                speaking = false;
+                if (voiceMode && continueListening) {
+                    startListening();
+                } else {
+                    setStatus('ready');
+                    setStopVisible(false);
+                }
+            };
+            utterance.onerror = function () {
+                speaking = false;
+                setStatus('ready', 'Voice playback unavailable');
+                setStopVisible(false);
+            };
+            root.speechSynthesis.speak(utterance);
+        }
+
+        function decorateMessage(message) {
+            if (!message || !message.classList.contains('assistant') || message.classList.contains('rateb-ai-typing-container') || message.querySelector('.rateb-ai-speak-btn')) return;
+            var content = message.querySelector('.rateb-ai-message-content');
+            if (!content || !String(content.textContent || '').trim()) return;
+            var button = doc.createElement('button');
+            button.type = 'button';
+            button.className = 'rateb-ai-speak-btn';
+            button.setAttribute('aria-label', 'Play AI response');
+            button.title = 'Play AI response';
+            button.innerHTML = '<i class="fa-solid fa-volume-high" aria-hidden="true"></i>';
+            button.addEventListener('click', function () { speak(content.textContent, false); });
+            message.appendChild(button);
+        }
+
+        function startListening() {
+            if (!Recognition || listening || api.loading) return;
+            stopSpeaking();
+            recognition = new Recognition();
+            recognition.lang = languageSelect.value || 'en-US';
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.onstart = function () {
+                listening = true;
+                setStatus('listening');
+                setStopVisible(true);
+            };
+            recognition.onresult = function (event) {
+                var transcript = '';
+                for (var i = event.resultIndex; i < event.results.length; i += 1) {
+                    transcript += event.results[i][0].transcript;
+                }
+                var last = event.results[event.results.length - 1];
+                if (last && last.isFinal && transcript.trim()) {
+                    waitingForVoiceReply = voiceMode;
+                    setStatus('processing');
+                    api.send(transcript.trim());
+                }
+            };
+            recognition.onerror = function (event) {
+                listening = false;
+                setStatus('ready', event.error === 'not-allowed' ? 'Microphone permission was blocked' : 'Voice input unavailable');
+                setStopVisible(false);
+            };
+            recognition.onend = function () {
+                listening = false;
+                if (!speaking && !api.loading && !waitingForVoiceReply) {
+                    setStatus('ready');
+                    setStopVisible(false);
+                }
+            };
+            try {
+                recognition.start();
+            } catch (error) {
+                listening = false;
+                setStatus('ready', 'Voice input unavailable');
+            }
+        }
+
+        function stopAll() {
+            voiceMode = false;
+            waitingForVoiceReply = false;
+            if (recognition) recognition.stop();
+            listening = false;
+            stopSpeaking();
+            modeBtn.setAttribute('aria-pressed', 'false');
+            modeBtn.classList.remove('is-active');
+            setStatus('ready');
+            setStopVisible(false);
+        }
+
+        if (!Recognition) inputBtn.setAttribute('disabled', 'disabled');
+        inputBtn.addEventListener('click', function () {
+            if (listening) stopAll(); else startListening();
+        });
+        stopBtn.addEventListener('click', stopAll);
+        modeBtn.addEventListener('click', function () {
+            voiceMode = !voiceMode;
+            modeBtn.setAttribute('aria-pressed', voiceMode ? 'true' : 'false');
+            modeBtn.classList.toggle('is-active', voiceMode);
+            if (voiceMode) startListening(); else stopAll();
+        });
+        languageSelect.addEventListener('change', function () {
+            if (listening) {
+                if (recognition) recognition.stop();
+                listening = false;
+                startListening();
+            }
+        });
+
+        var observer = new root.MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                Array.prototype.forEach.call(mutation.addedNodes || [], function (node) {
+                    if (node.nodeType !== 1) return;
+                    decorateMessage(node);
+                    if (node.classList.contains('assistant') && !node.classList.contains('rateb-ai-typing-container')) {
+                        if (waitingForVoiceReply) {
+                            waitingForVoiceReply = false;
+                            var response = node.querySelector('.rateb-ai-message-content');
+                            if (response) speak(response.textContent, voiceMode);
+                        }
+                    }
+                });
+            });
+        });
+        observer.observe(messages, { childList: true });
+        Array.prototype.forEach.call(messages.querySelectorAll('.rateb-ai-message.assistant'), decorateMessage);
+
+        // Mark bound only after listeners are on the live button nodes
+        api.__ratebVoiceBound = true;
+        api.__ratebVoiceBoundRoot = rootNode;
+        api.__ratebVoiceInputBtn = inputBtn;
+        api.__ratebVoiceStopBtn = stopBtn;
+        api.__ratebVoiceModeBtn = modeBtn;
+    }
+
     function buildApi() {
         return {
             loading: false,
@@ -324,6 +516,7 @@
             if (input) input.removeAttribute('data-rateb-ai-input');
             if (sendBtn) sendBtn.removeAttribute('data-rateb-ai-click');
             api.bind();
+            installVoiceFeatures(api);
         }
     }
 
