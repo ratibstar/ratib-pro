@@ -441,6 +441,11 @@
             },
             clickSuggest: function (btn) {
                 try {
+                    var now = Date.now();
+                    if (this.__lastSuggestAt && (now - this.__lastSuggestAt) < 450) {
+                        return false;
+                    }
+                    this.__lastSuggestAt = now;
                     var prompt = '';
                     if (btn) {
                         prompt = btn.getAttribute('data-prompt') || '';
@@ -489,6 +494,30 @@
                 sendBtn.classList.toggle('is-empty', empty && !this.loading);
                 sendBtn.setAttribute('aria-disabled', (empty || this.loading) ? 'true' : 'false');
             },
+            bindSuggestButtons: function () {
+                var box = doc.getElementById('ratebAiRoot');
+                if (!box) return;
+                var self = this;
+                var VER = '4';
+                var nodes = box.querySelectorAll('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip');
+                Array.prototype.forEach.call(nodes, function (btn) {
+                    if (btn.getAttribute('data-suggest-v') === VER) return;
+                    if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
+                    var next = btn.cloneNode(true);
+                    next.setAttribute('data-suggest-v', VER);
+                    next.removeAttribute('onclick');
+                    if (btn.parentNode) btn.parentNode.replaceChild(next, btn);
+                    var fire = function (e) {
+                        if (e) {
+                            e.preventDefault();
+                            try { e.stopPropagation(); } catch (eStop) {}
+                        }
+                        self.clickSuggest(next);
+                        return false;
+                    };
+                    next.addEventListener('click', fire, true);
+                });
+            },
             bind: function () {
                 var box = doc.getElementById('ratebAiRoot');
                 if (!box) return;
@@ -529,6 +558,7 @@
                 }
                 box.setAttribute('data-rateb-ai-bound', '1');
                 if (self.loading) self.loading = false;
+                self.bindSuggestButtons();
                 self.syncSendBtn();
                 try { if (input) input.focus(); } catch (eFocus) {}
             }
@@ -544,8 +574,8 @@
         root.ratebAi.loading = !!prev.loading;
         root.ratebAi.lastMessage = prev.lastMessage || '';
 
-        if (!root.__ratebAiClickBound) {
-            root.__ratebAiClickBound = true;
+        if (!root.__ratebAiClickBoundV4) {
+            root.__ratebAiClickBoundV4 = true;
             doc.addEventListener('click', function (e) {
                 if (!doc.getElementById('ratebAiRoot') || !root.ratebAi) return;
                 var btn = e.target && e.target.closest
@@ -554,7 +584,6 @@
                 if (!btn) return;
                 if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
                 e.preventDefault();
-                try { e.stopPropagation(); } catch (eStop) {}
                 if (typeof root.ratebAi.clickSuggest === 'function') {
                     root.ratebAi.clickSuggest(btn);
                 }

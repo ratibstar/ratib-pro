@@ -338,9 +338,11 @@
     function scriptKey(src) {
         try {
             var u = new URL(src, root.location.href);
-            return u.origin + u.pathname;
+            // Keep ?v= / filemtime query so soft-nav reloads updated module scripts
+            // (immutable assets rely on query bust; ignoring search left stale handlers alive).
+            return u.origin + u.pathname + u.search;
         } catch (e) {
-            return String(src).split('?')[0];
+            return String(src);
         }
     }
 

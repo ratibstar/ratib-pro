@@ -242,6 +242,11 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
     },
     clickSuggest: function (btn) {
         try {
+            var now = Date.now();
+            if (this.__lastSuggestAt && (now - this.__lastSuggestAt) < 450) {
+                return false;
+            }
+            this.__lastSuggestAt = now;
             var prompt = '';
             if (btn) {
                 prompt = btn.getAttribute('data-prompt') || '';
@@ -292,6 +297,27 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
         sendBtn.classList.toggle('is-empty', empty && !this.loading);
         sendBtn.setAttribute('aria-disabled', (empty || this.loading) ? 'true' : 'false');
     },
+    bindSuggestButtons: function () {
+        var root = document.getElementById('ratebAiRoot');
+        if (!root) return;
+        var self = this;
+        var VER = '4';
+        var nodes = root.querySelectorAll('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip');
+        Array.prototype.forEach.call(nodes, function (btn) {
+            if (btn.getAttribute('data-suggest-v') === VER) return;
+            if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
+            var next = btn.cloneNode(true);
+            next.setAttribute('data-suggest-v', VER);
+            next.removeAttribute('onclick');
+            if (btn.parentNode) btn.parentNode.replaceChild(next, btn);
+            next.addEventListener('click', function (e) {
+                e.preventDefault();
+                try { e.stopPropagation(); } catch (eStop) {}
+                self.clickSuggest(next);
+                return false;
+            }, true);
+        });
+    },
     bind: function () {
         var root = document.getElementById('ratebAiRoot');
         if (!root) return;
@@ -333,13 +359,14 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
         root.setAttribute('data-rateb-ai-bound', '1');
         /* Soft-nav can leave loading=true; clear so suggestion/send clicks work again. */
         if (this.loading) this.loading = false;
+        self.bindSuggestButtons();
         self.syncSendBtn();
         try { if (input) input.focus(); } catch (e) {}
     }
 };
     } // end needsUpgrade
-    if (!window.__ratebAiSuggestBound) {
-        window.__ratebAiSuggestBound = true;
+    if (!window.__ratebAiSuggestBoundV4) {
+        window.__ratebAiSuggestBoundV4 = true;
         document.addEventListener('click', function (e) {
             if (!document.getElementById('ratebAiRoot') || !window.ratebAi) return;
             var btn = e.target && e.target.closest
@@ -348,7 +375,7 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
             if (!btn) return;
             if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
             e.preventDefault();
-            try { e.stopPropagation(); } catch (eStop) {}
+            // Do not stopPropagation — direct button listeners / onclick are backups.
             if (typeof window.ratebAi.clickSuggest === 'function') {
                 window.ratebAi.clickSuggest(btn);
             }
