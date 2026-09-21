@@ -46,6 +46,13 @@
 
         function setStopVisible(visible) {
             stopBtn.classList.toggle('is-hidden', !visible);
+            if (visible) {
+                stopBtn.removeAttribute('hidden');
+                stopBtn.style.display = '';
+            } else {
+                stopBtn.setAttribute('hidden', 'hidden');
+                stopBtn.style.display = 'none';
+            }
         }
 
         function stopSpeaking() {
@@ -105,6 +112,8 @@
             recognition.interimResults = true;
             recognition.onstart = function () {
                 listening = true;
+                inputBtn.classList.add('is-listening');
+                inputBtn.setAttribute('data-listening', '1');
                 setStatus('listening');
                 setStopVisible(true);
             };
@@ -122,11 +131,15 @@
             };
             recognition.onerror = function (event) {
                 listening = false;
+                inputBtn.classList.remove('is-listening');
+                inputBtn.removeAttribute('data-listening');
                 setStatus('ready', event.error === 'not-allowed' ? 'Microphone permission was blocked' : 'Voice input unavailable');
                 setStopVisible(false);
             };
             recognition.onend = function () {
                 listening = false;
+                inputBtn.classList.remove('is-listening');
+                inputBtn.removeAttribute('data-listening');
                 if (!speaking && !api.loading && !waitingForVoiceReply) {
                     setStatus('ready');
                     setStopVisible(false);
@@ -152,16 +165,37 @@
             setStopVisible(false);
         }
 
-        if (!Recognition) inputBtn.setAttribute('disabled', 'disabled');
-        inputBtn.addEventListener('click', function () {
+        function toggleVoiceInput() {
             if (listening) stopAll(); else startListening();
-        });
-        stopBtn.addEventListener('click', stopAll);
-        modeBtn.addEventListener('click', function () {
+            return false;
+        }
+
+        function toggleVoiceMode() {
             voiceMode = !voiceMode;
             modeBtn.setAttribute('aria-pressed', voiceMode ? 'true' : 'false');
             modeBtn.classList.toggle('is-active', voiceMode);
             if (voiceMode) startListening(); else stopAll();
+            return false;
+        }
+
+        if (!Recognition) {
+            inputBtn.setAttribute('disabled', 'disabled');
+            modeBtn.setAttribute('disabled', 'disabled');
+            setStatus('ready', 'Voice input unavailable in this browser');
+        }
+        setStopVisible(false);
+
+        inputBtn.addEventListener('click', function (e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            toggleVoiceInput();
+        });
+        stopBtn.addEventListener('click', function (e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            stopAll();
+        });
+        modeBtn.addEventListener('click', function (e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            toggleVoiceMode();
         });
         languageSelect.addEventListener('change', function () {
             if (listening) {
@@ -170,6 +204,12 @@
                 startListening();
             }
         });
+
+        // Inline onclick (same pattern as send) — works even if soft-nav skipped deferred rebind.
+        api.toggleVoiceInput = toggleVoiceInput;
+        api.toggleVoiceMode = toggleVoiceMode;
+        api.stopVoice = function () { stopAll(); return false; };
+        api.bindVoice = function () { installVoiceFeatures(api); };
 
         var observer = new root.MutationObserver(function (mutations) {
             mutations.forEach(function (mutation) {
@@ -517,6 +557,7 @@
             if (sendBtn) sendBtn.removeAttribute('data-rateb-ai-click');
             api.bind();
             installVoiceFeatures(api);
+            api.bindVoice = function () { installVoiceFeatures(api); };
         }
     }
 

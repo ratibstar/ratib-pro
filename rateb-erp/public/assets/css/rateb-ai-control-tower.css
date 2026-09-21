@@ -208,6 +208,108 @@
   margin-top: .75rem;
 }
 
+.rateb-ai-input-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+}
+
+.rateb-ai-voice-language {
+  min-width: 3.5rem;
+  height: 40px;
+  padding: 0 .55rem;
+  border: 1px solid var(--ai-input-border, #ced4da);
+  border-radius: 10px;
+  background: var(--ai-assistant-bg, #f8f9fa);
+  color: var(--ai-text, #212529);
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rateb-ai-voice-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ai-input-border, #ced4da);
+  border-radius: 10px;
+  background: var(--ai-assistant-bg, #f8f9fa);
+  color: var(--ai-text, #212529);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+}
+
+.rateb-ai-voice-btn i {
+  pointer-events: none;
+  font-size: .95rem;
+}
+
+.rateb-ai-voice-btn:hover:not(:disabled),
+.rateb-ai-voice-btn.is-active {
+  border-color: var(--ai-primary, #1a5fb4);
+  color: #fff;
+  background: var(--ai-primary, #1a5fb4);
+}
+
+.rateb-ai-voice-btn--mic.is-listening,
+.rateb-ai-voice-btn[data-listening="1"] {
+  border-color: #dc3545;
+  background: #dc3545;
+  color: #fff;
+}
+
+.rateb-ai-voice-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.rateb-ai-voice-btn.is-hidden,
+.rateb-ai-voice-btn[hidden] {
+  display: none !important;
+}
+
+.rateb-ai-voice-status {
+  flex: 1 0 100%;
+  min-height: 1.1rem;
+  margin: 0;
+  color: var(--ai-text-muted, #6c757d);
+  font-size: .75rem;
+  line-height: 1.2;
+}
+
+.rateb-ai-voice-status[data-state="listening"] {
+  color: #f87171;
+}
+
+.rateb-ai-voice-status[data-state="processing"] {
+  color: #fbbf24;
+}
+
+.rateb-ai-voice-status[data-state="speaking"] {
+  color: #4ade80;
+}
+
+.rateb-ai-speak-btn {
+  margin-inline-start: .5rem;
+  border: 0;
+  background: transparent;
+  color: var(--ai-text-muted, #6c757d);
+  cursor: pointer;
+  font-size: .8rem;
+}
+
+.rateb-ai-speak-btn:hover {
+  color: var(--ai-primary, #1a5fb4);
+}
+
 .rateb-ct-subtitle {
   font-size: .85rem;
   font-weight: 600;

@@ -484,11 +484,25 @@ if ($controlTower !== []) {
                 oninput="window.ratebAi && window.ratebAi.syncSendBtn && window.ratebAi.syncSendBtn();"
                 onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window.ratebAi&&window.ratebAi.sendFromInput&&window.ratebAi.sendFromInput();}"
                 required></textarea>
-            <div class="rateb-ai-input-actions">
+            <div class="rateb-ai-input-actions" role="group" aria-label="Voice and send">
+                <select class="rateb-ai-voice-language" id="aiVoiceLanguage" aria-label="Voice language" title="Voice language">
+                    <option value="ar-SA" selected>AR</option>
+                    <option value="en-US">EN</option>
+                </select>
+                <button type="button" class="rateb-ai-voice-btn" id="aiVoiceModeBtn" aria-pressed="false" aria-label="Voice Mode" title="Voice Mode" onclick="return window.ratebAi && window.ratebAi.toggleVoiceMode ? window.ratebAi.toggleVoiceMode() : false;">
+                    <i class="fa-solid fa-headset" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="rateb-ai-voice-btn rateb-ai-voice-btn--mic" id="aiVoiceInputBtn" aria-label="Microphone" title="Microphone" onclick="return window.ratebAi && window.ratebAi.toggleVoiceInput ? window.ratebAi.toggleVoiceInput() : false;">
+                    <i class="fa-solid fa-microphone" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="rateb-ai-voice-btn rateb-ai-voice-btn--stop is-hidden" id="aiVoiceStopBtn" hidden aria-label="Stop" title="Stop" onclick="return window.ratebAi && window.ratebAi.stopVoice ? window.ratebAi.stopVoice() : false;">
+                    <i class="fa-solid fa-stop" aria-hidden="true"></i>
+                </button>
                 <button type="button" class="rateb-ai-send-btn" id="aiSendBtn" aria-label="<?php echo htmlspecialchars(__('ai_send'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi && window.ratebAi.sendFromInput ? window.ratebAi.sendFromInput() : false;">
                     <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
                 </button>
             </div>
+            <div class="rateb-ai-voice-status" id="aiVoiceStatus" aria-live="polite" data-state="ready">Ready</div>
         </div>
         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
     </form>
@@ -517,24 +531,39 @@ if ($controlTower !== []) {
     --ai-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-[data-bs-theme="dark"] {
-    --ai-bg: #1e1e2e;
-    --ai-text: #e4e4e7;
-    --ai-text-muted: #a1a1aa;
-    --ai-border: #3f3f46;
-    --ai-primary: #3b82f6;
-    --ai-primary-hover: #2563eb;
-    --ai-user-bg: #3b82f6;
-    --ai-user-text: #ffffff;
-    --ai-assistant-bg: #27272a;
-    --ai-assistant-border: #3f3f46;
-    --ai-input-bg: #18181b;
-    --ai-input-border: #3f3f46;
-    --ai-input-focus: #3b82f6;
+html[data-theme="dark"],
+html[data-bs-theme="dark"] {
+    --ai-bg: var(--rateb-sidebar, #070d18);
+    --ai-text: var(--rateb-text, #e2e8f0);
+    --ai-text-muted: var(--rateb-text-muted, #94a3b8);
+    --ai-border: var(--rateb-border, #2a3a52);
+    --ai-primary: var(--rateb-primary, #3b82f6);
+    --ai-primary-hover: var(--rateb-primary-dark, #2563eb);
+    --ai-user-bg: #123a6c;
+    --ai-user-text: #f5faff;
+    --ai-assistant-bg: var(--rateb-sidebar, #070d18);
+    --ai-assistant-border: var(--rateb-border, #2a3a52);
+    --ai-input-bg: var(--rateb-surface-elevated, #1c2940);
+    --ai-input-border: var(--rateb-border, #2a3a52);
+    --ai-input-focus: var(--rateb-primary, #3b82f6);
     --ai-status-online: #22c55e;
-    --ai-suggestion-bg: #27272a;
-    --ai-suggestion-hover: #3f3f46;
-    --ai-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    --ai-suggestion-bg: #0f1720;
+    --ai-suggestion-hover: #1d2733;
+    --ai-shadow: 0 2px 10px rgba(0,0,0,0.45);
+}
+
+html[data-theme="dark"] .rateb-ai-container,
+html[data-bs-theme="dark"] .rateb-ai-container {
+    background: var(--rateb-sidebar, #070d18);
+}
+
+html[data-theme="dark"] .rateb-ai-header,
+html[data-theme="dark"] .rateb-ai-messages,
+html[data-theme="dark"] .rateb-ai-input-form,
+html[data-bs-theme="dark"] .rateb-ai-header,
+html[data-bs-theme="dark"] .rateb-ai-messages,
+html[data-bs-theme="dark"] .rateb-ai-input-form {
+    background: var(--rateb-sidebar, #070d18);
 }
 
 .rateb-ai-container {
@@ -763,6 +792,7 @@ if ($controlTower !== []) {
 
 .rateb-ai-input-wrapper {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     gap: 10px;
     background: var(--ai-input-bg);
@@ -776,7 +806,8 @@ if ($controlTower !== []) {
 }
 
 .rateb-ai-input {
-    flex: 1;
+    flex: 1 1 12rem;
+    min-width: 0;
     border: 0;
     outline: none;
     resize: none;
@@ -787,6 +818,87 @@ if ($controlTower !== []) {
     max-height: 180px;
     font-family: inherit;
 }
+
+.rateb-ai-input-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 3;
+}
+
+.rateb-ai-voice-language {
+    min-width: 3.5rem;
+    height: 40px;
+    padding: 0 .55rem;
+    border: 1px solid var(--ai-input-border);
+    border-radius: 10px;
+    background: var(--ai-assistant-bg);
+    color: var(--ai-text);
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.rateb-ai-voice-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--ai-input-border);
+    border-radius: 10px;
+    background: var(--ai-assistant-bg);
+    color: var(--ai-text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    position: relative;
+    z-index: 3;
+    flex-shrink: 0;
+}
+
+.rateb-ai-voice-btn i {
+    pointer-events: none;
+    font-size: .95rem;
+}
+
+.rateb-ai-voice-btn:hover:not(:disabled),
+.rateb-ai-voice-btn.is-active {
+    border-color: var(--ai-primary);
+    color: #fff;
+    background: var(--ai-primary);
+}
+
+.rateb-ai-voice-btn--mic.is-listening,
+.rateb-ai-voice-btn[data-listening="1"] {
+    border-color: #dc3545;
+    background: #dc3545;
+    color: #fff;
+}
+
+.rateb-ai-voice-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.rateb-ai-voice-btn.is-hidden,
+.rateb-ai-voice-btn[hidden] {
+    display: none !important;
+}
+
+.rateb-ai-voice-status {
+    flex: 1 0 100%;
+    min-height: 1.1rem;
+    margin: 0;
+    color: var(--ai-text-muted);
+    font-size: .75rem;
+    line-height: 1.2;
+}
+
+.rateb-ai-voice-status[data-state="listening"] { color: #f87171; }
+.rateb-ai-voice-status[data-state="processing"] { color: #fbbf24; }
+.rateb-ai-voice-status[data-state="speaking"] { color: #4ade80; }
 
 .rateb-ai-send-btn {
     width: 40px;
@@ -801,7 +913,7 @@ if ($controlTower !== []) {
     justify-content: center;
     pointer-events: auto;
     position: relative;
-    z-index: 2;
+    z-index: 3;
 }
 
 .rateb-ai-send-btn:disabled,
@@ -1015,6 +1127,9 @@ try {
     }
 } catch (eSw) {}
 </script>
-<?php /* History toolbar must bind immediately (no defer) — soft-nav + SW often skip re-running deferred module scripts. */ ?>
+<?php /* History + page JS without defer — soft-nav + SW often skip re-running deferred scripts. */ ?>
 <script src="<?php echo htmlspecialchars($aiHistJs, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($aiJs, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars($aiJs, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script>
+try { window.ratebAi && window.ratebAi.bindVoice && window.ratebAi.bindVoice(); } catch (eVoice) {}
+</script>
