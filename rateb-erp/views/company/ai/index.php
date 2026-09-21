@@ -9,19 +9,23 @@ $controlTower = is_array($controlTower ?? null) ? $controlTower : [];
 $csrf = $csrf ?? \Rateb\App\Core\Csrf::token();
 $aiJs = rateb_asset('js/rateb-ai-page.js');
 $aiHistJs = rateb_asset('js/rateb-ai-history.js');
+$aiToolbarJs = rateb_asset('js/rateb-ai-toolbar.js');
 $ctCss = rateb_asset('css/rateb-ai-control-tower.css');
 $ctJs = rateb_asset('js/rateb-ai-control-tower.js');
 /* Bust SW/browser cache for toolbar handlers (soft-nav + deferred scripts). */
 $aiHistFile = RATEB_ROOT . '/public/assets/js/rateb-ai-history.js';
 $aiPageFile = RATEB_ROOT . '/public/assets/js/rateb-ai-page.js';
+$aiToolbarFile = RATEB_ROOT . '/public/assets/js/rateb-ai-toolbar.js';
 $ctCssFile = RATEB_ROOT . '/public/assets/css/rateb-ai-control-tower.css';
 $ctJsFile = RATEB_ROOT . '/public/assets/js/rateb-ai-control-tower.js';
 $aiHistVer = is_file($aiHistFile) ? (string) filemtime($aiHistFile) : '1';
 $aiPageVer = is_file($aiPageFile) ? (string) filemtime($aiPageFile) : '1';
+$aiToolbarVer = is_file($aiToolbarFile) ? (string) filemtime($aiToolbarFile) : '1';
 $ctCssVer = is_file($ctCssFile) ? (string) filemtime($ctCssFile) : '1';
 $ctJsVer = is_file($ctJsFile) ? (string) filemtime($ctJsFile) : '1';
 $aiHistJs .= (str_contains($aiHistJs, '?') ? '&' : '?') . 'aih=' . rawurlencode($aiHistVer);
 $aiJs .= (str_contains($aiJs, '?') ? '&' : '?') . 'aip=' . rawurlencode($aiPageVer);
+$aiToolbarJs .= (str_contains($aiToolbarJs, '?') ? '&' : '?') . 'ait=' . rawurlencode($aiToolbarVer);
 $ctCss .= (str_contains($ctCss, '?') ? '&' : '?') . 'ctc=' . rawurlencode($ctCssVer);
 $ctJs .= (str_contains($ctJs, '?') ? '&' : '?') . 'ctj=' . rawurlencode($ctJsVer);
 $aiCompanyId = (int) ($aiCompanyId ?? 0);
@@ -907,7 +911,8 @@ html[data-bs-theme="dark"] .rateb-ai-input-form {
     gap: 8px;
     flex-shrink: 0;
     position: relative;
-    z-index: 3;
+    z-index: 50;
+    pointer-events: auto;
 }
 
 .rateb-ai-voice-language {
@@ -1228,4 +1233,10 @@ try {
 <script src="<?php echo htmlspecialchars($aiJs, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script>
 try { window.ratebAi && window.ratebAi.bindVoice && window.ratebAi.bindVoice(); } catch (eVoice) {}
+try {
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'RATEB_PURGE_AI_ASSETS' });
+  }
+} catch (ePurge) {}
 </script>
+<script src="<?php echo htmlspecialchars($aiToolbarJs, ENT_QUOTES, 'UTF-8'); ?>"></script>

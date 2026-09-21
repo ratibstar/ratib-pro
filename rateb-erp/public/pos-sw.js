@@ -4,10 +4,10 @@
 var SHELL_CACHE = 'rateb-pos-shell-v8';
 var ASSET_CACHE = 'rateb-pos-assets-v8';
 var ERP_COEXIST_CACHE = 'rateb-erp-coexist-v34';
-/* v48 — never paint cached /admin over a live 403 commercial lock. */
-var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v49';
+/* v49 — honour ?v= for RATEB AI page JS (mic/send were stuck on stale SW cache). */
+var ERP_OPS_PAGE_CACHE = 'rateb-erp-ops-pages-v50';
 var ERP_OPS_ALLOWLIST_CACHE = 'rateb-erp-ops-allowlist-v34';
-var SW_BUILD_ID = '20260906-tenant-plans-ops-v168';
+var SW_BUILD_ID = '20260921-ai-toolbar-sw-v49';
 var RATEB_SYNC_TAG = 'rateb-offline-flush';
 var RATEB_PRINT_SYNC_TAG = 'rateb-pos-print';
 var REGISTER_SHELL_PATH = '__rateb_pos_register_shell__';
@@ -1677,6 +1677,18 @@ function safeOfflineAdminNavigate(request, url, event) {
  * Online: network first (passthrough). Offline/soft-latch/fail: safeOfflineAdminNavigate.
  */
 function adminDocumentNavigate(request, url, event) {
+    var isAiPath = !!(url && /\/admin\/ai\/?$/i.test(url.pathname));
+    if (isAiPath) {
+        return fetch(request, { cache: 'no-store', credentials: 'same-origin', redirect: 'follow' })
+            .then(function (response) {
+                return asNonRedirectedResponse(response).then(function (clean) {
+                    return clean || onlineAdminRetryResponse(url);
+                });
+            })
+            .catch(function () {
+                return onlineAdminRetryResponse(url);
+            });
+    }
     // Hard offline only → shell stub. Soft-latch / timeouts must NOT fake "أوفلاين"
     // while the UI badge still says متصل (that caused the click-to-click mess).
     if (isHardBrowserOffline()) {
@@ -2532,6 +2544,17 @@ function navigateAdminDashboardNetworkFirst(request, url, event) {
  */
 function softNavAdminHtml(request, url, event) {
     var pageUrl = request.url || (url && url.href) || '';
+
+    if (url && /\/admin\/ai\/?$/i.test(url.pathname)) {
+        return fetch(request, { cache: 'no-store', credentials: 'same-origin', redirect: 'follow' })
+            .then(function (response) {
+                return asNonRedirectedResponse(response).then(function (clean) {
+                    return clean || onlineAdminRetryResponse(url);
+                });
+            }).catch(function () {
+                return onlineAdminRetryResponse(url);
+            });
+    }
 
     function storeLive(response) {
         if (!response || !response.ok) {
@@ -3522,7 +3545,7 @@ function isVersionedOfflineIdentityJs(pathname) {
 
 /** Admin shell JS — online must honour ?v= bust (never ignoreSearch stale body). */
 function isVersionedAdminShellJs(pathname) {
-    return /\/assets\/js\/(erp-nav-instant|settings-mail-dns|module-page-stats|dashboard-charts-defer|charts|theme|lang)\.js$/i
+    return /\/assets\/js\/(erp-nav-instant|settings-mail-dns|module-page-stats|dashboard-charts-defer|charts|theme|lang|rateb-ai-page|rateb-ai-history|rateb-ai-control-tower|rateb-ai-toolbar)\.js$/i
         .test(String(pathname || ''));
 }
 
@@ -4981,6 +5004,27 @@ self.addEventListener('message', function (event) {
             }).catch(function () {
                 return false;
             })
+        );
+        return;
+    }
+    if (data.type === 'RATEB_PURGE_AI_ASSETS') {
+        event.waitUntil(
+            caches.keys().then(function (keys) {
+                return Promise.all((keys || []).map(function (name) {
+                    return caches.open(name).then(function (cache) {
+                        return cache.keys().then(function (reqs) {
+                            return Promise.all((reqs || []).map(function (req) {
+                                var u = String(req && req.url ? req.url : '');
+                                if (/\/assets\/js\/rateb-ai[^/]*\.js/i.test(u)
+                                    || /\/assets\/css\/rateb-ai[^/]*\.css/i.test(u)) {
+                                    return cache.delete(req).catch(function () { return false; });
+                                }
+                                return null;
+                            }));
+                        });
+                    }).catch(function () { return null; });
+                }));
+            }).catch(function () { return false; })
         );
         return;
     }
