@@ -167,6 +167,7 @@ final class ProcurementPolicyGuard
         if ($toolName === 'create_draft_purchase_request'
             || $toolName === 'create_inventory_item'
             || $toolName === 'create_employee'
+            || $toolName === 'create_supplier'
         ) {
             return true;
         }

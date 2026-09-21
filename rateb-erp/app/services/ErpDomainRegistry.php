@@ -540,6 +540,9 @@ final class ErpDomainRegistry
         if (self::isDomainEntitled(self::DOMAIN_HR, $ctx)) {
             $createChips[] = ['id' => 'add_employee', 'domain' => self::DOMAIN_HR, 'label' => 'ai_cap_add_employee', 'prompt' => 'ai_suggest_add_employee'];
         }
+        if (self::isDomainEntitled(self::DOMAIN_SUPPLIERS, $ctx)) {
+            $createChips[] = ['id' => 'add_supplier', 'domain' => self::DOMAIN_SUPPLIERS, 'label' => 'ai_cap_add_supplier', 'prompt' => 'ai_suggest_add_supplier'];
+        }
         $seen = array_column($out, 'id');
         foreach ($createChips as $chip) {
             if (in_array($chip['id'], $seen, true)) {

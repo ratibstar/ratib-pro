@@ -44,6 +44,7 @@ final class ErpActionPlanner
         'submit_journal_for_approval',
         'create_inventory_item',
         'create_employee',
+        'create_supplier',
     ];
 
     /** @var list<string> */
@@ -104,7 +105,7 @@ final class ErpActionPlanner
             '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|عدّل|عدل|ألغ|الغ|حدّث|حدث|أرسل|ارسل|submit|create|update|cancel|add|prepare\s+for\s+delivery|جهز|متابعة\s*للعميل|طلب\s*شراء)/ui'
         ) && (
             ErpOrchestrationPlanner::hasWriteIntent($message)
-            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|inventory|employee|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
+            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|مورد|موردين|inventory|employee|supplier|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
         );
     }
 
@@ -240,6 +241,28 @@ final class ErpActionPlanner
                 ];
                 $actions[] = self::makeAction('create_employee', $args, $ctx, 'create_employee_from_chat');
                 $domains[] = 'hr';
+            }
+        }
+
+        // Supplier create
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(مورد|موردين|supplier|suppliers)/ui')) {
+            $supName = self::extractSupplierName($message);
+            if ($supName === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة مورد اكتب مثلاً: أضف مورد شركة النور'
+                        : 'To add a supplier write e.g.: add supplier Al-Noor Co',
+                    'domain' => 'suppliers',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $args = [
+                    'name' => $supName,
+                    'status' => 'active',
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ];
+                $actions[] = self::makeAction('create_supplier', $args, $ctx, 'create_supplier_from_chat');
+                $domains[] = 'suppliers';
             }
         }
 
@@ -1303,6 +1326,51 @@ final class ErpActionPlanner
                     ? $pending['parameter_snapshot']
                     : [],
             ];
+        } elseif (!empty($pending['confirmations']) && is_array($pending['confirmations'])) {
+            // Rebuild plan from LLM/domain pending confirmations (session may lack action_plan).
+            $actions = [];
+            $domains = [];
+            $actionId = (string) ($pending['action_id'] ?? '');
+            foreach ($pending['confirmations'] as $c) {
+                if (!is_array($c)) {
+                    continue;
+                }
+                $tool = (string) ($c['tool'] ?? '');
+                if ($tool === '') {
+                    continue;
+                }
+                $args = is_array($c['arguments'] ?? null) ? $c['arguments'] : [];
+                $action = self::makeAction($tool, $args, $ctx, 'confirm_pending_write', $actionId);
+                $ck = (string) ($c['confirm_key'] ?? '');
+                if ($ck !== '') {
+                    $action['confirm_key'] = $ck;
+                }
+                if (!empty($c['permission'])) {
+                    $action['permission'] = (string) $c['permission'];
+                }
+                $actions[] = $action;
+                $d = (string) ($action['domain'] ?? '');
+                if ($d !== '') {
+                    $domains[] = $d;
+                }
+            }
+            if ($actions !== []) {
+                if ($actionId === '') {
+                    $actionId = 'act_' . substr(sha1((string) json_encode(array_column($actions, 'confirm_key'))), 0, 12);
+                }
+                $plan = [
+                    'intent' => (string) ($pending['intent'] ?? 'pending_write_confirmation'),
+                    'domains' => array_values(array_unique($domains)),
+                    'actions' => $actions,
+                    'unsupported' => [],
+                    'recommendations' => [],
+                    'requires_confirmation' => true,
+                    'evidence_first' => true,
+                    'auto_execute' => false,
+                    'from_pending_confirmations' => true,
+                    'action_id' => $actionId,
+                ];
+            }
         }
 
         // Confirm path: CONFIRMED → AUTHORIZED (execution starts in ErpAgent)
@@ -1412,6 +1480,7 @@ final class ErpActionPlanner
             'create_draft_purchase_request' => 'إنشاء مسودة طلب شراء',
             'create_inventory_item' => 'إضافة صنف مخزون',
             'create_employee' => 'إضافة موظف',
+            'create_supplier' => 'إضافة مورد',
             'duplicate_action' => 'إجراء مكرر',
             'tool_exception' => 'تعذر تنفيذ الأداة',
             'verification_incomplete' => 'التحقق غير مكتمل',
@@ -1436,6 +1505,7 @@ final class ErpActionPlanner
             'create_draft_purchase_request' => 'Create draft purchase request',
             'create_inventory_item' => 'Add inventory item',
             'create_employee' => 'Add employee',
+            'create_supplier' => 'Add supplier',
             'duplicate_action' => 'Duplicate action',
             'tool_exception' => 'Tool execution failed',
             'verification_incomplete' => 'Verification incomplete',
@@ -1541,6 +1611,9 @@ final class ErpActionPlanner
         }
         if ($tool === 'create_employee') {
             return ['exists' => false, 'entity' => 'employee', 'status' => null];
+        }
+        if ($tool === 'create_supplier') {
+            return ['exists' => false, 'entity' => 'supplier', 'status' => null];
         }
         $id = (int) ($args['id'] ?? 0);
         if ($id < 1) {
@@ -1713,6 +1786,30 @@ final class ErpActionPlanner
             }
         }
 
+        if ($tool === 'create_supplier') {
+            $id = (int) ($execResult['data']['id'] ?? 0);
+            if ($id < 1) {
+                return ['verified' => false, 'incomplete' => true, 'new_state' => null, 'message' => 'verification_incomplete_missing_id'];
+            }
+            try {
+                $rows = (new \Rateb\App\Models\Supplier())->query(
+                    'SELECT id, code, name, status FROM rateb_suppliers
+                     WHERE id = :id AND company_id = :cid LIMIT 1',
+                    ['id' => $id, 'cid' => (int) $ctx->companyId]
+                );
+                $row = $rows[0] ?? null;
+                $ok = is_array($row);
+                return [
+                    'verified' => $ok,
+                    'incomplete' => !$ok,
+                    'new_state' => $ok ? ['exists' => true, 'entity' => 'supplier', 'id' => $id] + $row : null,
+                    'message' => $ok ? 'verified_supplier_created' : 'verification_incomplete',
+                ];
+            } catch (\Throwable $e) {
+                return ['verified' => false, 'incomplete' => true, 'new_state' => null, 'message' => 'verification_incomplete'];
+            }
+        }
+
         $id = (int) ($action['arguments']['id'] ?? $execResult['data']['id'] ?? 0);
         $state = self::readStateSnapshot($tool, ['id' => $id], $ctx);
         if ($state === null) {
@@ -1751,7 +1848,7 @@ final class ErpActionPlanner
                    AND status = 'success'
                    AND tool_name IN (
                      'create_draft_purchase_request','update_purchase_request','cancel_purchase_request','submit_purchase_request',
-                     'submit_journal_for_approval','create_inventory_item','create_employee'
+                     'submit_journal_for_approval','create_inventory_item','create_employee','create_supplier'
                    )
                  ORDER BY id DESC LIMIT 30"
             );
@@ -1866,6 +1963,19 @@ final class ErpActionPlanner
             return mb_substr(trim($m[1]), 0, 120);
         }
         if (preg_match('/(?:ضيف|أضف|اضف|إضافة|أنشئ|إنشاء|add|create)\s+(?:موظف|موظفة|employee)\s+(.+)$/ui', $message, $m)) {
+            $t = trim($m[1]);
+            $t = preg_replace('/\s*(بريد|email|جوال|phone|هاتف).*$/ui', '', $t) ?? $t;
+            return mb_substr(trim($t, " \t\"'«»"), 0, 120);
+        }
+        return '';
+    }
+
+    private static function extractSupplierName(string $message): string
+    {
+        if (preg_match('/(?:اسم|name)\s*[:=]\s*[\"\']?([^\"\'\n]{2,120})/ui', $message, $m)) {
+            return mb_substr(trim($m[1]), 0, 120);
+        }
+        if (preg_match('/(?:ضيف|أضف|اضف|إضافة|أنشئ|إنشاء|add|create)\s+(?:مورد|موردين|supplier)\s+(.+)$/ui', $message, $m)) {
             $t = trim($m[1]);
             $t = preg_replace('/\s*(بريد|email|جوال|phone|هاتف).*$/ui', '', $t) ?? $t;
             return mb_substr(trim($t, " \t\"'«»"), 0, 120);

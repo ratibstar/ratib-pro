@@ -37,6 +37,8 @@ final class SupplierToolExecutor
                     return self::getSupplierInventoryLinks($arguments, $companyId);
                 case 'analyze_supplier_cross_domain':
                     return self::analyzeSupplierCrossDomain($arguments, $companyId);
+                case 'create_supplier':
+                    return self::createSupplier($arguments, $companyId, (int) $ctx->userId);
                 default:
                     return self::fail('tool_not_implemented');
             }
@@ -711,6 +713,57 @@ final class SupplierToolExecutor
                     'cross_domain_uses_existing_relations_only',
                     'no_separate_agent_workflow',
                 ],
+            ],
+            'error' => null,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createSupplier(array $args, int $companyId, int $userId): array
+    {
+        $name = trim((string) ($args['name'] ?? ''));
+        if ($name === '') {
+            return self::fail('name_required');
+        }
+
+        $model = new Supplier();
+        $data = [
+            'company_id' => $companyId,
+            'name' => mb_substr($name, 0, 190),
+            'email' => trim((string) ($args['email'] ?? '')),
+            'phone' => trim((string) ($args['phone'] ?? '')),
+            'address' => trim((string) ($args['address'] ?? '')),
+            'status' => trim((string) ($args['status'] ?? 'active')) ?: 'active',
+            'notes' => trim((string) ($args['notes'] ?? '')),
+        ];
+        $branchId = (int) ($args['branch_id'] ?? 0);
+        if ($branchId < 1 && function_exists('rateb_resolve_create_branch_id')) {
+            $branchId = (int) rateb_resolve_create_branch_id();
+        }
+        if ($branchId > 0) {
+            $data['branch_id'] = $branchId;
+        }
+        (new DocumentCodeService())->assignIfEmpty($data, $model, DocumentCodeService::PREFIX_SUPPLIER, 'code');
+
+        $id = (int) $model->create($data);
+        if ($id < 1) {
+            return self::fail('create_failed');
+        }
+
+        $rows = $model->query(
+            'SELECT id, code, name, email, phone, status FROM rateb_suppliers WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        $row = $rows[0] ?? ['id' => $id, 'name' => $name];
+
+        return [
+            'success' => true,
+            'data' => [
+                'id' => $id,
+                'supplier' => $row,
+                'created_by' => $userId > 0 ? $userId : null,
             ],
             'error' => null,
         ];

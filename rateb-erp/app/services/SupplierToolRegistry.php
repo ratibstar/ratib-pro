@@ -114,6 +114,26 @@ final class SupplierToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_supplier' => [
+                'name' => 'create_supplier',
+                'description' => 'Create a new supplier (WRITE — requires user confirmation). Tenant-scoped. Name required.',
+                'permission' => 'suppliers.manage',
+                'module' => 'suppliers',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'email' => ['type' => 'string', 'maxLength' => 190],
+                        'phone' => ['type' => 'string', 'maxLength' => 50],
+                        'address' => ['type' => 'string', 'maxLength' => 500],
+                        'status' => ['type' => 'string', 'default' => 'active'],
+                        'notes' => ['type' => 'string'],
+                        'branch_id' => ['type' => 'integer', 'minimum' => 1],
+                    ],
+                    'required' => ['name'],
+                ],
+            ],
         ];
     }
 

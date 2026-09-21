@@ -268,6 +268,29 @@ final class ErpAgent
                 || ErpActionPlanner::hasActionIntent($message)
             )
         );
+        // Bare "ضيف مخزون / أضف موظف / أضف مورد" without params → guidance only (no LLM invent/refuse).
+        if (
+            !$actionLayerApplicable
+            && !$hasConfirmedWrites
+            && empty($actionPreview['actions'])
+            && !empty($actionPreview['recommendations'])
+            && (ErpActionPlanner::hasActionIntent($message) || !empty($intent['write_intent']))
+        ) {
+            $gov = ErpGovernanceLayer::evaluate($message, $intent, $ctx, $this->config, $actionPreview, false);
+            $gov['execution_level'] = ErpGovernanceLayer::LEVEL_READ_ONLY;
+            return $this->finalizeWithGovernance([
+                'response' => ErpActionPlanner::formatActionResponse($actionPreview, [], [], $ctx),
+                'tool_calls' => [],
+                'pending_confirmations' => [],
+                'audit' => [],
+                'domain' => 'action',
+                'agent' => self::AGENT_ID,
+                'action' => ['plan' => $actionPreview, 'results' => [], 'partial' => false],
+                'observability' => ['success' => true, 'duration_ms' => 0, 'conversation_phase' => 'guidance'],
+                '_started_at' => microtime(true),
+                '_pending_persisted' => true,
+            ], $gov, $ctx, $requestId);
+        }
         if ($actionLayerApplicable) {
             $gov = ErpGovernanceLayer::evaluate($message, $intent, $ctx, $this->config, $actionPreview, $hasConfirmedWrites);
             $bound = ErpGovernanceLayer::checkBoundaries(
@@ -282,6 +305,25 @@ final class ErpAgent
             }
             $result = $this->processActions($input, $ctx, $intent, $requestId, $gov);
             return $this->finalizeWithGovernance($result, $gov, $ctx, $requestId);
+        }
+        // Confirm button with keys but no session pending (e.g. stale) — never let LLM invent a refuse.
+        if ($hasConfirmedWrites && ErpActionPlanner::isConfirmationPhrase($message) && empty($pending['confirmations'])) {
+            $gov = ErpGovernanceLayer::evaluate($message, $intent, $ctx, $this->config, null, false);
+            $gov['execution_level'] = ErpGovernanceLayer::LEVEL_READ_ONLY;
+            $ar = $ctx->normalizedLocale() === 'ar';
+            return $this->finalizeWithGovernance([
+                'response' => $ar
+                    ? 'لا يوجد إجراء معلق للتأكيد. أعد الطلب ثم اضغط تأكيد.'
+                    : 'No pending action to confirm. Please restate the request, then confirm.',
+                'tool_calls' => [],
+                'pending_confirmations' => [],
+                'audit' => [],
+                'domain' => 'action',
+                'agent' => self::AGENT_ID,
+                'observability' => ['success' => true, 'duration_ms' => 0],
+                '_started_at' => microtime(true),
+                '_pending_persisted' => true,
+            ], $gov, $ctx, $requestId);
         }
 
         // Cross-domain orchestration (READ/ANALYSIS) — never invents tools/domains.
@@ -972,6 +1014,7 @@ final class ErpAgent
         // Persist pending confirmations so text confirmations (انشئ / نعم) can resume
         $scopeKey = (string) ($input['conversation_scope'] ?? $ctx->conversationScopeKey());
         $forcedPlan = !empty($input['_forced_action_plan']);
+        $pendingPersisted = false;
         if ($pendingConfirmations !== [] && $scopeKey !== '') {
             $prev = ErpActionPlanner::loadPendingState($scopeKey);
             ErpActionPlanner::savePendingState($scopeKey, array_merge($prev, [
@@ -984,6 +1027,7 @@ final class ErpAgent
                 'verified_actions' => [],
                 'executed_keys' => [],
             ]));
+            $pendingPersisted = true;
         } elseif ($pendingConfirmations === [] && $executionResults !== [] && $scopeKey !== '' && !$forcedPlan) {
             // Conversation confirm path owns lifecycle persistence (VERIFIED/FAILED)
             $anyVerified = false;
@@ -1080,6 +1124,7 @@ final class ErpAgent
             ],
             '_governance_seed' => $governance,
             '_started_at' => $startedAt,
+            '_pending_persisted' => $pendingPersisted,
         ];
     }
 
@@ -1096,6 +1141,30 @@ final class ErpAgent
     ): array {
         $startedAt = (float) ($result['_started_at'] ?? microtime(true));
         unset($result['_started_at'], $result['_governance_seed']);
+
+        // Persist LLM/domain pending writes so Confirm / «نعم» can execute (same as ActionPlanner path).
+        $pendingList = is_array($result['pending_confirmations'] ?? null) ? $result['pending_confirmations'] : [];
+        if ($pendingList !== [] && empty($result['_pending_persisted'])) {
+            $persisted = $this->persistPendingWriteConfirmations($pendingList, $ctx, (string) ($result['domain'] ?? ''));
+            if ($persisted) {
+                // User-facing: this is a write awaiting confirmation — never label as read-only.
+                $governance['execution_level'] = ErpGovernanceLayer::LEVEL_CONFIRMED_WRITE;
+                $governance['confirmation'] = array_merge(
+                    is_array($governance['confirmation'] ?? null) ? $governance['confirmation'] : [],
+                    ['required' => true]
+                );
+                $governance['risk'] = ErpGovernanceLayer::RISK_MEDIUM;
+            } else {
+                // Incomplete invent (e.g. create without name) — no Confirm button / no LLM refuse loop.
+                $result['pending_confirmations'] = [];
+                $ar = $ctx->normalizedLocale() === 'ar';
+                $hint = $ar
+                    ? "لإتمام الإضافة اكتب التفاصيل، مثلاً:\n• أضف مخزون رز كمية 20\n• أضف موظف أحمد العتيبي\n• أضف مورد شركة النور"
+                    : "To complete the add, include details, e.g.:\n• add inventory rice qty 20\n• add employee Ahmed\n• add supplier Al-Noor Co";
+                $resp = trim((string) ($result['response'] ?? ''));
+                $result['response'] = $resp !== '' ? ($resp . "\n\n" . $hint) : $hint;
+            }
+        }
 
         // Cap tool list for boundary check from actual calls
         $toolsUsed = [];
@@ -1184,8 +1253,114 @@ final class ErpAgent
         ], 'success');
         $result['audit'] = $audit;
         $result['agent'] = self::AGENT_ID;
+        unset($result['_pending_persisted']);
 
         return $result;
+    }
+
+    /**
+     * Persist LLM/domain pending write confirmations so Confirm / «نعم» executes via ActionPlanner.
+     *
+     * @param list<array<string, mixed>> $pendingList
+     * @return bool True when at least one complete write was persisted
+     */
+    private function persistPendingWriteConfirmations(
+        array $pendingList,
+        ProcurementAgentContext $ctx,
+        string $domainHint = ''
+    ): bool {
+        $scopeKey = $ctx->conversationScopeKey();
+        if ($scopeKey === '' || $pendingList === []) {
+            return false;
+        }
+
+        $actions = [];
+        $domains = [];
+        $confirmations = [];
+        foreach ($pendingList as $p) {
+            if (!is_array($p)) {
+                continue;
+            }
+            $tool = (string) ($p['tool'] ?? '');
+            if ($tool === '' || !ErpToolRegistry::isAllowed($tool)) {
+                continue;
+            }
+            $args = is_array($p['arguments'] ?? null) ? $p['arguments'] : [];
+            // Never persist incomplete creates — Confirm would fail or invent data.
+            if ($tool === 'create_inventory_item') {
+                $n = trim((string) ($args['item_name'] ?? $args['name'] ?? ''));
+                if ($n === '') {
+                    continue;
+                }
+            } elseif ($tool === 'create_employee' || $tool === 'create_supplier') {
+                $n = trim((string) ($args['name'] ?? ''));
+                if ($n === '') {
+                    continue;
+                }
+            }
+            $action = ErpActionPlanner::actionFromDraft($tool, $args, $ctx, 'llm_pending_write');
+            $ck = (string) ($p['confirm_key'] ?? '');
+            if ($ck !== '') {
+                $action['confirm_key'] = $ck;
+            }
+            if (!empty($p['permission'])) {
+                $action['permission'] = (string) $p['permission'];
+            }
+            if (!empty($p['class'])) {
+                $action['class'] = (string) $p['class'];
+            }
+            $actions[] = $action;
+            $d = (string) ($action['domain'] ?? ErpToolRegistry::domainForTool($tool) ?? $domainHint);
+            if ($d !== '') {
+                $domains[] = $d;
+            }
+            $confirmations[] = [
+                'tool' => $tool,
+                'arguments' => $args,
+                'confirm_key' => (string) ($action['confirm_key'] ?? $ck),
+                'permission' => (string) ($action['permission'] ?? ''),
+                'class' => (string) ($action['class'] ?? ErpActionPlanner::CLASS_WRITE),
+                'previous_state' => $action['previous_state'] ?? ($p['previous_state'] ?? null),
+                'impact_preview' => is_array($p['impact_preview'] ?? null)
+                    ? $p['impact_preview']
+                    : ['summary' => $this->actionImpactSummary($tool, $args, $ctx)],
+            ];
+        }
+        if ($actions === [] || $confirmations === []) {
+            return false;
+        }
+
+        $actionId = 'act_' . substr(sha1($scopeKey . '|' . (string) json_encode(array_column($confirmations, 'confirm_key'))), 0, 12);
+        foreach ($actions as &$a) {
+            $a['action_id'] = $actionId;
+        }
+        unset($a);
+
+        $plan = [
+            'intent' => 'pending_write_confirmation',
+            'domains' => array_values(array_unique($domains)),
+            'actions' => $actions,
+            'unsupported' => [],
+            'recommendations' => [],
+            'requires_confirmation' => true,
+            'evidence_first' => true,
+            'auto_execute' => false,
+            'from_llm_pending' => true,
+            'action_id' => $actionId,
+        ];
+
+        $prev = ErpActionPlanner::loadPendingState($scopeKey);
+        ErpActionPlanner::savePendingState($scopeKey, array_merge(is_array($prev) ? $prev : [], [
+            'phase' => ErpActionPlanner::PHASE_PENDING_CONFIRMATION,
+            'confirmations' => $confirmations,
+            'action_plan' => $plan,
+            'intent' => (string) ($plan['intent'] ?? ''),
+            'company_id' => (int) $ctx->companyId,
+            'action_id' => $actionId,
+            'verified_actions' => [],
+            'executed_keys' => [],
+        ]));
+        return true;
     }
 
     /**
@@ -1274,12 +1449,18 @@ final class ErpAgent
         $ar = $ctx->normalizedLocale() === 'ar';
         $id = (int) ($arguments['id'] ?? 0);
         $title = trim((string) ($arguments['title'] ?? ''));
+        $itemName = trim((string) ($arguments['item_name'] ?? $arguments['name'] ?? ''));
+        $qty = (float) ($arguments['quantity'] ?? 0);
         if ($ar) {
             return match ($toolName) {
                 'create_draft_purchase_request' => 'إنشاء مسودة طلب شراء' . ($title !== '' ? ': ' . $title : ''),
                 'update_purchase_request' => 'تعديل طلب شراء' . ($id > 0 ? ' #' . $id : ''),
                 'cancel_purchase_request' => 'إلغاء طلب شراء' . ($id > 0 ? ' #' . $id : ''),
                 'submit_purchase_request' => 'إرسال طلب شراء للموافقة' . ($id > 0 ? ' #' . $id : ''),
+                'create_inventory_item' => 'إضافة صنف مخزون' . ($itemName !== '' ? ': ' . $itemName : '')
+                    . ($qty > 0 ? ' (كمية ' . $qty . ')' : ''),
+                'create_employee' => 'إضافة موظف' . ($itemName !== '' ? ': ' . $itemName : ''),
+                'create_supplier' => 'إضافة مورد' . ($itemName !== '' ? ': ' . $itemName : ''),
                 default => $toolName,
             };
         }
@@ -1288,6 +1469,10 @@ final class ErpAgent
             'update_purchase_request' => 'Update purchase request' . ($id > 0 ? ' #' . $id : ''),
             'cancel_purchase_request' => 'Cancel purchase request' . ($id > 0 ? ' #' . $id : ''),
             'submit_purchase_request' => 'Submit purchase request for approval' . ($id > 0 ? ' #' . $id : ''),
+            'create_inventory_item' => 'Add inventory item' . ($itemName !== '' ? ': ' . $itemName : '')
+                . ($qty > 0 ? ' (qty ' . $qty . ')' : ''),
+            'create_employee' => 'Add employee' . ($itemName !== '' ? ': ' . $itemName : ''),
+            'create_supplier' => 'Add supplier' . ($itemName !== '' ? ': ' . $itemName : ''),
             default => $toolName,
         };
     }
