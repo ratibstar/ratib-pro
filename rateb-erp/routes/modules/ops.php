@@ -611,7 +611,8 @@ $router->post($app('approvals/requests/{id}/delegate'), [ApprovalRequestsControl
  *  Module gate: procurement (plan entitlement). Permission: ai.view. */
 // Plan module: procurement; permission: ai.view (no entity resource — AI is not an entity CRUD surface).
 $aiMw = rateb_erp_mw('procurement', 'ai.view');
-$router->get($app('ai'), [Rateb\App\Controllers\Company\AiController::class, 'index'], $aiMw);
+$aiPageMw = rateb_erp_mw('', 'ai.view');
+$router->get($app('ai'), [Rateb\App\Controllers\Company\AiController::class, 'index'], $aiPageMw);
 $router->get($app('ai/tower'), [Rateb\App\Controllers\Company\AiController::class, 'tower'], $aiMw);
 $router->post($app('ai/chat'), [Rateb\App\Controllers\Company\AiController::class, 'chat'], $aiMw);
 

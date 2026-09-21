@@ -26,6 +26,9 @@ final class AiController extends Controller
             return;
         }
 
+        $isSuperAdmin = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+        $isPlatformStaff = !$isSuperAdmin
+            && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff((int) ($user['id'] ?? 0));
         $companyId = TenantContext::companyId();
         if (!$companyId && function_exists('rateb_resolve_ops_company_id')) {
             $opsCompanyId = (int) rateb_resolve_ops_company_id();
@@ -34,23 +37,13 @@ final class AiController extends Controller
                 $companyId = $opsCompanyId;
             }
         }
-        if (!$companyId) {
+        if (!$companyId && !$isSuperAdmin && !$isPlatformStaff) {
             $this->redirect(rateb_url('admin'));
             return;
         }
 
         $planLimits = new \Rateb\App\Services\PlanLimitService();
-        $hasAnyDomain = false;
-        if (class_exists(\Rateb\App\Services\ErpDomainRegistry::class)) {
-            foreach (\Rateb\App\Services\ErpDomainRegistry::getActiveDomains() as $d) {
-                $mod = (string) ($d['module'] ?? '');
-                if ($mod === 'dashboard' || ($mod !== '' && $planLimits->companyHasModule($companyId, $mod))) {
-                    $hasAnyDomain = true;
-                    break;
-                }
-            }
-        }
-        if (!$hasAnyDomain && !$planLimits->companyHasModule($companyId, 'procurement')) {
+        if ($companyId && !$planLimits->companyHasModule($companyId, 'procurement')) {
             http_response_code(403);
             $this->view('errors/403', ['title' => '403'], 'main');
             return;
