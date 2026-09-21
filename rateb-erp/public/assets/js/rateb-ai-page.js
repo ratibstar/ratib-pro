@@ -37,10 +37,19 @@
         var waitingForVoiceReply = false;
         var pendingTranscript = '';
         var autoSendOnFinal = false; // capsule UI: user confirms with ✓
-        var recordingActive = false; // sticky until ✕ / ✓ / hard deny
         var voiceSession = 0;
         var lastMicToggleAt = 0;
         var restartTimer = null;
+        var openTimer = null;
+
+        function isRecActive() {
+            return !!(api.__voiceRecActive || (formEl && formEl.classList.contains('is-recording')));
+        }
+
+        function recArmedRecently() {
+            var armed = Number(api.__voiceRecArmedAt || 0);
+            return armed > 0 && (Date.now() - armed) < 700;
+        }
 
         function clearRestartTimer() {
             if (restartTimer) {
@@ -49,28 +58,47 @@
             }
         }
 
+        function clearOpenTimer() {
+            if (openTimer) {
+                try { root.clearTimeout(openTimer); } catch (eO) {}
+                openTimer = null;
+            }
+        }
+
         function showRecBar() {
-            recordingActive = true;
+            api.__voiceRecActive = true;
+            if (!api.__voiceRecArmedAt) api.__voiceRecArmedAt = Date.now();
             // Re-query in case soft-nav swapped nodes but this install is still live.
             formEl = doc.getElementById('aiInputForm') || formEl;
             recBar = doc.getElementById('aiVoiceRecBar') || recBar;
+            recCancel = doc.getElementById('aiVoiceRecCancel') || recCancel;
+            recOk = doc.getElementById('aiVoiceRecOk') || recOk;
             if (formEl) formEl.classList.add('is-recording');
             if (recBar) {
                 recBar.hidden = false;
                 recBar.removeAttribute('hidden');
+                recBar.classList.add('is-arming');
                 try { recBar.style.display = 'flex'; } catch (eDisp) {}
             }
+            // Block ✕/✓ under the cursor for a short arming window (mic click must not hit cancel).
+            root.setTimeout(function () {
+                var bar = doc.getElementById('aiVoiceRecBar');
+                if (bar) bar.classList.remove('is-arming');
+            }, 700);
         }
 
         function hideRecBar() {
-            recordingActive = false;
+            api.__voiceRecActive = false;
+            api.__voiceRecArmedAt = 0;
             clearRestartTimer();
+            clearOpenTimer();
             formEl = doc.getElementById('aiInputForm') || formEl;
             recBar = doc.getElementById('aiVoiceRecBar') || recBar;
             if (formEl) formEl.classList.remove('is-recording');
             if (recBar) {
                 recBar.hidden = true;
                 recBar.setAttribute('hidden', 'hidden');
+                recBar.classList.remove('is-arming');
                 try { recBar.style.display = ''; } catch (eDisp2) {}
             }
         }
@@ -236,15 +264,14 @@
                 inputBtn.removeAttribute('data-listening');
                 var err = event && event.error ? String(event.error) : '';
                 var denied = err === 'not-allowed' || err === 'service-not-allowed';
-                // aborted / no-speech / network blips: keep capsule open and restart.
+                // Never auto-dismiss the capsule — only ✕ / ✓ close it.
                 if (denied) {
                     setStatus('ready', 'اسمح للمايك من إعدادات المتصفح ثم أعد المحاولة');
                     setStopVisible(false);
-                    hideRecBar();
                     return;
                 }
                 if (err === 'aborted') return;
-                if (recordingActive) {
+                if (isRecActive()) {
                     setStatus('listening', 'جاري الاستماع…');
                 } else {
                     setStatus('ready', 'تعذر تشغيل المايك');
@@ -257,11 +284,11 @@
                 inputBtn.classList.remove('is-listening');
                 inputBtn.removeAttribute('data-listening');
                 // Keep capsule open until user presses ✕ / ✓.
-                if (recordingActive && !api.loading) {
+                if (isRecActive() && !api.loading) {
                     clearRestartTimer();
                     restartTimer = root.setTimeout(function () {
                         restartTimer = null;
-                        if (!recordingActive || mySession !== voiceSession || api.loading) return;
+                        if (!isRecActive() || mySession !== voiceSession || api.loading) return;
                         try {
                             recognition.start();
                         } catch (eRestart) {
@@ -280,11 +307,11 @@
             } catch (error) {
                 listening = false;
                 // Keep bar visible; retry shortly while session is still active.
-                if (recordingActive) {
+                if (isRecActive()) {
                     clearRestartTimer();
                     restartTimer = root.setTimeout(function () {
                         restartTimer = null;
-                        if (recordingActive && mySession === voiceSession) {
+                        if (isRecActive() && mySession === voiceSession) {
                             try { startListening(); } catch (e3) {}
                         }
                     }, 220);
@@ -299,6 +326,7 @@
             waitingForVoiceReply = false;
             voiceSession += 1;
             clearRestartTimer();
+            clearOpenTimer();
             try { if (recognition) recognition.abort(); } catch (eStop) {
                 try { if (recognition) recognition.stop(); } catch (eStop2) {}
             }
@@ -314,6 +342,8 @@
         }
 
         function cancelRecording() {
+            // Ignore ghost clicks that land on ✕ because the capsule replaced the mic under the cursor.
+            if (recArmedRecently()) return false;
             pendingTranscript = '';
             var input = doc.getElementById('aiInput');
             if (input) {
@@ -325,11 +355,13 @@
         }
 
         function confirmRecording() {
+            if (recArmedRecently()) return false;
             var text = pendingTranscript || '';
             var input = doc.getElementById('aiInput');
             if (!text && input) text = String(input.value || '').trim();
             voiceSession += 1;
             clearRestartTimer();
+            clearOpenTimer();
             try { if (recognition) recognition.abort(); } catch (eStop) {
                 try { if (recognition) recognition.stop(); } catch (eStop2) {}
             }
@@ -354,13 +386,29 @@
             if (now - lastMicToggleAt < 450) return false;
             lastMicToggleAt = now;
             // Capsule stays open until ✕ / ✓ — do not toggle-off on second mic click.
-            if (recordingActive || (formEl && formEl.classList.contains('is-recording'))) {
-                if (!listening) startListening();
-                else showRecBar();
+            if (isRecActive()) {
+                if (!listening) {
+                    clearOpenTimer();
+                    openTimer = root.setTimeout(function () {
+                        openTimer = null;
+                        if (isRecActive() && !listening) startListening();
+                    }, 80);
+                } else {
+                    showRecBar();
+                }
                 return false;
             }
             pendingTranscript = '';
-            startListening();
+            // Mark active immediately (survives rebind), but defer DOM swap so this click
+            // cannot land on ✕ that appears where the mic was.
+            api.__voiceRecActive = true;
+            api.__voiceRecArmedAt = Date.now();
+            clearOpenTimer();
+            openTimer = root.setTimeout(function () {
+                openTimer = null;
+                if (!api.__voiceRecActive) return;
+                startListening();
+            }, 80);
             return false;
         }
 
@@ -379,25 +427,37 @@
             setStatus('ready', 'الميكروفون يحتاج Chrome مع إذن المايك');
         }
 
-        inputBtn.addEventListener('click', function (e) {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-            toggleVoiceInput();
-        });
-        stopBtn.addEventListener('click', function (e) {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-            stopAll();
-        });
-        modeBtn.addEventListener('click', function (e) {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-            toggleVoiceMode();
-        });
-        if (recCancel) {
+        // Prefer document master + toolbar binders — avoid stacking per-button listeners on rebind.
+        if (inputBtn.getAttribute('data-rateb-voice-click') !== '1') {
+            inputBtn.setAttribute('data-rateb-voice-click', '1');
+            inputBtn.addEventListener('click', function (e) {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                toggleVoiceInput();
+            });
+        }
+        if (stopBtn.getAttribute('data-rateb-voice-click') !== '1') {
+            stopBtn.setAttribute('data-rateb-voice-click', '1');
+            stopBtn.addEventListener('click', function (e) {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                stopAll();
+            });
+        }
+        if (modeBtn.getAttribute('data-rateb-voice-click') !== '1') {
+            modeBtn.setAttribute('data-rateb-voice-click', '1');
+            modeBtn.addEventListener('click', function (e) {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                toggleVoiceMode();
+            });
+        }
+        if (recCancel && recCancel.getAttribute('data-rateb-voice-click') !== '1') {
+            recCancel.setAttribute('data-rateb-voice-click', '1');
             recCancel.addEventListener('click', function (e) {
                 if (e) { e.preventDefault(); e.stopPropagation(); }
                 cancelRecording();
             });
         }
-        if (recOk) {
+        if (recOk && recOk.getAttribute('data-rateb-voice-click') !== '1') {
+            recOk.setAttribute('data-rateb-voice-click', '1');
             recOk.addEventListener('click', function (e) {
                 if (e) { e.preventDefault(); e.stopPropagation(); }
                 confirmRecording();
@@ -770,7 +830,7 @@
         };
     }
 
-    var API_VER = 8;
+    var API_VER = 9;
 
     function ensureVoiceReady(api) {
         if (!api) return;
@@ -787,8 +847,9 @@
     }
 
     function bindMasterClicks() {
-        if (root.__ratebAiClickBoundV8) return;
-        root.__ratebAiClickBoundV8 = true;
+        if (root.__ratebAiClickBoundV9) return;
+        root.__ratebAiClickBoundV9 = true;
+        root.__ratebAiClickBoundV8 = true; // legacy inline binder checks V8
         doc.addEventListener('click', function (e) {
             if (!doc.getElementById('ratebAiRoot') || !root.ratebAi) return;
             var t = e.target && e.target.closest ? e.target.closest(

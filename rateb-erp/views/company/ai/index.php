@@ -39,7 +39,7 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
     try { if (document.body) document.body.setAttribute('data-rateb-hide-help-assistant', '1'); } catch (eHide) {}
-    var API_VER = 8;
+    var API_VER = 9;
     var needsUpgrade = !(window.ratebAi && window.ratebAi.__apiVer === API_VER
         && window.ratebAi.__p0ChatHistory && typeof window.ratebAi.getHistory === 'function'
         && typeof window.ratebAi.clickSuggest === 'function');
@@ -376,6 +376,22 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
         window.__ratebAiClickBoundV6 = true;
         document.addEventListener('click', function (e) {
             if (!document.getElementById('ratebAiRoot') || !window.ratebAi) return;
+            // page.js owns mic/headset/stop once its master binder is active.
+            if (window.__ratebAiClickBoundV8) {
+                var onlySuggest = e.target && e.target.closest
+                    ? e.target.closest('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip, #aiSendBtn')
+                    : null;
+                if (!onlySuggest) return;
+                if (onlySuggest.getAttribute('data-rateb-ai-confirm') || onlySuggest.getAttribute('data-rateb-ai-cancel')) return;
+                e.preventDefault();
+                var apiS = window.ratebAi;
+                if (onlySuggest.id === 'aiSendBtn') {
+                    if (typeof apiS.sendFromInput === 'function') apiS.sendFromInput();
+                    return;
+                }
+                if (typeof apiS.clickSuggest === 'function') apiS.clickSuggest(onlySuggest);
+                return;
+            }
             var t = e.target && e.target.closest
                 ? e.target.closest('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip, #aiSendBtn, #aiVoiceModeBtn, #aiVoiceInputBtn, #aiVoiceStopBtn')
                 : null;
@@ -1039,6 +1055,11 @@ html[data-bs-theme="dark"] .rateb-ai-input-form {
 
 .rateb-ai-input-form.is-recording .rateb-ai-voice-rec[hidden] {
     display: flex !important;
+}
+
+/* Prevent mic→✕ ghost click while capsule replaces the mic under the cursor */
+.rateb-ai-voice-rec.is-arming .rateb-ai-voice-rec__actions {
+    pointer-events: none;
 }
 
 .rateb-ai-voice-rec__dots {
