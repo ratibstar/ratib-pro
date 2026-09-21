@@ -103,11 +103,25 @@
             message.appendChild(button);
         }
 
+        function putTranscript(text) {
+            var input = doc.getElementById('aiInput');
+            var value = String(text || '').trim();
+            if (!input || !value) return;
+            input.value = value;
+            try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (eIn) {}
+            if (typeof api.syncSendBtn === 'function') api.syncSendBtn();
+        }
+
         function startListening() {
-            if (!Recognition || listening || api.loading) return;
+            if (!Recognition) {
+                setStatus('ready', 'الميكروفون غير مدعوم في هذا المتصفح. استخدم Chrome واسمح بالمايك.');
+                return;
+            }
+            if (listening) return;
+            if (api.loading) api.loading = false;
             stopSpeaking();
             recognition = new Recognition();
-            recognition.lang = languageSelect.value || 'en-US';
+            recognition.lang = languageSelect.value || 'ar-SA';
             recognition.continuous = false;
             recognition.interimResults = true;
             recognition.onstart = function () {
@@ -122,6 +136,7 @@
                 for (var i = event.resultIndex; i < event.results.length; i += 1) {
                     transcript += event.results[i][0].transcript;
                 }
+                putTranscript(transcript);
                 var last = event.results[event.results.length - 1];
                 if (last && last.isFinal && transcript.trim()) {
                     waitingForVoiceReply = voiceMode;
@@ -133,7 +148,8 @@
                 listening = false;
                 inputBtn.classList.remove('is-listening');
                 inputBtn.removeAttribute('data-listening');
-                setStatus('ready', event.error === 'not-allowed' ? 'Microphone permission was blocked' : 'Voice input unavailable');
+                var denied = event && (event.error === 'not-allowed' || event.error === 'service-not-allowed');
+                setStatus('ready', denied ? 'اسمح للمايك من إعدادات المتصفح ثم أعد المحاولة' : 'تعذر تشغيل المايك');
                 setStopVisible(false);
             };
             recognition.onend = function () {
@@ -149,7 +165,7 @@
                 recognition.start();
             } catch (error) {
                 listening = false;
-                setStatus('ready', 'Voice input unavailable');
+                setStatus('ready', 'تعذر تشغيل المايك');
             }
         }
 
@@ -178,12 +194,12 @@
             return false;
         }
 
-        if (!Recognition) {
-            inputBtn.setAttribute('disabled', 'disabled');
-            modeBtn.setAttribute('disabled', 'disabled');
-            setStatus('ready', 'Voice input unavailable in this browser');
-        }
         setStopVisible(false);
+        inputBtn.removeAttribute('disabled');
+        modeBtn.removeAttribute('disabled');
+        if (!Recognition) {
+            setStatus('ready', 'الميكروفون يحتاج Chrome مع إذن المايك');
+        }
 
         inputBtn.addEventListener('click', function (e) {
             if (e) { e.preventDefault(); e.stopPropagation(); }

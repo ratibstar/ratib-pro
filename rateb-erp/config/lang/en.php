@@ -4678,6 +4678,7 @@ return [
     'ai_auth_required' => 'Valid authentication and company context required',
     'ai_agent_failed' => 'AI agent failed',
     'ai_company_required' => 'Company context is required',
+    'ai_platform_mode_hint' => 'Platform mode is on. Ask about the system here, or pick a company above for purchases, inventory, and accounts.',
     'ai_tool_list_purchase_requests' => 'List purchase requests',
     'ai_tool_get_purchase_request' => 'Purchase request details',
     'ai_tool_list_purchase_orders' => 'List purchase orders',

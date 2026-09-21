@@ -55,6 +55,23 @@ final class AiController extends Controller
         return $companyId > 0 ? $companyId : 0;
     }
 
+    /** Platform mode (no company): answer without tenant tools or a hard error. */
+    private function platformModeReply(string $message): string
+    {
+        $q = trim($message);
+        $locale = (string) SessionManager::get('rateb_locale', 'ar');
+        $ar = $locale !== 'en';
+        if ($q === '') {
+            return $ar
+                ? 'أنا RATEB AI. وضع المنصة بدون شركة جاهز للأسئلة العامة. لبيانات شركة (مشتريات، مخزون، حسابات) اختر الشركة من القائمة أعلاه.'
+                : 'RATEB AI is ready in platform mode. Pick a company above for that company\'s purchases, inventory, and accounts.';
+        }
+
+        return $ar
+            ? "وضع المنصة (بدون شركة) يعمل، لكن «{$q}» يحتاج دفتر شركة محددة.\nاختر الشركة من القائمة أعلاه — نفس الوكلاء الذين يعملون مع الشركات سيجيبون على بياناتها.\nفي وضع المنصة أقدر أشرح النظام والتنقل والصلاحيات بدون فتح بيانات شركة."
+            : "Platform mode is on, but \"{$q}\" needs a specific company.\nChoose a company above and the same agents will answer from that company's data.\nIn platform mode I can explain the system, navigation, and permissions without opening a company ledger.";
+    }
+
     public function index(): void
     {
         Auth::bootstrapFromSession();
@@ -217,13 +234,31 @@ final class AiController extends Controller
 
         $companyId = $this->resolveAiCompanyId();
         if (!$companyId) {
+            if (!$this->validateCsrf()) {
+                $this->json([
+                    'success' => false,
+                    'error' => 'csrf_invalid',
+                    'message' => __('ai_csrf_invalid'),
+                ], 403);
+                return;
+            }
+            $rawPlatform = (string) file_get_contents('php://input');
+            $bodyPlatform = json_decode($rawPlatform, true);
+            if (!is_array($bodyPlatform)) {
+                $bodyPlatform = [];
+            }
+            $platformMessage = trim((string) ($bodyPlatform['message'] ?? ''));
             $this->json([
-                'success' => false,
-                'error' => 'company_required',
-                'message' => __('company_required') !== 'company_required'
-                    ? __('company_required')
-                    : __('ai_company_required'),
-            ], 400);
+                'success' => true,
+                'request_id' => (string) ($bodyPlatform['request_id'] ?? ''),
+                'data' => [
+                    'response' => $this->platformModeReply($platformMessage),
+                    'tool_calls' => [],
+                    'pending_confirmations' => [],
+                    'domain' => 'platform',
+                    'agent' => 'rateb_platform_assistant',
+                ],
+            ]);
             return;
         }
 

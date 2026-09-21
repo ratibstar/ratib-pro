@@ -4726,6 +4726,7 @@ return [
     'ai_auth_required' => 'يلزم تسجيل الدخول وسياق الشركة',
     'ai_agent_failed' => 'فشل مساعد RATEB AI',
     'ai_company_required' => 'سياق الشركة مطلوب',
+    'ai_platform_mode_hint' => 'وضع المنصة يعمل. اسأل عن النظام هنا، أو اختر شركة من القائمة لبيانات المشتريات والمخزون والحسابات.',
     'ai_tool_list_purchase_requests' => 'عرض طلبات الشراء',
     'ai_tool_get_purchase_request' => 'تفاصيل طلب شراء',
     'ai_tool_list_purchase_orders' => 'عرض أوامر الشراء',

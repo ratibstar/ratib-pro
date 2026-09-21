@@ -457,12 +457,9 @@ if ($controlTower !== []) {
     ?>"
 >
     <?php if (!empty($aiNeedsCompany)): ?>
-    <div class="alert alert-warning mb-3" role="alert" id="aiCompanyRequiredBanner">
+    <div class="alert alert-info mb-3" role="status" id="aiCompanyRequiredBanner">
         <i class="fas fa-building me-1"></i>
-        <strong><?php echo htmlspecialchars(__('company_required'), ENT_QUOTES, 'UTF-8'); ?></strong>
-        <?php if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()): ?>
-        <span class="d-block mt-1"><?php echo htmlspecialchars(__('select_company_ops'), ENT_QUOTES, 'UTF-8'); ?></span>
-        <?php endif; ?>
+        <?php echo htmlspecialchars(__('ai_platform_mode_hint'), ENT_QUOTES, 'UTF-8'); ?>
     </div>
     <?php if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()): ?>
         <?php Rateb\App\Core\View::partial('ops-company-select'); ?>
@@ -565,8 +562,9 @@ if ($controlTower !== []) {
                 <button type="button" class="rateb-ai-voice-btn" id="aiVoiceModeBtn" aria-pressed="false" aria-label="Voice Mode" title="Voice Mode" onclick="return window.ratebAi && window.ratebAi.toggleVoiceMode ? window.ratebAi.toggleVoiceMode() : false;">
                     <i class="fa-solid fa-headset" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="rateb-ai-voice-btn rateb-ai-voice-btn--mic" id="aiVoiceInputBtn" aria-label="Microphone" title="Microphone" onclick="return window.ratebAi && window.ratebAi.toggleVoiceInput ? window.ratebAi.toggleVoiceInput() : false;">
+                <button type="button" class="rateb-ai-voice-btn rateb-ai-voice-btn--mic" id="aiVoiceInputBtn" aria-label="مايك" title="مايك" onclick="return window.ratebAi && window.ratebAi.toggleVoiceInput ? window.ratebAi.toggleVoiceInput() : false;">
                     <i class="fa-solid fa-microphone" aria-hidden="true"></i>
+                    <span>مايك</span>
                 </button>
                 <button type="button" class="rateb-ai-voice-btn rateb-ai-voice-btn--stop is-hidden" id="aiVoiceStopBtn" hidden aria-label="Stop" title="Stop" onclick="return window.ratebAi && window.ratebAi.stopVoice ? window.ratebAi.stopVoice() : false;">
                     <i class="fa-solid fa-stop" aria-hidden="true"></i>
@@ -948,7 +946,21 @@ html[data-bs-theme="dark"] .rateb-ai-input-form {
     background: var(--ai-primary);
 }
 
-.rateb-ai-voice-btn--mic.is-listening,
+.rateb-ai-voice-btn--mic {
+    width: auto;
+    min-width: 40px;
+    padding: 0 10px;
+    gap: 6px;
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1d4ed8;
+    font-weight: 700;
+}
+
+.rateb-ai-voice-btn--mic span {
+    font-size: 12px;
+    pointer-events: none;
+}
 .rateb-ai-voice-btn[data-listening="1"] {
     border-color: #dc3545;
     background: #dc3545;
