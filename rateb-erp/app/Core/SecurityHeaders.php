@@ -22,7 +22,8 @@ final class SecurityHeaders
         header('X-Frame-Options: SAMEORIGIN');
         header('Referrer-Policy: strict-origin-when-cross-origin');
         // camera=(self): POS biometric face + login barcode scanner need getUserMedia.
-        header('Permissions-Policy: camera=(self), microphone=(), geolocation=()');
+        // microphone=(self): RATEB AI voice input (SpeechRecognition) + future voice features.
+        header('Permissions-Policy: camera=(self), microphone=(self), geolocation=()');
 
         if (PHP_SAPI !== 'cli' && !defined('RATEB_HEALTH_PROBE')) {
             header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -45,7 +46,7 @@ final class SecurityHeaders
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob:",
             "font-src 'self' data:",
-            "connect-src 'self' {$analytics}",
+            "connect-src 'self' {$analytics} https://www.google.com https://www.googleapis.com",
             "media-src 'self' blob:",
         ]);
         header('Content-Security-Policy: ' . $csp);

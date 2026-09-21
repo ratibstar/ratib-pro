@@ -240,9 +240,48 @@
             if (typeof api.syncSendBtn === 'function') api.syncSendBtn();
         }
 
-        function startListening() {
-            // Always show the capsule UI immediately on mic click (even before permission).
-            showRecBar();
+        var micStream = null;
+
+        function releaseMicStream() {
+            if (!micStream) return;
+            try {
+                var tracks = micStream.getTracks ? micStream.getTracks() : [];
+                for (var i = 0; i < tracks.length; i += 1) {
+                    try { tracks[i].stop(); } catch (eTr) {}
+                }
+            } catch (eRel) {}
+            micStream = null;
+        }
+
+        function ensureMicPermission(done) {
+            var cb = typeof done === 'function' ? done : function () {};
+            if (!root.navigator || !root.navigator.mediaDevices || !root.navigator.mediaDevices.getUserMedia) {
+                cb(true);
+                return;
+            }
+            // Prompt once to unlock Permissions-Policy / browser mic gate, then release
+            // so SpeechRecognition can own the mic (holding the stream can block STT).
+            root.navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(function (stream) {
+                try {
+                    var tracks = stream.getTracks ? stream.getTracks() : [];
+                    for (var i = 0; i < tracks.length; i += 1) {
+                        try { tracks[i].stop(); } catch (eTr) {}
+                    }
+                } catch (eStop) {}
+                api.__micPermissionOk = true;
+                cb(true);
+            }).catch(function (err) {
+                var name = err && err.name ? String(err.name) : '';
+                if (name === 'NotAllowedError' || name === 'PermissionDeniedError' || name === 'SecurityError') {
+                    setStatus('ready', 'اسمح للمايك من إعدادات المتصفح (قفل العنوان ← الميكروفون)');
+                    cb(false);
+                    return;
+                }
+                cb(true);
+            });
+        }
+
+        function startRecognitionEngine() {
             if (!Recognition) {
                 setStatus('ready', 'الميكروفون غير مدعوم في هذا المتصفح. استخدم Chrome واسمح بالمايك.');
                 return;
@@ -252,45 +291,41 @@
             stopSpeaking();
             clearRestartTimer();
             var mySession = ++voiceSession;
+            var cycleBase = String(api.__pendingVoiceTranscript || pendingTranscript || '').trim();
             try { if (recognition) recognition.abort(); } catch (eAbortPrev) {}
             recognition = new Recognition();
-            recognition.lang = languageSelect.value || 'ar-SA';
-            recognition.continuous = true;
+            recognition.lang = (languageSelect && languageSelect.value) ? languageSelect.value : 'ar-SA';
+            // Single-utterance cycles are more reliable for ar-SA; we restart while capsule is open.
+            recognition.continuous = false;
             recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
             recognition.onstart = function () {
                 if (mySession !== voiceSession) return;
                 listening = true;
                 inputBtn.classList.add('is-listening');
                 inputBtn.setAttribute('data-listening', '1');
-                setStatus('listening', 'جاري الاستماع…');
+                setStatus('listening', 'جاري الاستماع… تكلم الآن');
                 setStopVisible(true);
                 showRecBar();
             };
             recognition.onresult = function (event) {
                 if (mySession !== voiceSession) return;
-                // Rebuild full transcript from all results (continuous mode chunks).
-                var full = '';
+                var cycle = '';
                 try {
                     for (var i = 0; i < event.results.length; i += 1) {
                         if (event.results[i] && event.results[i][0]) {
-                            full += event.results[i][0].transcript;
+                            cycle += event.results[i][0].transcript;
                         }
                     }
                 } catch (eRes) {
-                    full = '';
+                    cycle = '';
                 }
-                full = String(full || '').trim();
-                if (!full) return;
-                storeTranscript(full);
-                // Capsule mode: wait for ✓ — only auto-send in headset voiceMode without bar confirm.
-                var last = event.results[event.results.length - 1];
-                if (autoSendOnFinal && voiceMode && last && last.isFinal && full) {
-                    waitingForVoiceReply = true;
-                    setStatus('processing');
-                    hideRecBar();
-                    api.loading = false;
-                    api.send(full);
-                }
+                cycle = String(cycle || '').trim();
+                if (!cycle) return;
+                var merged = cycleBase ? (cycleBase + ' ' + cycle) : cycle;
+                // Prefer longest / latest merge within this cycle.
+                storeTranscript(merged);
+                setStatus('listening', 'تم الالتقاط — يمكنك المتابعة أو ✓');
             };
             recognition.onerror = function (event) {
                 if (mySession !== voiceSession) return;
@@ -299,13 +334,20 @@
                 inputBtn.removeAttribute('data-listening');
                 var err = event && event.error ? String(event.error) : '';
                 var denied = err === 'not-allowed' || err === 'service-not-allowed';
-                // Never auto-dismiss the capsule — only ✕ / ✓ close it.
                 if (denied) {
-                    setStatus('ready', 'اسمح للمايك من إعدادات المتصفح ثم أعد المحاولة');
+                    setStatus('ready', 'المتصفح يمنع المايك — اسمح بالميكروفون لهذا الموقع');
                     setStopVisible(false);
                     return;
                 }
                 if (err === 'aborted') return;
+                if (err === 'no-speech') {
+                    setStatus('listening', 'لم أسمع شيئاً — تكلم بوضوح…');
+                    return;
+                }
+                if (err === 'network') {
+                    setStatus('listening', 'شبكة التعرف على الصوت ضعيفة — أعد المحاولة');
+                    return;
+                }
                 if (isRecActive()) {
                     setStatus('listening', 'جاري الاستماع…');
                 } else {
@@ -318,7 +360,8 @@
                 listening = false;
                 inputBtn.classList.remove('is-listening');
                 inputBtn.removeAttribute('data-listening');
-                // Keep capsule open until user presses ✕ / ✓.
+                // Snapshot what we have so far as the base for the next cycle.
+                cycleBase = String(api.__pendingVoiceTranscript || pendingTranscript || '').trim();
                 if (isRecActive() && !api.loading) {
                     clearRestartTimer();
                     restartTimer = root.setTimeout(function () {
@@ -327,9 +370,9 @@
                         try {
                             recognition.start();
                         } catch (eRestart) {
-                            try { startListening(); } catch (e2) {}
+                            try { startRecognitionEngine(); } catch (e2) {}
                         }
-                    }, 180);
+                    }, 220);
                     return;
                 }
                 if (!speaking && !api.loading && !waitingForVoiceReply) {
@@ -341,19 +384,29 @@
                 recognition.start();
             } catch (error) {
                 listening = false;
-                // Keep bar visible; retry shortly while session is still active.
                 if (isRecActive()) {
                     clearRestartTimer();
                     restartTimer = root.setTimeout(function () {
                         restartTimer = null;
                         if (isRecActive() && mySession === voiceSession) {
-                            try { startListening(); } catch (e3) {}
+                            try { startRecognitionEngine(); } catch (e3) {}
                         }
-                    }, 220);
+                    }, 280);
                 } else {
                     setStatus('ready', 'تعذر تشغيل المايك');
                 }
             }
+        }
+
+        function startListening() {
+            // Always show the capsule UI immediately on mic click (even before permission).
+            showRecBar();
+            setStatus('listening', 'جاري تفعيل المايك…');
+            ensureMicPermission(function (ok) {
+                if (!isRecActive()) return;
+                if (!ok) return;
+                startRecognitionEngine();
+            });
         }
 
         function stopAll() {
@@ -362,6 +415,7 @@
             voiceSession += 1;
             clearRestartTimer();
             clearOpenTimer();
+            releaseMicStream();
             try { if (recognition) recognition.abort(); } catch (eStop) {
                 try { if (recognition) recognition.stop(); } catch (eStop2) {}
             }
@@ -921,7 +975,7 @@
         };
     }
 
-    var API_VER = 10;
+    var API_VER = 11;
 
     function ensureVoiceReady(api) {
         if (!api) return;
