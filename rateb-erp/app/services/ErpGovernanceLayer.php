@@ -435,6 +435,37 @@ final class ErpGovernanceLayer
     }
 
     /**
+     * Attach governance footer only when it changes what the user can/must do.
+     *
+     * @param array<string, mixed> $governance
+     * @param array<string, mixed> $trace
+     * @param array<string, mixed> $result
+     */
+    public static function shouldAttachGovernanceSummary(array $governance, array $trace, array $result): bool
+    {
+        if (!empty($result['governance_stopped'])) {
+            return true;
+        }
+        if (!empty($result['pending_confirmations'])) {
+            return true;
+        }
+        if (!empty($governance['confirmation']['required'])) {
+            return true;
+        }
+        if (!empty($governance['approval']['required'])) {
+            return true;
+        }
+        if (!empty($trace['executed'])) {
+            return true;
+        }
+        $level = (string) ($governance['execution_level'] ?? self::LEVEL_READ_ONLY);
+        if (in_array($level, [self::LEVEL_CONFIRMED_WRITE, self::LEVEL_APPROVED_WRITE, self::LEVEL_CONTROLLED_AUTONOMY], true)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Format short operational governance summary for the user (AR/EN).
      *
      * @param array<string, mixed> $governance

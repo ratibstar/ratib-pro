@@ -27,7 +27,7 @@ final class ErpOrchestrationPlanner
         $explicit = strtolower(trim((string) $explicitDomain));
         if ($explicit !== '' && ErpDomainRegistry::isActive($explicit)) {
             $domain = ErpDomainRegistry::resolve($explicit);
-            if ($domain !== null && $ctx->moduleEnabled((string) $domain['module'])) {
+            if ($domain !== null && ErpDomainRegistry::isDomainEntitled($explicit, $ctx)) {
                 return [
                     'mode' => 'single',
                     'domains' => [$explicit],
@@ -81,7 +81,7 @@ final class ErpOrchestrationPlanner
             ),
             ErpDomainRegistry::DOMAIN_HR => self::match(
                 $message,
-                '/(hr|human\s*resources|employee|employees|workforce|attendance|leave|موارد\s*بشرية|موظف|موظفين|الحضور|إجازة|اجازة)/ui'
+                '/(hr|human\s*resources|employee|employees|workforce|attendance|leave|الموارد\s*البشرية|موارد\s*بشرية|موظف|موظفين|الحضور|إجازة|اجازة)/ui'
             ),
             ErpDomainRegistry::DOMAIN_RECRUITMENT => self::match(
                 $message,
@@ -176,7 +176,7 @@ final class ErpOrchestrationPlanner
                     continue;
                 }
                 $meta = ErpDomainRegistry::resolve($id);
-                if ($meta !== null && $ctx->moduleEnabled((string) $meta['module'])) {
+                if ($meta !== null && ErpDomainRegistry::isDomainEntitled($id, $ctx)) {
                     $domains[] = $id;
                 }
                 if (count($domains) >= 6) {
@@ -202,7 +202,7 @@ final class ErpOrchestrationPlanner
                     continue;
                 }
                 $meta = ErpDomainRegistry::resolve($fallbackId);
-                if ($meta !== null && $ctx->moduleEnabled((string) $meta['module'])) {
+                if ($meta !== null && ErpDomainRegistry::isDomainEntitled($fallbackId, $ctx)) {
                     $domains[] = $fallbackId;
                 }
                 if (count($domains) >= 2) {
@@ -214,7 +214,7 @@ final class ErpOrchestrationPlanner
                 if ($decisionSupport) {
                     foreach (ErpDomainRegistry::activeDomainIds() as $id) {
                         $meta = ErpDomainRegistry::resolve($id);
-                        if ($meta !== null && $ctx->moduleEnabled((string) $meta['module']) && !in_array($id, $domains, true)) {
+                        if ($meta !== null && ErpDomainRegistry::isDomainEntitled($id, $ctx) && !in_array($id, $domains, true)) {
                             $domains[] = $id;
                         }
                         if (count($domains) >= 3) {
@@ -241,7 +241,7 @@ final class ErpOrchestrationPlanner
                     continue;
                 }
                 $meta = ErpDomainRegistry::resolve($id);
-                if ($meta !== null && $ctx->moduleEnabled((string) $meta['module'])) {
+                if ($meta !== null && ErpDomainRegistry::isDomainEntitled($id, $ctx)) {
                     $domains[] = $id;
                 }
             }

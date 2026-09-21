@@ -5000,7 +5000,7 @@ return [
     'ai_tool_err_invalid_tool_response' => 'Invalid tool response',
     'ai_tool_err_tool_not_allowed' => 'Tool is not allowed',
     'ai_tool_err_llm_timeout' => 'The AI service timed out. Please try again',
-    'ai_tool_err_llm_empty_response' => 'No response was received from the AI service',
+    'ai_tool_err_llm_empty_response' => 'No clear reply from the AI model. Try a direct phrase like “list employees”, or pick a domain suggestion.',
     'ai_tool_err_llm_invalid_response' => 'Invalid response from the AI service',
     'ai_tool_err_llm_invalid_tool_response' => 'Invalid tool response from the AI service',
     'ai_tool_err_llm_request_failed' => 'Unable to reach the AI service',

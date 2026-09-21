@@ -310,7 +310,7 @@ final class ErpAgent
         $domain = $resolved['domain'];
         $domainId = (string) $domain['id'];
 
-        if (!$ctx->moduleEnabled((string) $domain['module'])) {
+        if (!ErpDomainRegistry::isDomainEntitled($domainId, $ctx)) {
             return $this->domainFailureResponse($ctx, $requestId, 'module_not_entitled', $domainId);
         }
 
@@ -331,6 +331,28 @@ final class ErpAgent
             'domains' => [$domainId],
             'mode' => 'single',
         ]), $ctx, $this->config, null, $hasConfirmedWrites);
+
+        // Direct list/module queries → live tools (no LLM invent/refuse/empty).
+        if (
+            empty($intent['write_intent'])
+            && empty($input['confirmed_writes'])
+            && $this->isDirectDataRequest($message)
+        ) {
+            $detIntent = array_merge($intent, [
+                'domains' => [$domainId],
+                'mode' => 'single',
+                'primary' => $domainId,
+                'intent_kind' => 'query',
+                'decision_support' => false,
+            ]);
+            $result = $this->processSingleDomainRead($input, $ctx, $detIntent, $domainId, $requestId);
+            return $this->finalizeWithGovernance(
+                $decorate($result, $domainId, $resolved, $intent),
+                $govSingle,
+                $ctx,
+                $requestId
+            );
+        }
 
         if ($domainId === ErpDomainRegistry::DOMAIN_PROCUREMENT) {
             $runtime = new ProcurementAgent($this->config, $this->llmClient);
@@ -460,7 +482,17 @@ final class ErpAgent
             );
         }
 
-        return $this->domainFailureResponse($ctx, $requestId, 'domain_not_implemented', $domainId);
+        // Remaining active domains (HR, Recruitment, Projects, …) share the same hardened runtime.
+        $result = $this->runDomainWithTools($domain, $input, $ctx);
+        if ($result === null) {
+            return $this->domainFailureResponse($ctx, $requestId, 'domain_not_implemented', $domainId);
+        }
+        return $this->finalizeWithGovernance(
+            $decorate($result, $domainId, $resolved, $intent),
+            $govSingle,
+            $ctx,
+            $requestId
+        );
     }
 
     /**
@@ -1128,12 +1160,15 @@ final class ErpAgent
         $result['governance'] = $governance;
         $result['decision_trace'] = $trace;
 
-        $govSummary = ErpGovernanceLayer::formatGovernanceSummary($governance, $trace, $ctx);
-        $resp = (string) ($result['response'] ?? '');
-        if ($resp !== '' && !str_contains($resp, $govSummary)) {
-            $result['response'] = rtrim($resp) . "\n\n" . $govSummary;
-        } elseif ($resp === '') {
-            $result['response'] = $govSummary;
+        // Quiet reads: keep the user reply clean. Show governance only when it affects action.
+        if (ErpGovernanceLayer::shouldAttachGovernanceSummary($governance, $trace, $result)) {
+            $govSummary = ErpGovernanceLayer::formatGovernanceSummary($governance, $trace, $ctx);
+            $resp = (string) ($result['response'] ?? '');
+            if ($govSummary !== '' && $resp !== '' && !str_contains($resp, $govSummary)) {
+                $result['response'] = rtrim($resp) . "\n\n" . $govSummary;
+            } elseif ($govSummary !== '' && $resp === '') {
+                $result['response'] = $govSummary;
+            }
         }
 
         $audit = is_array($result['audit'] ?? null) ? $result['audit'] : [];
@@ -2035,7 +2070,7 @@ final class ErpAgent
                 if ($domain === null) {
                     return ['ok' => false, 'error_code' => 'domain_unavailable', 'domain' => $requested];
                 }
-                if (!$ctx->moduleEnabled((string) $domain['module'])) {
+                if (!ErpDomainRegistry::isDomainEntitled($requested, $ctx)) {
                     return ['ok' => false, 'error_code' => 'module_not_entitled', 'domain' => $requested];
                 }
                 return ['ok' => true, 'domain' => $domain, 'source' => 'explicit'];
@@ -2046,17 +2081,34 @@ final class ErpAgent
             return ['ok' => false, 'error_code' => 'domain_unknown', 'domain' => $requested];
         }
 
-        $intent = ErpOrchestrationPlanner::detectIntent((string) ($input['message'] ?? ''), $ctx, null);
+        $message = (string) ($input['message'] ?? '');
+        $intent = ErpOrchestrationPlanner::detectIntent($message, $ctx, null);
+
+        // Prefer intent primary for single-domain queries (HR, payroll, …) before keyword defaults.
+        $primary = (string) ($intent['primary'] ?? '');
+        if (
+            $primary !== ''
+            && ($intent['mode'] ?? '') === 'single'
+            && ErpDomainRegistry::isActive($primary)
+        ) {
+            $domain = ErpDomainRegistry::resolve($primary);
+            if ($domain !== null && ErpDomainRegistry::isDomainEntitled($primary, $ctx)) {
+                return ['ok' => true, 'domain' => $domain, 'source' => 'intent_primary'];
+            }
+            if ($domain !== null) {
+                return ['ok' => false, 'error_code' => 'module_not_entitled', 'domain' => $primary];
+            }
+        }
+
         if (($intent['mode'] ?? '') === 'cross' && count($intent['domains'] ?? []) >= 2) {
             // resolveDomain remains single-domain for callers; cross is handled in process().
-            $primary = (string) ($intent['primary'] ?? ErpDomainRegistry::defaultDomainId());
-            $domain = ErpDomainRegistry::resolve($primary);
-            if ($domain !== null && $ctx->moduleEnabled((string) $domain['module'])) {
+            $crossPrimary = (string) ($intent['primary'] ?? ErpDomainRegistry::defaultDomainId());
+            $domain = ErpDomainRegistry::resolve($crossPrimary);
+            if ($domain !== null && ErpDomainRegistry::isDomainEntitled($crossPrimary, $ctx)) {
                 return ['ok' => true, 'domain' => $domain, 'source' => 'cross_primary'];
             }
         }
 
-        $message = (string) ($input['message'] ?? '');
         if ($message !== '' && ErpDomainRegistry::isActive(ErpDomainRegistry::DOMAIN_EXECUTIVE)) {
             if (ErpOrchestrationPlanner::hasExecutiveIntent($message)) {
                 $exec = ErpDomainRegistry::resolve(ErpDomainRegistry::DOMAIN_EXECUTIVE);
@@ -2065,10 +2117,18 @@ final class ErpAgent
                 }
             }
         }
+        if ($message !== '' && ErpDomainRegistry::isActive(ErpDomainRegistry::DOMAIN_HR)) {
+            if (preg_match('/(hr|human\s*resources|employee|employees|workforce|attendance|leave|الموارد\s*البشرية|موارد\s*بشرية|موظف|موظفين|الحضور|إجازة|اجازة)/ui', $message) === 1) {
+                $hr = ErpDomainRegistry::resolve(ErpDomainRegistry::DOMAIN_HR);
+                if ($hr !== null && ErpDomainRegistry::isDomainEntitled(ErpDomainRegistry::DOMAIN_HR, $ctx)) {
+                    return ['ok' => true, 'domain' => $hr, 'source' => 'keyword'];
+                }
+            }
+        }
         if ($message !== '' && ErpDomainRegistry::isActive(ErpDomainRegistry::DOMAIN_ACCOUNTING)) {
             if (preg_match('/(accounting|financial|finance|receivable|payable|invoice|payment|journal|ledger|vat|محاسبة|مالي|مالية|مستحقات|ذمم|فاتورة|فواتير|دفعة|قيد|ضريبة|الوضع\s*المالي)/ui', $message) === 1) {
                 $acc = ErpDomainRegistry::resolve(ErpDomainRegistry::DOMAIN_ACCOUNTING);
-                if ($acc !== null && $ctx->moduleEnabled((string) $acc['module'])) {
+                if ($acc !== null && ErpDomainRegistry::isDomainEntitled(ErpDomainRegistry::DOMAIN_ACCOUNTING, $ctx)) {
                     return ['ok' => true, 'domain' => $acc, 'source' => 'keyword'];
                 }
             }
@@ -2076,7 +2136,7 @@ final class ErpAgent
         if ($message !== '' && ErpDomainRegistry::isActive(ErpDomainRegistry::DOMAIN_LOGISTICS)) {
             if (preg_match('/(logistics|shipment|shipments|delivery|deliveries|trip|trips|شحن|شحنات|تسليم|توصيل|رحلة|رحلات|لوجست|تتبع)/ui', $message) === 1) {
                 $log = ErpDomainRegistry::resolve(ErpDomainRegistry::DOMAIN_LOGISTICS);
-                if ($log !== null && $ctx->moduleEnabled((string) $log['module'])) {
+                if ($log !== null && ErpDomainRegistry::isDomainEntitled(ErpDomainRegistry::DOMAIN_LOGISTICS, $ctx)) {
                     return ['ok' => true, 'domain' => $log, 'source' => 'keyword'];
                 }
             }
@@ -2084,7 +2144,7 @@ final class ErpAgent
         if ($message !== '' && ErpDomainRegistry::isActive(ErpDomainRegistry::DOMAIN_CRM)) {
             if (preg_match('/(crm|customer|customers|lead|leads|opportunity|عميل|عملاء|فرصة|فرص|متابعة\s*العميل)/ui', $message) === 1) {
                 $crm = ErpDomainRegistry::resolve(ErpDomainRegistry::DOMAIN_CRM);
-                if ($crm !== null && $ctx->moduleEnabled((string) $crm['module'])) {
+                if ($crm !== null && ErpDomainRegistry::isDomainEntitled(ErpDomainRegistry::DOMAIN_CRM, $ctx)) {
                     return ['ok' => true, 'domain' => $crm, 'source' => 'keyword'];
                 }
             }
@@ -2092,7 +2152,7 @@ final class ErpAgent
         if ($message !== '' && ErpDomainRegistry::isActive(ErpDomainRegistry::DOMAIN_SALES)) {
             if (preg_match('/(sales|pos|مبيعات|بيع|نقطة\s*البيع|طلب\s*بيع|طلبات\s*البيع)/ui', $message) === 1) {
                 $sales = ErpDomainRegistry::resolve(ErpDomainRegistry::DOMAIN_SALES);
-                if ($sales !== null && $ctx->moduleEnabled((string) $sales['module'])) {
+                if ($sales !== null && ErpDomainRegistry::isDomainEntitled(ErpDomainRegistry::DOMAIN_SALES, $ctx)) {
                     return ['ok' => true, 'domain' => $sales, 'source' => 'keyword'];
                 }
             }
@@ -2100,7 +2160,7 @@ final class ErpAgent
         if ($message !== '' && ErpDomainRegistry::isActive(ErpDomainRegistry::DOMAIN_SUPPLIERS)) {
             if (preg_match('/(supplier|suppliers|مورد|موردين|موردون|المورد|الموردين)/ui', $message) === 1) {
                 $sup = ErpDomainRegistry::resolve(ErpDomainRegistry::DOMAIN_SUPPLIERS);
-                if ($sup !== null && $ctx->moduleEnabled((string) $sup['module'])) {
+                if ($sup !== null && ErpDomainRegistry::isDomainEntitled(ErpDomainRegistry::DOMAIN_SUPPLIERS, $ctx)) {
                     return ['ok' => true, 'domain' => $sup, 'source' => 'keyword'];
                 }
             }
@@ -2108,7 +2168,7 @@ final class ErpAgent
         if ($message !== '' && ErpDomainRegistry::isActive(ErpDomainRegistry::DOMAIN_INVENTORY)) {
             if (preg_match('/(inventory|warehouse|stock|sku|مخزون|مستودع|صنف|أصناف|حركة|حركات)/ui', $message) === 1) {
                 $inv = ErpDomainRegistry::resolve(ErpDomainRegistry::DOMAIN_INVENTORY);
-                if ($inv !== null && $ctx->moduleEnabled((string) $inv['module'])) {
+                if ($inv !== null && ErpDomainRegistry::isDomainEntitled(ErpDomainRegistry::DOMAIN_INVENTORY, $ctx)) {
                     return ['ok' => true, 'domain' => $inv, 'source' => 'keyword'];
                 }
             }
@@ -2119,7 +2179,7 @@ final class ErpAgent
         if ($domain === null || empty($domain['active'])) {
             return ['ok' => false, 'error_code' => 'domain_unavailable', 'domain' => $defaultId];
         }
-        if (!$ctx->moduleEnabled((string) $domain['module'])) {
+        if (!ErpDomainRegistry::isDomainEntitled($defaultId, $ctx)) {
             return ['ok' => false, 'error_code' => 'module_not_entitled', 'domain' => $defaultId];
         }
 
@@ -2138,6 +2198,333 @@ final class ErpAgent
             $ctx,
             isset($input['domain']) ? (string) $input['domain'] : null
         );
+    }
+
+    /**
+     * List/show/module-name queries should hit live tools directly (accurate, no LLM refuse/empty).
+     */
+    private function isDirectDataRequest(string $message): bool
+    {
+        $m = trim($message);
+        if ($m === '') {
+            return false;
+        }
+        if (preg_match('/^(عرض|اعرض|أظهر|اظهر|list|show|ملخص|احص|إحص|افتح|open)\b/ui', $m) === 1) {
+            return true;
+        }
+        if (mb_strlen($m) > 48) {
+            return false;
+        }
+        return preg_match(
+            '/(الموارد\s*البشرية|موارد\s*بشرية|توظيف|مشاريع|عقود|أصول|رواتب|مسير|تصنيع|جودة|موافقات|سوق\s*الخدمات|إشعارات|ذكاء\s*الأعمال|محاسبة|مبيعات|مخزون|مشتريات|موردين|عملاء|شحن|لوجست|crm|hr|pos|bi)\b/ui',
+            $m
+        ) === 1;
+    }
+
+    /**
+     * @param array<string, mixed> $domain
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>|null
+     */
+    private function runDomainWithTools(array $domain, array $input, ProcurementAgentContext $ctx): ?array
+    {
+        $domainId = (string) ($domain['id'] ?? '');
+        $registry = (string) ($domain['tool_registry'] ?? '');
+        $executor = (string) ($domain['tool_executor'] ?? '');
+        if ($domainId === '' || $registry === '' || $executor === '' || !class_exists($registry) || !class_exists($executor)) {
+            return null;
+        }
+        $label = (string) ($domain['label'] ?? $domainId);
+        $cfg = $this->config;
+        $agentCfg = is_array($cfg['agent'] ?? null) ? $cfg['agent'] : [];
+        $agentCfg['tool_registry'] = $registry;
+        $agentCfg['tool_executor'] = $executor;
+        $promptKey = $domainId . '_system_prompt';
+        $agentCfg['system_prompt'] = (string) ($agentCfg[$promptKey]
+            ?? ('You are the RATEB ERP Agent in the ' . $label . ' domain. Use only approved tools for this domain. '
+                . 'Never invent numbers or records. Tenant-scope every operation. Speak only in the UI language. '
+                . 'For list/show requests call the matching list/summary tools first, then answer clearly from tool results. '
+                . 'Never auto-execute writes — mutations require explicit confirmation.'));
+        $cfg['agent'] = $agentCfg;
+        $runtime = new ProcurementAgent($cfg, $this->llmClient);
+        $result = $runtime->process($input, $ctx);
+        return is_array($result) ? $result : null;
+    }
+
+    /**
+     * Deterministic single-domain READ via orchestration plan (no LLM).
+     *
+     * @param array<string, mixed> $input
+     * @param array<string, mixed> $intent
+     * @return array<string, mixed>
+     */
+    private function processSingleDomainRead(
+        array $input,
+        ProcurementAgentContext $ctx,
+        array $intent,
+        string $domainId,
+        string $requestId
+    ): array {
+        $startedAt = microtime(true);
+        $plan = ErpOrchestrationPlanner::buildPlan($intent, $ctx, 4);
+        $toolCalls = [];
+        $auditEntries = [];
+        $confirmed = [];
+        $failed = [];
+
+        $auditEntries[] = $this->logAudit($ctx, $requestId, 'single_domain_plan', [
+            'domain' => $domainId,
+            'plan_size' => count($plan),
+            'tools' => array_map(static fn($s) => $s['tool'] ?? '', $plan),
+        ], [
+            'event_type' => 'single_domain_plan',
+            'error_code' => null,
+        ], 'success');
+
+        foreach ($plan as $step) {
+            $toolName = (string) ($step['tool'] ?? '');
+            $arguments = is_array($step['arguments'] ?? null) ? $step['arguments'] : [];
+            $stepDomain = (string) ($step['domain'] ?? $domainId);
+            $purpose = (string) ($step['purpose'] ?? '');
+            if ($toolName === '') {
+                continue;
+            }
+
+            $policy = ProcurementPolicyGuard::checkAndExecute([
+                'tool' => $toolName,
+                'arguments' => $arguments,
+                'request_company_id' => null,
+                'request_id' => $requestId,
+                'write_confirmed' => false,
+            ], $ctx);
+
+            if (!$policy['allowed']) {
+                $code = (string) ($policy['error_code'] ?? 'permission_denied');
+                $failed[] = [
+                    'tool' => $toolName,
+                    'domain' => $stepDomain,
+                    'purpose' => $purpose,
+                    'error_code' => $code,
+                ];
+                $toolCalls[] = [
+                    'tool' => $toolName,
+                    'domain' => $stepDomain,
+                    'arguments' => $arguments,
+                    'result' => ['success' => false, 'error' => $code, 'error_code' => $code],
+                    'audit_status' => 'denied',
+                ];
+                continue;
+            }
+
+            $result = $this->executeRegisteredTool($toolName, $arguments, $ctx);
+            if (!empty($result['success'])) {
+                $confirmed[] = [
+                    'tool' => $toolName,
+                    'domain' => $stepDomain,
+                    'purpose' => $purpose,
+                    'data' => $result['data'] ?? null,
+                ];
+                $toolCalls[] = [
+                    'tool' => $toolName,
+                    'domain' => $stepDomain,
+                    'arguments' => $arguments,
+                    'result' => ['success' => true, 'data' => $result['data'] ?? null],
+                    'audit_status' => 'success',
+                ];
+            } else {
+                $code = (string) ($result['error_code'] ?? $result['error'] ?? 'tool_exception');
+                $failed[] = [
+                    'tool' => $toolName,
+                    'domain' => $stepDomain,
+                    'purpose' => $purpose,
+                    'error_code' => $code,
+                ];
+                $toolCalls[] = [
+                    'tool' => $toolName,
+                    'domain' => $stepDomain,
+                    'arguments' => $arguments,
+                    'result' => ['success' => false, 'error' => $code, 'error_code' => $code],
+                    'audit_status' => 'error',
+                ];
+            }
+        }
+
+        $response = $this->formatDomainDataReply($confirmed, $failed, $domainId, $ctx);
+
+        return [
+            'response' => $response,
+            'tool_calls' => $toolCalls,
+            'pending_confirmations' => [],
+            'audit' => $auditEntries,
+            'domain' => $domainId,
+            'agent' => self::AGENT_ID,
+            'observability' => [
+                'request_id' => $requestId,
+                'company_id' => $ctx->companyId,
+                'user_id' => $ctx->userId,
+                'success' => $confirmed !== [],
+                'duration_ms' => (int) ((microtime(true) - $startedAt) * 1000),
+                'domain' => $domainId,
+                'path' => 'deterministic_read',
+            ],
+        ];
+    }
+
+    /**
+     * @param list<array{tool: string, domain: string, purpose: string, data: mixed}> $confirmed
+     * @param list<array{tool: string, domain: string, purpose: string, error_code: string}> $failed
+     */
+    private function formatDomainDataReply(
+        array $confirmed,
+        array $failed,
+        string $domainId,
+        ProcurementAgentContext $ctx
+    ): string {
+        $ar = $ctx->normalizedLocale() === 'ar';
+        $meta = ErpDomainRegistry::resolve($domainId);
+        $label = (string) ($meta['label'] ?? $domainId);
+        $lines = [];
+        $lines[] = $ar
+            ? ($label . ' — نتائج مباشرة من بيانات الشركة:')
+            : ($label . ' — live company data:');
+
+        foreach ($confirmed as $row) {
+            $purpose = (string) ($row['purpose'] ?? '');
+            $tool = (string) ($row['tool'] ?? '');
+            $data = $row['data'] ?? null;
+            if (!is_array($data)) {
+                continue;
+            }
+            $title = $this->purposeTitle($purpose, $tool, $ar);
+
+            if (isset($data['rows']) && is_array($data['rows'])) {
+                $rows = $data['rows'];
+                $lines[] = $title . ' (' . count($rows) . ')';
+                if ($rows === []) {
+                    $lines[] = $ar ? '- لا توجد سجلات حالياً.' : '- No records found.';
+                    if (!empty($data['note']) && (string) $data['note'] === 'table_unavailable') {
+                        $lines[] = $ar
+                            ? '- جدول البيانات غير متاح لهذه الشركة بعد.'
+                            : '- Data table is not available for this company yet.';
+                    }
+                    continue;
+                }
+                foreach (array_slice($rows, 0, 25) as $r) {
+                    if (is_array($r)) {
+                        $lines[] = '- ' . $this->formatRowBrief($r);
+                    }
+                }
+                if (count($rows) > 25) {
+                    $extra = count($rows) - 25;
+                    $lines[] = $ar ? ('… و ' . $extra . ' أخرى') : ('… and ' . $extra . ' more');
+                }
+                continue;
+            }
+
+            $lines[] = $title . ':';
+            $printed = false;
+            foreach ($data as $k => $v) {
+                if (is_scalar($v)) {
+                    $lines[] = '- ' . $k . ': ' . $v;
+                    $printed = true;
+                } elseif (is_array($v)) {
+                    $allScalar = true;
+                    foreach ($v as $sv) {
+                        if (!is_scalar($sv)) {
+                            $allScalar = false;
+                            break;
+                        }
+                    }
+                    if ($allScalar && $v !== []) {
+                        foreach ($v as $sk => $sv) {
+                            $lines[] = '- ' . $k . '/' . $sk . ': ' . $sv;
+                            $printed = true;
+                        }
+                    }
+                }
+            }
+            if (!$printed) {
+                $lines[] = $ar ? '- تم جلب البيانات بنجاح.' : '- Data retrieved successfully.';
+            }
+        }
+
+        if ($confirmed === []) {
+            if ($failed !== []) {
+                $lines[] = $ar
+                    ? 'تعذر جلب البيانات. تحقق من صلاحيات الوحدة أو أعد المحاولة.'
+                    : 'Could not fetch data. Check module permissions or retry.';
+                foreach ($failed as $f) {
+                    $lines[] = '- ' . (string) ($f['tool'] ?? '') . ' (' . (string) ($f['error_code'] ?? '') . ')';
+                }
+            } else {
+                $lines[] = $ar
+                    ? 'لا توجد أدوات قراءة جاهزة لهذا الطلب في هذا المجال.'
+                    : 'No read tools were available for this request in this domain.';
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function purposeTitle(string $purpose, string $tool, bool $ar): string
+    {
+        $map = [
+            'hr_employees' => ['ar' => 'الموظفون', 'en' => 'Employees'],
+            'hr_summary' => ['ar' => 'ملخص القوى العاملة', 'en' => 'Workforce summary'],
+            'recruitment_candidates' => ['ar' => 'المرشحون', 'en' => 'Candidates'],
+            'recruitment_summary' => ['ar' => 'ملخص التوظيف', 'en' => 'Recruitment summary'],
+            'projects_list' => ['ar' => 'المشاريع', 'en' => 'Projects'],
+            'projects_summary' => ['ar' => 'ملخص المشاريع', 'en' => 'Projects summary'],
+            'contracts_list' => ['ar' => 'العقود', 'en' => 'Contracts'],
+            'contracts_summary' => ['ar' => 'ملخص العقود', 'en' => 'Contracts summary'],
+            'assets_list' => ['ar' => 'الأصول', 'en' => 'Assets'],
+            'assets_summary' => ['ar' => 'ملخص الأصول', 'en' => 'Assets summary'],
+            'payroll_summary' => ['ar' => 'ملخص الرواتب', 'en' => 'Payroll summary'],
+            'payroll_cycles' => ['ar' => 'دورات الرواتب', 'en' => 'Payroll cycles'],
+            'mfg_orders' => ['ar' => 'أوامر التصنيع', 'en' => 'Production orders'],
+            'mfg_summary' => ['ar' => 'ملخص التصنيع', 'en' => 'Manufacturing summary'],
+            'quality_summary' => ['ar' => 'ملخص الجودة', 'en' => 'Quality summary'],
+            'quality_ncrs' => ['ar' => 'عدم المطابقة', 'en' => 'Nonconformities'],
+            'approvals_pending' => ['ar' => 'موافقات معلّقة', 'en' => 'Pending approvals'],
+            'approvals_summary' => ['ar' => 'ملخص الموافقات', 'en' => 'Approvals summary'],
+            'marketplace_summary' => ['ar' => 'ملخص سوق الخدمات', 'en' => 'Marketplace summary'],
+            'marketplace_orders' => ['ar' => 'طلبات السوق', 'en' => 'Marketplace orders'],
+            'notifications_digest' => ['ar' => 'ملخص الإشعارات', 'en' => 'Notifications digest'],
+            'notifications_unread' => ['ar' => 'إشعارات غير مقروءة', 'en' => 'Unread notifications'],
+            'bi_summary' => ['ar' => 'ملخص مؤشرات الأعمال', 'en' => 'BI summary'],
+            'bi_kpis' => ['ar' => 'المؤشرات', 'en' => 'KPIs'],
+            'website_summary' => ['ar' => 'ملخص الموقع', 'en' => 'Website summary'],
+            'cms_pages' => ['ar' => 'صفحات الموقع', 'en' => 'CMS pages'],
+        ];
+        if (isset($map[$purpose])) {
+            return $ar ? $map[$purpose]['ar'] : $map[$purpose]['en'];
+        }
+        return $tool !== '' ? $tool : ($ar ? 'النتائج' : 'Results');
+    }
+
+    /**
+     * @param array<string, mixed> $r
+     */
+    private function formatRowBrief(array $r): string
+    {
+        $parts = [];
+        foreach (['employee_code', 'code', 'name', 'title', 'status', 'email', 'job_title', 'order_no', 'id'] as $k) {
+            if (isset($r[$k]) && $r[$k] !== '' && $r[$k] !== null) {
+                $parts[] = (string) $r[$k];
+            }
+        }
+        if ($parts === []) {
+            $i = 0;
+            foreach ($r as $v) {
+                if (is_scalar($v) && (string) $v !== '') {
+                    $parts[] = (string) $v;
+                    if (++$i >= 3) {
+                        break;
+                    }
+                }
+            }
+        }
+        return implode(' — ', array_slice(array_values(array_unique($parts)), 0, 4));
     }
 
     /**
@@ -2164,8 +2551,8 @@ final class ErpAgent
                 'en' => 'The agent domain is currently unavailable.',
             ],
             'module_not_entitled' => [
-                'ar' => 'الوحدة غير مفعّلة لهذه الشركة.',
-                'en' => 'The module is not enabled for this company.',
+                'ar' => 'ليس لديك صلاحية عرض هذا المجال لهذه الشركة، أو الوحدة غير مفعّلة.',
+                'en' => 'You are not entitled to this domain for this company, or the module is disabled.',
             ],
             'unauthorized' => [
                 'ar' => 'يلزم تسجيل الدخول للمتابعة.',
@@ -2177,6 +2564,13 @@ final class ErpAgent
             'en' => 'Unable to complete the request right now.',
         ];
         $response = $locale === 'ar' ? $pair['ar'] : $pair['en'];
+        if ($domainId !== '' && $locale === 'ar') {
+            $meta = ErpDomainRegistry::resolve($domainId);
+            $label = (string) ($meta['label'] ?? $domainId);
+            if ($errorCode === 'module_not_entitled') {
+                $response = 'لا يمكن فتح «' . $label . '»: الوحدة غير مفعّلة أو بلا صلاحية لهذه الشركة.';
+            }
+        }
 
         return [
             'response' => $response,

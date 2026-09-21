@@ -132,9 +132,10 @@ $coreOk = class_exists(ErpAgent::class)
 $coreOk ? $pass('UNIFIED CORE') : $fail('UNIFIED CORE');
 
 $registryOk = ErpDomainRegistry::isActive('procurement')
-    && !ErpDomainRegistry::isActive('hr')
-    && ErpDomainRegistry::isReservedFuture('inventory')
-    && ErpDomainRegistry::toolsForDomain('hr') === []
+    && ErpDomainRegistry::isActive('hr')
+    && ErpDomainRegistry::isActive('inventory')
+    && !ErpDomainRegistry::isReservedFuture('hr')
+    && ErpDomainRegistry::toolsForDomain('hr') !== []
     && ErpDomainRegistry::toolsForDomain('procurement') !== [];
 $registryOk ? $pass('DOMAIN REGISTRY') : $fail('DOMAIN REGISTRY');
 
@@ -142,7 +143,8 @@ $future = ErpDomainRegistry::futureReadiness();
 $futureOk = !empty($future['single_agent'])
     && !empty($future['can_add_domain_without_new_agent'])
     && in_array('procurement', $future['active'] ?? [], true)
-    && count(array_intersect($future['reserved_future'] ?? [], ['inventory', 'suppliers', 'sales', 'accounting', 'hr', 'crm', 'projects'])) === 7;
+    && in_array('hr', $future['active'] ?? [], true)
+    && ($future['reserved_future'] ?? []) === [];
 $futureOk ? $pass('FUTURE DOMAIN READINESS') : $fail('FUTURE DOMAIN READINESS');
 
 // SHARED CONTEXT
@@ -192,15 +194,15 @@ $erp = new ErpAgent($config, new Phase6MockLlm([
 ]));
 $resDefault = $erp->resolveDomain([], $ctx);
 $resExplicit = $erp->resolveDomain(['domain' => 'procurement'], $ctx);
-$resFuture = $erp->resolveDomain(['domain' => 'hr'], $ctx);
+$resHr = $erp->resolveDomain(['domain' => 'hr'], $ctx);
 $resUnknown = $erp->resolveDomain(['domain' => 'marketing_xyz'], $ctx);
 $domainResolveOk = !empty($resDefault['ok'])
     && ($resDefault['domain']['id'] ?? '') === 'procurement'
     && !empty($resExplicit['ok'])
-    && empty($resFuture['ok']) && ($resFuture['error_code'] ?? '') === 'domain_not_implemented'
+    && !empty($resHr['ok']) && ($resHr['domain']['id'] ?? '') === 'hr'
     && empty($resUnknown['ok']) && ($resUnknown['error_code'] ?? '') === 'domain_unknown';
 if (!$domainResolveOk) {
-    $fail('UNIFIED CORE_domain_resolve', json_encode([$resDefault, $resFuture, $resUnknown]));
+    $fail('UNIFIED CORE_domain_resolve', json_encode([$resDefault, $resHr, $resUnknown]));
 }
 
 // Procurement through unified core

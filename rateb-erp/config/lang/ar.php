@@ -5048,7 +5048,7 @@ return [
     'ai_tool_err_invalid_tool_response' => 'استجابة الأداة غير صالحة',
     'ai_tool_err_tool_not_allowed' => 'الأداة غير مسموح بها',
     'ai_tool_err_llm_timeout' => 'انتهت مهلة خدمة الذكاء الاصطناعي. يرجى المحاولة مرة أخرى',
-    'ai_tool_err_llm_empty_response' => 'لم يتم استلام رد من خدمة الذكاء الاصطناعي',
+    'ai_tool_err_llm_empty_response' => 'تعذر الحصول على رد واضح من نموذج الذكاء الاصطناعي. جرّب صياغة مباشرة مثل: «عرض الموظفين» أو اختر المجال من الاقتراحات.',
     'ai_tool_err_llm_invalid_response' => 'استجابة خدمة الذكاء الاصطناعي غير صالحة',
     'ai_tool_err_llm_invalid_tool_response' => 'استجابة أدوات غير صالحة من خدمة الذكاء الاصطناعي',
     'ai_tool_err_llm_request_failed' => 'تعذر الاتصال بخدمة الذكاء الاصطناعي',
