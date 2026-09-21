@@ -440,8 +440,22 @@
                 return false;
             },
             clickSuggest: function (btn) {
-                var prompt = (btn && (btn.getAttribute('data-prompt') || btn.textContent)) || '';
-                return this.send(prompt);
+                try {
+                    var prompt = '';
+                    if (btn) {
+                        prompt = btn.getAttribute('data-prompt') || '';
+                        if (!String(prompt || '').trim()) {
+                            prompt = btn.textContent || btn.innerText || '';
+                        }
+                    }
+                    prompt = String(prompt || '').trim();
+                    if (!prompt) return false;
+                    if (this.loading) this.loading = false;
+                    return this.send(prompt);
+                } catch (eSuggest) {
+                    try { console.warn('ratebAi.clickSuggest', eSuggest); } catch (eLog) {}
+                    return false;
+                }
             },
             getHistory: function () {
                 var messages = doc.getElementById('aiMessages');
@@ -514,6 +528,7 @@
                     });
                 }
                 box.setAttribute('data-rateb-ai-bound', '1');
+                if (self.loading) self.loading = false;
                 self.syncSendBtn();
                 try { if (input) input.focus(); } catch (eFocus) {}
             }
@@ -532,12 +547,17 @@
         if (!root.__ratebAiClickBound) {
             root.__ratebAiClickBound = true;
             doc.addEventListener('click', function (e) {
-                var btn = e.target && e.target.closest ? e.target.closest('.rateb-ai-suggestion-btn') : null;
-                if (!btn || !doc.getElementById('ratebAiRoot')) return;
+                if (!doc.getElementById('ratebAiRoot') || !root.ratebAi) return;
+                var btn = e.target && e.target.closest
+                    ? e.target.closest('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip')
+                    : null;
+                if (!btn) return;
                 if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
                 e.preventDefault();
-                e.stopPropagation();
-                root.ratebAi.clickSuggest(btn);
+                try { e.stopPropagation(); } catch (eStop) {}
+                if (typeof root.ratebAi.clickSuggest === 'function') {
+                    root.ratebAi.clickSuggest(btn);
+                }
             }, true);
         }
 

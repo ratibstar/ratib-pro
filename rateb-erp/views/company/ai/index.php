@@ -241,8 +241,22 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
         return false;
     },
     clickSuggest: function (btn) {
-        var prompt = (btn && (btn.getAttribute('data-prompt') || btn.textContent)) || '';
-        return this.send(prompt);
+        try {
+            var prompt = '';
+            if (btn) {
+                prompt = btn.getAttribute('data-prompt') || '';
+                if (!String(prompt || '').trim()) {
+                    prompt = btn.textContent || btn.innerText || '';
+                }
+            }
+            prompt = String(prompt || '').trim();
+            if (!prompt) return false;
+            if (this.loading) this.loading = false;
+            return this.send(prompt);
+        } catch (eSuggest) {
+            try { console.warn('ratebAi.clickSuggest', eSuggest); } catch (eLog) {}
+            return false;
+        }
     },
     getHistory: function () {
         var messages = document.getElementById('aiMessages');
@@ -317,6 +331,8 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
             });
         }
         root.setAttribute('data-rateb-ai-bound', '1');
+        /* Soft-nav can leave loading=true; clear so suggestion/send clicks work again. */
+        if (this.loading) this.loading = false;
         self.syncSendBtn();
         try { if (input) input.focus(); } catch (e) {}
     }
@@ -325,12 +341,17 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
     if (!window.__ratebAiSuggestBound) {
         window.__ratebAiSuggestBound = true;
         document.addEventListener('click', function (e) {
-            var btn = e.target && e.target.closest ? e.target.closest('.rateb-ai-suggestion-btn') : null;
-            if (!btn || !document.getElementById('ratebAiRoot')) return;
+            if (!document.getElementById('ratebAiRoot') || !window.ratebAi) return;
+            var btn = e.target && e.target.closest
+                ? e.target.closest('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip')
+                : null;
+            if (!btn) return;
             if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
             e.preventDefault();
-            e.stopPropagation();
-            window.ratebAi.clickSuggest(btn);
+            try { e.stopPropagation(); } catch (eStop) {}
+            if (typeof window.ratebAi.clickSuggest === 'function') {
+                window.ratebAi.clickSuggest(btn);
+            }
         }, true);
     }
     if (!window.__ratebAiNavBound) {
@@ -454,7 +475,7 @@ if ($controlTower !== []) {
                 <?php if ($aiCapabilities !== []): ?>
                 <div class="rateb-ai-capabilities" aria-label="<?php echo htmlspecialchars(__('ai_capabilities'), ENT_QUOTES, 'UTF-8'); ?>">
                     <?php foreach ($aiCapabilities as $cap): if (!is_array($cap)) continue; ?>
-                        <button type="button" class="rateb-ai-capability-chip" data-prompt="<?php echo htmlspecialchars((string) ($cap['prompt'] ?? $cap['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi.clickSuggest(this);"><?php echo htmlspecialchars((string) ($cap['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></button>
+                        <button type="button" class="rateb-ai-capability-chip" data-prompt="<?php echo htmlspecialchars((string) ($cap['prompt'] ?? $cap['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi && window.ratebAi.clickSuggest ? window.ratebAi.clickSuggest(this) : false;"><?php echo htmlspecialchars((string) ($cap['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></button>
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
@@ -463,9 +484,9 @@ if ($controlTower !== []) {
                     $suggestCaps = array_slice($aiCapabilities, 0, 4);
                     if ($suggestCaps === []):
                     ?>
-                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars(__('ai_suggest_list_pr'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi.clickSuggest(this);"><?php echo htmlspecialchars(__('ai_suggest_list_pr'), ENT_QUOTES, 'UTF-8'); ?></button>
+                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars(__('ai_suggest_list_pr'), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi && window.ratebAi.clickSuggest ? window.ratebAi.clickSuggest(this) : false;"><?php echo htmlspecialchars(__('ai_suggest_list_pr'), ENT_QUOTES, 'UTF-8'); ?></button>
                     <?php else: foreach ($suggestCaps as $cap): if (!is_array($cap)) continue; ?>
-                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars((string) ($cap['prompt'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi.clickSuggest(this);"><?php echo htmlspecialchars((string) ($cap['prompt'] ?? $cap['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></button>
+                    <button type="button" class="rateb-ai-suggestion-btn" data-prompt="<?php echo htmlspecialchars((string) ($cap['prompt'] ?? $cap['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" onclick="return window.ratebAi && window.ratebAi.clickSuggest ? window.ratebAi.clickSuggest(this) : false;"><?php echo htmlspecialchars((string) ($cap['prompt'] ?? $cap['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></button>
                     <?php endforeach; endif; ?>
                 </div>
             </div>
@@ -711,6 +732,9 @@ html[data-bs-theme="dark"] .rateb-ai-input-form {
     padding: 4px 10px;
     font-size: 12px;
     cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 4;
 }
 
 .rateb-ai-capability-chip:hover {
@@ -727,6 +751,8 @@ html[data-bs-theme="dark"] .rateb-ai-input-form {
     color: var(--ai-text);
     cursor: pointer;
     pointer-events: auto;
+    position: relative;
+    z-index: 4;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
