@@ -374,6 +374,64 @@ final class ErpDomainRegistry
     }
 
     /**
+     * Whether the current user/company may use an active domain (chips + orchestration + policy).
+     */
+    public static function isDomainEntitled(string $domainId, ProcurementAgentContext $ctx): bool
+    {
+        if ($ctx->isSuperAdmin) {
+            return true;
+        }
+        $meta = self::resolve($domainId);
+        if ($meta === null || empty($meta['active'])) {
+            return false;
+        }
+        $module = (string) ($meta['module'] ?? '');
+        if ($module === '' || $module === 'dashboard') {
+            return $ctx->can('dashboard.view') || $ctx->can('ai.view');
+        }
+        if ($ctx->moduleEnabled($module)) {
+            return true;
+        }
+        if ($domainId === self::DOMAIN_PAYROLL && $ctx->moduleEnabled('hr')) {
+            return true;
+        }
+        if ($domainId === self::DOMAIN_QUALITY && ($ctx->moduleEnabled('manufacturing') || $ctx->moduleEnabled('quality'))) {
+            return true;
+        }
+        if ($domainId === self::DOMAIN_BI && ($ctx->moduleEnabled('reports') || $ctx->can('reports.view') || $ctx->can('dashboard.view'))) {
+            return true;
+        }
+        if ($domainId === self::DOMAIN_APPROVALS && ($ctx->moduleEnabled('workflows') || $ctx->moduleEnabled('procurement') || $ctx->can('workflows.view'))) {
+            return true;
+        }
+        if ($domainId === self::DOMAIN_NOTIFICATIONS && ($ctx->can('dashboard.view') || $ctx->can('ai.view'))) {
+            return true;
+        }
+        // RATEB AI operators: allow read domain packs when AI is entitled (tenant still enforced).
+        if ($ctx->can('ai.view') && $ctx->companyId > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Module keys that active domains are allowed to claim in the policy guard.
+     *
+     * @return list<string>
+     */
+    public static function allowedModuleKeys(): array
+    {
+        $out = [];
+        foreach (self::getActiveDomains() as $meta) {
+            $module = (string) ($meta['module'] ?? '');
+            if ($module !== '' && !in_array($module, $out, true)) {
+                $out[] = $module;
+            }
+        }
+        return $out;
+    }
+
+    /**
      * User-facing capabilities from active domains/tools the user can actually access.
      *
      * @return list<array{id:string,label:string,prompt:string,domain:string}>
@@ -408,15 +466,7 @@ final class ErpDomainRegistry
             if (empty($meta['active'])) {
                 continue;
             }
-            $module = (string) ($meta['module'] ?? '');
-            $moduleOk = $module === '' || $module === 'dashboard'
-                || $ctx->moduleEnabled($module)
-                || ($id === self::DOMAIN_PAYROLL && $ctx->moduleEnabled('hr'))
-                || ($id === self::DOMAIN_QUALITY && ($ctx->moduleEnabled('manufacturing') || $ctx->moduleEnabled('quality')))
-                || ($id === self::DOMAIN_BI && ($ctx->moduleEnabled('reports') || $ctx->can('reports.view') || $ctx->can('dashboard.view')))
-                || ($id === self::DOMAIN_APPROVALS && ($ctx->moduleEnabled('workflows') || $ctx->moduleEnabled('procurement') || $ctx->can('workflows.view')))
-                || ($id === self::DOMAIN_NOTIFICATIONS && ($ctx->can('dashboard.view') || $ctx->can('ai.view')));
-            if (!$moduleOk && !$ctx->isSuperAdmin) {
+            if (!self::isDomainEntitled($id, $ctx)) {
                 continue;
             }
             if ($id === self::DOMAIN_EXECUTIVE && !$ctx->can('dashboard.view') && !$ctx->can('ai.view') && !$ctx->isSuperAdmin) {

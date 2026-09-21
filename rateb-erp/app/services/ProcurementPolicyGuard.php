@@ -59,51 +59,27 @@ final class ProcurementPolicyGuard
             return self::deny('tenant_mismatch', $policyChecks, $auditData, 'Request company_id does not match session company_id');
         }
 
-        // Step 3: Tool Allowlist (unified active domains)
-        $policyChecks['tool_allowlist'] = ErpToolRegistry::isAllowed($toolName)
-            || ProcurementToolRegistry::isAllowed($toolName)
-            || InventoryToolRegistry::isAllowed($toolName)
-            || SupplierToolRegistry::isAllowed($toolName)
-            || SalesToolRegistry::isAllowed($toolName)
-            || CrmToolRegistry::isAllowed($toolName)
-            || LogisticsToolRegistry::isAllowed($toolName)
-            || AccountingToolRegistry::isAllowed($toolName)
-            || ExecutiveToolRegistry::isAllowed($toolName);
+        // Step 3: Tool Allowlist (unified active domains — never hardcode per-domain registries)
+        $policyChecks['tool_allowlist'] = ErpToolRegistry::isAllowed($toolName);
         if (!$policyChecks['tool_allowlist']) {
             return self::deny('tool_not_allowed', $policyChecks, $auditData, "Tool not in allowlist: {$toolName}");
         }
 
         // Step 4: Module Entitlement
-        $tool = ErpToolRegistry::getTool($toolName)
-            ?? ProcurementToolRegistry::getTool($toolName)
-            ?? InventoryToolRegistry::getTool($toolName)
-            ?? SupplierToolRegistry::getTool($toolName)
-            ?? SalesToolRegistry::getTool($toolName)
-            ?? CrmToolRegistry::getTool($toolName)
-            ?? LogisticsToolRegistry::getTool($toolName)
-            ?? AccountingToolRegistry::getTool($toolName)
-            ?? ExecutiveToolRegistry::getTool($toolName);
+        $tool = ErpToolRegistry::getTool($toolName);
+        if ($tool === null) {
+            return self::deny('tool_not_allowed', $policyChecks, $auditData, "Tool metadata missing: {$toolName}");
+        }
         $module = (string) ($tool['module'] ?? '');
-        $policyChecks['module_scope'] = in_array($module, ['procurement', 'suppliers', 'inventory', 'pos', 'crm', 'logistics', 'accounting', 'dashboard'], true);
+        $domainId = ErpDomainRegistry::domainForTool($toolName) ?? '';
+        $policyChecks['module_scope'] = $module !== '' && in_array($module, ErpDomainRegistry::allowedModuleKeys(), true);
         if (!$policyChecks['module_scope']) {
             return self::deny('tool_not_allowed', $policyChecks, $auditData, 'Tool outside ERP agent domain scope');
         }
-        if ($module === 'dashboard') {
-            // Executive visibility: entitled if dashboard enabled OR any active ERP domain module is enabled.
-            $entitled = $ctx->moduleEnabled('dashboard');
-            if (!$entitled) {
-                foreach (ErpDomainRegistry::activeDomainIds() as $domainId) {
-                    if ($domainId === ErpDomainRegistry::DOMAIN_EXECUTIVE) {
-                        continue;
-                    }
-                    $meta = ErpDomainRegistry::resolve($domainId);
-                    if ($meta !== null && $ctx->moduleEnabled((string) $meta['module'])) {
-                        $entitled = true;
-                        break;
-                    }
-                }
-            }
-            $policyChecks['module_entitlement'] = $entitled;
+        if ($domainId !== '') {
+            $policyChecks['module_entitlement'] = ErpDomainRegistry::isDomainEntitled($domainId, $ctx);
+        } elseif ($module === 'dashboard') {
+            $policyChecks['module_entitlement'] = $ctx->moduleEnabled('dashboard') || $ctx->can('ai.view');
         } else {
             $policyChecks['module_entitlement'] = $module !== '' && $ctx->moduleEnabled($module);
         }
@@ -112,8 +88,13 @@ final class ProcurementPolicyGuard
         }
 
         // Step 5: RBAC Permission
-        $permission = $tool['permission'] ?? '';
+        $permission = (string) ($tool['permission'] ?? '');
         $rbac = $permission !== '' && $ctx->can($permission);
+        $isWrite = !empty($tool['write']);
+        // Read tools: AI operators with ai.view may query any entitled domain pack.
+        if (!$rbac && !$isWrite && ($ctx->can('ai.view') || $ctx->isSuperAdmin)) {
+            $rbac = true;
+        }
         // Executive tools: allow dashboard.view OR ai.view (RATEB AI access).
         if (!$rbac && ExecutiveToolRegistry::isAllowed($toolName)) {
             $rbac = $ctx->can('ai.view') || $ctx->can('reports.view') || $ctx->can('accounting.view');
@@ -123,24 +104,15 @@ final class ProcurementPolicyGuard
             return self::deny('permission_denied', $policyChecks, $auditData, "Permission required: {$permission}");
         }
 
-        // Step 5b: Parameter sufficiency
+        // Step 5b: Parameter sufficiency (prefer owning registry via domain metadata)
         $sufficient = true;
-        if (ExecutiveToolRegistry::isAllowed($toolName)) {
-            $sufficient = ExecutiveToolRegistry::hasSufficientParameters($toolName, $arguments);
-        } elseif (AccountingToolRegistry::isAllowed($toolName)) {
-            $sufficient = AccountingToolRegistry::hasSufficientParameters($toolName, $arguments);
-        } elseif (LogisticsToolRegistry::isAllowed($toolName)) {
-            $sufficient = LogisticsToolRegistry::hasSufficientParameters($toolName, $arguments);
-        } elseif (CrmToolRegistry::isAllowed($toolName)) {
-            $sufficient = CrmToolRegistry::hasSufficientParameters($toolName, $arguments);
-        } elseif (SalesToolRegistry::isAllowed($toolName)) {
-            $sufficient = SalesToolRegistry::hasSufficientParameters($toolName, $arguments);
-        } elseif (SupplierToolRegistry::isAllowed($toolName)) {
-            $sufficient = SupplierToolRegistry::hasSufficientParameters($toolName, $arguments);
-        } elseif (InventoryToolRegistry::isAllowed($toolName)) {
-            $sufficient = InventoryToolRegistry::hasSufficientParameters($toolName, $arguments);
-        } elseif (ProcurementToolRegistry::isAllowed($toolName)) {
-            $sufficient = ProcurementToolRegistry::hasSufficientParameters($toolName, $arguments);
+        $registry = '';
+        if ($domainId !== '') {
+            $meta = ErpDomainRegistry::resolve($domainId);
+            $registry = (string) ($meta['tool_registry'] ?? '');
+        }
+        if ($registry !== '' && class_exists($registry) && method_exists($registry, 'hasSufficientParameters')) {
+            $sufficient = (bool) $registry::hasSufficientParameters($toolName, $arguments);
         }
         $policyChecks['parameter_sufficiency'] = $sufficient;
         if (!$policyChecks['parameter_sufficiency']) {
@@ -155,7 +127,6 @@ final class ProcurementPolicyGuard
 
         // Step 6b: Write tools require an explicit confirmation flag set by the agent runtime
         // (never trust LLM-provided confirmation arguments).
-        $isWrite = !empty($tool['write']);
         $policyChecks['write_confirmation'] = !$isWrite || !empty($call['write_confirmed']);
         if (!$policyChecks['write_confirmation']) {
             return self::deny('write_confirmation_required', $policyChecks, $auditData, 'Write tool requires user confirmation');

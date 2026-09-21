@@ -14,15 +14,15 @@ final class HrToolExecutor
   array (
     'desc' => 'List employees (tenant-scoped). Optional search/status/department.',
     'table' => 'rateb_employees',
-    'sql' => 'SELECT id, employee_code, full_name, first_name, last_name, email, phone, department_id, job_title_id, status, hire_date, branch_id
+    'sql' => 'SELECT id, employee_code, name, email, phone, department_id, job_title_id, job_title, status, hire_date, branch_id
                           FROM rateb_employees WHERE company_id = :cid',
     'search_cols' => 
     array (
-      0 => 'full_name',
-      1 => 'first_name',
-      2 => 'last_name',
-      3 => 'email',
-      4 => 'employee_code',
+      0 => 'name',
+      1 => 'email',
+      2 => 'employee_code',
+      3 => 'phone',
+      4 => 'job_title',
     ),
     'status_col' => 'status',
     'order' => 'id DESC',
@@ -47,7 +47,7 @@ final class HrToolExecutor
   array (
     'desc' => 'List HR departments (tenant-scoped).',
     'table' => 'rateb_hr_departments',
-    'sql' => 'SELECT id, code, name, status, parent_id FROM rateb_hr_departments WHERE company_id = :cid',
+    'sql' => 'SELECT id, code, name, status FROM rateb_hr_departments WHERE company_id = :cid',
     'order' => 'id ASC',
   ),
   'hr_workforce_summary' => 

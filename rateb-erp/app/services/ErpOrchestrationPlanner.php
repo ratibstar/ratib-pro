@@ -146,7 +146,7 @@ final class ErpOrchestrationPlanner
                 continue;
             }
             $meta = ErpDomainRegistry::resolve($domainId);
-            if ($meta === null || !$ctx->moduleEnabled((string) $meta['module'])) {
+            if ($meta === null || !ErpDomainRegistry::isDomainEntitled($domainId, $ctx)) {
                 continue;
             }
             $domains[] = $domainId;
@@ -383,7 +383,7 @@ final class ErpOrchestrationPlanner
                 return;
             }
             $meta = ErpDomainRegistry::resolve($domain);
-            if ($meta === null || !$ctx->moduleEnabled((string) $meta['module'])) {
+            if ($meta === null || !ErpDomainRegistry::isDomainEntitled($domain, $ctx)) {
                 return;
             }
             $toolMeta = ErpToolRegistry::getTool($tool);
@@ -597,6 +597,59 @@ final class ErpOrchestrationPlanner
             $add('analyze_advanced_procurement_operations', ['limit' => $limit], 'procurement_operations');
             $add('list_pending_approvals', ['limit' => $limit], 'pending_approvals');
             $add('get_procurement_operational_guidance', ['limit' => $limit], 'operational_guidance');
+        }
+
+        if ($has(ErpDomainRegistry::DOMAIN_HR)) {
+            $add('list_employees', ['limit' => $limit], 'hr_employees');
+            $add('hr_workforce_summary', ['limit' => $limit], 'hr_summary');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_RECRUITMENT)) {
+            $add('list_recruitment_candidates', ['limit' => $limit], 'recruitment_candidates');
+            $add('recruitment_pipeline_summary', ['limit' => $limit], 'recruitment_summary');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_PROJECTS)) {
+            $add('list_projects', ['limit' => $limit], 'projects_list');
+            $add('projects_status_summary', ['limit' => $limit], 'projects_summary');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_CONTRACTS)) {
+            $add('list_contracts', ['limit' => $limit], 'contracts_list');
+            $add('contracts_status_summary', ['limit' => $limit], 'contracts_summary');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_ASSETS)) {
+            $add('list_assets', ['limit' => $limit], 'assets_list');
+            $add('assets_summary', ['limit' => $limit], 'assets_summary');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_PAYROLL)) {
+            $add('payroll_run_summary', ['limit' => $limit], 'payroll_summary');
+            $add('list_payroll_cycles', ['limit' => $limit], 'payroll_cycles');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_MANUFACTURING)) {
+            $add('list_production_orders', ['limit' => $limit], 'mfg_orders');
+            $add('manufacturing_status_summary', ['limit' => $limit], 'mfg_summary');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_QUALITY)) {
+            $add('quality_summary', ['limit' => $limit], 'quality_summary');
+            $add('list_qms_nonconformities', ['limit' => $limit], 'quality_ncrs');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_APPROVALS)) {
+            $add('list_pending_eap_requests', ['limit' => $limit], 'approvals_pending');
+            $add('approvals_inbox_summary', ['limit' => $limit], 'approvals_summary');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_MARKETPLACE)) {
+            $add('marketplace_summary', ['limit' => $limit], 'marketplace_summary');
+            $add('list_marketplace_orders', ['limit' => $limit], 'marketplace_orders');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_NOTIFICATIONS)) {
+            $add('notifications_digest', ['limit' => $limit], 'notifications_digest');
+            $add('list_unread_notifications', ['limit' => $limit], 'notifications_unread');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_BI)) {
+            $add('bi_kpi_summary', ['limit' => $limit], 'bi_summary');
+            $add('list_bi_kpis', ['limit' => $limit], 'bi_kpis');
+        }
+        if ($has(ErpDomainRegistry::DOMAIN_WEBSITE)) {
+            $add('website_content_summary', ['limit' => $limit], 'website_summary');
+            $add('list_cms_pages', ['limit' => $limit], 'cms_pages');
         }
 
         return $plan;
