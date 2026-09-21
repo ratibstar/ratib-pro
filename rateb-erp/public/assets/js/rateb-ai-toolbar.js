@@ -40,8 +40,8 @@
     if (!rootEl) return;
     var actions = doc.querySelector('.rateb-ai-input-actions');
     if (!actions) return;
-    if (actions.getAttribute('data-toolbar-bound') === '7') return;
-    actions.setAttribute('data-toolbar-bound', '7');
+    if (actions.getAttribute('data-toolbar-bound') === '8') return;
+    actions.setAttribute('data-toolbar-bound', '8');
 
     var send = doc.getElementById('aiSendBtn');
     var mic = doc.getElementById('aiVoiceInputBtn');
@@ -63,7 +63,7 @@
     }
 
     function onMic(e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
+      if (e) { e.preventDefault(); e.stopPropagation(); try { e.stopImmediatePropagation(); } catch (eSip) {} }
       var api = ensureApi();
       status('المايك…');
       if (typeof api.toggleVoiceInput === 'function') {

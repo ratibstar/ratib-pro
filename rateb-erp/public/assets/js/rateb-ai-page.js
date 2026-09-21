@@ -37,20 +37,41 @@
         var waitingForVoiceReply = false;
         var pendingTranscript = '';
         var autoSendOnFinal = false; // capsule UI: user confirms with ✓
+        var recordingActive = false; // sticky until ✕ / ✓ / hard deny
+        var voiceSession = 0;
+        var lastMicToggleAt = 0;
+        var restartTimer = null;
+
+        function clearRestartTimer() {
+            if (restartTimer) {
+                try { root.clearTimeout(restartTimer); } catch (eT) {}
+                restartTimer = null;
+            }
+        }
 
         function showRecBar() {
+            recordingActive = true;
+            // Re-query in case soft-nav swapped nodes but this install is still live.
+            formEl = doc.getElementById('aiInputForm') || formEl;
+            recBar = doc.getElementById('aiVoiceRecBar') || recBar;
             if (formEl) formEl.classList.add('is-recording');
             if (recBar) {
                 recBar.hidden = false;
                 recBar.removeAttribute('hidden');
+                try { recBar.style.display = 'flex'; } catch (eDisp) {}
             }
         }
 
         function hideRecBar() {
+            recordingActive = false;
+            clearRestartTimer();
+            formEl = doc.getElementById('aiInputForm') || formEl;
+            recBar = doc.getElementById('aiVoiceRecBar') || recBar;
             if (formEl) formEl.classList.remove('is-recording');
             if (recBar) {
                 recBar.hidden = true;
                 recBar.setAttribute('hidden', 'hidden');
+                try { recBar.style.display = ''; } catch (eDisp2) {}
             }
         }
 
@@ -162,7 +183,6 @@
         function startListening() {
             // Always show the capsule UI immediately on mic click (even before permission).
             showRecBar();
-            pendingTranscript = '';
             if (!Recognition) {
                 setStatus('ready', 'الميكروفون غير مدعوم في هذا المتصفح. استخدم Chrome واسمح بالمايك.');
                 return;
@@ -170,11 +190,15 @@
             if (listening) return;
             if (api.loading) api.loading = false;
             stopSpeaking();
+            clearRestartTimer();
+            var mySession = ++voiceSession;
+            try { if (recognition) recognition.abort(); } catch (eAbortPrev) {}
             recognition = new Recognition();
             recognition.lang = languageSelect.value || 'ar-SA';
             recognition.continuous = true;
             recognition.interimResults = true;
             recognition.onstart = function () {
+                if (mySession !== voiceSession) return;
                 listening = true;
                 inputBtn.classList.add('is-listening');
                 inputBtn.setAttribute('data-listening', '1');
@@ -183,6 +207,7 @@
                 showRecBar();
             };
             recognition.onresult = function (event) {
+                if (mySession !== voiceSession) return;
                 var transcript = '';
                 for (var i = event.resultIndex; i < event.results.length; i += 1) {
                     transcript += event.results[i][0].transcript;
@@ -205,29 +230,47 @@
                 }
             };
             recognition.onerror = function (event) {
+                if (mySession !== voiceSession) return;
                 listening = false;
                 inputBtn.classList.remove('is-listening');
                 inputBtn.removeAttribute('data-listening');
-                var denied = event && (event.error === 'not-allowed' || event.error === 'service-not-allowed');
-                setStatus('ready', denied ? 'اسمح للمايك من إعدادات المتصفح ثم أعد المحاولة' : 'تعذر تشغيل المايك');
-                setStopVisible(false);
-                if (denied || (event && event.error === 'network')) {
+                var err = event && event.error ? String(event.error) : '';
+                var denied = err === 'not-allowed' || err === 'service-not-allowed';
+                // aborted / no-speech / network blips: keep capsule open and restart.
+                if (denied) {
+                    setStatus('ready', 'اسمح للمايك من إعدادات المتصفح ثم أعد المحاولة');
+                    setStopVisible(false);
                     hideRecBar();
+                    return;
+                }
+                if (err === 'aborted') return;
+                if (recordingActive) {
+                    setStatus('listening', 'جاري الاستماع…');
+                } else {
+                    setStatus('ready', 'تعذر تشغيل المايك');
+                    setStopVisible(false);
                 }
             };
             recognition.onend = function () {
+                if (mySession !== voiceSession) return;
                 listening = false;
                 inputBtn.classList.remove('is-listening');
                 inputBtn.removeAttribute('data-listening');
-                // Keep capsule open: restart listen while user hasn't pressed X/✓ yet.
-                if (formEl && formEl.classList.contains('is-recording') && !api.loading) {
-                    try {
-                        recognition.start();
-                        return;
-                    } catch (eRestart) { /* fall through */ }
+                // Keep capsule open until user presses ✕ / ✓.
+                if (recordingActive && !api.loading) {
+                    clearRestartTimer();
+                    restartTimer = root.setTimeout(function () {
+                        restartTimer = null;
+                        if (!recordingActive || mySession !== voiceSession || api.loading) return;
+                        try {
+                            recognition.start();
+                        } catch (eRestart) {
+                            try { startListening(); } catch (e2) {}
+                        }
+                    }, 180);
+                    return;
                 }
-                if (!speaking && !api.loading && !waitingForVoiceReply
-                    && !(formEl && formEl.classList.contains('is-recording'))) {
+                if (!speaking && !api.loading && !waitingForVoiceReply) {
                     setStatus('ready');
                     setStopVisible(false);
                 }
@@ -236,14 +279,29 @@
                 recognition.start();
             } catch (error) {
                 listening = false;
-                setStatus('ready', 'تعذر تشغيل المايك');
+                // Keep bar visible; retry shortly while session is still active.
+                if (recordingActive) {
+                    clearRestartTimer();
+                    restartTimer = root.setTimeout(function () {
+                        restartTimer = null;
+                        if (recordingActive && mySession === voiceSession) {
+                            try { startListening(); } catch (e3) {}
+                        }
+                    }, 220);
+                } else {
+                    setStatus('ready', 'تعذر تشغيل المايك');
+                }
             }
         }
 
         function stopAll() {
             voiceMode = false;
             waitingForVoiceReply = false;
-            try { if (recognition) recognition.stop(); } catch (eStop) {}
+            voiceSession += 1;
+            clearRestartTimer();
+            try { if (recognition) recognition.abort(); } catch (eStop) {
+                try { if (recognition) recognition.stop(); } catch (eStop2) {}
+            }
             listening = false;
             stopSpeaking();
             modeBtn.setAttribute('aria-pressed', 'false');
@@ -270,7 +328,11 @@
             var text = pendingTranscript || '';
             var input = doc.getElementById('aiInput');
             if (!text && input) text = String(input.value || '').trim();
-            try { if (recognition) recognition.stop(); } catch (eStop) {}
+            voiceSession += 1;
+            clearRestartTimer();
+            try { if (recognition) recognition.abort(); } catch (eStop) {
+                try { if (recognition) recognition.stop(); } catch (eStop2) {}
+            }
             listening = false;
             hideRecBar();
             setStopVisible(false);
@@ -287,11 +349,17 @@
         }
 
         function toggleVoiceInput() {
-            if (listening || (formEl && formEl.classList.contains('is-recording'))) {
-                // Second mic click while open = keep recording; use X/✓ on the bar.
+            // Mic is bound from master-click + toolbar + inline — debounce duplicate fires.
+            var now = Date.now();
+            if (now - lastMicToggleAt < 450) return false;
+            lastMicToggleAt = now;
+            // Capsule stays open until ✕ / ✓ — do not toggle-off on second mic click.
+            if (recordingActive || (formEl && formEl.classList.contains('is-recording'))) {
                 if (!listening) startListening();
+                else showRecBar();
                 return false;
             }
+            pendingTranscript = '';
             startListening();
             return false;
         }
@@ -702,7 +770,7 @@
         };
     }
 
-    var API_VER = 6;
+    var API_VER = 8;
 
     function ensureVoiceReady(api) {
         if (!api) return;
@@ -719,8 +787,8 @@
     }
 
     function bindMasterClicks() {
-        if (root.__ratebAiClickBoundV6) return;
-        root.__ratebAiClickBoundV6 = true;
+        if (root.__ratebAiClickBoundV8) return;
+        root.__ratebAiClickBoundV8 = true;
         doc.addEventListener('click', function (e) {
             if (!doc.getElementById('ratebAiRoot') || !root.ratebAi) return;
             var t = e.target && e.target.closest ? e.target.closest(
@@ -743,10 +811,12 @@
                 return;
             }
             if (t.id === 'aiVoiceInputBtn') {
+                e.stopImmediatePropagation();
                 if (typeof api.toggleVoiceInput === 'function') api.toggleVoiceInput();
                 return;
             }
             if (t.id === 'aiVoiceStopBtn') {
+                e.stopImmediatePropagation();
                 if (typeof api.stopVoice === 'function') api.stopVoice();
                 return;
             }
