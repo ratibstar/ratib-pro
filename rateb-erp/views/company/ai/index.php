@@ -30,7 +30,7 @@ $aiCapabilities = is_array($aiCapabilities ?? null) ? $aiCapabilities : [];
 $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
 ?>
 <link rel="stylesheet" href="<?php echo htmlspecialchars($ctCss, ENT_QUOTES, 'UTF-8'); ?>">
-<script src="<?php echo htmlspecialchars($ctJs, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars($ctJs, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script>
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
@@ -429,9 +429,8 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
 })();
 </script>
 <?php
-if ($controlTower !== []) {
-    require __DIR__ . '/control-tower.php';
-}
+// Always render Control Tower chrome (platform + tenant) so the UI matches.
+require __DIR__ . '/control-tower.php';
 ?>
 <div
     class="rateb-ai-container"
@@ -461,9 +460,6 @@ if ($controlTower !== []) {
         <i class="fas fa-building me-1"></i>
         <?php echo htmlspecialchars(__('ai_platform_mode_hint'), ENT_QUOTES, 'UTF-8'); ?>
     </div>
-    <?php if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()): ?>
-        <?php Rateb\App\Core\View::partial('ops-company-select'); ?>
-    <?php endif; ?>
     <?php endif; ?>
     <div class="rateb-ai-header">
         <div class="rateb-ai-brand">

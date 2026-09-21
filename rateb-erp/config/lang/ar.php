@@ -4857,7 +4857,7 @@ return [
     'ai_tool_plan_multi_step_workflow' => 'تخطيط سير عمل متعدد الخطوات',
     'ai_tool_get_active_workflows' => 'سير العمل النشط',
     'ai_tool_get_workflow_status' => 'حالة سير العمل',
-    'ai_ct_title' => 'برج تحكم وكيل راتب',
+    'ai_ct_title' => 'برج تحكم وكيل رتب',
     'ai_ct_as_of' => 'حتى',
     'ai_ct_live_only' => 'أدلة حية للمستأجر فقط',
     'ai_ct_refresh' => 'تحديث',

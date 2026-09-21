@@ -129,6 +129,13 @@ final class AiController extends Controller
                 $toolLabels = [];
             }
         }
+        // Platform mode (no company): same chrome as tenant agents — empty tower + full capability chips.
+        if (!is_array($tower) || $tower === []) {
+            $tower = $this->emptyControlTowerShell((int) $companyId);
+        }
+        if ($capabilities === []) {
+            $capabilities = $this->fallbackPlatformCapabilities();
+        }
 
         $this->view('company/ai/index', [
             'title' => __('rateb_ai'),
@@ -143,6 +150,67 @@ final class AiController extends Controller
             'aiCapabilities' => is_array($capabilities) ? $capabilities : [],
             'aiToolLabels' => is_array($toolLabels) ? $toolLabels : [],
         ], 'main');
+    }
+
+    /** @return array<string, mixed> */
+    private function emptyControlTowerShell(int $companyId = 0): array
+    {
+        return [
+            'company_id' => $companyId,
+            'as_of' => date('Y-m-d H:i:s'),
+            'overview' => [
+                'kpi_count' => 0,
+                'critical_risks' => 0,
+                'open_warnings' => 0,
+                'forecasts_available' => 0,
+                'recommendations' => 0,
+                'outcomes' => 0,
+                'active_workflows' => 0,
+            ],
+            'kpis' => [],
+            'risks' => [],
+            'warnings' => [],
+            'forecasts' => [],
+            'recommendations' => [],
+            'actions' => ['proposed' => [], 'executed' => [], 'verified' => [], 'failed' => []],
+            'outcomes' => [],
+            'learning' => [],
+            'memory' => [],
+            'workflows' => [],
+            'agent_activity' => [],
+            'agent_effectiveness' => [],
+        ];
+    }
+
+    /** @return list<array{id:string,label:string,prompt:string,domain:string}> */
+    private function fallbackPlatformCapabilities(): array
+    {
+        $defs = [
+            ['id' => 'procurement', 'label' => 'ai_cap_procurement', 'prompt' => 'ai_suggest_list_pr', 'domain' => 'procurement'],
+            ['id' => 'inventory', 'label' => 'ai_cap_inventory', 'prompt' => 'ai_suggest_inventory', 'domain' => 'inventory'],
+            ['id' => 'suppliers', 'label' => 'ai_cap_suppliers', 'prompt' => 'ai_suggest_search_suppliers', 'domain' => 'suppliers'],
+            ['id' => 'crm', 'label' => 'ai_cap_crm', 'prompt' => 'ai_suggest_crm', 'domain' => 'crm'],
+            ['id' => 'accounting', 'label' => 'ai_cap_accounting', 'prompt' => 'ai_suggest_accounting', 'domain' => 'accounting'],
+            ['id' => 'executive', 'label' => 'ai_cap_executive', 'prompt' => 'ai_suggest_executive', 'domain' => 'executive'],
+            ['id' => 'warnings', 'label' => 'ai_cap_warnings', 'prompt' => 'ai_suggest_warnings', 'domain' => 'executive'],
+            ['id' => 'learning', 'label' => 'ai_cap_learning', 'prompt' => 'ai_suggest_learning', 'domain' => 'executive'],
+            ['id' => 'workflows', 'label' => 'ai_cap_workflows', 'prompt' => 'ai_suggest_workflow', 'domain' => 'executive'],
+            ['id' => 'control_tower', 'label' => 'ai_cap_control_tower', 'prompt' => 'ai_suggest_control_tower', 'domain' => 'executive'],
+            ['id' => 'memory', 'label' => 'ai_cap_memory', 'prompt' => 'ai_suggest_memory', 'domain' => 'executive'],
+        ];
+        $out = [];
+        foreach ($defs as $d) {
+            $labelKey = $d['label'];
+            $promptKey = $d['prompt'];
+            $out[] = [
+                'id' => $d['id'],
+                'label' => function_exists('__') ? __($labelKey) : $labelKey,
+                'prompt' => function_exists('__') ? __($promptKey) : $promptKey,
+                'domain' => $d['domain'],
+            ];
+        }
+
+        return $out;
     }
 
     /**
@@ -163,7 +231,12 @@ final class AiController extends Controller
 
         $companyId = $this->resolveAiCompanyId();
         if (!$companyId) {
-            $this->json(['success' => false, 'error' => 'company_required', 'message' => __('ai_company_required')], 400);
+            $this->json([
+                'success' => true,
+                'data' => $this->emptyControlTowerShell(0),
+                'company_id' => 0,
+                'platform_mode' => true,
+            ]);
             return;
         }
 
