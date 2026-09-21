@@ -1353,19 +1353,30 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     <span class="rateb-help-nav-btn__label"><?php echo Rateb\App\Core\View::escape(__('pwa_install_erp')); ?></span>
                 </button>
                 <?php
-                /* Same gates as /admin/ai (AiController + rateb_erp_mw procurement/ai.view):
-                 * ai.view + company context (tenant or ops picker) + procurement module.
-                 * Super Admin still bypasses ai.view via rateb_can — test with a normal user. */
+                /* Same gates as /admin/ai (AiController):
+                 * - ai.view required for everyone (SA bypasses via rateb_can).
+                 * - Platform staff / SA: no tenant company — show when ai.view passes.
+                 * - Tenant users: company context + module `ai` (+ procurement page gate). */
                 $ratebAiVisible = false;
                 if (rateb_can('ai.view')) {
                     try {
-                        $aiCompanyId = (int) \Rateb\App\Core\SessionManager::get('rateb_company_id', 0);
-                        if ($aiCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
-                            $aiCompanyId = (int) rateb_resolve_ops_company_id();
-                        }
-                        if ($aiCompanyId > 0) {
-                            $ratebAiVisible = (new \Rateb\App\Services\PlanLimitService())
-                                ->companyHasModule($aiCompanyId, 'procurement');
+                        $ratebAiIsSuperAdmin = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+                        $ratebAiUserId = (int) \Rateb\App\Core\SessionManager::get('rateb_user_id', 0);
+                        $ratebAiIsPlatformStaff = !$ratebAiIsSuperAdmin
+                            && $ratebAiUserId > 0
+                            && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($ratebAiUserId);
+                        if ($ratebAiIsSuperAdmin || $ratebAiIsPlatformStaff) {
+                            $ratebAiVisible = true;
+                        } else {
+                            $aiCompanyId = (int) \Rateb\App\Core\SessionManager::get('rateb_company_id', 0);
+                            if ($aiCompanyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+                                $aiCompanyId = (int) rateb_resolve_ops_company_id();
+                            }
+                            if ($aiCompanyId > 0) {
+                                $aiPlanLimits = new \Rateb\App\Services\PlanLimitService();
+                                $ratebAiVisible = $aiPlanLimits->companyHasModule($aiCompanyId, 'ai')
+                                    && $aiPlanLimits->companyHasModule($aiCompanyId, 'procurement');
+                            }
                         }
                     } catch (\Throwable $eAiNav) {
                         $ratebAiVisible = false;
