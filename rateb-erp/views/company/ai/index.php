@@ -39,7 +39,7 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
     try { if (document.body) document.body.setAttribute('data-rateb-hide-help-assistant', '1'); } catch (eHide) {}
-    var API_VER = 11;
+    var API_VER = 12;
     var needsUpgrade = !(window.ratebAi && window.ratebAi.__apiVer === API_VER
         && window.ratebAi.__p0ChatHistory && typeof window.ratebAi.getHistory === 'function'
         && typeof window.ratebAi.clickSuggest === 'function');

@@ -470,7 +470,9 @@
                 api.__pendingVoiceTranscript = '';
                 updateRecPreview('');
                 setStatus('processing', 'جاري الإرسال…');
-                waitingForVoiceReply = true;
+                // Mic → chat only: never auto-read the assistant reply aloud.
+                waitingForVoiceReply = false;
+                stopSpeaking();
                 // Match sendFromInput: never leave loading stuck blocking chat send.
                 api.loading = false;
                 var chat = root.ratebAi || api;
@@ -630,11 +632,8 @@
                     if (node.nodeType !== 1) return;
                     decorateMessage(node);
                     if (node.classList.contains('assistant') && !node.classList.contains('rateb-ai-typing-container')) {
-                        if (waitingForVoiceReply) {
-                            waitingForVoiceReply = false;
-                            var response = node.querySelector('.rateb-ai-message-content');
-                            if (response) speak(response.textContent, voiceMode);
-                        }
+                        // Chat-only replies after voice: never auto-TTS (speaker icon remains optional).
+                        if (waitingForVoiceReply) waitingForVoiceReply = false;
                     }
                 });
             });
@@ -975,7 +974,7 @@
         };
     }
 
-    var API_VER = 11;
+    var API_VER = 12;
 
     function ensureVoiceReady(api) {
         if (!api) return;
