@@ -40,8 +40,8 @@
     if (!rootEl) return;
     var actions = doc.querySelector('.rateb-ai-input-actions');
     if (!actions) return;
-    if (actions.getAttribute('data-toolbar-bound') === '9') return;
-    actions.setAttribute('data-toolbar-bound', '9');
+    if (actions.getAttribute('data-toolbar-bound') === '10') return;
+    actions.setAttribute('data-toolbar-bound', '10');
 
     var send = doc.getElementById('aiSendBtn');
     var mic = doc.getElementById('aiVoiceInputBtn');

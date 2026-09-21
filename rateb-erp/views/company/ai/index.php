@@ -39,7 +39,7 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
     try { if (document.body) document.body.setAttribute('data-rateb-hide-help-assistant', '1'); } catch (eHide) {}
-    var API_VER = 9;
+    var API_VER = 10;
     var needsUpgrade = !(window.ratebAi && window.ratebAi.__apiVer === API_VER
         && window.ratebAi.__p0ChatHistory && typeof window.ratebAi.getHistory === 'function'
         && typeof window.ratebAi.clickSuggest === 'function');
@@ -606,9 +606,12 @@ require __DIR__ . '/control-tower.php';
                 <span></span><span></span><span></span><span></span><span></span>
                 <span></span><span></span><span></span>
             </div>
-            <div class="rateb-ai-voice-rec__wave" id="aiVoiceWave" aria-hidden="true">
-                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <div class="rateb-ai-voice-rec__live" id="aiVoiceRecLive">
+                <div class="rateb-ai-voice-rec__wave" id="aiVoiceWave" aria-hidden="true">
+                    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+                <div class="rateb-ai-voice-rec__text" id="aiVoiceRecText"></div>
             </div>
             <div class="rateb-ai-voice-rec__actions">
                 <button type="button" class="rateb-ai-voice-rec__btn rateb-ai-voice-rec__btn--cancel" id="aiVoiceRecCancel" aria-label="إلغاء" title="إلغاء" onclick="return window.ratebAi && window.ratebAi.cancelVoiceRecording ? window.ratebAi.cancelVoiceRecording() : false;">
@@ -1092,15 +1095,46 @@ html[data-bs-theme="dark"] .rateb-ai-input-form {
     50% { opacity: 1; transform: scale(1.15); }
 }
 
-.rateb-ai-voice-rec__wave {
+.rateb-ai-voice-rec__live {
     flex: 1 1 auto;
     min-width: 0;
-    height: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+}
+
+.rateb-ai-voice-rec__wave {
+    flex: 0 0 auto;
+    min-width: 0;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 3px;
     overflow: hidden;
+}
+
+.rateb-ai-voice-rec.has-text .rateb-ai-voice-rec__wave {
+    height: 14px;
+    opacity: .55;
+}
+
+.rateb-ai-voice-rec__text {
+    display: none;
+    color: #e8eaed;
+    font-size: .9rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: auto;
+    text-align: start;
+    padding-inline: 2px;
+}
+
+.rateb-ai-voice-rec.has-text .rateb-ai-voice-rec__text {
+    display: block;
 }
 
 .rateb-ai-voice-rec__wave i {

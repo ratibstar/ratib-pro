@@ -29,6 +29,7 @@
         var recBar = doc.getElementById('aiVoiceRecBar');
         var recCancel = doc.getElementById('aiVoiceRecCancel');
         var recOk = doc.getElementById('aiVoiceRecOk');
+        var recText = doc.getElementById('aiVoiceRecText');
         var Recognition = root.SpeechRecognition || root.webkitSpeechRecognition;
         var recognition = null;
         var listening = false;
@@ -65,6 +66,34 @@
             }
         }
 
+        function updateRecPreview(text) {
+            recText = doc.getElementById('aiVoiceRecText') || recText;
+            recBar = doc.getElementById('aiVoiceRecBar') || recBar;
+            var value = String(text || '').trim();
+            if (recText) recText.textContent = value;
+            if (recBar) recBar.classList.toggle('has-text', !!value);
+        }
+
+        function storeTranscript(text) {
+            var value = String(text || '').trim();
+            pendingTranscript = value;
+            api.__pendingVoiceTranscript = value;
+            putTranscript(value);
+            updateRecPreview(value);
+        }
+
+        function readTranscript() {
+            var fromApi = String(api.__pendingVoiceTranscript || '').trim();
+            if (fromApi) return fromApi;
+            var fromPending = String(pendingTranscript || '').trim();
+            if (fromPending) return fromPending;
+            var input = doc.getElementById('aiInput');
+            if (input) return String(input.value || '').trim();
+            var preview = doc.getElementById('aiVoiceRecText');
+            if (preview) return String(preview.textContent || '').trim();
+            return '';
+        }
+
         function showRecBar() {
             api.__voiceRecActive = true;
             if (!api.__voiceRecArmedAt) api.__voiceRecArmedAt = Date.now();
@@ -73,6 +102,7 @@
             recBar = doc.getElementById('aiVoiceRecBar') || recBar;
             recCancel = doc.getElementById('aiVoiceRecCancel') || recCancel;
             recOk = doc.getElementById('aiVoiceRecOk') || recOk;
+            recText = doc.getElementById('aiVoiceRecText') || recText;
             if (formEl) formEl.classList.add('is-recording');
             if (recBar) {
                 recBar.hidden = false;
@@ -99,8 +129,10 @@
                 recBar.hidden = true;
                 recBar.setAttribute('hidden', 'hidden');
                 recBar.classList.remove('is-arming');
+                recBar.classList.remove('has-text');
                 try { recBar.style.display = ''; } catch (eDisp2) {}
             }
+            if (recText) recText.textContent = '';
         }
 
         if (!inputBtn || !modeBtn || !languageSelect || !status) {
@@ -236,25 +268,28 @@
             };
             recognition.onresult = function (event) {
                 if (mySession !== voiceSession) return;
-                var transcript = '';
-                for (var i = event.resultIndex; i < event.results.length; i += 1) {
-                    transcript += event.results[i][0].transcript;
-                }
-                if (transcript.trim()) {
-                    pendingTranscript = String(transcript || '').trim();
-                    putTranscript(pendingTranscript);
-                }
-                var last = event.results[event.results.length - 1];
-                if (last && last.isFinal && transcript.trim()) {
-                    pendingTranscript = transcript.trim();
-                    putTranscript(pendingTranscript);
-                    // Capsule mode: wait for ✓ — only auto-send in headset voiceMode without bar confirm.
-                    if (autoSendOnFinal && voiceMode) {
-                        waitingForVoiceReply = true;
-                        setStatus('processing');
-                        hideRecBar();
-                        api.send(pendingTranscript);
+                // Rebuild full transcript from all results (continuous mode chunks).
+                var full = '';
+                try {
+                    for (var i = 0; i < event.results.length; i += 1) {
+                        if (event.results[i] && event.results[i][0]) {
+                            full += event.results[i][0].transcript;
+                        }
                     }
+                } catch (eRes) {
+                    full = '';
+                }
+                full = String(full || '').trim();
+                if (!full) return;
+                storeTranscript(full);
+                // Capsule mode: wait for ✓ — only auto-send in headset voiceMode without bar confirm.
+                var last = event.results[event.results.length - 1];
+                if (autoSendOnFinal && voiceMode && last && last.isFinal && full) {
+                    waitingForVoiceReply = true;
+                    setStatus('processing');
+                    hideRecBar();
+                    api.loading = false;
+                    api.send(full);
                 }
             };
             recognition.onerror = function (event) {
@@ -343,8 +378,10 @@
 
         function cancelRecording() {
             // Ignore ghost clicks that land on ✕ because the capsule replaced the mic under the cursor.
-            if (recArmedRecently()) return false;
+            if (recArmedRecently() && !readTranscript()) return false;
             pendingTranscript = '';
+            api.__pendingVoiceTranscript = '';
+            updateRecPreview('');
             var input = doc.getElementById('aiInput');
             if (input) {
                 input.value = '';
@@ -355,28 +392,80 @@
         }
 
         function confirmRecording() {
-            if (recArmedRecently()) return false;
-            var text = pendingTranscript || '';
-            var input = doc.getElementById('aiInput');
-            if (!text && input) text = String(input.value || '').trim();
-            voiceSession += 1;
+            var text = readTranscript();
+            // Only block ghost ✓ when nothing was captured yet.
+            if (recArmedRecently() && !text) return false;
+
+            var finishing = false;
+            function doSend() {
+                if (finishing) return;
+                finishing = true;
+                var finalText = readTranscript() || text;
+                listening = false;
+                hideRecBar();
+                setStopVisible(false);
+                inputBtn.classList.remove('is-listening');
+                inputBtn.removeAttribute('data-listening');
+
+                if (!finalText) {
+                    setStatus('ready', 'لم يُلتقط كلام — تكلم ثم اضغط ✓');
+                    return;
+                }
+
+                pendingTranscript = '';
+                api.__pendingVoiceTranscript = '';
+                updateRecPreview('');
+                setStatus('processing', 'جاري الإرسال…');
+                waitingForVoiceReply = true;
+                // Match sendFromInput: never leave loading stuck blocking chat send.
+                api.loading = false;
+                var chat = root.ratebAi || api;
+                var sent = false;
+                try {
+                    if (chat && typeof chat.send === 'function') {
+                        sent = chat.send.call(chat, finalText) !== false;
+                    }
+                } catch (eSend) {
+                    sent = false;
+                    try { console.warn('ratebAi.voiceSend', eSend); } catch (eLog) {}
+                }
+                if (!sent) {
+                    putTranscript(finalText);
+                    setStatus('ready', 'النص جاهز في الحقل — اضغط إرسال');
+                    return;
+                }
+                setStatus('ready');
+            }
+
+            // Stop recognition (finalize interim → final) then send into chat like Cursor voice.
             clearRestartTimer();
             clearOpenTimer();
-            try { if (recognition) recognition.abort(); } catch (eStop) {
-                try { if (recognition) recognition.stop(); } catch (eStop2) {}
-            }
-            listening = false;
-            hideRecBar();
-            setStopVisible(false);
-            inputBtn.classList.remove('is-listening');
-            inputBtn.removeAttribute('data-listening');
-            if (!text) {
-                setStatus('ready', 'لم يُلتقط كلام — حاول مرة أخرى');
+            voiceSession += 1;
+            if (recognition) {
+                try {
+                    recognition.onresult = function (event) {
+                        var full = '';
+                        try {
+                            for (var i = 0; i < event.results.length; i += 1) {
+                                if (event.results[i] && event.results[i][0]) {
+                                    full += event.results[i][0].transcript;
+                                }
+                            }
+                        } catch (eRes) { full = ''; }
+                        full = String(full || '').trim();
+                        if (full) storeTranscript(full);
+                    };
+                    recognition.onend = function () { doSend(); };
+                    recognition.onerror = function () { doSend(); };
+                    recognition.stop();
+                } catch (eStop) {
+                    doSend();
+                    return false;
+                }
+                root.setTimeout(function () { doSend(); }, 450);
                 return false;
             }
-            setStatus('processing');
-            waitingForVoiceReply = voiceMode;
-            api.send(text);
+            doSend();
             return false;
         }
 
@@ -399,6 +488,8 @@
                 return false;
             }
             pendingTranscript = '';
+            api.__pendingVoiceTranscript = '';
+            updateRecPreview('');
             // Mark active immediately (survives rebind), but defer DOM swap so this click
             // cannot land on ✕ that appears where the mic was.
             api.__voiceRecActive = true;
@@ -830,7 +921,7 @@
         };
     }
 
-    var API_VER = 9;
+    var API_VER = 10;
 
     function ensureVoiceReady(api) {
         if (!api) return;
