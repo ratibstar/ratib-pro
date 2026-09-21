@@ -34,13 +34,18 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
 <script>
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
-    var needsUpgrade = !(window.ratebAi && window.ratebAi.__p0ChatHistory && typeof window.ratebAi.getHistory === 'function');
+    try { if (document.body) document.body.setAttribute('data-rateb-hide-help-assistant', '1'); } catch (eHide) {}
+    var API_VER = 5;
+    var needsUpgrade = !(window.ratebAi && window.ratebAi.__apiVer === API_VER
+        && window.ratebAi.__p0ChatHistory && typeof window.ratebAi.getHistory === 'function'
+        && typeof window.ratebAi.clickSuggest === 'function');
     if (needsUpgrade) {
     var prev = window.ratebAi || {};
     window.ratebAi = {
-    loading: !!prev.loading,
+    loading: false,
     lastMessage: prev.lastMessage || '',
     pendingConfirmKeys: Array.isArray(prev.pendingConfirmKeys) ? prev.pendingConfirmKeys : [],
+    __apiVer: API_VER,
     __p0WriteConfirm: true,
     __p0SendFix: true,
     __p0LangFix: true,
@@ -256,7 +261,7 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
             }
             prompt = String(prompt || '').trim();
             if (!prompt) return false;
-            if (this.loading) this.loading = false;
+            this.loading = false;
             return this.send(prompt);
         } catch (eSuggest) {
             try { console.warn('ratebAi.clickSuggest', eSuggest); } catch (eLog) {}
@@ -283,6 +288,7 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
         return out;
     },
     sendFromInput: function () {
+        this.loading = false;
         var input = document.getElementById('aiInput');
         return this.send(input ? input.value : '');
     },
@@ -297,25 +303,14 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
         sendBtn.classList.toggle('is-empty', empty && !this.loading);
         sendBtn.setAttribute('aria-disabled', (empty || this.loading) ? 'true' : 'false');
     },
+    /* Keep inline onclick intact — cloning used to strip it and leave dead chips. */
     bindSuggestButtons: function () {
         var root = document.getElementById('ratebAiRoot');
         if (!root) return;
-        var self = this;
-        var VER = '4';
         var nodes = root.querySelectorAll('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip');
         Array.prototype.forEach.call(nodes, function (btn) {
-            if (btn.getAttribute('data-suggest-v') === VER) return;
             if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
-            var next = btn.cloneNode(true);
-            next.setAttribute('data-suggest-v', VER);
-            next.removeAttribute('onclick');
-            if (btn.parentNode) btn.parentNode.replaceChild(next, btn);
-            next.addEventListener('click', function (e) {
-                e.preventDefault();
-                try { e.stopPropagation(); } catch (eStop) {}
-                self.clickSuggest(next);
-                return false;
-            }, true);
+            btn.setAttribute('data-suggest-v', '5');
         });
     },
     bind: function () {
@@ -357,27 +352,45 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
             });
         }
         root.setAttribute('data-rateb-ai-bound', '1');
-        /* Soft-nav can leave loading=true; clear so suggestion/send clicks work again. */
-        if (this.loading) this.loading = false;
+        this.loading = false;
         self.bindSuggestButtons();
         self.syncSendBtn();
         try { if (input) input.focus(); } catch (e) {}
     }
 };
     } // end needsUpgrade
-    if (!window.__ratebAiSuggestBoundV4) {
-        window.__ratebAiSuggestBoundV4 = true;
+    if (!window.__ratebAiClickBoundV5) {
+        window.__ratebAiClickBoundV5 = true;
         document.addEventListener('click', function (e) {
             if (!document.getElementById('ratebAiRoot') || !window.ratebAi) return;
-            var btn = e.target && e.target.closest
-                ? e.target.closest('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip')
+            var t = e.target && e.target.closest
+                ? e.target.closest('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip, #aiSendBtn, #aiVoiceModeBtn, #aiVoiceInputBtn, #aiVoiceStopBtn')
                 : null;
-            if (!btn) return;
-            if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
+            if (!t) return;
+            if (t.getAttribute('data-rateb-ai-confirm') || t.getAttribute('data-rateb-ai-cancel')) return;
             e.preventDefault();
-            // Do not stopPropagation — direct button listeners / onclick are backups.
-            if (typeof window.ratebAi.clickSuggest === 'function') {
-                window.ratebAi.clickSuggest(btn);
+            try { e.stopPropagation(); e.stopImmediatePropagation(); } catch (eStop) {}
+            var api = window.ratebAi;
+            if (t.id === 'aiSendBtn') {
+                if (typeof api.sendFromInput === 'function') api.sendFromInput();
+                return;
+            }
+            if (t.id === 'aiVoiceModeBtn') {
+                if (typeof api.toggleVoiceMode === 'function') api.toggleVoiceMode();
+                else if (typeof api.bindVoice === 'function') { api.bindVoice(); if (api.toggleVoiceMode) api.toggleVoiceMode(); }
+                return;
+            }
+            if (t.id === 'aiVoiceInputBtn') {
+                if (typeof api.toggleVoiceInput === 'function') api.toggleVoiceInput();
+                else if (typeof api.bindVoice === 'function') { api.bindVoice(); if (api.toggleVoiceInput) api.toggleVoiceInput(); }
+                return;
+            }
+            if (t.id === 'aiVoiceStopBtn') {
+                if (typeof api.stopVoice === 'function') api.stopVoice();
+                return;
+            }
+            if (typeof api.clickSuggest === 'function') {
+                api.clickSuggest(t);
             }
         }, true);
     }

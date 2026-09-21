@@ -455,7 +455,7 @@
                     }
                     prompt = String(prompt || '').trim();
                     if (!prompt) return false;
-                    if (this.loading) this.loading = false;
+                    this.loading = false;
                     return this.send(prompt);
                 } catch (eSuggest) {
                     try { console.warn('ratebAi.clickSuggest', eSuggest); } catch (eLog) {}
@@ -482,6 +482,7 @@
                 return out;
             },
             sendFromInput: function () {
+                this.loading = false;
                 var input = doc.getElementById('aiInput');
                 return this.send(input ? input.value : '');
             },
@@ -490,32 +491,19 @@
                 var sendBtn = doc.getElementById('aiSendBtn');
                 if (!sendBtn) return;
                 var empty = !(input && String(input.value || '').trim());
+                /* Never HTML-disable when idle — disabled swallows clicks (incl. onclick). */
                 sendBtn.disabled = !!this.loading;
                 sendBtn.classList.toggle('is-empty', empty && !this.loading);
                 sendBtn.setAttribute('aria-disabled', (empty || this.loading) ? 'true' : 'false');
             },
+            /* Keep inline onclick intact — cloning used to strip it and leave dead chips after soft-nav. */
             bindSuggestButtons: function () {
                 var box = doc.getElementById('ratebAiRoot');
                 if (!box) return;
-                var self = this;
-                var VER = '4';
                 var nodes = box.querySelectorAll('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip');
                 Array.prototype.forEach.call(nodes, function (btn) {
-                    if (btn.getAttribute('data-suggest-v') === VER) return;
                     if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
-                    var next = btn.cloneNode(true);
-                    next.setAttribute('data-suggest-v', VER);
-                    next.removeAttribute('onclick');
-                    if (btn.parentNode) btn.parentNode.replaceChild(next, btn);
-                    var fire = function (e) {
-                        if (e) {
-                            e.preventDefault();
-                            try { e.stopPropagation(); } catch (eStop) {}
-                        }
-                        self.clickSuggest(next);
-                        return false;
-                    };
-                    next.addEventListener('click', fire, true);
+                    btn.setAttribute('data-suggest-v', '5');
                 });
             },
             bind: function () {
@@ -557,7 +545,7 @@
                     });
                 }
                 box.setAttribute('data-rateb-ai-bound', '1');
-                if (self.loading) self.loading = false;
+                self.loading = false;
                 self.bindSuggestButtons();
                 self.syncSendBtn();
                 try { if (input) input.focus(); } catch (eFocus) {}
@@ -565,35 +553,64 @@
         };
     }
 
+    var API_VER = 5;
+
+    function bindMasterClicks() {
+        if (root.__ratebAiClickBoundV5) return;
+        root.__ratebAiClickBoundV5 = true;
+        doc.addEventListener('click', function (e) {
+            if (!doc.getElementById('ratebAiRoot') || !root.ratebAi) return;
+            var t = e.target && e.target.closest ? e.target.closest(
+                '.rateb-ai-suggestion-btn, .rateb-ai-capability-chip, #aiSendBtn, #aiVoiceModeBtn, #aiVoiceInputBtn, #aiVoiceStopBtn'
+            ) : null;
+            if (!t) return;
+            if (t.getAttribute('data-rateb-ai-confirm') || t.getAttribute('data-rateb-ai-cancel')) return;
+            e.preventDefault();
+            try { e.stopPropagation(); e.stopImmediatePropagation(); } catch (eStop) {}
+            var api = root.ratebAi;
+            if (t.id === 'aiSendBtn') {
+                if (typeof api.sendFromInput === 'function') api.sendFromInput();
+                return;
+            }
+            if (t.id === 'aiVoiceModeBtn') {
+                if (typeof api.toggleVoiceMode === 'function') api.toggleVoiceMode();
+                else if (typeof api.bindVoice === 'function') { api.bindVoice(); if (api.toggleVoiceMode) api.toggleVoiceMode(); }
+                return;
+            }
+            if (t.id === 'aiVoiceInputBtn') {
+                if (typeof api.toggleVoiceInput === 'function') api.toggleVoiceInput();
+                else if (typeof api.bindVoice === 'function') { api.bindVoice(); if (api.toggleVoiceInput) api.toggleVoiceInput(); }
+                return;
+            }
+            if (t.id === 'aiVoiceStopBtn') {
+                if (typeof api.stopVoice === 'function') api.stopVoice();
+                return;
+            }
+            if (typeof api.clickSuggest === 'function') {
+                api.clickSuggest(t);
+            }
+        }, true);
+    }
+
     function ensureApi() {
-        if (root.ratebAi && root.ratebAi.__p0ChatHistory && typeof root.ratebAi.getHistory === 'function') {
-            return root.ratebAi;
-        }
         var prev = root.ratebAi || {};
-        root.ratebAi = buildApi();
-        root.ratebAi.loading = !!prev.loading;
-        root.ratebAi.lastMessage = prev.lastMessage || '';
-
-        if (!root.__ratebAiClickBoundV4) {
-            root.__ratebAiClickBoundV4 = true;
-            doc.addEventListener('click', function (e) {
-                if (!doc.getElementById('ratebAiRoot') || !root.ratebAi) return;
-                var btn = e.target && e.target.closest
-                    ? e.target.closest('.rateb-ai-suggestion-btn, .rateb-ai-capability-chip')
-                    : null;
-                if (!btn) return;
-                if (btn.getAttribute('data-rateb-ai-confirm') || btn.getAttribute('data-rateb-ai-cancel')) return;
-                e.preventDefault();
-                if (typeof root.ratebAi.clickSuggest === 'function') {
-                    root.ratebAi.clickSuggest(btn);
-                }
-            }, true);
+        if (prev && prev.__apiVer === API_VER && typeof prev.send === 'function' && typeof prev.clickSuggest === 'function') {
+            bindMasterClicks();
+            return prev;
         }
-
+        root.ratebAi = buildApi();
+        root.ratebAi.__apiVer = API_VER;
+        root.ratebAi.loading = false;
+        root.ratebAi.lastMessage = prev.lastMessage || '';
+        root.ratebAi.pendingConfirmKeys = Array.isArray(prev.pendingConfirmKeys) ? prev.pendingConfirmKeys : [];
+        bindMasterClicks();
         return root.ratebAi;
     }
 
     function boot() {
+        try {
+            if (doc.body) doc.body.setAttribute('data-rateb-hide-help-assistant', '1');
+        } catch (eHide) {}
         var api = ensureApi();
         var box = doc.getElementById('ratebAiRoot');
         if (box) {
