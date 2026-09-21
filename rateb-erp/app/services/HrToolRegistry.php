@@ -84,6 +84,29 @@ final class HrToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_employee' => [
+                'name' => 'create_employee',
+                'description' => 'Create a new employee record (WRITE — requires user confirmation). Tenant-scoped. Name required.',
+                'permission' => 'hr.manage',
+                'module' => 'hr',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'email' => ['type' => 'string', 'maxLength' => 190],
+                        'phone' => ['type' => 'string', 'maxLength' => 50],
+                        'job_title' => ['type' => 'string', 'maxLength' => 120],
+                        'hire_date' => ['type' => 'string', 'format' => 'date'],
+                        'salary_base' => ['type' => 'number', 'minimum' => 0],
+                        'status' => ['type' => 'string', 'default' => 'active'],
+                        'notes' => ['type' => 'string'],
+                        'department_id' => ['type' => 'integer', 'minimum' => 1],
+                        'branch_id' => ['type' => 'integer', 'minimum' => 1],
+                    ],
+                    'required' => ['name'],
+                ],
+            ],
         ];
     }
 

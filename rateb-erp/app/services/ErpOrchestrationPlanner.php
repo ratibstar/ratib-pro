@@ -659,7 +659,7 @@ final class ErpOrchestrationPlanner
     {
         return self::match(
             $message,
-            '/(create|update|cancel|submit|write|أنشئ|إنشاء|عدّل|عدل|ألغ|الغ|أرسل|ارسل|تنفيذ\s*كتابة)/ui'
+            '/(create|update|cancel|submit|write|add|أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|عدّل|عدل|ألغ|الغ|أرسل|ارسل|تنفيذ\s*كتابة)/ui'
         );
     }
 

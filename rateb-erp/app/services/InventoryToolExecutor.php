@@ -37,6 +37,8 @@ final class InventoryToolExecutor
                     return self::analyzeInventory($arguments, $companyId);
                 case 'get_inventory_procurement_links':
                     return self::getInventoryProcurementLinks($arguments, $companyId);
+                case 'create_inventory_item':
+                    return self::createInventoryItem($arguments, $companyId, (int) $ctx->userId);
                 default:
                     return self::fail('tool_not_implemented');
             }
@@ -498,6 +500,81 @@ final class InventoryToolExecutor
                     'links_require_inventory_id_on_pr_po_line_items',
                     'empty_links_mean_no_matching_relations',
                 ],
+            ],
+            'error' => null,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createInventoryItem(array $args, int $companyId, int $userId): array
+    {
+        $name = trim((string) ($args['item_name'] ?? $args['name'] ?? ''));
+        if ($name === '') {
+            return self::fail('item_name_required');
+        }
+
+        $warehouseId = (int) ($args['warehouse_id'] ?? 0);
+        if ($warehouseId < 1) {
+            $whRows = (new Warehouse())->query(
+                'SELECT id FROM rateb_warehouses WHERE company_id = :cid ORDER BY id ASC LIMIT 1',
+                ['cid' => $companyId]
+            );
+            $warehouseId = (int) ($whRows[0]['id'] ?? 0);
+        }
+        if ($warehouseId < 1) {
+            return self::fail('warehouse_required');
+        }
+        $owned = (new Warehouse())->query(
+            'SELECT id FROM rateb_warehouses WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $warehouseId, 'cid' => $companyId]
+        );
+        if ($owned === []) {
+            return self::fail('warehouse_not_found');
+        }
+
+        $model = new Inventory();
+        $data = [
+            'company_id' => $companyId,
+            'warehouse_id' => $warehouseId,
+            'item_name' => mb_substr($name, 0, 190),
+            'sku' => trim((string) ($args['sku'] ?? '')),
+            'quantity' => max(0, (float) ($args['quantity'] ?? 0)),
+            'unit' => trim((string) ($args['unit'] ?? 'pcs')) ?: 'pcs',
+            'unit_cost' => max(0, (float) ($args['unit_cost'] ?? 0)),
+            'status' => trim((string) ($args['status'] ?? 'active')) ?: 'active',
+            'notes' => trim((string) ($args['notes'] ?? '')),
+        ];
+        if (array_key_exists('reorder_level', $args)) {
+            $data['reorder_level'] = max(0, (float) $args['reorder_level']);
+        }
+        $branchId = function_exists('rateb_resolve_create_branch_id')
+            ? (int) rateb_resolve_create_branch_id()
+            : 0;
+        if ($branchId > 0) {
+            $data['branch_id'] = $branchId;
+        }
+        (new DocumentCodeService())->assignIfEmpty($data, $model, DocumentCodeService::PREFIX_INVENTORY, 'item_code');
+
+        $id = (int) $model->create($data);
+        if ($id < 1) {
+            return self::fail('create_failed');
+        }
+
+        $rows = $model->query(
+            'SELECT id, item_code, item_name, sku, quantity, unit, unit_cost, warehouse_id, status
+             FROM rateb_inventory WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        $row = $rows[0] ?? ['id' => $id, 'item_name' => $name];
+
+        return [
+            'success' => true,
+            'data' => [
+                'id' => $id,
+                'item' => $row,
+                'created_by' => $userId > 0 ? $userId : null,
             ],
             'error' => null,
         ];

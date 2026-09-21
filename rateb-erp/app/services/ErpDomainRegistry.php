@@ -528,6 +528,42 @@ final class ErpDomainRegistry
                 $seen[] = $chip['id'];
             }
         }
+
+        // Create-action chips (confirmed writes) for entitled domains.
+        $createChips = [];
+        if (self::isDomainEntitled(self::DOMAIN_PROCUREMENT, $ctx)) {
+            $createChips[] = ['id' => 'add_pr', 'domain' => self::DOMAIN_PROCUREMENT, 'label' => 'ai_cap_add_pr', 'prompt' => 'ai_suggest_add_pr'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_INVENTORY, $ctx)) {
+            $createChips[] = ['id' => 'add_inventory', 'domain' => self::DOMAIN_INVENTORY, 'label' => 'ai_cap_add_inventory', 'prompt' => 'ai_suggest_add_inventory'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_HR, $ctx)) {
+            $createChips[] = ['id' => 'add_employee', 'domain' => self::DOMAIN_HR, 'label' => 'ai_cap_add_employee', 'prompt' => 'ai_suggest_add_employee'];
+        }
+        $seen = array_column($out, 'id');
+        foreach ($createChips as $chip) {
+            if (in_array($chip['id'], $seen, true)) {
+                continue;
+            }
+            $lk = $chip['label'];
+            $pk = $chip['prompt'];
+            $label = function_exists('__') ? __($lk) : $lk;
+            $prompt = function_exists('__') ? __($pk) : $pk;
+            if ($label === $lk) {
+                $label = $chip['id'];
+            }
+            if ($prompt === $pk) {
+                $prompt = $label;
+            }
+            $out[] = [
+                'id' => $chip['id'],
+                'domain' => $chip['domain'],
+                'label' => $label,
+                'prompt' => $prompt,
+            ];
+            $seen[] = $chip['id'];
+        }
+
         return $out;
     }
 

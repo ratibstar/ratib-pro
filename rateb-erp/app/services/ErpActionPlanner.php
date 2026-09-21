@@ -42,6 +42,8 @@ final class ErpActionPlanner
         'cancel_purchase_request',
         'submit_purchase_request',
         'submit_journal_for_approval',
+        'create_inventory_item',
+        'create_employee',
     ];
 
     /** @var list<string> */
@@ -99,10 +101,10 @@ final class ErpActionPlanner
     {
         return self::match(
             $message,
-            '/(أنشئ|إنشاء|عدّل|عدل|ألغ|الغ|حدّث|حدث|أرسل|ارسل|submit|create|update|cancel|prepare\s+for\s+delivery|جهز|متابعة\s*للعميل|طلب\s*شراء)/ui'
+            '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|عدّل|عدل|ألغ|الغ|حدّث|حدث|أرسل|ارسل|submit|create|update|cancel|add|prepare\s+for\s+delivery|جهز|متابعة\s*للعميل|طلب\s*شراء)/ui'
         ) && (
             ErpOrchestrationPlanner::hasWriteIntent($message)
-            || self::match($message, '/(طلب\s*شراء|purchase\s*request|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
+            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|inventory|employee|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
         );
     }
 
@@ -174,7 +176,7 @@ final class ErpActionPlanner
         }
 
         // Supported procurement writes only
-        if (self::match($message, '/(أنشئ|إنشاء|create).{0,40}(طلب\s*شراء|purchase\s*request)/ui')
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(طلب\s*شراء|purchase\s*request|مشتريات)/ui')
             || self::match($message, '/(طلب\s*شراء).{0,40}(ناقص|منتج|صنف|shortfall|missing|low\s*stock)/ui')
         ) {
             $title = self::extractTitle($message);
@@ -191,6 +193,53 @@ final class ErpActionPlanner
             $domains[] = 'procurement';
             if (is_array($intelligence) && !empty($intelligence['incomplete_chains'])) {
                 $domains[] = 'inventory';
+            }
+        }
+
+        // Inventory create
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(مخزون|صنف|منتج|inventory|item|sku)|ضيف\s*مخزون|أضف\s*مخزون/ui')) {
+            $itemName = self::extractInventoryItemName($message);
+            if ($itemName === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة مخزون اكتب مثلاً: أضف مخزون رز كمية 20'
+                        : 'To add inventory write e.g.: add inventory rice qty 20',
+                    'domain' => 'inventory',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $qty = self::extractQuantity($message);
+                $args = [
+                    'item_name' => $itemName,
+                    'quantity' => $qty,
+                    'unit' => 'pcs',
+                    'status' => 'active',
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ];
+                $actions[] = self::makeAction('create_inventory_item', $args, $ctx, 'create_inventory_from_chat');
+                $domains[] = 'inventory';
+            }
+        }
+
+        // Employee create
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(موظف|موظفين|employee|employees)/ui')) {
+            $empName = self::extractPersonName($message);
+            if ($empName === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة موظف اكتب مثلاً: أضف موظف أحمد العتيبي'
+                        : 'To add an employee write e.g.: add employee Ahmed',
+                    'domain' => 'hr',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $args = [
+                    'name' => $empName,
+                    'status' => 'active',
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ];
+                $actions[] = self::makeAction('create_employee', $args, $ctx, 'create_employee_from_chat');
+                $domains[] = 'hr';
             }
         }
 
@@ -364,7 +413,7 @@ final class ErpActionPlanner
     {
         return self::match(
             $message,
-            '/(أنشئ|إنشاء|انشئ|اعمل|اعملوا|سو[يى]|create|make).{0,40}(طلب\s*شراء|purchase\s*request)|طلب\s*شراء|purchase\s*request/ui'
+            '/(أنشئ|إنشاء|انشئ|أضف|اضف|ضيف|إضافة|اعمل|اعملوا|سو[يى]|create|make|add).{0,40}(طلب\s*شراء|purchase\s*request|مشتريات)|طلب\s*شراء|purchase\s*request/ui'
         );
     }
 
@@ -1361,6 +1410,8 @@ final class ErpActionPlanner
             'confirmation_required' => 'يتطلب تأكيد المستخدم',
             'controlled_test' => 'اختبار مضبوط',
             'create_draft_purchase_request' => 'إنشاء مسودة طلب شراء',
+            'create_inventory_item' => 'إضافة صنف مخزون',
+            'create_employee' => 'إضافة موظف',
             'duplicate_action' => 'إجراء مكرر',
             'tool_exception' => 'تعذر تنفيذ الأداة',
             'verification_incomplete' => 'التحقق غير مكتمل',
@@ -1383,6 +1434,8 @@ final class ErpActionPlanner
             'confirmation_required' => 'User confirmation required',
             'controlled_test' => 'Controlled test',
             'create_draft_purchase_request' => 'Create draft purchase request',
+            'create_inventory_item' => 'Add inventory item',
+            'create_employee' => 'Add employee',
             'duplicate_action' => 'Duplicate action',
             'tool_exception' => 'Tool execution failed',
             'verification_incomplete' => 'Verification incomplete',
@@ -1482,6 +1535,12 @@ final class ErpActionPlanner
         }
         if ($tool === 'create_draft_purchase_request') {
             return ['exists' => false, 'entity' => 'purchase_request', 'status' => null];
+        }
+        if ($tool === 'create_inventory_item') {
+            return ['exists' => false, 'entity' => 'inventory_item', 'status' => null];
+        }
+        if ($tool === 'create_employee') {
+            return ['exists' => false, 'entity' => 'employee', 'status' => null];
         }
         $id = (int) ($args['id'] ?? 0);
         if ($id < 1) {
@@ -1606,6 +1665,54 @@ final class ErpActionPlanner
             ];
         }
 
+        if ($tool === 'create_inventory_item') {
+            $id = (int) ($execResult['data']['id'] ?? 0);
+            if ($id < 1) {
+                return ['verified' => false, 'incomplete' => true, 'new_state' => null, 'message' => 'verification_incomplete_missing_id'];
+            }
+            try {
+                $rows = (new \Rateb\App\Models\Inventory())->query(
+                    'SELECT id, item_code, item_name, status, quantity FROM rateb_inventory
+                     WHERE id = :id AND company_id = :cid LIMIT 1',
+                    ['id' => $id, 'cid' => (int) $ctx->companyId]
+                );
+                $row = $rows[0] ?? null;
+                $ok = is_array($row);
+                return [
+                    'verified' => $ok,
+                    'incomplete' => !$ok,
+                    'new_state' => $ok ? ['exists' => true, 'entity' => 'inventory_item', 'id' => $id] + $row : null,
+                    'message' => $ok ? 'verified_inventory_created' : 'verification_incomplete',
+                ];
+            } catch (\Throwable $e) {
+                return ['verified' => false, 'incomplete' => true, 'new_state' => null, 'message' => 'verification_incomplete'];
+            }
+        }
+
+        if ($tool === 'create_employee') {
+            $id = (int) ($execResult['data']['id'] ?? 0);
+            if ($id < 1) {
+                return ['verified' => false, 'incomplete' => true, 'new_state' => null, 'message' => 'verification_incomplete_missing_id'];
+            }
+            try {
+                $rows = (new \Rateb\App\Models\Employee())->query(
+                    'SELECT id, employee_code, name, status FROM rateb_employees
+                     WHERE id = :id AND company_id = :cid LIMIT 1',
+                    ['id' => $id, 'cid' => (int) $ctx->companyId]
+                );
+                $row = $rows[0] ?? null;
+                $ok = is_array($row);
+                return [
+                    'verified' => $ok,
+                    'incomplete' => !$ok,
+                    'new_state' => $ok ? ['exists' => true, 'entity' => 'employee', 'id' => $id] + $row : null,
+                    'message' => $ok ? 'verified_employee_created' : 'verification_incomplete',
+                ];
+            } catch (\Throwable $e) {
+                return ['verified' => false, 'incomplete' => true, 'new_state' => null, 'message' => 'verification_incomplete'];
+            }
+        }
+
         $id = (int) ($action['arguments']['id'] ?? $execResult['data']['id'] ?? 0);
         $state = self::readStateSnapshot($tool, ['id' => $id], $ctx);
         if ($state === null) {
@@ -1644,7 +1751,7 @@ final class ErpActionPlanner
                    AND status = 'success'
                    AND tool_name IN (
                      'create_draft_purchase_request','update_purchase_request','cancel_purchase_request','submit_purchase_request',
-                     'submit_journal_for_approval'
+                     'submit_journal_for_approval','create_inventory_item','create_employee'
                    )
                  ORDER BY id DESC LIMIT 30"
             );
@@ -1734,6 +1841,52 @@ final class ErpActionPlanner
             return mb_substr(trim($t), 0, 120);
         }
         return '';
+    }
+
+    private static function extractInventoryItemName(string $message): string
+    {
+        if (preg_match('/(?:اسم|name)\s*[:=]\s*[\"\']?([^\"\'\n]{2,120})/ui', $message, $m)) {
+            return mb_substr(trim($m[1]), 0, 120);
+        }
+        if (preg_match('/(?:ضيف|أضف|اضف|إضافة|أنشئ|إنشاء|add|create)\s+(?:مخزون|صنف|منتج|inventory|item)\s+(.+)$/ui', $message, $m)) {
+            $t = trim($m[1]);
+            $t = preg_replace('/\s*(كمية|qty|quantity|عدد|unit|وحدة).*$/ui', '', $t) ?? $t;
+            $t = trim($t, " \t\"'«»");
+            return mb_substr($t, 0, 120);
+        }
+        if (preg_match('/(?:مخزون|صنف|منتج|item)\s+(?:باسم\s+)?[\"\']?([^\"\'\n]{2,80})/ui', $message, $m)) {
+            return mb_substr(trim($m[1]), 0, 120);
+        }
+        return '';
+    }
+
+    private static function extractPersonName(string $message): string
+    {
+        if (preg_match('/(?:اسم|name)\s*[:=]\s*[\"\']?([^\"\'\n]{2,120})/ui', $message, $m)) {
+            return mb_substr(trim($m[1]), 0, 120);
+        }
+        if (preg_match('/(?:ضيف|أضف|اضف|إضافة|أنشئ|إنشاء|add|create)\s+(?:موظف|موظفة|employee)\s+(.+)$/ui', $message, $m)) {
+            $t = trim($m[1]);
+            $t = preg_replace('/\s*(بريد|email|جوال|phone|هاتف).*$/ui', '', $t) ?? $t;
+            return mb_substr(trim($t, " \t\"'«»"), 0, 120);
+        }
+        return '';
+    }
+
+    private static function extractQuantity(string $message): float
+    {
+        if (preg_match('/(?:كمية|qty|quantity|عدد)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/ui', $message, $m)) {
+            return max(0, (float) str_replace(',', '.', $m[1]));
+        }
+        if (preg_match('/\b(\d+(?:[.,]\d+)?)\s*(?:قطعة|حبة|وحدة|pcs|kg|كجم)?\b/ui', $message, $m)) {
+            // Avoid matching years like 2026
+            $n = (float) str_replace(',', '.', $m[1]);
+            if ($n >= 1900 && $n <= 2100) {
+                return 0.0;
+            }
+            return max(0, $n);
+        }
+        return 0.0;
     }
 
     private static function isAr(ProcurementAgentContext $ctx): bool

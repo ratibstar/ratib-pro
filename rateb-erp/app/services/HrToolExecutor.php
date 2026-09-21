@@ -63,6 +63,13 @@ final class HrToolExecutor
         if ($companyId < 1) {
             return ErpAiDb::fail('tenant_mismatch');
         }
+        if ($toolName === 'create_employee') {
+            try {
+                return self::createEmployee($arguments, $companyId, (int) $ctx->userId);
+            } catch (\Throwable $e) {
+                return ErpAiDb::fail('tool_exception');
+            }
+        }
         if (!isset(self::TOOLS[$toolName])) {
             return ErpAiDb::fail('tool_not_implemented');
         }
@@ -71,6 +78,61 @@ final class HrToolExecutor
         } catch (\Throwable $e) {
             return ErpAiDb::fail('tool_exception');
         }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createEmployee(array $args, int $companyId, int $userId): array
+    {
+        $name = trim((string) ($args['name'] ?? ''));
+        if ($name === '') {
+            return ErpAiDb::fail('name_required');
+        }
+        $model = new \Rateb\App\Models\Employee();
+        $data = [
+            'company_id' => $companyId,
+            'name' => mb_substr($name, 0, 190),
+            'email' => trim((string) ($args['email'] ?? '')),
+            'phone' => trim((string) ($args['phone'] ?? '')),
+            'job_title' => trim((string) ($args['job_title'] ?? '')),
+            'status' => trim((string) ($args['status'] ?? 'active')) ?: 'active',
+            'notes' => trim((string) ($args['notes'] ?? '')),
+        ];
+        $hire = trim((string) ($args['hire_date'] ?? ''));
+        if ($hire !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $hire)) {
+            $data['hire_date'] = $hire;
+        }
+        if (array_key_exists('salary_base', $args)) {
+            $data['salary_base'] = max(0, (float) $args['salary_base']);
+        }
+        $deptId = (int) ($args['department_id'] ?? 0);
+        if ($deptId > 0) {
+            $data['department_id'] = $deptId;
+        }
+        $branchId = (int) ($args['branch_id'] ?? 0);
+        if ($branchId < 1 && function_exists('rateb_resolve_create_branch_id')) {
+            $branchId = (int) rateb_resolve_create_branch_id();
+        }
+        if ($branchId > 0) {
+            $data['branch_id'] = $branchId;
+        }
+        (new DocumentCodeService())->assignIfEmpty($data, $model, DocumentCodeService::PREFIX_EMPLOYEE, 'employee_code');
+
+        $id = (int) $model->create($data);
+        if ($id < 1) {
+            return ErpAiDb::fail('create_failed');
+        }
+        $rows = ErpAiDb::query(
+            'SELECT id, employee_code, name, email, phone, job_title, status, hire_date
+             FROM rateb_employees WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        return ErpAiDb::ok([
+            'id' => $id,
+            'employee' => $rows[0] ?? ['id' => $id, 'name' => $name],
+            'created_by' => $userId > 0 ? $userId : null,
+        ]);
     }
 
     /**

@@ -164,7 +164,10 @@ final class ProcurementPolicyGuard
             return $id > 0;
         }
 
-        if ($toolName === 'create_draft_purchase_request') {
+        if ($toolName === 'create_draft_purchase_request'
+            || $toolName === 'create_inventory_item'
+            || $toolName === 'create_employee'
+        ) {
             return true;
         }
 

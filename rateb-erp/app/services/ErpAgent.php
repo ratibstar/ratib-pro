@@ -2217,6 +2217,10 @@ final class ErpAgent
         if ($m === '') {
             return false;
         }
+        // Never treat create/add phrases as read-only list requests.
+        if (preg_match('/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add|عدّل|عدل|ألغ|الغ|أرسل|ارسل)/ui', $m) === 1) {
+            return false;
+        }
         if (preg_match('/^(عرض|اعرض|أظهر|اظهر|list|show|ملخص|احص|إحص|افتح|open)\b/ui', $m) === 1) {
             return true;
         }

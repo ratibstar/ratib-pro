@@ -4,8 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 /**
- * Inventory Tool Registry — READ/ANALYSIS tools for Inventory domain (Unified ERP Agent).
- * No WRITE tools: stock mutations stay on existing ERP controllers/services.
+ * Inventory Tool Registry — READ/ANALYSIS + confirmed WRITE create for Inventory domain.
  */
 final class InventoryToolRegistry
 {
@@ -115,6 +114,28 @@ final class InventoryToolRegistry
                         'low_stock_only' => ['type' => 'boolean', 'default' => false],
                     ],
                     'required' => [],
+                ],
+            ],
+            'create_inventory_item' => [
+                'name' => 'create_inventory_item',
+                'description' => 'Create a new inventory item (WRITE — requires user confirmation). Tenant-scoped. Uses default warehouse when warehouse_id omitted.',
+                'permission' => 'inventory.manage',
+                'module' => 'inventory',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'item_name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'warehouse_id' => ['type' => 'integer', 'minimum' => 1],
+                        'sku' => ['type' => 'string', 'maxLength' => 100],
+                        'quantity' => ['type' => 'number', 'minimum' => 0, 'default' => 0],
+                        'unit' => ['type' => 'string', 'default' => 'pcs'],
+                        'unit_cost' => ['type' => 'number', 'minimum' => 0, 'default' => 0],
+                        'reorder_level' => ['type' => 'number', 'minimum' => 0],
+                        'status' => ['type' => 'string', 'default' => 'active'],
+                        'notes' => ['type' => 'string'],
+                    ],
+                    'required' => ['item_name'],
                 ],
             ],
         ];
