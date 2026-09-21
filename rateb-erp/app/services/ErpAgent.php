@@ -1993,7 +1993,15 @@ final class ErpAgent
         $lines[] = $ar ? 'ملخص تشغيلي موحّد (بيانات حية):' : 'Unified operational summary (live data):';
         $domains = $intelligence['domains'] ?? [];
         if (is_array($domains) && $domains !== []) {
-            $lines[] = ($ar ? 'المجالات: ' : 'Domains: ') . implode(', ', $domains);
+            $domainLabels = [];
+            foreach ($domains as $d) {
+                if (is_string($d) && $d !== '') {
+                    $domainLabels[] = $this->domainDisplayLabel($d, $ar);
+                }
+            }
+            if ($domainLabels !== []) {
+                $lines[] = ($ar ? 'المجالات: ' : 'Domains: ') . implode('، ', $domainLabels);
+            }
         }
 
         $metrics = is_array($intelligence['metrics'] ?? null) ? $intelligence['metrics'] : [];
@@ -2001,7 +2009,7 @@ final class ErpAgent
             $lines[] = $ar ? 'مؤشرات:' : 'Metrics:';
             foreach ($metrics as $k => $v) {
                 if (is_scalar($v)) {
-                    $lines[] = '- ' . $k . ': ' . $v;
+                    $lines[] = '- ' . $this->fieldLabel((string) $k, $ar) . ': ' . $this->formatFieldValue((string) $k, $v, $ar);
                 }
             }
         }
@@ -2381,12 +2389,11 @@ final class ErpAgent
         ProcurementAgentContext $ctx
     ): string {
         $ar = $ctx->normalizedLocale() === 'ar';
-        $meta = ErpDomainRegistry::resolve($domainId);
-        $label = (string) ($meta['label'] ?? $domainId);
+        $label = $this->domainDisplayLabel($domainId, $ar);
         $lines = [];
         $lines[] = $ar
-            ? ($label . ' — نتائج مباشرة من بيانات الشركة:')
-            : ($label . ' — live company data:');
+            ? ('▸ ' . $label . ' — نتائج مباشرة من بيانات الشركة')
+            : ('▸ ' . $label . ' — live company data');
 
         foreach ($confirmed as $row) {
             $purpose = (string) ($row['purpose'] ?? '');
@@ -2396,10 +2403,14 @@ final class ErpAgent
                 continue;
             }
             $title = $this->purposeTitle($purpose, $tool, $ar);
+            $lines[] = '';
+            $lines[] = '【' . $title . '】';
 
             if (isset($data['rows']) && is_array($data['rows'])) {
                 $rows = $data['rows'];
-                $lines[] = $title . ' (' . count($rows) . ')';
+                $lines[] = $ar
+                    ? ('عدد السجلات: ' . count($rows))
+                    : ('Records: ' . count($rows));
                 if ($rows === []) {
                     $lines[] = $ar ? '- لا توجد سجلات حالياً.' : '- No records found.';
                     if (!empty($data['note']) && (string) $data['note'] === 'table_unavailable') {
@@ -2411,7 +2422,7 @@ final class ErpAgent
                 }
                 foreach (array_slice($rows, 0, 25) as $r) {
                     if (is_array($r)) {
-                        $lines[] = '- ' . $this->formatRowBrief($r);
+                        $lines[] = '- ' . $this->formatRowBrief($r, $ar);
                     }
                 }
                 if (count($rows) > 25) {
@@ -2421,30 +2432,13 @@ final class ErpAgent
                 continue;
             }
 
-            $lines[] = $title . ':';
-            $printed = false;
-            foreach ($data as $k => $v) {
-                if (is_scalar($v)) {
-                    $lines[] = '- ' . $k . ': ' . $v;
-                    $printed = true;
-                } elseif (is_array($v)) {
-                    $allScalar = true;
-                    foreach ($v as $sv) {
-                        if (!is_scalar($sv)) {
-                            $allScalar = false;
-                            break;
-                        }
-                    }
-                    if ($allScalar && $v !== []) {
-                        foreach ($v as $sk => $sv) {
-                            $lines[] = '- ' . $k . '/' . $sk . ': ' . $sv;
-                            $printed = true;
-                        }
-                    }
-                }
-            }
-            if (!$printed) {
+            $body = $this->formatLocalizedDataTree($data, $ar, 0);
+            if ($body === []) {
                 $lines[] = $ar ? '- تم جلب البيانات بنجاح.' : '- Data retrieved successfully.';
+            } else {
+                foreach ($body as $line) {
+                    $lines[] = $line;
+                }
             }
         }
 
@@ -2454,7 +2448,10 @@ final class ErpAgent
                     ? 'تعذر جلب البيانات. تحقق من صلاحيات الوحدة أو أعد المحاولة.'
                     : 'Could not fetch data. Check module permissions or retry.';
                 foreach ($failed as $f) {
-                    $lines[] = '- ' . (string) ($f['tool'] ?? '') . ' (' . (string) ($f['error_code'] ?? '') . ')';
+                    $toolName = (string) ($f['tool'] ?? '');
+                    $code = (string) ($f['error_code'] ?? '');
+                    $lines[] = '- ' . ErpActionPlanner::labelTool($toolName, $ar)
+                        . ($code !== '' ? ' (' . ErpActionPlanner::labelGovToken($code, $ar) . ')' : '');
                 }
             } else {
                 $lines[] = $ar
@@ -2463,12 +2460,92 @@ final class ErpAgent
             }
         }
 
-        return implode("\n", $lines);
+        return implode("\n", array_values(array_filter($lines, static fn($l) => $l !== null)));
+    }
+
+    private function domainDisplayLabel(string $domainId, bool $ar): string
+    {
+        $key = 'ai_cap_' . $domainId;
+        if (function_exists('__')) {
+            $tr = __($key);
+            if (is_string($tr) && $tr !== '' && $tr !== $key) {
+                return $tr;
+            }
+        }
+        $fallback = [
+            ErpDomainRegistry::DOMAIN_PROCUREMENT => ['ar' => 'المشتريات', 'en' => 'Procurement'],
+            ErpDomainRegistry::DOMAIN_INVENTORY => ['ar' => 'المخزون', 'en' => 'Inventory'],
+            ErpDomainRegistry::DOMAIN_SUPPLIERS => ['ar' => 'الموردون', 'en' => 'Suppliers'],
+            ErpDomainRegistry::DOMAIN_SALES => ['ar' => 'المبيعات', 'en' => 'Sales'],
+            ErpDomainRegistry::DOMAIN_CRM => ['ar' => 'العملاء', 'en' => 'CRM'],
+            ErpDomainRegistry::DOMAIN_LOGISTICS => ['ar' => 'اللوجستيات', 'en' => 'Logistics'],
+            ErpDomainRegistry::DOMAIN_ACCOUNTING => ['ar' => 'الحسابات', 'en' => 'Accounting'],
+            ErpDomainRegistry::DOMAIN_EXECUTIVE => ['ar' => 'التحليل التنفيذي', 'en' => 'Executive'],
+            ErpDomainRegistry::DOMAIN_HR => ['ar' => 'الموارد البشرية', 'en' => 'HR'],
+            ErpDomainRegistry::DOMAIN_RECRUITMENT => ['ar' => 'التوظيف', 'en' => 'Recruitment'],
+            ErpDomainRegistry::DOMAIN_PROJECTS => ['ar' => 'المشاريع', 'en' => 'Projects'],
+            ErpDomainRegistry::DOMAIN_CONTRACTS => ['ar' => 'العقود', 'en' => 'Contracts'],
+            ErpDomainRegistry::DOMAIN_ASSETS => ['ar' => 'الأصول', 'en' => 'Assets'],
+            ErpDomainRegistry::DOMAIN_PAYROLL => ['ar' => 'الرواتب', 'en' => 'Payroll'],
+            ErpDomainRegistry::DOMAIN_MANUFACTURING => ['ar' => 'التصنيع', 'en' => 'Manufacturing'],
+            ErpDomainRegistry::DOMAIN_QUALITY => ['ar' => 'الجودة', 'en' => 'Quality'],
+            ErpDomainRegistry::DOMAIN_APPROVALS => ['ar' => 'الموافقات', 'en' => 'Approvals'],
+            ErpDomainRegistry::DOMAIN_MARKETPLACE => ['ar' => 'سوق الخدمات', 'en' => 'Marketplace'],
+            ErpDomainRegistry::DOMAIN_NOTIFICATIONS => ['ar' => 'الإشعارات', 'en' => 'Notifications'],
+            ErpDomainRegistry::DOMAIN_BI => ['ar' => 'ذكاء الأعمال', 'en' => 'Business Intelligence'],
+            ErpDomainRegistry::DOMAIN_WEBSITE => ['ar' => 'الموقع والمحتوى', 'en' => 'Website'],
+        ];
+        if (isset($fallback[$domainId])) {
+            return $ar ? $fallback[$domainId]['ar'] : $fallback[$domainId]['en'];
+        }
+        $meta = ErpDomainRegistry::resolve($domainId);
+        return (string) ($meta['label'] ?? $domainId);
     }
 
     private function purposeTitle(string $purpose, string $tool, bool $ar): string
     {
         $map = [
+            'inventory_intelligence' => ['ar' => 'ملخص المخزون', 'en' => 'Inventory summary'],
+            'inventory_procurement_links' => ['ar' => 'ربط المخزون بالمشتريات', 'en' => 'Inventory–procurement links'],
+            'procurement_operations' => ['ar' => 'عمليات المشتريات', 'en' => 'Procurement operations'],
+            'pending_approvals' => ['ar' => 'الموافقات المعلقة', 'en' => 'Pending approvals'],
+            'operational_guidance' => ['ar' => 'إرشاد تشغيلي', 'en' => 'Operational guidance'],
+            'supplier_intelligence' => ['ar' => 'ملخص الموردين', 'en' => 'Supplier summary'],
+            'supplier_procurement_links' => ['ar' => 'ربط الموردين بالمشتريات', 'en' => 'Supplier–procurement links'],
+            'supplier_inventory_links' => ['ar' => 'ربط الموردين بالمخزون', 'en' => 'Supplier–inventory links'],
+            'sales_intelligence' => ['ar' => 'ملخص المبيعات', 'en' => 'Sales summary'],
+            'sales_guidance' => ['ar' => 'إرشاد المبيعات', 'en' => 'Sales guidance'],
+            'sales_inventory_links' => ['ar' => 'ربط المبيعات بالمخزون', 'en' => 'Sales–inventory links'],
+            'sales_procurement_links' => ['ar' => 'ربط المبيعات بالمشتريات', 'en' => 'Sales–procurement links'],
+            'sales_supplier_links' => ['ar' => 'ربط المبيعات بالموردين', 'en' => 'Sales–supplier links'],
+            'sales_cross_domain_core' => ['ar' => 'تحليل المبيعات عبر المجالات', 'en' => 'Cross-domain sales'],
+            'crm_intelligence' => ['ar' => 'ملخص العملاء', 'en' => 'CRM summary'],
+            'crm_guidance' => ['ar' => 'إرشاد العملاء', 'en' => 'CRM guidance'],
+            'crm_sales_links' => ['ar' => 'ربط العملاء بالمبيعات', 'en' => 'CRM–sales links'],
+            'crm_inventory_links' => ['ar' => 'ربط العملاء بالمخزون', 'en' => 'CRM–inventory links'],
+            'crm_procurement_links' => ['ar' => 'ربط العملاء بالمشتريات', 'en' => 'CRM–procurement links'],
+            'crm_supplier_links' => ['ar' => 'ربط العملاء بالموردين', 'en' => 'CRM–supplier links'],
+            'crm_commercial_core' => ['ar' => 'الذكاء التجاري للعملاء', 'en' => 'CRM commercial intelligence'],
+            'logistics_intelligence' => ['ar' => 'ملخص اللوجستيات', 'en' => 'Logistics summary'],
+            'logistics_guidance' => ['ar' => 'إرشاد اللوجستيات', 'en' => 'Logistics guidance'],
+            'logistics_crm_links' => ['ar' => 'ربط اللوجستيات بالعملاء', 'en' => 'Logistics–CRM links'],
+            'logistics_sales_links' => ['ar' => 'ربط اللوجستيات بالمبيعات', 'en' => 'Logistics–sales links'],
+            'logistics_inventory_links' => ['ar' => 'ربط اللوجستيات بالمخزون', 'en' => 'Logistics–inventory links'],
+            'logistics_procurement_links' => ['ar' => 'ربط اللوجستيات بالمشتريات', 'en' => 'Logistics–procurement links'],
+            'logistics_supplier_links' => ['ar' => 'ربط اللوجستيات بالموردين', 'en' => 'Logistics–supplier links'],
+            'accounting_intelligence' => ['ar' => 'ملخص الحسابات', 'en' => 'Accounting summary'],
+            'accounting_guidance' => ['ar' => 'إرشاد الحسابات', 'en' => 'Accounting guidance'],
+            'accounting_sales_links' => ['ar' => 'ربط الحسابات بالمبيعات', 'en' => 'Accounting–sales links'],
+            'accounting_procurement_links' => ['ar' => 'ربط الحسابات بالمشتريات', 'en' => 'Accounting–procurement links'],
+            'accounting_supplier_links' => ['ar' => 'ربط الحسابات بالموردين', 'en' => 'Accounting–supplier links'],
+            'accounting_inventory_links' => ['ar' => 'ربط الحسابات بالمخزون', 'en' => 'Accounting–inventory links'],
+            'accounting_logistics_links' => ['ar' => 'ربط الحسابات باللوجستيات', 'en' => 'Accounting–logistics links'],
+            'financial_intelligence_core' => ['ar' => 'الذكاء المالي', 'en' => 'Financial intelligence'],
+            'executive_intelligence_core' => ['ar' => 'الذكاء التنفيذي', 'en' => 'Executive intelligence'],
+            'proactive_early_warning_core' => ['ar' => 'التحذيرات المبكرة', 'en' => 'Early warnings'],
+            'operational_learning_core' => ['ar' => 'التعلم التشغيلي', 'en' => 'Operational learning'],
+            'operational_memory_core' => ['ar' => 'السياق التشغيلي', 'en' => 'Operational context'],
+            'cross_domain_core' => ['ar' => 'تحليل عبر المجالات', 'en' => 'Cross-domain analysis'],
             'hr_employees' => ['ar' => 'الموظفون', 'en' => 'Employees'],
             'hr_summary' => ['ar' => 'ملخص القوى العاملة', 'en' => 'Workforce summary'],
             'recruitment_candidates' => ['ar' => 'المرشحون', 'en' => 'Candidates'],
@@ -2499,18 +2576,250 @@ final class ErpAgent
         if (isset($map[$purpose])) {
             return $ar ? $map[$purpose]['ar'] : $map[$purpose]['en'];
         }
-        return $tool !== '' ? $tool : ($ar ? 'النتائج' : 'Results');
+        if ($tool !== '') {
+            $toolLabel = ErpActionPlanner::labelTool($tool, $ar);
+            if ($toolLabel !== '' && $toolLabel !== $tool) {
+                return $toolLabel;
+            }
+        }
+        return $ar ? 'النتائج' : 'Results';
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return list<string>
+     */
+    private function formatLocalizedDataTree(array $data, bool $ar, int $depth): array
+    {
+        if ($depth > 3) {
+            return [];
+        }
+        $skip = [
+            'data_source', 'data source', 'company_id', 'table', 'request_id',
+            'tenant_id', 'secrets_excluded', 'agent', 'domain',
+        ];
+        $lines = [];
+        $indent = str_repeat('  ', $depth);
+
+        // Prefer nested summary block when present.
+        if (isset($data['summary']) && is_array($data['summary']) && $depth === 0) {
+            $lines[] = $indent . ($ar ? 'الملخص:' : 'Summary:');
+            foreach ($this->formatLocalizedDataTree($data['summary'], $ar, $depth + 1) as $line) {
+                $lines[] = $line;
+            }
+            if (isset($data['as_of']) && is_scalar($data['as_of'])) {
+                $lines[] = $indent . '- ' . $this->fieldLabel('as_of', $ar) . ': ' . $this->formatFieldValue('as_of', $data['as_of'], $ar);
+            }
+            if (isset($data['notes']) && is_array($data['notes'])) {
+                foreach ($data['notes'] as $note) {
+                    if (is_scalar($note)) {
+                        $lines[] = $indent . '- ' . $this->translateNote((string) $note, $ar);
+                    }
+                }
+            }
+            // Also surface other useful top-level lists (low_stock, etc.) briefly.
+            foreach ($data as $k => $v) {
+                $key = (string) $k;
+                if (in_array($key, ['summary', 'as_of', 'notes', 'data_source', 'data source', 'company_id'], true)) {
+                    continue;
+                }
+                if (is_array($v) && isset($v[0]) && is_array($v[0])) {
+                    $lines[] = $indent . $this->fieldLabel($key, $ar) . ' (' . count($v) . '):';
+                    foreach (array_slice($v, 0, 8) as $row) {
+                        if (is_array($row)) {
+                            $lines[] = $indent . '- ' . $this->formatRowBrief($row, $ar);
+                        }
+                    }
+                } elseif (is_scalar($v) && !in_array(strtolower($key), $skip, true)) {
+                    $lines[] = $indent . '- ' . $this->fieldLabel($key, $ar) . ': ' . $this->formatFieldValue($key, $v, $ar);
+                }
+            }
+            return $lines;
+        }
+
+        foreach ($data as $k => $v) {
+            $key = (string) $k;
+            if (in_array(strtolower($key), $skip, true) || in_array($key, $skip, true)) {
+                continue;
+            }
+            if ($key === 'notes' && is_array($v)) {
+                foreach ($v as $note) {
+                    if (is_scalar($note)) {
+                        $lines[] = $indent . '- ' . $this->translateNote((string) $note, $ar);
+                    }
+                }
+                continue;
+            }
+            if (is_scalar($v)) {
+                $lines[] = $indent . '- ' . $this->fieldLabel($key, $ar) . ': ' . $this->formatFieldValue($key, $v, $ar);
+                continue;
+            }
+            if (!is_array($v) || $v === []) {
+                continue;
+            }
+            // List of row objects
+            if (isset($v[0]) && is_array($v[0])) {
+                $lines[] = $indent . $this->fieldLabel($key, $ar) . ' (' . count($v) . '):';
+                foreach (array_slice($v, 0, 8) as $row) {
+                    if (is_array($row)) {
+                        $lines[] = $indent . '- ' . $this->formatRowBrief($row, $ar);
+                    }
+                }
+                continue;
+            }
+            // Associative map of scalars (by_status etc.)
+            $allScalar = true;
+            foreach ($v as $sv) {
+                if (!is_scalar($sv) && $sv !== null) {
+                    $allScalar = false;
+                    break;
+                }
+            }
+            if ($allScalar) {
+                $lines[] = $indent . $this->fieldLabel($key, $ar) . ':';
+                foreach ($v as $sk => $sv) {
+                    $lines[] = $indent . '  - ' . $this->fieldLabel((string) $sk, $ar) . ': ' . $this->formatFieldValue((string) $sk, $sv, $ar);
+                }
+                continue;
+            }
+            $lines[] = $indent . $this->fieldLabel($key, $ar) . ':';
+            foreach ($this->formatLocalizedDataTree($v, $ar, $depth + 1) as $line) {
+                $lines[] = $line;
+            }
+        }
+        return $lines;
+    }
+
+    private function fieldLabel(string $key, bool $ar): string
+    {
+        $k = strtolower(trim(str_replace([' ', '-'], '_', $key)));
+        $map = [
+            'as_of' => ['ar' => 'تاريخ البيانات', 'en' => 'As of'],
+            'item_count' => ['ar' => 'عدد الأصناف', 'en' => 'Item count'],
+            'total_quantity' => ['ar' => 'إجمالي الكمية', 'en' => 'Total quantity'],
+            'total_value' => ['ar' => 'إجمالي القيمة', 'en' => 'Total value'],
+            'available_item_count' => ['ar' => 'أصناف متوفرة', 'en' => 'Available items'],
+            'zero_stock_item_count' => ['ar' => 'أصناف بدون مخزون', 'en' => 'Zero-stock items'],
+            'warehouse_count' => ['ar' => 'عدد المستودعات', 'en' => 'Warehouses'],
+            'movements_last_7_days' => ['ar' => 'حركات آخر 7 أيام', 'en' => 'Movements (7 days)'],
+            'low_stock_count' => ['ar' => 'أصناف منخفضة', 'en' => 'Low stock'],
+            'expiring_count' => ['ar' => 'أصناف قاربت الانتهاء', 'en' => 'Expiring'],
+            'currency' => ['ar' => 'العملة', 'en' => 'Currency'],
+            'summary' => ['ar' => 'الملخص', 'en' => 'Summary'],
+            'notes' => ['ar' => 'ملاحظات', 'en' => 'Notes'],
+            'total' => ['ar' => 'الإجمالي', 'en' => 'Total'],
+            'by_status' => ['ar' => 'حسب الحالة', 'en' => 'By status'],
+            'active' => ['ar' => 'نشط', 'en' => 'Active'],
+            'inactive' => ['ar' => 'غير نشط', 'en' => 'Inactive'],
+            'pending' => ['ar' => 'معلّق', 'en' => 'Pending'],
+            'approved' => ['ar' => 'معتمد', 'en' => 'Approved'],
+            'rejected' => ['ar' => 'مرفوض', 'en' => 'Rejected'],
+            'draft' => ['ar' => 'مسودة', 'en' => 'Draft'],
+            'open' => ['ar' => 'مفتوح', 'en' => 'Open'],
+            'closed' => ['ar' => 'مغلق', 'en' => 'Closed'],
+            'employees' => ['ar' => 'الموظفون', 'en' => 'Employees'],
+            'employee_count' => ['ar' => 'عدد الموظفين', 'en' => 'Employees'],
+            'leave_count' => ['ar' => 'طلبات الإجازة', 'en' => 'Leave requests'],
+            'department_count' => ['ar' => 'عدد الأقسام', 'en' => 'Departments'],
+            'candidates' => ['ar' => 'المرشحون', 'en' => 'Candidates'],
+            'projects' => ['ar' => 'المشاريع', 'en' => 'Projects'],
+            'contracts' => ['ar' => 'العقود', 'en' => 'Contracts'],
+            'assets' => ['ar' => 'الأصول', 'en' => 'Assets'],
+            'orders' => ['ar' => 'الطلبات', 'en' => 'Orders'],
+            'customers' => ['ar' => 'العملاء', 'en' => 'Customers'],
+            'leads' => ['ar' => 'العملاء المحتملون', 'en' => 'Leads'],
+            'opportunities' => ['ar' => 'الفرص', 'en' => 'Opportunities'],
+            'shipments' => ['ar' => 'الشحنات', 'en' => 'Shipments'],
+            'trips' => ['ar' => 'الرحلات', 'en' => 'Trips'],
+            'invoices' => ['ar' => 'الفواتير', 'en' => 'Invoices'],
+            'receivables' => ['ar' => 'الذمم المدينة', 'en' => 'Receivables'],
+            'payables' => ['ar' => 'الذمم الدائنة', 'en' => 'Payables'],
+            'unread' => ['ar' => 'غير مقروء', 'en' => 'Unread'],
+            'kpis' => ['ar' => 'المؤشرات', 'en' => 'KPIs'],
+            'low_stock' => ['ar' => 'مخزون منخفض', 'en' => 'Low stock'],
+            'expiring' => ['ar' => 'قارب على الانتهاء', 'en' => 'Expiring'],
+            'warehouses' => ['ar' => 'المستودعات', 'en' => 'Warehouses'],
+            'movements' => ['ar' => 'الحركات', 'en' => 'Movements'],
+            'unknown' => ['ar' => 'غير محدد', 'en' => 'Unknown'],
+            'status' => ['ar' => 'الحالة', 'en' => 'Status'],
+            'name' => ['ar' => 'الاسم', 'en' => 'Name'],
+            'code' => ['ar' => 'الرمز', 'en' => 'Code'],
+            'quantity' => ['ar' => 'الكمية', 'en' => 'Quantity'],
+            'amount' => ['ar' => 'المبلغ', 'en' => 'Amount'],
+            'balance' => ['ar' => 'الرصيد', 'en' => 'Balance'],
+            'count' => ['ar' => 'العدد', 'en' => 'Count'],
+        ];
+        if (isset($map[$k])) {
+            return $ar ? $map[$k]['ar'] : $map[$k]['en'];
+        }
+        // Numeric list indexes → hide as labels
+        if (ctype_digit($k)) {
+            return $ar ? ('عنصر ' . ((int) $k + 1)) : ('Item ' . ((int) $k + 1));
+        }
+        // Soft humanize remaining snake_case (still better than raw)
+        $human = str_replace('_', ' ', $k);
+        return $ar ? $human : ucwords($human);
+    }
+
+    private function formatFieldValue(string $key, mixed $value, bool $ar): string
+    {
+        if ($value === null) {
+            return $ar ? '—' : '—';
+        }
+        if (is_bool($value)) {
+            return $value ? ($ar ? 'نعم' : 'Yes') : ($ar ? 'لا' : 'No');
+        }
+        $s = trim((string) $value);
+        $k = strtolower($key);
+        if ($k === 'status' || $k === 'bucket') {
+            return $this->fieldLabel($s, $ar);
+        }
+        if (in_array($s, ['live_tenant', 'empty_lists_mean_no_matching_records', 'all_values_from_live_tenant_data', 'table_unavailable'], true)) {
+            return $this->translateNote($s, $ar);
+        }
+        return $s;
+    }
+
+    private function translateNote(string $note, bool $ar): string
+    {
+        $map = [
+            'empty_lists_mean_no_matching_records' => [
+                'ar' => 'القوائم الفارغة تعني عدم وجود سجلات مطابقة حالياً.',
+                'en' => 'Empty lists mean no matching records right now.',
+            ],
+            'all_values_from_live_tenant_data' => [
+                'ar' => 'جميع القيم من بيانات الشركة الحية.',
+                'en' => 'All values are from live company data.',
+            ],
+            'table_unavailable' => [
+                'ar' => 'جدول البيانات غير متاح لهذه الشركة بعد.',
+                'en' => 'Data table is not available for this company yet.',
+            ],
+            'live_tenant' => [
+                'ar' => 'بيانات الشركة الحية',
+                'en' => 'Live company data',
+            ],
+        ];
+        $key = strtolower(trim($note));
+        if (isset($map[$key])) {
+            return $ar ? $map[$key]['ar'] : $map[$key]['en'];
+        }
+        return $note;
     }
 
     /**
      * @param array<string, mixed> $r
      */
-    private function formatRowBrief(array $r): string
+    private function formatRowBrief(array $r, bool $ar = true): string
     {
         $parts = [];
-        foreach (['employee_code', 'code', 'name', 'title', 'status', 'email', 'job_title', 'order_no', 'id'] as $k) {
+        foreach (['employee_code', 'code', 'sku', 'name', 'title', 'status', 'email', 'job_title', 'order_no', 'id'] as $k) {
             if (isset($r[$k]) && $r[$k] !== '' && $r[$k] !== null) {
-                $parts[] = (string) $r[$k];
+                $val = (string) $r[$k];
+                if ($k === 'status') {
+                    $val = $this->fieldLabel($val, $ar);
+                }
+                $parts[] = $val;
             }
         }
         if ($parts === []) {
@@ -2564,11 +2873,12 @@ final class ErpAgent
             'en' => 'Unable to complete the request right now.',
         ];
         $response = $locale === 'ar' ? $pair['ar'] : $pair['en'];
-        if ($domainId !== '' && $locale === 'ar') {
-            $meta = ErpDomainRegistry::resolve($domainId);
-            $label = (string) ($meta['label'] ?? $domainId);
+        if ($domainId !== '') {
+            $label = $this->domainDisplayLabel($domainId, $locale === 'ar');
             if ($errorCode === 'module_not_entitled') {
-                $response = 'لا يمكن فتح «' . $label . '»: الوحدة غير مفعّلة أو بلا صلاحية لهذه الشركة.';
+                $response = $locale === 'ar'
+                    ? ('لا يمكن فتح «' . $label . '»: الوحدة غير مفعّلة أو بلا صلاحية لهذه الشركة.')
+                    : ('Cannot open “' . $label . '”: module disabled or not entitled for this company.');
             }
         }
 

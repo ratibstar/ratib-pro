@@ -900,6 +900,37 @@ html[data-bs-theme="dark"] .rateb-ai-input-form {
     overflow-wrap: anywhere;
 }
 
+.rateb-ai-fold {
+    margin: 8px 0 4px;
+    border: 1px solid var(--ai-border);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+.rateb-ai-fold-sum {
+    cursor: pointer;
+    list-style: none;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--ai-primary);
+    user-select: none;
+}
+.rateb-ai-fold-sum::-webkit-details-marker { display: none; }
+.rateb-ai-fold-sum::before {
+    content: '▾ ';
+    opacity: 0.75;
+}
+.rateb-ai-fold:not([open]) .rateb-ai-fold-sum::before {
+    content: '▸ ';
+}
+.rateb-ai-fold-body {
+    padding: 0 12px 10px;
+    border-top: 1px solid var(--ai-border);
+}
+.rateb-ai-fold-intro {
+    margin-bottom: 4px;
+}
+
 .rateb-ai-message.user .rateb-ai-message-content {
     background: var(--ai-user-bg);
     border-color: var(--ai-user-bg);

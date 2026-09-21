@@ -719,12 +719,48 @@
                         .replace(/"/g, '&quot;').replace(/'/g, '&#039;')
                         .replace(/\n/g, '<br>');
                 }
+                function escPlain(text) {
+                    return String(text)
+                        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+                }
+                function formatAssistantHtml(content) {
+                    var lines = String(content || '').split('\n');
+                    var html = '';
+                    var i = 0;
+                    while (i < lines.length) {
+                        var sec = lines[i].match(/^【(.+)】\s*$/);
+                        if (sec) {
+                            var title = sec[1];
+                            var body = [];
+                            i += 1;
+                            while (i < lines.length && !/^【.+】\s*$/.test(lines[i])) {
+                                body.push(lines[i]);
+                                i += 1;
+                            }
+                            html += '<details class="rateb-ai-fold" open>' +
+                                '<summary class="rateb-ai-fold-sum">' + escPlain(title) + '</summary>' +
+                                '<div class="rateb-ai-fold-body">' + esc(body.join('\n')) + '</div></details>';
+                            continue;
+                        }
+                        var plain = [];
+                        while (i < lines.length && !/^【.+】\s*$/.test(lines[i])) {
+                            plain.push(lines[i]);
+                            i += 1;
+                        }
+                        if (plain.length) {
+                            html += '<div class="rateb-ai-fold-intro">' + esc(plain.join('\n')) + '</div>';
+                        }
+                    }
+                    return html || esc(content);
+                }
                 function addMsg(role, content) {
                     var div = doc.createElement('div');
                     div.className = 'rateb-ai-message ' + role;
+                    var bodyHtml = role === 'assistant' ? formatAssistantHtml(content) : esc(content);
                     div.innerHTML = '<div class="rateb-ai-message-avatar"><i class="fa-solid fa-' +
                         (role === 'user' ? 'user' : 'robot') + '"></i></div>' +
-                        '<div class="rateb-ai-message-content">' + esc(content) + '</div>';
+                        '<div class="rateb-ai-message-content">' + bodyHtml + '</div>';
                     messages.appendChild(div);
                     messages.scrollTop = messages.scrollHeight;
                 }
