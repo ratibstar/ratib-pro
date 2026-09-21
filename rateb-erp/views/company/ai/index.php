@@ -39,7 +39,7 @@ $aiToolLabels = is_array($aiToolLabels ?? null) ? $aiToolLabels : [];
 /* Inline boot — must work even when SW/soft-nav delays or skips deferred external JS. */
 (function () {
     try { if (document.body) document.body.setAttribute('data-rateb-hide-help-assistant', '1'); } catch (eHide) {}
-    var API_VER = 6;
+    var API_VER = 7;
     var needsUpgrade = !(window.ratebAi && window.ratebAi.__apiVer === API_VER
         && window.ratebAi.__p0ChatHistory && typeof window.ratebAi.getHistory === 'function'
         && typeof window.ratebAi.clickSuggest === 'function');
@@ -553,7 +553,7 @@ require __DIR__ . '/control-tower.php';
     </div>
 
     <form class="rateb-ai-input-form" id="aiInputForm" novalidate onsubmit="event.preventDefault(); return window.ratebAi && window.ratebAi.sendFromInput ? window.ratebAi.sendFromInput() : false;">
-        <div class="rateb-ai-input-wrapper">
+        <div class="rateb-ai-input-wrapper" id="aiInputWrapper">
             <textarea
                 class="rateb-ai-input"
                 id="aiInput"
@@ -584,6 +584,24 @@ require __DIR__ . '/control-tower.php';
                 </button>
             </div>
             <div class="rateb-ai-voice-status" id="aiVoiceStatus" aria-live="polite" data-state="ready">Ready</div>
+        </div>
+        <div class="rateb-ai-voice-rec" id="aiVoiceRecBar" hidden aria-live="polite">
+            <div class="rateb-ai-voice-rec__dots" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span>
+            </div>
+            <div class="rateb-ai-voice-rec__wave" id="aiVoiceWave" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+            <div class="rateb-ai-voice-rec__actions">
+                <button type="button" class="rateb-ai-voice-rec__btn rateb-ai-voice-rec__btn--cancel" id="aiVoiceRecCancel" aria-label="إلغاء" title="إلغاء" onclick="return window.ratebAi && window.ratebAi.cancelVoiceRecording ? window.ratebAi.cancelVoiceRecording() : false;">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="rateb-ai-voice-rec__btn rateb-ai-voice-rec__btn--ok" id="aiVoiceRecOk" aria-label="إرسال" title="إرسال" onclick="return window.ratebAi && window.ratebAi.confirmVoiceRecording ? window.ratebAi.confirmVoiceRecording() : false;">
+                    <i class="fa-solid fa-check" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
         <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
     </form>
@@ -995,6 +1013,129 @@ html[data-bs-theme="dark"] .rateb-ai-input-form {
     color: var(--ai-text-muted);
     font-size: .75rem;
     line-height: 1.2;
+}
+
+/* Recording capsule — shown while mic is active (matches voice-rec reference UI) */
+.rateb-ai-voice-rec {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: #1a1d24;
+    border: 1px solid #2a303a;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+}
+
+.rateb-ai-input-form.is-recording .rateb-ai-input-wrapper {
+    display: none;
+}
+
+.rateb-ai-input-form.is-recording .rateb-ai-voice-rec {
+    display: flex;
+}
+
+.rateb-ai-voice-rec__dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    padding-inline-start: 4px;
+}
+
+.rateb-ai-voice-rec__dots span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #8b93a7;
+    opacity: .55;
+    animation: rateb-ai-rec-dot 1.2s ease-in-out infinite;
+}
+
+.rateb-ai-voice-rec__dots span:nth-child(2) { animation-delay: .1s; }
+.rateb-ai-voice-rec__dots span:nth-child(3) { animation-delay: .2s; }
+.rateb-ai-voice-rec__dots span:nth-child(4) { animation-delay: .3s; }
+.rateb-ai-voice-rec__dots span:nth-child(5) { animation-delay: .4s; }
+.rateb-ai-voice-rec__dots span:nth-child(6) { animation-delay: .5s; }
+.rateb-ai-voice-rec__dots span:nth-child(7) { animation-delay: .6s; }
+.rateb-ai-voice-rec__dots span:nth-child(8) { animation-delay: .7s; }
+
+@keyframes rateb-ai-rec-dot {
+    0%, 100% { opacity: .35; transform: scale(.85); }
+    50% { opacity: 1; transform: scale(1.15); }
+}
+
+.rateb-ai-voice-rec__wave {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    overflow: hidden;
+}
+
+.rateb-ai-voice-rec__wave i {
+    display: block;
+    width: 3px;
+    border-radius: 2px;
+    background: #9aa3b5;
+    height: 8px;
+    animation: rateb-ai-rec-wave 1s ease-in-out infinite;
+}
+
+.rateb-ai-voice-rec__wave i:nth-child(odd) { animation-duration: .85s; }
+.rateb-ai-voice-rec__wave i:nth-child(3n) { animation-duration: 1.15s; }
+.rateb-ai-voice-rec__wave i:nth-child(1) { animation-delay: 0s; }
+.rateb-ai-voice-rec__wave i:nth-child(2) { animation-delay: .05s; }
+.rateb-ai-voice-rec__wave i:nth-child(3) { animation-delay: .1s; }
+.rateb-ai-voice-rec__wave i:nth-child(4) { animation-delay: .15s; }
+.rateb-ai-voice-rec__wave i:nth-child(5) { animation-delay: .2s; }
+.rateb-ai-voice-rec__wave i:nth-child(6) { animation-delay: .08s; }
+.rateb-ai-voice-rec__wave i:nth-child(7) { animation-delay: .18s; }
+.rateb-ai-voice-rec__wave i:nth-child(8) { animation-delay: .12s; }
+.rateb-ai-voice-rec__wave i:nth-child(9) { animation-delay: .22s; }
+.rateb-ai-voice-rec__wave i:nth-child(10) { animation-delay: .04s; }
+
+@keyframes rateb-ai-rec-wave {
+    0%, 100% { height: 6px; opacity: .45; }
+    50% { height: 22px; opacity: 1; }
+}
+
+.rateb-ai-voice-rec__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.rateb-ai-voice-rec__btn {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #e8eaed;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.rateb-ai-voice-rec__btn:hover {
+    background: rgba(255,255,255,.08);
+}
+
+.rateb-ai-voice-rec__btn--ok {
+    color: #7dd3a0;
+}
+
+.rateb-ai-voice-rec__btn--cancel {
+    color: #c5cad6;
 }
 
 .rateb-ai-voice-status[data-state="listening"] { color: #f87171; }

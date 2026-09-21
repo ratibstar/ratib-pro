@@ -25,12 +25,34 @@
         var languageSelect = doc.getElementById('aiVoiceLanguage');
         var status = doc.getElementById('aiVoiceStatus');
         var messages = doc.getElementById('aiMessages');
+        var formEl = doc.getElementById('aiInputForm');
+        var recBar = doc.getElementById('aiVoiceRecBar');
+        var recCancel = doc.getElementById('aiVoiceRecCancel');
+        var recOk = doc.getElementById('aiVoiceRecOk');
         var Recognition = root.SpeechRecognition || root.webkitSpeechRecognition;
         var recognition = null;
         var listening = false;
         var speaking = false;
         var voiceMode = false;
         var waitingForVoiceReply = false;
+        var pendingTranscript = '';
+        var autoSendOnFinal = false; // capsule UI: user confirms with ✓
+
+        function showRecBar() {
+            if (formEl) formEl.classList.add('is-recording');
+            if (recBar) {
+                recBar.hidden = false;
+                recBar.removeAttribute('hidden');
+            }
+        }
+
+        function hideRecBar() {
+            if (formEl) formEl.classList.remove('is-recording');
+            if (recBar) {
+                recBar.hidden = true;
+                recBar.setAttribute('hidden', 'hidden');
+            }
+        }
 
         if (!inputBtn || !modeBtn || !languageSelect || !status) {
             api.toggleVoiceInput = function () {
@@ -138,6 +160,9 @@
         }
 
         function startListening() {
+            // Always show the capsule UI immediately on mic click (even before permission).
+            showRecBar();
+            pendingTranscript = '';
             if (!Recognition) {
                 setStatus('ready', 'الميكروفون غير مدعوم في هذا المتصفح. استخدم Chrome واسمح بالمايك.');
                 return;
@@ -147,26 +172,36 @@
             stopSpeaking();
             recognition = new Recognition();
             recognition.lang = languageSelect.value || 'ar-SA';
-            recognition.continuous = false;
+            recognition.continuous = true;
             recognition.interimResults = true;
             recognition.onstart = function () {
                 listening = true;
                 inputBtn.classList.add('is-listening');
                 inputBtn.setAttribute('data-listening', '1');
-                setStatus('listening');
+                setStatus('listening', 'جاري الاستماع…');
                 setStopVisible(true);
+                showRecBar();
             };
             recognition.onresult = function (event) {
                 var transcript = '';
                 for (var i = event.resultIndex; i < event.results.length; i += 1) {
                     transcript += event.results[i][0].transcript;
                 }
-                putTranscript(transcript);
+                if (transcript.trim()) {
+                    pendingTranscript = String(transcript || '').trim();
+                    putTranscript(pendingTranscript);
+                }
                 var last = event.results[event.results.length - 1];
                 if (last && last.isFinal && transcript.trim()) {
-                    waitingForVoiceReply = voiceMode;
-                    setStatus('processing');
-                    api.send(transcript.trim());
+                    pendingTranscript = transcript.trim();
+                    putTranscript(pendingTranscript);
+                    // Capsule mode: wait for ✓ — only auto-send in headset voiceMode without bar confirm.
+                    if (autoSendOnFinal && voiceMode) {
+                        waitingForVoiceReply = true;
+                        setStatus('processing');
+                        hideRecBar();
+                        api.send(pendingTranscript);
+                    }
                 }
             };
             recognition.onerror = function (event) {
@@ -176,12 +211,23 @@
                 var denied = event && (event.error === 'not-allowed' || event.error === 'service-not-allowed');
                 setStatus('ready', denied ? 'اسمح للمايك من إعدادات المتصفح ثم أعد المحاولة' : 'تعذر تشغيل المايك');
                 setStopVisible(false);
+                if (denied || (event && event.error === 'network')) {
+                    hideRecBar();
+                }
             };
             recognition.onend = function () {
                 listening = false;
                 inputBtn.classList.remove('is-listening');
                 inputBtn.removeAttribute('data-listening');
-                if (!speaking && !api.loading && !waitingForVoiceReply) {
+                // Keep capsule open: restart listen while user hasn't pressed X/✓ yet.
+                if (formEl && formEl.classList.contains('is-recording') && !api.loading) {
+                    try {
+                        recognition.start();
+                        return;
+                    } catch (eRestart) { /* fall through */ }
+                }
+                if (!speaking && !api.loading && !waitingForVoiceReply
+                    && !(formEl && formEl.classList.contains('is-recording'))) {
                     setStatus('ready');
                     setStopVisible(false);
                 }
@@ -197,17 +243,56 @@
         function stopAll() {
             voiceMode = false;
             waitingForVoiceReply = false;
-            if (recognition) recognition.stop();
+            try { if (recognition) recognition.stop(); } catch (eStop) {}
             listening = false;
             stopSpeaking();
             modeBtn.setAttribute('aria-pressed', 'false');
             modeBtn.classList.remove('is-active');
+            inputBtn.classList.remove('is-listening');
+            inputBtn.removeAttribute('data-listening');
             setStatus('ready');
             setStopVisible(false);
+            hideRecBar();
+        }
+
+        function cancelRecording() {
+            pendingTranscript = '';
+            var input = doc.getElementById('aiInput');
+            if (input) {
+                input.value = '';
+                try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (eIn) {}
+            }
+            stopAll();
+            return false;
+        }
+
+        function confirmRecording() {
+            var text = pendingTranscript || '';
+            var input = doc.getElementById('aiInput');
+            if (!text && input) text = String(input.value || '').trim();
+            try { if (recognition) recognition.stop(); } catch (eStop) {}
+            listening = false;
+            hideRecBar();
+            setStopVisible(false);
+            inputBtn.classList.remove('is-listening');
+            inputBtn.removeAttribute('data-listening');
+            if (!text) {
+                setStatus('ready', 'لم يُلتقط كلام — حاول مرة أخرى');
+                return false;
+            }
+            setStatus('processing');
+            waitingForVoiceReply = voiceMode;
+            api.send(text);
+            return false;
         }
 
         function toggleVoiceInput() {
-            if (listening) stopAll(); else startListening();
+            if (listening || (formEl && formEl.classList.contains('is-recording'))) {
+                // Second mic click while open = keep recording; use X/✓ on the bar.
+                if (!listening) startListening();
+                return false;
+            }
+            startListening();
             return false;
         }
 
@@ -238,6 +323,18 @@
             if (e) { e.preventDefault(); e.stopPropagation(); }
             toggleVoiceMode();
         });
+        if (recCancel) {
+            recCancel.addEventListener('click', function (e) {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                cancelRecording();
+            });
+        }
+        if (recOk) {
+            recOk.addEventListener('click', function (e) {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                confirmRecording();
+            });
+        }
         languageSelect.addEventListener('change', function () {
             if (listening) {
                 if (recognition) recognition.stop();
@@ -249,6 +346,8 @@
         // Inline onclick (same pattern as send) — works even if soft-nav skipped deferred rebind.
         api.toggleVoiceInput = toggleVoiceInput;
         api.toggleVoiceMode = toggleVoiceMode;
+        api.cancelVoiceRecording = cancelRecording;
+        api.confirmVoiceRecording = confirmRecording;
         api.stopVoice = function () { stopAll(); return false; };
         api.bindVoice = function () { installVoiceFeatures(api); };
 
