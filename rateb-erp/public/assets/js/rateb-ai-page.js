@@ -17,7 +17,8 @@
             && api.__ratebVoiceInputBtn === inputBtn
             && api.__ratebVoiceStopBtn === stopBtn
             && api.__ratebVoiceModeBtn === modeBtn
-            && inputBtn) {
+            && inputBtn
+            && typeof api.toggleVoiceInput === 'function') {
             return;
         }
 
@@ -31,7 +32,31 @@
         var voiceMode = false;
         var waitingForVoiceReply = false;
 
-        if (!inputBtn || !stopBtn || !modeBtn || !languageSelect || !status || !messages) return;
+        if (!inputBtn || !modeBtn || !languageSelect || !status) {
+            api.toggleVoiceInput = function () {
+                try {
+                    var s = doc.getElementById('aiVoiceStatus');
+                    if (s) {
+                        s.textContent = 'عناصر المايك غير جاهزة — حدّث الصفحة (Ctrl+F5)';
+                        s.setAttribute('data-state', 'ready');
+                    }
+                } catch (eSt) {}
+                return false;
+            };
+            api.toggleVoiceMode = api.toggleVoiceInput;
+            api.stopVoice = function () { return false; };
+            api.bindVoice = function () { installVoiceFeatures(api); };
+            return;
+        }
+        if (!stopBtn) {
+            stopBtn = doc.createElement('button');
+            stopBtn.id = 'aiVoiceStopBtn';
+            stopBtn.hidden = true;
+            stopBtn.className = 'rateb-ai-voice-btn rateb-ai-voice-btn--stop is-hidden';
+        }
+        if (!messages) {
+            messages = doc.getElementById('aiMessages') || doc.body;
+        }
 
         function setStatus(state, detail) {
             var labels = {
@@ -500,7 +525,16 @@
             sendFromInput: function () {
                 this.loading = false;
                 var input = doc.getElementById('aiInput');
-                return this.send(input ? input.value : '');
+                var status = doc.getElementById('aiVoiceStatus');
+                var msg = input ? String(input.value || '').trim() : '';
+                if (!msg) {
+                    if (status) {
+                        status.textContent = 'اكتب رسالة أو استخدم المايك أولاً';
+                        status.setAttribute('data-state', 'ready');
+                    }
+                    return false;
+                }
+                return this.send(msg);
             },
             syncSendBtn: function () {
                 var input = doc.getElementById('aiInput');
@@ -569,11 +603,25 @@
         };
     }
 
-    var API_VER = 5;
+    var API_VER = 6;
+
+    function ensureVoiceReady(api) {
+        if (!api) return;
+        try {
+            if (typeof api.bindVoice === 'function') {
+                api.bindVoice();
+            } else {
+                installVoiceFeatures(api);
+                api.bindVoice = function () { installVoiceFeatures(api); };
+            }
+        } catch (eVoice) {
+            try { installVoiceFeatures(api); } catch (e2) {}
+        }
+    }
 
     function bindMasterClicks() {
-        if (root.__ratebAiClickBoundV5) return;
-        root.__ratebAiClickBoundV5 = true;
+        if (root.__ratebAiClickBoundV6) return;
+        root.__ratebAiClickBoundV6 = true;
         doc.addEventListener('click', function (e) {
             if (!doc.getElementById('ratebAiRoot') || !root.ratebAi) return;
             var t = e.target && e.target.closest ? e.target.closest(
@@ -582,20 +630,21 @@
             if (!t) return;
             if (t.getAttribute('data-rateb-ai-confirm') || t.getAttribute('data-rateb-ai-cancel')) return;
             e.preventDefault();
-            try { e.stopPropagation(); e.stopImmediatePropagation(); } catch (eStop) {}
+            // Do NOT stopImmediatePropagation — keep onclick / other listeners as backup.
             var api = root.ratebAi;
+            if (t.id === 'aiSendBtn' || t.id === 'aiVoiceModeBtn' || t.id === 'aiVoiceInputBtn' || t.id === 'aiVoiceStopBtn') {
+                ensureVoiceReady(api);
+            }
             if (t.id === 'aiSendBtn') {
                 if (typeof api.sendFromInput === 'function') api.sendFromInput();
                 return;
             }
             if (t.id === 'aiVoiceModeBtn') {
                 if (typeof api.toggleVoiceMode === 'function') api.toggleVoiceMode();
-                else if (typeof api.bindVoice === 'function') { api.bindVoice(); if (api.toggleVoiceMode) api.toggleVoiceMode(); }
                 return;
             }
             if (t.id === 'aiVoiceInputBtn') {
                 if (typeof api.toggleVoiceInput === 'function') api.toggleVoiceInput();
-                else if (typeof api.bindVoice === 'function') { api.bindVoice(); if (api.toggleVoiceInput) api.toggleVoiceInput(); }
                 return;
             }
             if (t.id === 'aiVoiceStopBtn') {
@@ -637,9 +686,11 @@
             if (form) form.removeAttribute('data-rateb-ai-submit');
             if (input) input.removeAttribute('data-rateb-ai-input');
             if (sendBtn) sendBtn.removeAttribute('data-rateb-ai-click');
+            api.__ratebVoiceBound = false;
             api.bind();
             installVoiceFeatures(api);
             api.bindVoice = function () { installVoiceFeatures(api); };
+            ensureVoiceReady(api);
         }
     }
 
