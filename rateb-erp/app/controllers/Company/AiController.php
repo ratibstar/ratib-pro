@@ -10,6 +10,51 @@ use Rateb\App\Core\SessionManager;
 
 final class AiController extends Controller
 {
+    /**
+     * Bind a real tenant for AI. Platform SA often has TenantContext=null while
+     * leftover rateb_company_id still drives the branch bar — adopt that so chat works.
+     */
+    private function resolveAiCompanyId(): int
+    {
+        $companyId = (int) (TenantContext::companyId() ?? 0);
+
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
+
+        if ($companyId < 1) {
+            $sessionCompany = (int) (SessionManager::get('rateb_company_id', 0) ?? 0);
+            if ($sessionCompany > 0) {
+                if (function_exists('rateb_adopt_ops_company_id')) {
+                    $companyId = (int) rateb_adopt_ops_company_id($sessionCompany);
+                } else {
+                    $companyId = $sessionCompany;
+                }
+            }
+        }
+
+        if ($companyId < 1 && function_exists('rateb_resolve_erp_shell_company_id')) {
+            $isPlatformSa = (bool) SessionManager::get('rateb_is_super_admin')
+                && function_exists('rateb_is_platform_oversight_host')
+                && rateb_is_platform_oversight_host();
+            // Platform SA without an explicit tenant stays at 0 (picker required).
+            // Everyone else may fall back to shell/primary resolution.
+            if (!$isPlatformSa) {
+                $companyId = (int) rateb_resolve_erp_shell_company_id();
+            }
+        }
+
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+            if (function_exists('rateb_sync_ops_session_to_company')) {
+                rateb_sync_ops_session_to_company($companyId);
+            }
+            SessionManager::set('rateb_ops_company_explicit', 1);
+        }
+
+        return $companyId > 0 ? $companyId : 0;
+    }
+
     public function index(): void
     {
         Auth::bootstrapFromSession();
@@ -29,14 +74,7 @@ final class AiController extends Controller
         $isSuperAdmin = function_exists('rateb_is_super_admin') && rateb_is_super_admin();
         $isPlatformStaff = !$isSuperAdmin
             && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff((int) ($user['id'] ?? 0));
-        $companyId = TenantContext::companyId();
-        if (!$companyId && function_exists('rateb_resolve_ops_company_id')) {
-            $opsCompanyId = (int) rateb_resolve_ops_company_id();
-            if ($opsCompanyId > 0) {
-                TenantContext::setCompanyId($opsCompanyId);
-                $companyId = $opsCompanyId;
-            }
-        }
+        $companyId = $this->resolveAiCompanyId();
         if (!$companyId && !$isSuperAdmin && !$isPlatformStaff) {
             $this->redirect(rateb_url('admin'));
             return;
@@ -83,6 +121,7 @@ final class AiController extends Controller
             'towerEndpoint' => rateb_url(rateb_app_route('ai/tower')),
             'aiCompanyId' => (int) $companyId,
             'aiUserId' => (int) ($user['id'] ?? 0),
+            'aiNeedsCompany' => $companyId < 1,
             'controlTower' => is_array($tower) ? $tower : [],
             'aiCapabilities' => is_array($capabilities) ? $capabilities : [],
             'aiToolLabels' => is_array($toolLabels) ? $toolLabels : [],
@@ -105,14 +144,7 @@ final class AiController extends Controller
             return;
         }
 
-        $companyId = TenantContext::companyId();
-        if (!$companyId && function_exists('rateb_resolve_ops_company_id')) {
-            $opsCompanyId = (int) rateb_resolve_ops_company_id();
-            if ($opsCompanyId > 0) {
-                TenantContext::setCompanyId($opsCompanyId);
-                $companyId = $opsCompanyId;
-            }
-        }
+        $companyId = $this->resolveAiCompanyId();
         if (!$companyId) {
             $this->json(['success' => false, 'error' => 'company_required', 'message' => __('ai_company_required')], 400);
             return;
@@ -183,14 +215,7 @@ final class AiController extends Controller
             return;
         }
 
-        $companyId = TenantContext::companyId();
-        if (!$companyId && function_exists('rateb_resolve_ops_company_id')) {
-            $opsCompanyId = (int) rateb_resolve_ops_company_id();
-            if ($opsCompanyId > 0) {
-                TenantContext::setCompanyId($opsCompanyId);
-                $companyId = $opsCompanyId;
-            }
-        }
+        $companyId = $this->resolveAiCompanyId();
         if (!$companyId) {
             $this->json([
                 'success' => false,

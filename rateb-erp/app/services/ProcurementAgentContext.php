@@ -60,6 +60,27 @@ final class ProcurementAgentContext
 
         $companyId = TenantContext::companyId();
         if ($companyId === null || $companyId < 1) {
+            if (function_exists('rateb_resolve_ops_company_id')) {
+                $ops = (int) rateb_resolve_ops_company_id();
+                if ($ops > 0) {
+                    TenantContext::setCompanyId($ops);
+                    $companyId = $ops;
+                }
+            }
+        }
+        if ($companyId === null || $companyId < 1) {
+            $sessionCompany = (int) SessionManager::get('rateb_company_id', 0);
+            if ($sessionCompany > 0) {
+                if (function_exists('rateb_adopt_ops_company_id')) {
+                    $sessionCompany = (int) rateb_adopt_ops_company_id($sessionCompany);
+                }
+                if ($sessionCompany > 0) {
+                    TenantContext::setCompanyId($sessionCompany);
+                    $companyId = $sessionCompany;
+                }
+            }
+        }
+        if ($companyId === null || $companyId < 1) {
             // No company context — cannot proceed with procurement tools
             return null;
         }

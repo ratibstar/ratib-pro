@@ -456,6 +456,18 @@ if ($controlTower !== []) {
         echo htmlspecialchars(json_encode($aiToolLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}', ENT_QUOTES, 'UTF-8');
     ?>"
 >
+    <?php if (!empty($aiNeedsCompany)): ?>
+    <div class="alert alert-warning mb-3" role="alert" id="aiCompanyRequiredBanner">
+        <i class="fas fa-building me-1"></i>
+        <strong><?php echo htmlspecialchars(__('company_required'), ENT_QUOTES, 'UTF-8'); ?></strong>
+        <?php if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()): ?>
+        <span class="d-block mt-1"><?php echo htmlspecialchars(__('select_company_ops'), ENT_QUOTES, 'UTF-8'); ?></span>
+        <?php endif; ?>
+    </div>
+    <?php if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()): ?>
+        <?php Rateb\App\Core\View::partial('ops-company-select'); ?>
+    <?php endif; ?>
+    <?php endif; ?>
     <div class="rateb-ai-header">
         <div class="rateb-ai-brand">
             <?php

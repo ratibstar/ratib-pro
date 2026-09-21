@@ -1479,6 +1479,9 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 && (
                 rateb_is_ops_route($erpRoute)
                 || strpos($currentPath, '/admin/ops/') !== false
+                || preg_match('#/(?:admin/)?ai(?:/|$)#', (string) $currentPath) === 1
+                || $erpRoute === 'admin/ai'
+                || str_starts_with((string) $erpRoute, 'admin/ai/')
             );
             if ($platformAccountsUi && rateb_is_super_admin()) {
                 Rateb\App\Core\View::partial('platform-accounts-banner');
