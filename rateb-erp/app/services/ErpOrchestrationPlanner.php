@@ -77,7 +77,59 @@ final class ErpOrchestrationPlanner
             ),
             ErpDomainRegistry::DOMAIN_PROCUREMENT => self::match(
                 $message,
-                '/(procurement|purchase\s*request|purchase\s*order|approval|approvals|مشتريات|طلب\s*شراء|طلبات\s*الشراء|أوامر\s*شراء|أمر\s*شراء|موافقة|موافقات|متأخر|تأخير)/ui'
+                '/(procurement|purchase\s*request|purchase\s*order|مشتريات|طلب\s*شراء|طلبات\s*الشراء|أوامر\s*شراء|أمر\s*شراء|متأخر|تأخير)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_HR => self::match(
+                $message,
+                '/(hr|human\s*resources|employee|employees|workforce|attendance|leave|موارد\s*بشرية|موظف|موظفين|الحضور|إجازة|اجازة)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_RECRUITMENT => self::match(
+                $message,
+                '/(recruitment|recruit|candidate|candidates|interview|hiring|توظيف|مرشح|مرشحين|مقابلة|مقابلات|استقدام)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_PROJECTS => self::match(
+                $message,
+                '/(project|projects|milestone|task|tasks|مشروع|مشاريع|مهمة|مهام)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_CONTRACTS => self::match(
+                $message,
+                '/(contract|contracts|renewal|عقد|عقود|تجديد\s*عقد)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_ASSETS => self::match(
+                $message,
+                '/(asset|assets|eam|maintenance|أصل|أصول|صيانة)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_PAYROLL => self::match(
+                $message,
+                '/(payroll|salary|salaries|payslip|رواتب|راتب|مسير|قسيمة\s*راتب|منصة\s*الرواتب)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_MANUFACTURING => self::match(
+                $message,
+                '/(manufacturing|production\s*order|bom|تصنيع|إنتاج|أمر\s*تصنيع)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_QUALITY => self::match(
+                $message,
+                '/(quality|qms|ncr|nonconform|inspection|جودة|عدم\s*مطابقة|فحص|منصة\s*الجودة)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_APPROVALS => self::match(
+                $message,
+                '/(approval|approvals|workflow|eap|موافقة|موافقات|سير\s*عمل|اعتماد)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_MARKETPLACE => self::match(
+                $message,
+                '/(marketplace|service\s*market|سوق\s*الخدمات|مقدم\s*خدمة)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_NOTIFICATIONS => self::match(
+                $message,
+                '/(notification|notifications|إشعار|إشعارات|تنبيه|تنبيهات)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_BI => self::match(
+                $message,
+                '/(business\s*intelligence|\bbi\b|kpi|analytics|ذكاء\s*الأعمال|مؤشر|مؤشرات)/ui'
+            ),
+            ErpDomainRegistry::DOMAIN_WEBSITE => self::match(
+                $message,
+                '/(website|cms|blog|موقع|محتوى\s*تسويقي|صفحات\s*الموقع)/ui'
             ),
         ];
 

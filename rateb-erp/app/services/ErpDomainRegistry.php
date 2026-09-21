@@ -19,6 +19,19 @@ final class ErpDomainRegistry
     public const DOMAIN_LOGISTICS = 'logistics';
     public const DOMAIN_ACCOUNTING = 'accounting';
     public const DOMAIN_EXECUTIVE = 'executive';
+    public const DOMAIN_HR = 'hr';
+    public const DOMAIN_RECRUITMENT = 'recruitment';
+    public const DOMAIN_PROJECTS = 'projects';
+    public const DOMAIN_CONTRACTS = 'contracts';
+    public const DOMAIN_ASSETS = 'assets';
+    public const DOMAIN_PAYROLL = 'payroll';
+    public const DOMAIN_MANUFACTURING = 'manufacturing';
+    public const DOMAIN_QUALITY = 'quality';
+    public const DOMAIN_APPROVALS = 'approvals';
+    public const DOMAIN_MARKETPLACE = 'marketplace';
+    public const DOMAIN_NOTIFICATIONS = 'notifications';
+    public const DOMAIN_BI = 'bi';
+    public const DOMAIN_WEBSITE = 'website';
 
     /**
      * Active domains with real runtimes/tools only.
@@ -122,25 +135,147 @@ final class ErpDomainRegistry
                 'policy_guard' => ProcurementPolicyGuard::class,
                 'runtime' => ProcurementAgent::class,
             ],
+            self::DOMAIN_HR => [
+                'id' => self::DOMAIN_HR,
+                'active' => true,
+                'module' => 'hr',
+                'label' => 'HR',
+                'tool_registry' => HrToolRegistry::class,
+                'tool_executor' => HrToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_RECRUITMENT => [
+                'id' => self::DOMAIN_RECRUITMENT,
+                'active' => true,
+                'module' => 'recruitment',
+                'label' => 'Recruitment',
+                'tool_registry' => RecruitmentToolRegistry::class,
+                'tool_executor' => RecruitmentToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_PROJECTS => [
+                'id' => self::DOMAIN_PROJECTS,
+                'active' => true,
+                'module' => 'projects',
+                'label' => 'Projects',
+                'tool_registry' => ProjectsToolRegistry::class,
+                'tool_executor' => ProjectsToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_CONTRACTS => [
+                'id' => self::DOMAIN_CONTRACTS,
+                'active' => true,
+                'module' => 'contracts',
+                'label' => 'Contracts',
+                'tool_registry' => ContractsToolRegistry::class,
+                'tool_executor' => ContractsToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_ASSETS => [
+                'id' => self::DOMAIN_ASSETS,
+                'active' => true,
+                'module' => 'assets',
+                'label' => 'Assets',
+                'tool_registry' => AssetsToolRegistry::class,
+                'tool_executor' => AssetsToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_PAYROLL => [
+                'id' => self::DOMAIN_PAYROLL,
+                'active' => true,
+                'module' => 'payroll',
+                'label' => 'Payroll',
+                'tool_registry' => PayrollToolRegistry::class,
+                'tool_executor' => PayrollToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_MANUFACTURING => [
+                'id' => self::DOMAIN_MANUFACTURING,
+                'active' => true,
+                'module' => 'manufacturing',
+                'label' => 'Manufacturing',
+                'tool_registry' => ManufacturingToolRegistry::class,
+                'tool_executor' => ManufacturingToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_QUALITY => [
+                'id' => self::DOMAIN_QUALITY,
+                'active' => true,
+                'module' => 'quality',
+                'label' => 'Quality',
+                'tool_registry' => QualityToolRegistry::class,
+                'tool_executor' => QualityToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_APPROVALS => [
+                'id' => self::DOMAIN_APPROVALS,
+                'active' => true,
+                'module' => 'workflows',
+                'label' => 'Approvals',
+                'tool_registry' => ApprovalsToolRegistry::class,
+                'tool_executor' => ApprovalsToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_MARKETPLACE => [
+                'id' => self::DOMAIN_MARKETPLACE,
+                'active' => true,
+                'module' => 'marketplace',
+                'label' => 'Marketplace',
+                'tool_registry' => MarketplaceToolRegistry::class,
+                'tool_executor' => MarketplaceToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_NOTIFICATIONS => [
+                'id' => self::DOMAIN_NOTIFICATIONS,
+                'active' => true,
+                'module' => 'dashboard',
+                'label' => 'Notifications',
+                'tool_registry' => NotificationsToolRegistry::class,
+                'tool_executor' => NotificationsToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_BI => [
+                'id' => self::DOMAIN_BI,
+                'active' => true,
+                'module' => 'reports',
+                'label' => 'Business Intelligence',
+                'tool_registry' => BiToolRegistry::class,
+                'tool_executor' => BiToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
+            self::DOMAIN_WEBSITE => [
+                'id' => self::DOMAIN_WEBSITE,
+                'active' => true,
+                'module' => 'website',
+                'label' => 'Website / CMS',
+                'tool_registry' => WebsiteToolRegistry::class,
+                'tool_executor' => WebsiteToolExecutor::class,
+                'policy_guard' => ProcurementPolicyGuard::class,
+                'runtime' => ProcurementAgent::class,
+            ],
         ];
     }
 
     /**
-     * Reserved future ERP domains — not implemented, no tools, no fake handlers.
+     * Reserved future ERP domains — empty once packs are live.
      *
      * @return list<string>
      */
     public static function getReservedFutureDomains(): array
     {
-        return [
-            'hr',
-            'projects',
-            'contracts',
-            'payroll',
-            'manufacturing',
-            'quality',
-            'bi',
-        ];
+        return [];
     }
 
     public static function defaultDomainId(): string
@@ -255,13 +390,33 @@ final class ErpDomainRegistry
             self::DOMAIN_LOGISTICS => ['label' => 'ai_cap_logistics', 'prompt' => 'ai_suggest_logistics'],
             self::DOMAIN_ACCOUNTING => ['label' => 'ai_cap_accounting', 'prompt' => 'ai_suggest_accounting'],
             self::DOMAIN_EXECUTIVE => ['label' => 'ai_cap_executive', 'prompt' => 'ai_suggest_executive'],
+            self::DOMAIN_HR => ['label' => 'ai_cap_hr', 'prompt' => 'ai_suggest_hr'],
+            self::DOMAIN_RECRUITMENT => ['label' => 'ai_cap_recruitment', 'prompt' => 'ai_suggest_recruitment'],
+            self::DOMAIN_PROJECTS => ['label' => 'ai_cap_projects', 'prompt' => 'ai_suggest_projects'],
+            self::DOMAIN_CONTRACTS => ['label' => 'ai_cap_contracts', 'prompt' => 'ai_suggest_contracts'],
+            self::DOMAIN_ASSETS => ['label' => 'ai_cap_assets', 'prompt' => 'ai_suggest_assets'],
+            self::DOMAIN_PAYROLL => ['label' => 'ai_cap_payroll', 'prompt' => 'ai_suggest_payroll'],
+            self::DOMAIN_MANUFACTURING => ['label' => 'ai_cap_manufacturing', 'prompt' => 'ai_suggest_manufacturing'],
+            self::DOMAIN_QUALITY => ['label' => 'ai_cap_quality', 'prompt' => 'ai_suggest_quality'],
+            self::DOMAIN_APPROVALS => ['label' => 'ai_cap_approvals', 'prompt' => 'ai_suggest_approvals'],
+            self::DOMAIN_MARKETPLACE => ['label' => 'ai_cap_marketplace', 'prompt' => 'ai_suggest_marketplace'],
+            self::DOMAIN_NOTIFICATIONS => ['label' => 'ai_cap_notifications', 'prompt' => 'ai_suggest_notifications'],
+            self::DOMAIN_BI => ['label' => 'ai_cap_bi', 'prompt' => 'ai_suggest_bi'],
+            self::DOMAIN_WEBSITE => ['label' => 'ai_cap_website', 'prompt' => 'ai_suggest_website'],
         ];
         foreach (self::getActiveDomains() as $id => $meta) {
             if (empty($meta['active'])) {
                 continue;
             }
             $module = (string) ($meta['module'] ?? '');
-            if ($module !== '' && $module !== 'dashboard' && !$ctx->moduleEnabled($module)) {
+            $moduleOk = $module === '' || $module === 'dashboard'
+                || $ctx->moduleEnabled($module)
+                || ($id === self::DOMAIN_PAYROLL && $ctx->moduleEnabled('hr'))
+                || ($id === self::DOMAIN_QUALITY && ($ctx->moduleEnabled('manufacturing') || $ctx->moduleEnabled('quality')))
+                || ($id === self::DOMAIN_BI && ($ctx->moduleEnabled('reports') || $ctx->can('reports.view') || $ctx->can('dashboard.view')))
+                || ($id === self::DOMAIN_APPROVALS && ($ctx->moduleEnabled('workflows') || $ctx->moduleEnabled('procurement') || $ctx->can('workflows.view')))
+                || ($id === self::DOMAIN_NOTIFICATIONS && ($ctx->can('dashboard.view') || $ctx->can('ai.view')));
+            if (!$moduleOk && !$ctx->isSuperAdmin) {
                 continue;
             }
             if ($id === self::DOMAIN_EXECUTIVE && !$ctx->can('dashboard.view') && !$ctx->can('ai.view') && !$ctx->isSuperAdmin) {
