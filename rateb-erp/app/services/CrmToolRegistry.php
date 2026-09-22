@@ -258,6 +258,42 @@ final class CrmToolRegistry
                     'required' => ['name'],
                 ],
             ],
+            'create_crm_opportunity' => [
+                'name' => 'create_crm_opportunity',
+                'description' => 'Create a CRM opportunity (WRITE — requires confirmation).',
+                'permission' => 'crm.manage',
+                'module' => 'crm',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'name' => 
+  array (
+    'type' => 'string',
+  ),
+  'amount' => 
+  array (
+    'type' => 'number',
+  ),
+  'customer_id' => 
+  array (
+    'type' => 'integer',
+  ),
+  'lead_id' => 
+  array (
+    'type' => 'integer',
+  ),
+  'notes' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+  0 => 'name',
+),
+                ],
+            ],
+
         ];
     }
 

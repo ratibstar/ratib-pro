@@ -42,6 +42,8 @@ final class SalesToolExecutor
                     return self::getSalesSupplierLinks($arguments, $companyId);
                 case 'analyze_sales_cross_domain':
                     return self::analyzeSalesCrossDomain($arguments, $companyId);
+                case 'create_sales_order':
+                    return ErpAiWriteTools::createSalesOrder($arguments, $companyId, (int) $ctx->userId);
                 default:
                     return self::fail('tool_not_implemented');
             }

@@ -313,6 +313,56 @@ final class ProcurementToolRegistry
                     'required' => ['id'],
                 ],
             ],
+            'create_draft_purchase_order' => [
+                'name' => 'create_draft_purchase_order',
+                'description' => 'Create a draft purchase order (WRITE — requires confirmation).',
+                'permission' => 'procurement.manage',
+                'module' => 'procurement',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'title' => ['type' => 'string'],
+                        'notes' => ['type' => 'string'],
+                        'supplier_id' => ['type' => 'integer', 'minimum' => 1],
+                        'total_amount' => ['type' => 'number', 'minimum' => 0],
+                    ],
+                    'required' => [],
+                ],
+            ],
+            'create_draft_rfq' => [
+                'name' => 'create_draft_rfq',
+                'description' => 'Create a draft RFQ (WRITE — requires confirmation). Title required.',
+                'permission' => 'procurement.manage',
+                'module' => 'procurement',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'title' => ['type' => 'string', 'minLength' => 1],
+                        'description' => ['type' => 'string'],
+                        'deadline' => ['type' => 'string'],
+                    ],
+                    'required' => ['title'],
+                ],
+            ],
+            'create_draft_quotation' => [
+                'name' => 'create_draft_quotation',
+                'description' => 'Create a draft supplier quotation (WRITE — requires confirmation).',
+                'permission' => 'procurement.manage',
+                'module' => 'procurement',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'notes' => ['type' => 'string'],
+                        'amount' => ['type' => 'number', 'minimum' => 0],
+                        'rfq_id' => ['type' => 'integer', 'minimum' => 1],
+                        'supplier_id' => ['type' => 'integer', 'minimum' => 1],
+                    ],
+                    'required' => [],
+                ],
+            ],
         ];
     }
 

@@ -70,6 +70,61 @@ final class QualityToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_quality_inspection' => [
+                'name' => 'create_quality_inspection',
+                'description' => 'Create a QMS inspection (WRITE — requires confirmation).',
+                'permission' => 'quality.manage',
+                'module' => 'quality',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'title' => 
+  array (
+    'type' => 'string',
+  ),
+  'notes' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+  0 => 'title',
+),
+                ],
+            ],
+            'create_nonconformity' => [
+                'name' => 'create_nonconformity',
+                'description' => 'Create a QMS nonconformity (WRITE — requires confirmation).',
+                'permission' => 'quality.manage',
+                'module' => 'quality',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'title' => 
+  array (
+    'type' => 'string',
+  ),
+  'description' => 
+  array (
+    'type' => 'string',
+  ),
+  'severity' => 
+  array (
+    'type' => 'string',
+  ),
+  'notes' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+  0 => 'title',
+),
+                ],
+            ],
+
         ];
     }
 

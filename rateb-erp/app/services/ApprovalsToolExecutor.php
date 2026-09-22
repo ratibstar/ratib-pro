@@ -46,6 +46,20 @@ final class ApprovalsToolExecutor
         if ($companyId < 1) {
             return ErpAiDb::fail('tenant_mismatch');
         }
+        if ($toolName === 'approve_approval_request') {
+            try {
+                return ErpAiWriteTools::approveApprovalRequest($arguments, $companyId, (int) $ctx->userId);
+            } catch (\Throwable $e) {
+                return ErpAiDb::fail('tool_exception');
+            }
+        }
+        if ($toolName === 'reject_approval_request') {
+            try {
+                return ErpAiWriteTools::rejectApprovalRequest($arguments, $companyId, (int) $ctx->userId);
+            } catch (\Throwable $e) {
+                return ErpAiDb::fail('tool_exception');
+            }
+        }
         if (!isset(self::TOOLS[$toolName])) {
             return ErpAiDb::fail('tool_not_implemented');
         }

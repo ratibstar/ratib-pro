@@ -70,6 +70,13 @@ final class HrToolExecutor
                 return ErpAiDb::fail('tool_exception');
             }
         }
+        if ($toolName === 'create_leave_request') {
+            try {
+                return ErpAiWriteTools::createLeaveRequest($arguments, $companyId, (int) $ctx->userId);
+            } catch (\Throwable $e) {
+                return ErpAiDb::fail('tool_exception');
+            }
+        }
         if (!isset(self::TOOLS[$toolName])) {
             return ErpAiDb::fail('tool_not_implemented');
         }

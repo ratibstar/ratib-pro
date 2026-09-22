@@ -155,6 +155,37 @@ final class SalesToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_sales_order' => [
+                'name' => 'create_sales_order',
+                'description' => 'Create a draft sales/POS order (WRITE — requires confirmation).',
+                'permission' => 'pos.manage',
+                'module' => 'pos',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'customer_id' => 
+  array (
+    'type' => 'integer',
+  ),
+  'total' => 
+  array (
+    'type' => 'number',
+  ),
+  'order_type' => 
+  array (
+    'type' => 'string',
+  ),
+  'notes' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+),
+                ],
+            ],
+
         ];
     }
 

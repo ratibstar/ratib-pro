@@ -175,8 +175,27 @@ final class ProcurementPolicyGuard
             || $toolName === 'create_asset'
             || $toolName === 'create_recruitment_candidate'
             || $toolName === 'create_contract'
+            || $toolName === 'create_draft_purchase_order'
+            || $toolName === 'create_draft_rfq'
+            || $toolName === 'create_draft_quotation'
+            || $toolName === 'create_sales_order'
+            || $toolName === 'create_crm_opportunity'
+            || $toolName === 'create_leave_request'
+            || $toolName === 'create_production_order'
+            || $toolName === 'create_quality_inspection'
+            || $toolName === 'create_nonconformity'
+            || $toolName === 'create_marketplace_order'
+            || $toolName === 'create_payroll_cycle'
         ) {
             return true;
+        }
+
+        if ($toolName === 'update_shipment_status'
+            || $toolName === 'approve_approval_request'
+            || $toolName === 'reject_approval_request'
+        ) {
+            $id = (int) ($arguments['id'] ?? $arguments['shipment_id'] ?? $arguments['request_id'] ?? 0);
+            return $id > 0;
         }
 
         if ($toolName === 'update_purchase_request' || $toolName === 'cancel_purchase_request') {

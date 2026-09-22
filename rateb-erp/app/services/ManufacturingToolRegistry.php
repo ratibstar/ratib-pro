@@ -70,6 +70,38 @@ final class ManufacturingToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_production_order' => [
+                'name' => 'create_production_order',
+                'description' => 'Create a draft production order (WRITE — requires confirmation). Title required; product_id preferred.',
+                'permission' => 'manufacturing.manage',
+                'module' => 'manufacturing',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'title' => 
+  array (
+    'type' => 'string',
+  ),
+  'product_id' => 
+  array (
+    'type' => 'integer',
+  ),
+  'qty_planned' => 
+  array (
+    'type' => 'number',
+  ),
+  'notes' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+  0 => 'title',
+),
+                ],
+            ],
+
         ];
     }
 

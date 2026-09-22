@@ -68,6 +68,63 @@ final class ApprovalsToolRegistry
                     'required' => [],
                 ],
             ],
+            'approve_approval_request' => [
+                'name' => 'approve_approval_request',
+                'description' => 'Approve an EAP approval request (WRITE — requires confirmation).',
+                'permission' => 'workflows.manage',
+                'module' => 'workflows',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'id' => 
+  array (
+    'type' => 'integer',
+    'minimum' => 1,
+  ),
+  'comment' => 
+  array (
+    'type' => 'string',
+  ),
+  'reason' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+  0 => 'id',
+),
+                ],
+            ],
+            'reject_approval_request' => [
+                'name' => 'reject_approval_request',
+                'description' => 'Reject an EAP approval request (WRITE — requires confirmation).',
+                'permission' => 'workflows.manage',
+                'module' => 'workflows',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'id' => 
+  array (
+    'type' => 'integer',
+    'minimum' => 1,
+  ),
+  'comment' => 
+  array (
+    'type' => 'string',
+  ),
+  'reason' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+  0 => 'id',
+),
+                ],
+            ],
+
         ];
     }
 

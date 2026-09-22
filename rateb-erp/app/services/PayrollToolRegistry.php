@@ -71,6 +71,33 @@ final class PayrollToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_payroll_cycle' => [
+                'name' => 'create_payroll_cycle',
+                'description' => 'Create a payroll cycle definition (WRITE — requires confirmation). Does not run payroll.',
+                'permission' => 'payroll.manage',
+                'module' => 'payroll',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'name' => 
+  array (
+    'type' => 'string',
+  ),
+  'frequency' => 
+  array (
+    'type' => 'string',
+  ),
+  'notes' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+),
+                ],
+            ],
+
         ];
     }
 

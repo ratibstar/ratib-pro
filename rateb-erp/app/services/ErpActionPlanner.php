@@ -52,6 +52,20 @@ final class ErpActionPlanner
         'create_asset',
         'create_recruitment_candidate',
         'create_contract',
+        'create_draft_purchase_order',
+        'create_draft_rfq',
+        'create_draft_quotation',
+        'create_sales_order',
+        'create_crm_opportunity',
+        'create_leave_request',
+        'update_shipment_status',
+        'create_production_order',
+        'create_quality_inspection',
+        'create_nonconformity',
+        'create_marketplace_order',
+        'create_payroll_cycle',
+        'approve_approval_request',
+        'reject_approval_request',
     ];
 
     /** @var list<string> */
@@ -112,7 +126,7 @@ final class ErpActionPlanner
             '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|عدّل|عدل|ألغ|الغ|حدّث|حدث|أرسل|ارسل|submit|create|update|cancel|add|prepare\s+for\s+delivery|جهز|متابعة\s*للعميل|طلب\s*شراء)/ui'
         ) && (
             ErpOrchestrationPlanner::hasWriteIntent($message)
-            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|مورد|موردين|موارد\s*بشرية|حساب|مستخدم|عميل|فرصة|متابعة|مشروع|أصل|عقد|مرشح|lead|customer|project|asset|contract|candidate|inventory|employee|supplier|hr|user\s*account|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
+            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|مورد|موردين|موارد\s*بشرية|حساب|مستخدم|عميل|فرصة|متابعة|مشروع|أصل|عقد|مرشح|lead|customer|project|asset|contract|candidate|inventory|employee|supplier|hr|user\s*account|حالة\s*الطلب|متابعة|تسليم|delivery|أمر\s*شراء|طلب\s*بيع|إجازة|اجازة|أمر\s*إنتاج|فحص|عدم\s*مطابقة|دورة\s*رواتب|عرض\s*سعر|opportunity|leave|production|inspection|payroll|quotation|marketplace|موافقة|approval)/ui')
         );
     }
 
@@ -155,14 +169,6 @@ final class ErpActionPlanner
                         . "Use Users administration in the control panel for login accounts.\n"
                         . "To add an HR employee record write e.g.: add employee Ahmed",
                 'domain' => 'users',
-                'class' => self::CLASS_RECOMMENDATION,
-            ];
-        }
-        if (self::match($message, '/(جهز.*تسليم|prepare.*delivery|حدّث\s*حالة\s*الشحن|update\s+shipment\s+status)/ui')) {
-            $unsupported[] = [
-                'requested' => 'update_logistics_status',
-                'domain' => 'logistics',
-                'reason' => 'no_write_tool_registered_for_logistics',
                 'class' => self::CLASS_RECOMMENDATION,
             ];
         }
@@ -301,7 +307,9 @@ final class ErpActionPlanner
         }
 
         // CRM lead
-        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(فرصة|عميل\s*محتمل|ليد|lead)/ui')) {
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(فرصة|عميل\s*محتمل|ليد|lead)/ui')
+            && !self::match($message, '/(فرصة\s*بيع|صفقة|opportunity)/ui')
+        ) {
             $title = self::extractTitleLike($message, '/(?:فرصة|عميل\s*محتمل|ليد|lead)\s+(.+)$/ui');
             if ($title === '') {
                 $recommendations[] = [
@@ -500,6 +508,226 @@ final class ErpActionPlanner
             }
         }
 
+        // Purchase order (distinct from purchase request)
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(أمر\s*شراء|purchase\s*order|\bpo\b)/ui')
+            && !self::match($message, '/طلب\s*شراء|purchase\s*request/ui')
+        ) {
+            $notes = self::extractTitleLike($message, '/(?:أمر\s*شراء|purchase\s*order|\bpo\b)\s+(.+)$/ui');
+            $actions[] = self::makeAction('create_draft_purchase_order', [
+                'notes' => $notes !== '' ? $notes : mb_substr(trim($message), 0, 500),
+                'title' => $notes !== '' ? $notes : (self::isAr($ctx) ? 'أمر شراء مقترح' : 'Suggested purchase order'),
+            ], $ctx, 'create_po_from_chat');
+            $domains[] = 'procurement';
+        }
+
+        // RFQ
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(طلب\s*عرض\s*سعر|طلب\s*تسعير|\brfq\b)/ui')) {
+            $title = self::extractTitleLike($message, '/(?:طلب\s*عرض\s*سعر|طلب\s*تسعير|rfq)\s+(.+)$/ui');
+            if ($title === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإنشاء طلب عرض سعر اكتب مثلاً: أنشئ طلب عرض سعر مواد تغليف'
+                        : 'To create an RFQ write e.g.: create RFQ packaging materials',
+                    'domain' => 'procurement',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_draft_rfq', [
+                    'title' => $title,
+                    'description' => mb_substr(trim($message), 0, 500),
+                ], $ctx, 'create_rfq_from_chat');
+                $domains[] = 'procurement';
+            }
+        }
+
+        // Supplier quotation
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(عرض\s*سعر|quotation)/ui')
+            && !self::match($message, '/طلب\s*عرض|rfq/ui')
+        ) {
+            $actions[] = self::makeAction('create_draft_quotation', [
+                'notes' => mb_substr(trim($message), 0, 500),
+                'title' => self::extractTitleLike($message, '/(?:عرض\s*سعر|quotation)\s+(.+)$/ui')
+                    ?: (self::isAr($ctx) ? 'عرض سعر' : 'Quotation'),
+            ], $ctx, 'create_quotation_from_chat');
+            $domains[] = 'procurement';
+        }
+
+        // Sales order
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(طلب\s*بيع|أمر\s*بيع|sales\s*order)/ui')) {
+            $actions[] = self::makeAction('create_sales_order', [
+                'notes' => mb_substr(trim($message), 0, 500),
+                'order_type' => 'sale',
+            ], $ctx, 'create_sales_order_from_chat');
+            $domains[] = 'sales';
+        }
+
+        // CRM opportunity (before generic lead "فرصة")
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(فرصة\s*بيع|صفقة|opportunity)/ui')) {
+            $name = self::extractTitleLike($message, '/(?:فرصة\s*بيع|صفقة|opportunity)\s+(.+)$/ui');
+            if ($name === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة فرصة بيع اكتب مثلاً: أضف فرصة بيع مشروع النور'
+                        : 'To add an opportunity write e.g.: add opportunity Al-Noor project',
+                    'domain' => 'crm',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_crm_opportunity', [
+                    'name' => $name,
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ], $ctx, 'create_opportunity_from_chat');
+                $domains[] = 'crm';
+            }
+        }
+
+        // Leave request
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(إجازة|اجازة|leave(\s*request)?)/ui')) {
+            $start = self::extractDate($message);
+            if ($start === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لطلب إجازة اكتب مثلاً: أضف إجازة من 2026-10-01 إلى 2026-10-03 لأحمد'
+                        : 'To request leave write e.g.: add leave from 2026-10-01 to 2026-10-03 for Ahmed',
+                    'domain' => 'hr',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $end = self::extractSecondDate($message) ?: $start;
+                $empName = self::extractPersonName($message);
+                $args = [
+                    'start_date' => $start,
+                    'end_date' => $end,
+                    'reason' => mb_substr(trim($message), 0, 500),
+                ];
+                if ($empName !== '') {
+                    $args['employee_name'] = $empName;
+                }
+                $actions[] = self::makeAction('create_leave_request', $args, $ctx, 'create_leave_from_chat');
+                $domains[] = 'hr';
+            }
+        }
+
+        // Update shipment status
+        if (self::match($message, '/(حدّث|حدث|جهز|update|prepare).{0,40}(شحن|تسليم|shipment|delivery)|update\s+shipment\s+status/ui')) {
+            $id = self::extractId($message);
+            $status = self::extractShipmentStatus($message);
+            if ($id < 1 || $status === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لتحديث حالة شحنة اكتب مثلاً: حدّث حالة الشحن #12 إلى delivered'
+                        : 'To update shipment status write e.g.: update shipment #12 status to delivered',
+                    'domain' => 'logistics',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('update_shipment_status', [
+                    'id' => $id,
+                    'status' => $status,
+                ], $ctx, 'update_shipment_from_chat');
+                $domains[] = 'logistics';
+            }
+        }
+
+        // Production order
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(أمر\s*إنتاج|انتاج|production\s*order)/ui')) {
+            $title = self::extractTitleLike($message, '/(?:أمر\s*إنتاج|انتاج|production\s*order)\s+(.+)$/ui');
+            if ($title === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإنشاء أمر إنتاج اكتب مثلاً: أنشئ أمر إنتاج دفعة أكتوبر'
+                        : 'To create a production order write e.g.: create production order October batch',
+                    'domain' => 'manufacturing',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_production_order', [
+                    'title' => $title,
+                    'qty_planned' => self::extractQuantity($message) ?: 1,
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ], $ctx, 'create_production_from_chat');
+                $domains[] = 'manufacturing';
+            }
+        }
+
+        // Quality inspection
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(فحص\s*جودة|inspection)/ui')) {
+            $title = self::extractTitleLike($message, '/(?:فحص\s*جودة|inspection)\s+(.+)$/ui');
+            if ($title === '') {
+                $title = self::isAr($ctx) ? 'فحص جودة' : 'Quality inspection';
+            }
+            $actions[] = self::makeAction('create_quality_inspection', [
+                'title' => $title,
+                'notes' => mb_substr(trim($message), 0, 500),
+            ], $ctx, 'create_qi_from_chat');
+            $domains[] = 'quality';
+        }
+
+        // Nonconformity
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(عدم\s*مطابقة|nonconformity|\bncr\b)/ui')) {
+            $title = self::extractTitleLike($message, '/(?:عدم\s*مطابقة|nonconformity|\bncr\b)\s+(.+)$/ui');
+            if ($title === '') {
+                $title = self::isAr($ctx) ? 'عدم مطابقة' : 'Nonconformity';
+            }
+            $actions[] = self::makeAction('create_nonconformity', [
+                'title' => $title,
+                'notes' => mb_substr(trim($message), 0, 500),
+            ], $ctx, 'create_ncr_from_chat');
+            $domains[] = 'quality';
+        }
+
+        // Marketplace order
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(طلب\s*سوق|marketplace\s*order)/ui')) {
+            $item = self::extractTitleLike($message, '/(?:طلب\s*سوق|marketplace\s*order)\s+(.+)$/ui');
+            $actions[] = self::makeAction('create_marketplace_order', [
+                'item_name' => $item !== '' ? $item : (self::isAr($ctx) ? 'طلب سوق' : 'Marketplace order'),
+                'notes' => mb_substr(trim($message), 0, 500),
+            ], $ctx, 'create_mp_order_from_chat');
+            $domains[] = 'marketplace';
+        }
+
+        // Payroll cycle (definition only — never runs payroll)
+        if (self::match($message, '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|create|add).{0,40}(دورة\s*رواتب|payroll\s*cycle)/ui')) {
+            $name = self::extractTitleLike($message, '/(?:دورة\s*رواتب|payroll\s*cycle)\s+(.+)$/ui');
+            $actions[] = self::makeAction('create_payroll_cycle', [
+                'name' => $name !== '' ? $name : ('Payroll ' . date('Y-m')),
+                'frequency' => 'monthly',
+                'notes' => mb_substr(trim($message), 0, 500),
+            ], $ctx, 'create_payroll_cycle_from_chat');
+            $domains[] = 'payroll';
+        }
+
+        // Approve / reject approval request
+        if (self::match($message, '/(وافق|اعتمد|approve).{0,40}(موافقة|طلب\s*موافقة|approval)|approve\s+approval/ui')) {
+            $id = self::extractId($message);
+            if ($id > 0) {
+                $actions[] = self::makeAction('approve_approval_request', ['id' => $id], $ctx, 'approve_from_chat');
+                $domains[] = 'approvals';
+            } else {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'للموافقة اكتب مثلاً: وافق على طلب الموافقة #15'
+                        : 'To approve write e.g.: approve approval request #15',
+                    'domain' => 'approvals',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            }
+        } elseif (self::match($message, '/(ارفض|رفض|reject).{0,40}(موافقة|طلب\s*موافقة|approval)|reject\s+approval/ui')) {
+            $id = self::extractId($message);
+            if ($id > 0) {
+                $actions[] = self::makeAction('reject_approval_request', ['id' => $id], $ctx, 'reject_from_chat');
+                $domains[] = 'approvals';
+            } else {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'للرفض اكتب مثلاً: ارفض طلب الموافقة #15'
+                        : 'To reject write e.g.: reject approval request #15',
+                    'domain' => 'approvals',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            }
+        }
+
         // If write intent but no mapped supported action — recommendation only
         if ($actions === [] && $unsupported === [] && ErpOrchestrationPlanner::hasWriteIntent($message)) {
             $recommendations[] = [
@@ -515,7 +743,12 @@ final class ErpActionPlanner
                         . "• أضف مشروع تطوير المتجر\n"
                         . "• أضف أصل طابعة ليزر\n"
                         . "• أضف مرشح سارة أحمد\n"
-                        . "• أضف عقد صيانة سنوية"
+                        . "• أضف عقد صيانة سنوية\n"
+                        . "• أنشئ أمر شراء مستلزمات\n"
+                        . "• أنشئ طلب بيع\n"
+                        . "• أضف إجازة من 2026-10-01\n"
+                        . "• أنشئ أمر إنتاج دفعة أكتوبر\n"
+                        . "• أضف فرصة بيع مشروع النور"
                     : "This write action is not available via the agent yet.\n"
                         . "You can try e.g.:\n"
                         . "• add a purchase request for office supplies\n"
@@ -527,7 +760,12 @@ final class ErpActionPlanner
                         . "• add project Store upgrade\n"
                         . "• add asset laser printer\n"
                         . "• add candidate Sara Ahmed\n"
-                        . "• add contract annual maintenance",
+                        . "• add contract annual maintenance\n"
+                        . "• create purchase order supplies\n"
+                        . "• create sales order\n"
+                        . "• add leave from 2026-10-01\n"
+                        . "• create production order October batch\n"
+                        . "• add opportunity Al-Noor project",
                 'domain' => '',
                 'class' => self::CLASS_RECOMMENDATION,
             ];
@@ -1687,6 +1925,20 @@ final class ErpActionPlanner
             'create_asset' => 'إضافة أصل',
             'create_recruitment_candidate' => 'إضافة مرشح',
             'create_contract' => 'إضافة عقد',
+            'create_draft_purchase_order' => 'إنشاء مسودة أمر شراء',
+            'create_draft_rfq' => 'إنشاء طلب عرض سعر',
+            'create_draft_quotation' => 'إنشاء عرض سعر',
+            'create_sales_order' => 'إنشاء طلب بيع',
+            'create_crm_opportunity' => 'إضافة فرصة بيع',
+            'create_leave_request' => 'طلب إجازة',
+            'update_shipment_status' => 'تحديث حالة شحنة',
+            'create_production_order' => 'إنشاء أمر إنتاج',
+            'create_quality_inspection' => 'إنشاء فحص جودة',
+            'create_nonconformity' => 'تسجيل عدم مطابقة',
+            'create_marketplace_order' => 'إنشاء طلب سوق',
+            'create_payroll_cycle' => 'إنشاء دورة رواتب',
+            'approve_approval_request' => 'الموافقة على طلب',
+            'reject_approval_request' => 'رفض طلب موافقة',
             'duplicate_action' => 'إجراء مكرر',
             'tool_exception' => 'تعذر تنفيذ الأداة',
             'verification_incomplete' => 'التحقق غير مكتمل',
@@ -1719,6 +1971,20 @@ final class ErpActionPlanner
             'create_asset' => 'Add asset',
             'create_recruitment_candidate' => 'Add recruitment candidate',
             'create_contract' => 'Add contract',
+            'create_draft_purchase_order' => 'Create draft purchase order',
+            'create_draft_rfq' => 'Create RFQ',
+            'create_draft_quotation' => 'Create quotation',
+            'create_sales_order' => 'Create sales order',
+            'create_crm_opportunity' => 'Add CRM opportunity',
+            'create_leave_request' => 'Create leave request',
+            'update_shipment_status' => 'Update shipment status',
+            'create_production_order' => 'Create production order',
+            'create_quality_inspection' => 'Create quality inspection',
+            'create_nonconformity' => 'Create nonconformity',
+            'create_marketplace_order' => 'Create marketplace order',
+            'create_payroll_cycle' => 'Create payroll cycle',
+            'approve_approval_request' => 'Approve approval request',
+            'reject_approval_request' => 'Reject approval request',
             'duplicate_action' => 'Duplicate action',
             'tool_exception' => 'Tool execution failed',
             'verification_incomplete' => 'Verification incomplete',
@@ -1831,8 +2097,19 @@ final class ErpActionPlanner
         if (in_array($tool, [
             'create_crm_lead', 'create_crm_followup', 'create_customer',
             'create_project', 'create_asset', 'create_recruitment_candidate', 'create_contract',
+            'create_draft_purchase_order', 'create_draft_rfq', 'create_draft_quotation',
+            'create_sales_order', 'create_crm_opportunity', 'create_leave_request',
+            'create_production_order', 'create_quality_inspection', 'create_nonconformity',
+            'create_marketplace_order', 'create_payroll_cycle',
         ], true)) {
             return ['exists' => false, 'entity' => $tool, 'status' => null];
+        }
+        if ($tool === 'update_shipment_status' || $tool === 'approve_approval_request' || $tool === 'reject_approval_request') {
+            $sid = (int) ($args['id'] ?? $args['shipment_id'] ?? $args['request_id'] ?? 0);
+            if ($sid < 1) {
+                return null;
+            }
+            return ['exists' => true, 'entity' => $tool, 'id' => $sid, 'status' => (string) ($args['status'] ?? 'pending')];
         }
         $id = (int) ($args['id'] ?? 0);
         if ($id < 1) {
@@ -2037,6 +2314,17 @@ final class ErpActionPlanner
             'create_asset' => ['table' => 'rateb_eam_assets', 'cols' => 'id, asset_no, name, status', 'msg' => 'verified_asset_created'],
             'create_recruitment_candidate' => ['table' => 'rateb_recruitment_candidates', 'cols' => 'id, candidate_no, full_name, status', 'msg' => 'verified_candidate_created'],
             'create_contract' => ['table' => 'rateb_contracts', 'cols' => 'id, contract_no, title, status', 'msg' => 'verified_contract_created'],
+            'create_draft_purchase_order' => ['table' => 'rateb_purchase_orders', 'cols' => 'id, order_no, status', 'msg' => 'verified_po_created'],
+            'create_draft_rfq' => ['table' => 'rateb_rfqs', 'cols' => 'id, rfq_no, title, status', 'msg' => 'verified_rfq_created'],
+            'create_draft_quotation' => ['table' => 'rateb_supplier_quotations', 'cols' => 'id, quotation_no, status', 'msg' => 'verified_quotation_created'],
+            'create_sales_order' => ['table' => 'rateb_pos_orders', 'cols' => 'id, order_no, status, total', 'msg' => 'verified_sales_order_created'],
+            'create_crm_opportunity' => ['table' => 'rateb_crm_opportunities', 'cols' => 'id, opportunity_no, name, status', 'msg' => 'verified_opportunity_created'],
+            'create_leave_request' => ['table' => 'rateb_leave_requests', 'cols' => 'id, employee_id, start_date, end_date, status', 'msg' => 'verified_leave_created'],
+            'create_production_order' => ['table' => 'rateb_mfg_production_orders', 'cols' => 'id, code, title, status', 'msg' => 'verified_production_created'],
+            'create_quality_inspection' => ['table' => 'rateb_qms_inspections', 'cols' => 'id, code, title, status', 'msg' => 'verified_qi_created'],
+            'create_nonconformity' => ['table' => 'rateb_qms_nonconformities', 'cols' => 'id, code, title, status', 'msg' => 'verified_ncr_created'],
+            'create_marketplace_order' => ['table' => 'rateb_mp_orders', 'cols' => 'id, order_no, status, total_amount', 'msg' => 'verified_mp_order_created'],
+            'create_payroll_cycle' => ['table' => 'rateb_payroll_cycles', 'cols' => 'id, code, name, status', 'msg' => 'verified_payroll_cycle_created'],
         ];
         if (isset($verifyMap[$tool])) {
             $id = (int) ($execResult['data']['id'] ?? 0);
@@ -2104,7 +2392,7 @@ final class ErpActionPlanner
                      'create_draft_purchase_request','update_purchase_request','cancel_purchase_request','submit_purchase_request',
                      'submit_journal_for_approval','create_inventory_item','create_employee','create_supplier',
                      'create_crm_lead','create_crm_followup','create_customer','create_project','create_asset',
-                     'create_recruitment_candidate','create_contract'
+                     'create_recruitment_candidate','create_contract','create_draft_purchase_order','create_draft_rfq','create_draft_quotation','create_sales_order','create_crm_opportunity','create_leave_request','update_shipment_status','create_production_order','create_quality_inspection','create_nonconformity','create_marketplace_order','create_payroll_cycle','approve_approval_request','reject_approval_request'
                    )
                  ORDER BY id DESC LIMIT 30"
             );
@@ -2172,6 +2460,48 @@ final class ErpActionPlanner
         return null;
     }
 
+
+    private static function extractDate(string $message): string
+    {
+        if (preg_match('/\b(20\d{2}-\d{2}-\d{2})\b/', $message, $m)) {
+            return $m[1];
+        }
+        return '';
+    }
+
+    private static function extractSecondDate(string $message): string
+    {
+        if (preg_match_all('/\b(20\d{2}-\d{2}-\d{2})\b/', $message, $m) && count($m[1]) >= 2) {
+            return (string) $m[1][1];
+        }
+        return '';
+    }
+
+    private static function extractShipmentStatus(string $message): string
+    {
+        $allowed = ['draft', 'pending', 'picked', 'in_transit', 'out_for_delivery', 'delivered', 'failed', 'cancelled'];
+        foreach ($allowed as $st) {
+            if (preg_match('/\b' . preg_quote($st, '/') . '\b/i', $message)) {
+                return $st;
+            }
+        }
+        $map = [
+            'مسودة' => 'draft',
+            'معلق' => 'pending',
+            'تم\s*الجمع|مجمّع|مجمع' => 'picked',
+            'قيد\s*النقل|في\s*الطريق' => 'in_transit',
+            'خارج\s*للتوصيل' => 'out_for_delivery',
+            'تم\s*التسليم|مسلّم|مسلم|وصلت' => 'delivered',
+            'فشل' => 'failed',
+            'ملغ|ملغي|ملغى' => 'cancelled',
+        ];
+        foreach ($map as $pat => $st) {
+            if (preg_match('/' . $pat . '/ui', $message)) {
+                return $st;
+            }
+        }
+        return '';
+    }
     private static function extractId(string $message): int
     {
         if (preg_match('/(?:#|id\s*[:=]?\s*|رقم\s*)(\d{1,10})/ui', $message, $m)) {

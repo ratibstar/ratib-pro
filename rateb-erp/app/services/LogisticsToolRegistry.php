@@ -206,6 +206,36 @@ final class LogisticsToolRegistry
                     'required' => [],
                 ],
             ],
+            'update_shipment_status' => [
+                'name' => 'update_shipment_status',
+                'description' => 'Update logistics shipment status (WRITE — requires confirmation).',
+                'permission' => 'logistics.manage',
+                'module' => 'logistics',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'id' => 
+  array (
+    'type' => 'integer',
+    'minimum' => 1,
+  ),
+  'status' => 
+  array (
+    'type' => 'string',
+  ),
+  'shipment_id' => 
+  array (
+    'type' => 'integer',
+  ),
+),
+                    'required' => array (
+  0 => 'id',
+  1 => 'status',
+),
+                ],
+            ],
+
         ];
     }
 

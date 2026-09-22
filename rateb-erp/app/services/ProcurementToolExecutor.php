@@ -66,6 +66,12 @@ final class ProcurementToolExecutor
                     return self::cancelPurchaseRequest($arguments, $companyId, $ctx->userId);
                 case 'submit_purchase_request':
                     return self::submitPurchaseRequest($arguments, $companyId, $ctx->userId);
+                case 'create_draft_purchase_order':
+                    return ErpAiWriteTools::createDraftPurchaseOrder($arguments, $companyId, (int) $ctx->userId);
+                case 'create_draft_rfq':
+                    return ErpAiWriteTools::createDraftRfq($arguments, $companyId, (int) $ctx->userId);
+                case 'create_draft_quotation':
+                    return ErpAiWriteTools::createDraftQuotation($arguments, $companyId, (int) $ctx->userId);
                 default:
                     return self::fail('tool_not_implemented');
             }

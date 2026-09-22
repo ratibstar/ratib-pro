@@ -52,6 +52,8 @@ final class LogisticsToolExecutor
                     return self::getSupplierLinks($arguments, $companyId);
                 case 'analyze_logistics_end_to_end':
                     return self::analyzeEndToEnd($arguments, $companyId);
+                case 'update_shipment_status':
+                    return ErpAiWriteTools::updateShipmentStatus($arguments, $companyId, (int) $ctx->userId);
                 default:
                     return self::fail('tool_not_implemented');
             }

@@ -107,6 +107,50 @@ final class HrToolRegistry
                     'required' => ['name'],
                 ],
             ],
+            'create_leave_request' => [
+                'name' => 'create_leave_request',
+                'description' => 'Create a pending leave request (WRITE — requires confirmation).',
+                'permission' => 'hr.manage',
+                'module' => 'hr',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'employee_id' => 
+  array (
+    'type' => 'integer',
+  ),
+  'employee_name' => 
+  array (
+    'type' => 'string',
+  ),
+  'leave_type_id' => 
+  array (
+    'type' => 'integer',
+  ),
+  'start_date' => 
+  array (
+    'type' => 'string',
+  ),
+  'end_date' => 
+  array (
+    'type' => 'string',
+  ),
+  'days' => 
+  array (
+    'type' => 'number',
+  ),
+  'reason' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+  0 => 'start_date',
+),
+                ],
+            ],
+
         ];
     }
 

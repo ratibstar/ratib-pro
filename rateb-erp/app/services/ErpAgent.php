@@ -1294,15 +1294,25 @@ final class ErpAgent
                 }
             } elseif (in_array($tool, [
                 'create_employee', 'create_supplier', 'create_customer', 'create_project',
-                'create_asset', 'create_recruitment_candidate',
+                'create_asset', 'create_recruitment_candidate', 'create_crm_opportunity',
+                'create_production_order', 'create_quality_inspection', 'create_nonconformity',
+                'create_marketplace_order', 'create_payroll_cycle',
             ], true)) {
-                $n = trim((string) ($args['name'] ?? $args['full_name'] ?? ''));
-                if ($n === '') {
+                $n = trim((string) ($args['name'] ?? $args['full_name'] ?? $args['title'] ?? $args['item_name'] ?? ''));
+                if ($n === '' && !in_array($tool, ['create_marketplace_order', 'create_payroll_cycle'], true)) {
                     continue;
                 }
-            } elseif (in_array($tool, ['create_crm_lead', 'create_contract'], true)) {
+            } elseif (in_array($tool, ['create_crm_lead', 'create_contract', 'create_draft_rfq', 'create_draft_quotation'], true)) {
                 $n = trim((string) ($args['title'] ?? $args['name'] ?? ''));
-                if ($n === '') {
+                if ($n === '' && $tool !== 'create_draft_quotation') {
+                    continue;
+                }
+            } elseif ($tool === 'create_leave_request') {
+                if (trim((string) ($args['start_date'] ?? '')) === '') {
+                    continue;
+                }
+            } elseif ($tool === 'update_shipment_status' || $tool === 'approve_approval_request' || $tool === 'reject_approval_request') {
+                if ((int) ($args['id'] ?? $args['shipment_id'] ?? $args['request_id'] ?? 0) < 1) {
                     continue;
                 }
             } elseif ($tool === 'create_crm_followup') {
@@ -1481,6 +1491,20 @@ final class ErpAgent
                 'create_asset' => 'إضافة أصل' . ($itemName !== '' ? ': ' . $itemName : ''),
                 'create_recruitment_candidate' => 'إضافة مرشح' . ($itemName !== '' ? ': ' . $itemName : ''),
                 'create_contract' => 'إضافة عقد' . ($title !== '' ? ': ' . $title : ($itemName !== '' ? ': ' . $itemName : '')),
+                'create_draft_purchase_order' => 'إنشاء مسودة أمر شراء' . ($title !== '' ? ': ' . $title : ''),
+                'create_draft_rfq' => 'إنشاء طلب عرض سعر' . ($title !== '' ? ': ' . $title : ''),
+                'create_draft_quotation' => 'إنشاء عرض سعر' . ($title !== '' ? ': ' . $title : ''),
+                'create_sales_order' => 'إنشاء طلب بيع',
+                'create_crm_opportunity' => 'إضافة فرصة بيع' . ($itemName !== '' ? ': ' . $itemName : ($title !== '' ? ': ' . $title : '')),
+                'create_leave_request' => 'طلب إجازة' . (!empty($arguments['start_date']) ? ' من ' . $arguments['start_date'] : ''),
+                'update_shipment_status' => 'تحديث حالة شحنة' . ($id > 0 ? ' #' . $id : '') . (!empty($arguments['status']) ? ' → ' . $arguments['status'] : ''),
+                'create_production_order' => 'إنشاء أمر إنتاج' . ($title !== '' ? ': ' . $title : ($itemName !== '' ? ': ' . $itemName : '')),
+                'create_quality_inspection' => 'إنشاء فحص جودة' . ($title !== '' ? ': ' . $title : ''),
+                'create_nonconformity' => 'تسجيل عدم مطابقة' . ($title !== '' ? ': ' . $title : ''),
+                'create_marketplace_order' => 'إنشاء طلب سوق' . ($itemName !== '' ? ': ' . $itemName : ''),
+                'create_payroll_cycle' => 'إنشاء دورة رواتب' . ($itemName !== '' ? ': ' . $itemName : ''),
+                'approve_approval_request' => 'الموافقة على طلب' . ($id > 0 ? ' #' . $id : ''),
+                'reject_approval_request' => 'رفض طلب موافقة' . ($id > 0 ? ' #' . $id : ''),
                 default => $toolName,
             };
         }
@@ -1500,6 +1524,20 @@ final class ErpAgent
             'create_asset' => 'Add asset' . ($itemName !== '' ? ': ' . $itemName : ''),
             'create_recruitment_candidate' => 'Add candidate' . ($itemName !== '' ? ': ' . $itemName : ''),
             'create_contract' => 'Add contract' . ($title !== '' ? ': ' . $title : ($itemName !== '' ? ': ' . $itemName : '')),
+            'create_draft_purchase_order' => 'Create draft purchase order' . ($title !== '' ? ': ' . $title : ''),
+            'create_draft_rfq' => 'Create RFQ' . ($title !== '' ? ': ' . $title : ''),
+            'create_draft_quotation' => 'Create quotation' . ($title !== '' ? ': ' . $title : ''),
+            'create_sales_order' => 'Create sales order',
+            'create_crm_opportunity' => 'Add CRM opportunity' . ($itemName !== '' ? ': ' . $itemName : ($title !== '' ? ': ' . $title : '')),
+            'create_leave_request' => 'Create leave request' . (!empty($arguments['start_date']) ? ' from ' . $arguments['start_date'] : ''),
+            'update_shipment_status' => 'Update shipment' . ($id > 0 ? ' #' . $id : '') . (!empty($arguments['status']) ? ' → ' . $arguments['status'] : ''),
+            'create_production_order' => 'Create production order' . ($title !== '' ? ': ' . $title : ($itemName !== '' ? ': ' . $itemName : '')),
+            'create_quality_inspection' => 'Create quality inspection' . ($title !== '' ? ': ' . $title : ''),
+            'create_nonconformity' => 'Create nonconformity' . ($title !== '' ? ': ' . $title : ''),
+            'create_marketplace_order' => 'Create marketplace order' . ($itemName !== '' ? ': ' . $itemName : ''),
+            'create_payroll_cycle' => 'Create payroll cycle' . ($itemName !== '' ? ': ' . $itemName : ''),
+            'approve_approval_request' => 'Approve approval request' . ($id > 0 ? ' #' . $id : ''),
+            'reject_approval_request' => 'Reject approval request' . ($id > 0 ? ' #' . $id : ''),
             default => $toolName,
         };
     }

@@ -72,6 +72,37 @@ final class MarketplaceToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_marketplace_order' => [
+                'name' => 'create_marketplace_order',
+                'description' => 'Create a draft marketplace order (WRITE — requires confirmation).',
+                'permission' => 'marketplace.manage',
+                'module' => 'marketplace',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => array (
+  'item_name' => 
+  array (
+    'type' => 'string',
+  ),
+  'title' => 
+  array (
+    'type' => 'string',
+  ),
+  'total_amount' => 
+  array (
+    'type' => 'number',
+  ),
+  'notes' => 
+  array (
+    'type' => 'string',
+  ),
+),
+                    'required' => array (
+),
+                ],
+            ],
+
         ];
     }
 

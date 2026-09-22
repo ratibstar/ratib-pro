@@ -54,6 +54,8 @@ final class CrmToolExecutor
                     return self::createCrmFollowup($arguments, $companyId, (int) $ctx->userId);
                 case 'create_customer':
                     return self::createCustomer($arguments, $companyId, (int) $ctx->userId);
+                case 'create_crm_opportunity':
+                    return ErpAiWriteTools::createCrmOpportunity($arguments, $companyId, (int) $ctx->userId);
                 default:
                     return self::fail('tool_not_implemented');
             }

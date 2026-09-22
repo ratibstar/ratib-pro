@@ -559,6 +559,31 @@ final class ErpDomainRegistry
         if (self::isDomainEntitled(self::DOMAIN_CONTRACTS, $ctx)) {
             $createChips[] = ['id' => 'add_contract', 'domain' => self::DOMAIN_CONTRACTS, 'label' => 'ai_cap_add_contract', 'prompt' => 'ai_suggest_add_contract'];
         }
+        if (self::isDomainEntitled(self::DOMAIN_PROCUREMENT, $ctx)) {
+            $createChips[] = ['id' => 'add_po', 'domain' => self::DOMAIN_PROCUREMENT, 'label' => 'ai_cap_add_po', 'prompt' => 'ai_suggest_add_po'];
+            $createChips[] = ['id' => 'add_rfq', 'domain' => self::DOMAIN_PROCUREMENT, 'label' => 'ai_cap_add_rfq', 'prompt' => 'ai_suggest_add_rfq'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_SALES, $ctx)) {
+            $createChips[] = ['id' => 'add_sales_order', 'domain' => self::DOMAIN_SALES, 'label' => 'ai_cap_add_sales_order', 'prompt' => 'ai_suggest_add_sales_order'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_CRM, $ctx)) {
+            $createChips[] = ['id' => 'add_opportunity', 'domain' => self::DOMAIN_CRM, 'label' => 'ai_cap_add_opportunity', 'prompt' => 'ai_suggest_add_opportunity'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_HR, $ctx)) {
+            $createChips[] = ['id' => 'add_leave', 'domain' => self::DOMAIN_HR, 'label' => 'ai_cap_add_leave', 'prompt' => 'ai_suggest_add_leave'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_MANUFACTURING, $ctx)) {
+            $createChips[] = ['id' => 'add_production', 'domain' => self::DOMAIN_MANUFACTURING, 'label' => 'ai_cap_add_production', 'prompt' => 'ai_suggest_add_production'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_QUALITY, $ctx)) {
+            $createChips[] = ['id' => 'add_inspection', 'domain' => self::DOMAIN_QUALITY, 'label' => 'ai_cap_add_inspection', 'prompt' => 'ai_suggest_add_inspection'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_MARKETPLACE, $ctx)) {
+            $createChips[] = ['id' => 'add_mp_order', 'domain' => self::DOMAIN_MARKETPLACE, 'label' => 'ai_cap_add_mp_order', 'prompt' => 'ai_suggest_add_mp_order'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_PAYROLL, $ctx)) {
+            $createChips[] = ['id' => 'add_payroll_cycle', 'domain' => self::DOMAIN_PAYROLL, 'label' => 'ai_cap_add_payroll_cycle', 'prompt' => 'ai_suggest_add_payroll_cycle'];
+        }
         $seen = array_column($out, 'id');
         foreach ($createChips as $chip) {
             if (in_array($chip['id'], $seen, true)) {
