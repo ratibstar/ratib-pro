@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+def hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace "sa.rateb.erp"
     compileSdk rootProject.ext.compileSdkVersion
@@ -7,8 +14,9 @@ android {
         applicationId "sa.rateb.erp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // P2: first Play-uploadable release after P0/P1 shell hardening
+        versionCode 2
+        versionName "1.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +24,45 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasReleaseKeystore) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                // Paths in key.properties are relative to android/ (rootProject), not app/.
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Signing applied only when key.properties exists; release tasks fail closed below.
+            if (hasReleaseKeystore) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+// Fail closed for release/AAB only — do not break assembleDebug.
+gradle.taskGraph.whenReady { graph ->
+    def wantsRelease = graph.allTasks.any { t ->
+        def n = t.name.toLowerCase()
+        return n.contains('bundlerelease') || n.contains('assemblerelease') || n.contains('packagerelease')
+    }
+    if (wantsRelease && !hasReleaseKeystore) {
+        throw new GradleException(
+            "Missing android/key.properties — required for release signing (P2). " +
+            "Copy key.properties.example, generate keystore/rateb-erp-upload-key.jks locally, then retry."
+        )
+    }
+    if (wantsRelease && hasReleaseKeystore) {
+        def store = rootProject.file(keystoreProperties['storeFile'])
+        if (!store.exists()) {
+            throw new GradleException("Release keystore not found: ${store}. See android/keystore/README.md")
         }
     }
 }

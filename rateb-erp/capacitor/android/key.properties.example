@@ -1,0 +1,7 @@
+# Copy to android/key.properties (gitignored) for Play upload signing.
+# P2: NEVER commit real passwords or the .jks file.
+
+storePassword=REPLACE_ME
+keyPassword=REPLACE_ME
+keyAlias=rateb_erp_upload
+storeFile=keystore/rateb-erp-upload-key.jks

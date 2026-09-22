@@ -46,3 +46,10 @@ See `native-templates/well-known/README.md`.
 ## Note
 
 Root `capacitor.config.json` (`com.tracking.app` / `mobile-app`) is untouched.
+
+## Release signing + AAB (P2)
+
+See `android/keystore/README.md` and `android/key.properties.example`.
+
+- Upload keystore + `key.properties` are **local only** (gitignored).
+- `./gradlew bundleRelease` fails closed if `key.properties` is missing (no debug signing fallback).

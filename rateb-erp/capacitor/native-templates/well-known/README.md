@@ -21,19 +21,11 @@ Must be HTTPS, `Content-Type: application/json`, no auth redirect.
 
 ## Fingerprints in `assetlinks.json`
 
-Current file includes the **local Android debug keystore** SHA-256 only (for device debug installs).
+Current file includes the **upload keystore** public certificate SHA-256 for `sa.rateb.erp` (local upload key).
 
-Before Play release, **add** the upload/App signing certificate SHA-256 (do not remove debug until debug testing is finished, or maintain separate staging file).
+**Not published** to `https://rateb.sa/.well-known/assetlinks.json` until the product owner confirms.
 
-```bash
-# Debug (already embedded):
-keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
-
-# Release upload key (after P2 signing exists):
-keytool -list -v -keystore /path/to/upload.jks -alias <alias>
-```
-
-Play Console → App signing also shows the **App signing key certificate** SHA-256 — that fingerprint must be listed for Play-distributed builds.
+After Play App Signing is enabled, also add the **App signing key certificate** SHA-256 from Play Console (keep the upload fingerprint listed as well for sideloaded/upload builds if needed).
 
 ## Verification (after publish)
 
