@@ -11,7 +11,11 @@
   "theme_color": "#0f1117",
   "lang": "ar",
   "dir": "rtl",
-  "categories": ["business", "productivity", "finance"],
+  "categories": [
+    "business",
+    "productivity",
+    "finance"
+  ],
   "icons": [
     {
       "src": "assets/pwa/erp-icon-192.png",
@@ -26,7 +30,7 @@
       "purpose": "any"
     },
     {
-      "src": "assets/pwa/erp-icon-512.png",
+      "src": "assets/pwa/erp-icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -38,28 +42,48 @@
       "short_name": "Home",
       "description": "Open ERP dashboard",
       "url": "./admin",
-      "icons": [{ "src": "assets/pwa/erp-icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "assets/pwa/erp-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Documents",
       "short_name": "DMS",
       "description": "Document management",
       "url": "./dms/dashboard",
-      "icons": [{ "src": "assets/pwa/erp-icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "assets/pwa/erp-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Analytics",
       "short_name": "BI",
       "description": "Business intelligence",
       "url": "./bi/dashboard",
-      "icons": [{ "src": "assets/pwa/erp-icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "assets/pwa/erp-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Offline shell",
       "short_name": "Offline",
       "description": "Cached offline shell",
       "url": "./offline-shell.html",
-      "icons": [{ "src": "assets/pwa/erp-icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "assets/pwa/erp-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "prefer_related_applications": false
