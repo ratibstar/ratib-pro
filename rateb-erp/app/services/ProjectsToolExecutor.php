@@ -59,6 +59,13 @@ final class ProjectsToolExecutor
         if ($companyId < 1) {
             return ErpAiDb::fail('tenant_mismatch');
         }
+        if ($toolName === 'create_project') {
+            try {
+                return self::createProject($arguments, $companyId, (int) $ctx->userId);
+            } catch (\Throwable $e) {
+                return ErpAiDb::fail('tool_exception');
+            }
+        }
         if (!isset(self::TOOLS[$toolName])) {
             return ErpAiDb::fail('tool_not_implemented');
         }
@@ -67,6 +74,29 @@ final class ProjectsToolExecutor
         } catch (\Throwable $e) {
             return ErpAiDb::fail('tool_exception');
         }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createProject(array $args, int $companyId, int $userId): array
+    {
+        $name = trim((string) ($args['name'] ?? $args['title'] ?? ''));
+        if ($name === '') {
+            return ErpAiDb::fail('name_required');
+        }
+        $created = (new ProjectService())->create([
+            'name' => $name,
+            'description' => trim((string) ($args['description'] ?? $args['notes'] ?? '')),
+            'notes' => trim((string) ($args['notes'] ?? '')),
+            'priority' => trim((string) ($args['priority'] ?? 'normal')) ?: 'normal',
+            'owner_user_id' => $userId > 0 ? $userId : null,
+        ]);
+        return ErpAiDb::ok([
+            'id' => (int) ($created['id'] ?? 0),
+            'project_no' => (string) ($created['project_no'] ?? ''),
+            'name' => $name,
+        ]);
     }
 
     /**

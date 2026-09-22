@@ -54,6 +54,13 @@ final class ContractsToolExecutor
         if ($companyId < 1) {
             return ErpAiDb::fail('tenant_mismatch');
         }
+        if ($toolName === 'create_contract') {
+            try {
+                return self::createContract($arguments, $companyId, (int) $ctx->userId);
+            } catch (\Throwable $e) {
+                return ErpAiDb::fail('tool_exception');
+            }
+        }
         if (!isset(self::TOOLS[$toolName])) {
             return ErpAiDb::fail('tool_not_implemented');
         }
@@ -62,6 +69,51 @@ final class ContractsToolExecutor
         } catch (\Throwable $e) {
             return ErpAiDb::fail('tool_exception');
         }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createContract(array $args, int $companyId, int $userId): array
+    {
+        $title = trim((string) ($args['title'] ?? $args['name'] ?? ''));
+        if ($title === '') {
+            return ErpAiDb::fail('title_required');
+        }
+        $model = new \Rateb\App\Models\Contract();
+        $data = [
+            'company_id' => $companyId,
+            'title' => mb_substr($title, 0, 190),
+            'status' => trim((string) ($args['status'] ?? 'draft')) ?: 'draft',
+            'value' => max(0, (float) ($args['value'] ?? 0)),
+            'contract_type' => trim((string) ($args['contract_type'] ?? '')),
+        ];
+        $start = trim((string) ($args['start_date'] ?? ''));
+        $end = trim((string) ($args['end_date'] ?? ''));
+        if ($start !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) {
+            $data['start_date'] = $start;
+        }
+        if ($end !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) {
+            $data['end_date'] = $end;
+        }
+        $branchId = function_exists('rateb_resolve_create_branch_id') ? (int) rateb_resolve_create_branch_id() : 0;
+        if ($branchId > 0) {
+            $data['branch_id'] = $branchId;
+        }
+        (new DocumentCodeService())->assignIfEmpty($data, $model, DocumentCodeService::PREFIX_CONTRACT, 'contract_no');
+        $id = (int) $model->create($data);
+        if ($id < 1) {
+            return ErpAiDb::fail('create_failed');
+        }
+        $rows = ErpAiDb::query(
+            'SELECT id, contract_no, title, status, value FROM rateb_contracts WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        return ErpAiDb::ok([
+            'id' => $id,
+            'contract' => $rows[0] ?? ['id' => $id, 'title' => $title],
+            'created_by' => $userId > 0 ? $userId : null,
+        ]);
     }
 
     /**

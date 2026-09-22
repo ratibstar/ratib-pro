@@ -70,6 +70,25 @@ final class ContractsToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_contract' => [
+                'name' => 'create_contract',
+                'description' => 'Create a commercial contract draft (WRITE — requires confirmation). Title required.',
+                'permission' => 'contracts.manage',
+                'module' => 'contracts',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'title' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'value' => ['type' => 'number', 'minimum' => 0, 'default' => 0],
+                        'start_date' => ['type' => 'string'],
+                        'end_date' => ['type' => 'string'],
+                        'contract_type' => ['type' => 'string'],
+                        'status' => ['type' => 'string', 'default' => 'draft'],
+                    ],
+                    'required' => ['title'],
+                ],
+            ],
         ];
     }
 

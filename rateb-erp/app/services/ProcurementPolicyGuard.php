@@ -168,6 +168,13 @@ final class ProcurementPolicyGuard
             || $toolName === 'create_inventory_item'
             || $toolName === 'create_employee'
             || $toolName === 'create_supplier'
+            || $toolName === 'create_crm_lead'
+            || $toolName === 'create_crm_followup'
+            || $toolName === 'create_customer'
+            || $toolName === 'create_project'
+            || $toolName === 'create_asset'
+            || $toolName === 'create_recruitment_candidate'
+            || $toolName === 'create_contract'
         ) {
             return true;
         }

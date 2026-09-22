@@ -70,6 +70,24 @@ final class RecruitmentToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_recruitment_candidate' => [
+                'name' => 'create_recruitment_candidate',
+                'description' => 'Create a recruitment candidate draft (WRITE — requires confirmation). full_name required.',
+                'permission' => 'recruitment.manage',
+                'module' => 'recruitment',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'full_name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'email' => ['type' => 'string'],
+                        'phone' => ['type' => 'string'],
+                        'job_title' => ['type' => 'string'],
+                        'notes' => ['type' => 'string'],
+                    ],
+                    'required' => ['full_name'],
+                ],
+            ],
         ];
     }
 

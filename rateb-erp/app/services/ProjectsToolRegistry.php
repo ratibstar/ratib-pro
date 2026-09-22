@@ -71,6 +71,23 @@ final class ProjectsToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_project' => [
+                'name' => 'create_project',
+                'description' => 'Create a project draft (WRITE — requires confirmation). Name required.',
+                'permission' => 'projects.manage',
+                'module' => 'projects',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'description' => ['type' => 'string'],
+                        'notes' => ['type' => 'string'],
+                        'priority' => ['type' => 'string', 'default' => 'normal'],
+                    ],
+                    'required' => ['name'],
+                ],
+            ],
         ];
     }
 

@@ -48,6 +48,12 @@ final class CrmToolExecutor
                     return self::getSupplierLinks($arguments, $companyId);
                 case 'analyze_crm_commercial_intelligence':
                     return self::analyzeCommercialIntelligence($arguments, $companyId);
+                case 'create_crm_lead':
+                    return self::createCrmLead($arguments, $companyId, (int) $ctx->userId);
+                case 'create_crm_followup':
+                    return self::createCrmFollowup($arguments, $companyId, (int) $ctx->userId);
+                case 'create_customer':
+                    return self::createCustomer($arguments, $companyId, (int) $ctx->userId);
                 default:
                     return self::fail('tool_not_implemented');
             }
@@ -852,6 +858,115 @@ final class CrmToolExecutor
                     'no_separate_crm_agent',
                     'failed_optional_joins_omitted_not_invented',
                 ],
+            ],
+            'error' => null,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createCrmLead(array $args, int $companyId, int $userId): array
+    {
+        $title = trim((string) ($args['title'] ?? $args['name'] ?? ''));
+        if ($title === '') {
+            return self::fail('title_required');
+        }
+        try {
+            $created = (new LeadService())->create([
+                'title' => $title,
+                'contact_name' => trim((string) ($args['contact_name'] ?? $args['name'] ?? '')),
+                'email' => trim((string) ($args['email'] ?? '')),
+                'phone' => trim((string) ($args['phone'] ?? '')),
+                'notes' => trim((string) ($args['notes'] ?? '')),
+                'priority' => trim((string) ($args['priority'] ?? 'normal')) ?: 'normal',
+                'owner_user_id' => $userId > 0 ? $userId : null,
+            ]);
+            return [
+                'success' => true,
+                'data' => [
+                    'id' => (int) ($created['id'] ?? 0),
+                    'lead_no' => (string) ($created['lead_no'] ?? ''),
+                    'title' => $title,
+                ],
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            return self::fail('create_failed');
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createCrmFollowup(array $args, int $companyId, int $userId): array
+    {
+        $subject = trim((string) ($args['subject'] ?? $args['title'] ?? $args['notes'] ?? ''));
+        if ($subject === '') {
+            return self::fail('subject_required');
+        }
+        try {
+            $created = (new TaskService())->create([
+                'subject' => $subject,
+                'priority' => trim((string) ($args['priority'] ?? 'normal')) ?: 'normal',
+                'notes' => trim((string) ($args['notes'] ?? '')),
+                'owner_user_id' => $userId > 0 ? $userId : null,
+                'customer_id' => (int) ($args['customer_id'] ?? 0) ?: null,
+                'lead_id' => (int) ($args['lead_id'] ?? 0) ?: null,
+            ]);
+            return [
+                'success' => true,
+                'data' => [
+                    'id' => (int) ($created['id'] ?? 0),
+                    'subject' => $subject,
+                ],
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            return self::fail('create_failed');
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createCustomer(array $args, int $companyId, int $userId): array
+    {
+        $name = trim((string) ($args['name'] ?? ''));
+        if ($name === '') {
+            return self::fail('name_required');
+        }
+        $model = new Customer();
+        $data = [
+            'company_id' => $companyId,
+            'name' => mb_substr($name, 0, 190),
+            'email' => trim((string) ($args['email'] ?? '')),
+            'phone' => trim((string) ($args['phone'] ?? '')),
+            'notes' => trim((string) ($args['notes'] ?? '')),
+            'is_active' => 1,
+        ];
+        $branchId = (int) ($args['branch_id'] ?? 0);
+        if ($branchId < 1 && function_exists('rateb_resolve_create_branch_id')) {
+            $branchId = (int) rateb_resolve_create_branch_id();
+        }
+        if ($branchId > 0) {
+            $data['branch_id'] = $branchId;
+        }
+        (new DocumentCodeService())->assignIfEmpty($data, $model, DocumentCodeService::PREFIX_CUSTOMER, 'code');
+        $id = (int) $model->create($data);
+        if ($id < 1) {
+            return self::fail('create_failed');
+        }
+        $rows = $model->query(
+            'SELECT id, code, name, email, phone, is_active FROM rateb_customers WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        return [
+            'success' => true,
+            'data' => [
+                'id' => $id,
+                'customer' => $rows[0] ?? ['id' => $id, 'name' => $name],
+                'created_by' => $userId > 0 ? $userId : null,
             ],
             'error' => null,
         ];

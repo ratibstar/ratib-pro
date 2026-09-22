@@ -57,6 +57,13 @@ final class RecruitmentToolExecutor
         if ($companyId < 1) {
             return ErpAiDb::fail('tenant_mismatch');
         }
+        if ($toolName === 'create_recruitment_candidate') {
+            try {
+                return self::createCandidate($arguments, $companyId, (int) $ctx->userId);
+            } catch (\Throwable $e) {
+                return ErpAiDb::fail('tool_exception');
+            }
+        }
         if (!isset(self::TOOLS[$toolName])) {
             return ErpAiDb::fail('tool_not_implemented');
         }
@@ -65,6 +72,30 @@ final class RecruitmentToolExecutor
         } catch (\Throwable $e) {
             return ErpAiDb::fail('tool_exception');
         }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createCandidate(array $args, int $companyId, int $userId): array
+    {
+        $name = trim((string) ($args['full_name'] ?? $args['name'] ?? ''));
+        if ($name === '') {
+            return ErpAiDb::fail('name_required');
+        }
+        $created = (new CandidateService())->create([
+            'full_name' => $name,
+            'email' => trim((string) ($args['email'] ?? '')),
+            'phone' => trim((string) ($args['phone'] ?? '')),
+            'job_title_target' => trim((string) ($args['job_title'] ?? $args['job_title_target'] ?? '')),
+            'notes' => trim((string) ($args['notes'] ?? '')),
+            'recruiter_user_id' => $userId > 0 ? $userId : null,
+        ]);
+        return ErpAiDb::ok([
+            'id' => (int) ($created['id'] ?? 0),
+            'candidate_no' => (string) ($created['candidate_no'] ?? ''),
+            'full_name' => $name,
+        ]);
     }
 
     /**

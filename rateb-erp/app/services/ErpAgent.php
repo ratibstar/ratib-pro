@@ -1292,8 +1292,21 @@ final class ErpAgent
                 if ($n === '') {
                     continue;
                 }
-            } elseif ($tool === 'create_employee' || $tool === 'create_supplier') {
-                $n = trim((string) ($args['name'] ?? ''));
+            } elseif (in_array($tool, [
+                'create_employee', 'create_supplier', 'create_customer', 'create_project',
+                'create_asset', 'create_recruitment_candidate',
+            ], true)) {
+                $n = trim((string) ($args['name'] ?? $args['full_name'] ?? ''));
+                if ($n === '') {
+                    continue;
+                }
+            } elseif (in_array($tool, ['create_crm_lead', 'create_contract'], true)) {
+                $n = trim((string) ($args['title'] ?? $args['name'] ?? ''));
+                if ($n === '') {
+                    continue;
+                }
+            } elseif ($tool === 'create_crm_followup') {
+                $n = trim((string) ($args['subject'] ?? $args['title'] ?? ''));
                 if ($n === '') {
                     continue;
                 }
@@ -1448,8 +1461,8 @@ final class ErpAgent
     {
         $ar = $ctx->normalizedLocale() === 'ar';
         $id = (int) ($arguments['id'] ?? 0);
-        $title = trim((string) ($arguments['title'] ?? ''));
-        $itemName = trim((string) ($arguments['item_name'] ?? $arguments['name'] ?? ''));
+        $title = trim((string) ($arguments['title'] ?? $arguments['subject'] ?? ''));
+        $itemName = trim((string) ($arguments['item_name'] ?? $arguments['name'] ?? $arguments['full_name'] ?? ''));
         $qty = (float) ($arguments['quantity'] ?? 0);
         if ($ar) {
             return match ($toolName) {
@@ -1461,6 +1474,13 @@ final class ErpAgent
                     . ($qty > 0 ? ' (كمية ' . $qty . ')' : ''),
                 'create_employee' => 'إضافة موظف' . ($itemName !== '' ? ': ' . $itemName : ''),
                 'create_supplier' => 'إضافة مورد' . ($itemName !== '' ? ': ' . $itemName : ''),
+                'create_crm_lead' => 'إضافة فرصة' . ($title !== '' ? ': ' . $title : ($itemName !== '' ? ': ' . $itemName : '')),
+                'create_crm_followup' => 'إضافة متابعة' . ($title !== '' ? ': ' . $title : ''),
+                'create_customer' => 'إضافة عميل' . ($itemName !== '' ? ': ' . $itemName : ''),
+                'create_project' => 'إضافة مشروع' . ($itemName !== '' ? ': ' . $itemName : ''),
+                'create_asset' => 'إضافة أصل' . ($itemName !== '' ? ': ' . $itemName : ''),
+                'create_recruitment_candidate' => 'إضافة مرشح' . ($itemName !== '' ? ': ' . $itemName : ''),
+                'create_contract' => 'إضافة عقد' . ($title !== '' ? ': ' . $title : ($itemName !== '' ? ': ' . $itemName : '')),
                 default => $toolName,
             };
         }
@@ -1473,6 +1493,13 @@ final class ErpAgent
                 . ($qty > 0 ? ' (qty ' . $qty . ')' : ''),
             'create_employee' => 'Add employee' . ($itemName !== '' ? ': ' . $itemName : ''),
             'create_supplier' => 'Add supplier' . ($itemName !== '' ? ': ' . $itemName : ''),
+            'create_crm_lead' => 'Add CRM lead' . ($title !== '' ? ': ' . $title : ($itemName !== '' ? ': ' . $itemName : '')),
+            'create_crm_followup' => 'Add CRM follow-up' . ($title !== '' ? ': ' . $title : ''),
+            'create_customer' => 'Add customer' . ($itemName !== '' ? ': ' . $itemName : ''),
+            'create_project' => 'Add project' . ($itemName !== '' ? ': ' . $itemName : ''),
+            'create_asset' => 'Add asset' . ($itemName !== '' ? ': ' . $itemName : ''),
+            'create_recruitment_candidate' => 'Add candidate' . ($itemName !== '' ? ': ' . $itemName : ''),
+            'create_contract' => 'Add contract' . ($title !== '' ? ': ' . $title : ($itemName !== '' ? ': ' . $itemName : '')),
             default => $toolName,
         };
     }

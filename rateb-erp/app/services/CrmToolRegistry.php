@@ -204,6 +204,60 @@ final class CrmToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_crm_lead' => [
+                'name' => 'create_crm_lead',
+                'description' => 'Create a CRM lead (WRITE — requires confirmation). Title required.',
+                'permission' => 'crm.manage',
+                'module' => 'crm',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'title' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'contact_name' => ['type' => 'string'],
+                        'email' => ['type' => 'string'],
+                        'phone' => ['type' => 'string'],
+                        'notes' => ['type' => 'string'],
+                        'priority' => ['type' => 'string', 'default' => 'normal'],
+                    ],
+                    'required' => ['title'],
+                ],
+            ],
+            'create_crm_followup' => [
+                'name' => 'create_crm_followup',
+                'description' => 'Create a CRM follow-up task (WRITE — requires confirmation). Subject required.',
+                'permission' => 'crm.manage',
+                'module' => 'crm',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'subject' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'notes' => ['type' => 'string'],
+                        'priority' => ['type' => 'string', 'default' => 'normal'],
+                        'customer_id' => ['type' => 'integer', 'minimum' => 1],
+                        'lead_id' => ['type' => 'integer', 'minimum' => 1],
+                    ],
+                    'required' => ['subject'],
+                ],
+            ],
+            'create_customer' => [
+                'name' => 'create_customer',
+                'description' => 'Create a customer record (WRITE — requires confirmation). Name required.',
+                'permission' => 'crm.manage',
+                'module' => 'crm',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'email' => ['type' => 'string'],
+                        'phone' => ['type' => 'string'],
+                        'notes' => ['type' => 'string'],
+                    ],
+                    'required' => ['name'],
+                ],
+            ],
         ];
     }
 

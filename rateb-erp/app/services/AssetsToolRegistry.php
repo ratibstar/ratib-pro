@@ -68,6 +68,23 @@ final class AssetsToolRegistry
                     'required' => [],
                 ],
             ],
+            'create_asset' => [
+                'name' => 'create_asset',
+                'description' => 'Create an asset draft (WRITE — requires confirmation). Name required.',
+                'permission' => 'assets.manage',
+                'module' => 'assets',
+                'write' => true,
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 190],
+                        'serial_no' => ['type' => 'string'],
+                        'notes' => ['type' => 'string'],
+                        'priority' => ['type' => 'string', 'default' => 'normal'],
+                    ],
+                    'required' => ['name'],
+                ],
+            ],
         ];
     }
 

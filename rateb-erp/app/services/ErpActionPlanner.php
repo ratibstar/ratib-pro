@@ -45,6 +45,13 @@ final class ErpActionPlanner
         'create_inventory_item',
         'create_employee',
         'create_supplier',
+        'create_crm_lead',
+        'create_crm_followup',
+        'create_customer',
+        'create_project',
+        'create_asset',
+        'create_recruitment_candidate',
+        'create_contract',
     ];
 
     /** @var list<string> */
@@ -105,7 +112,7 @@ final class ErpActionPlanner
             '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|عدّل|عدل|ألغ|الغ|حدّث|حدث|أرسل|ارسل|submit|create|update|cancel|add|prepare\s+for\s+delivery|جهز|متابعة\s*للعميل|طلب\s*شراء)/ui'
         ) && (
             ErpOrchestrationPlanner::hasWriteIntent($message)
-            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|مورد|موردين|موارد\s*بشرية|حساب|مستخدم|inventory|employee|supplier|hr|user\s*account|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
+            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|مورد|موردين|موارد\s*بشرية|حساب|مستخدم|عميل|فرصة|متابعة|مشروع|أصل|عقد|مرشح|lead|customer|project|asset|contract|candidate|inventory|employee|supplier|hr|user\s*account|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
         );
     }
 
@@ -149,18 +156,6 @@ final class ErpActionPlanner
                         . "To add an HR employee record write e.g.: add employee Ahmed",
                 'domain' => 'users',
                 'class' => self::CLASS_RECOMMENDATION,
-            ];
-        }
-        if (self::match($message, '/(متابعة\s*للعميل|أنشئ\s*متابعة|create\s+(a\s+)?follow[\s-]?up|crm\s+follow)/ui')) {
-            $unsupported[] = [
-                'requested' => 'create_crm_followup',
-                'domain' => 'crm',
-                'reason' => 'no_write_tool_registered_for_crm',
-                'class' => self::CLASS_RECOMMENDATION,
-            ];
-            $recommendations[] = [
-                'message' => 'crm_followup_write_not_available_via_agent',
-                'domain' => 'crm',
             ];
         }
         if (self::match($message, '/(جهز.*تسليم|prepare.*delivery|حدّث\s*حالة\s*الشحن|update\s+shipment\s+status)/ui')) {
@@ -305,6 +300,147 @@ final class ErpActionPlanner
             }
         }
 
+        // CRM lead
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(فرصة|عميل\s*محتمل|ليد|lead)/ui')) {
+            $title = self::extractTitleLike($message, '/(?:فرصة|عميل\s*محتمل|ليد|lead)\s+(.+)$/ui');
+            if ($title === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة فرصة/عميل محتمل اكتب مثلاً: أضف فرصة شركة الأمل'
+                        : 'To add a CRM lead write e.g.: add lead Al-Amal Co',
+                    'domain' => 'crm',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_crm_lead', [
+                    'title' => $title,
+                    'contact_name' => $title,
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ], $ctx, 'create_crm_lead_from_chat');
+                $domains[] = 'crm';
+            }
+        }
+
+        // CRM follow-up
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(متابعة|follow[\s-]?up)|متابعة\s*للعميل/ui')) {
+            $subject = self::extractTitleLike($message, '/(?:متابعة|follow[\s-]?up)\s+(.+)$/ui');
+            if ($subject === '') {
+                $subject = self::isAr($ctx) ? 'متابعة عميل' : 'Customer follow-up';
+            }
+            $actions[] = self::makeAction('create_crm_followup', [
+                'subject' => $subject,
+                'notes' => mb_substr(trim($message), 0, 500),
+            ], $ctx, 'create_crm_followup_from_chat');
+            $domains[] = 'crm';
+        }
+
+        // Customer
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(عميل|زبون|customer)(?!\s*محتمل)/ui')
+            && !self::match($message, '/(فرصة|ليد|lead|محتمل)/ui')
+        ) {
+            $custName = self::extractTitleLike($message, '/(?:عميل|زبون|customer)\s+(.+)$/ui');
+            if ($custName === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة عميل اكتب مثلاً: أضف عميل مؤسسة النور'
+                        : 'To add a customer write e.g.: add customer Al-Noor Est',
+                    'domain' => 'crm',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_customer', [
+                    'name' => $custName,
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ], $ctx, 'create_customer_from_chat');
+                $domains[] = 'crm';
+            }
+        }
+
+        // Project
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(مشروع|project)/ui')) {
+            $projName = self::extractTitleLike($message, '/(?:مشروع|project)\s+(.+)$/ui');
+            if ($projName === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة مشروع اكتب مثلاً: أضف مشروع تطوير المتجر'
+                        : 'To add a project write e.g.: add project Store upgrade',
+                    'domain' => 'projects',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_project', [
+                    'name' => $projName,
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ], $ctx, 'create_project_from_chat');
+                $domains[] = 'projects';
+            }
+        }
+
+        // Asset
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(أصل|اصول|أصول|asset)/ui')) {
+            $assetName = self::extractTitleLike($message, '/(?:أصل|اصول|أصول|asset)\s+(.+)$/ui');
+            if ($assetName === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة أصل اكتب مثلاً: أضف أصل طابعة ليزر'
+                        : 'To add an asset write e.g.: add asset laser printer',
+                    'domain' => 'assets',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_asset', [
+                    'name' => $assetName,
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ], $ctx, 'create_asset_from_chat');
+                $domains[] = 'assets';
+            }
+        }
+
+        // Recruitment candidate
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(مرشح|مرشحة|candidate)/ui')) {
+            $candName = self::extractPersonName($message);
+            if ($candName === '') {
+                $candName = self::extractTitleLike($message, '/(?:مرشح|مرشحة|candidate)\s+(.+)$/ui');
+            }
+            if ($candName === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة مرشح اكتب مثلاً: أضف مرشح سارة أحمد'
+                        : 'To add a candidate write e.g.: add candidate Sara Ahmed',
+                    'domain' => 'recruitment',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_recruitment_candidate', [
+                    'full_name' => $candName,
+                    'notes' => mb_substr(trim($message), 0, 500),
+                ], $ctx, 'create_candidate_from_chat');
+                $domains[] = 'recruitment';
+            }
+        }
+
+        // Contract
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(عقد|contracts?)/ui')
+            && !self::match($message, '/(توظيف|employment)/ui')
+        ) {
+            $ctTitle = self::extractTitleLike($message, '/(?:عقد|contract)\s+(.+)$/ui');
+            if ($ctTitle === '') {
+                $recommendations[] = [
+                    'message' => self::isAr($ctx)
+                        ? 'لإضافة عقد اكتب مثلاً: أضف عقد صيانة سنوية'
+                        : 'To add a contract write e.g.: add contract annual maintenance',
+                    'domain' => 'contracts',
+                    'class' => self::CLASS_RECOMMENDATION,
+                ];
+            } else {
+                $actions[] = self::makeAction('create_contract', [
+                    'title' => $ctTitle,
+                    'status' => 'draft',
+                ], $ctx, 'create_contract_from_chat');
+                $domains[] = 'contracts';
+            }
+        }
+
         if (self::match($message, '/(أرسل|ارسل|submit).{0,40}(قيد|journal).{0,40}(موافقة|approval)|submit\s+journal(\s+entry)?\s*#?\s*\d+|أرسل\s*القيد\s*#?\s*\d+/ui')) {
             $id = self::extractId($message);
             if ($id > 0) {
@@ -373,13 +509,25 @@ final class ErpActionPlanner
                         . "• أضف طلب شراء مستلزمات مكتبية\n"
                         . "• أضف مخزون رز كمية 20\n"
                         . "• أضف موظف أحمد العتيبي\n"
-                        . "• أضف مورد شركة النور"
+                        . "• أضف مورد شركة النور\n"
+                        . "• أضف عميل مؤسسة النور\n"
+                        . "• أضف فرصة شركة الأمل\n"
+                        . "• أضف مشروع تطوير المتجر\n"
+                        . "• أضف أصل طابعة ليزر\n"
+                        . "• أضف مرشح سارة أحمد\n"
+                        . "• أضف عقد صيانة سنوية"
                     : "This write action is not available via the agent yet.\n"
                         . "You can try e.g.:\n"
                         . "• add a purchase request for office supplies\n"
                         . "• add inventory rice qty 20\n"
                         . "• add employee Ahmed\n"
-                        . "• add supplier Al-Noor Co",
+                        . "• add supplier Al-Noor Co\n"
+                        . "• add customer Al-Noor Est\n"
+                        . "• add lead Al-Amal Co\n"
+                        . "• add project Store upgrade\n"
+                        . "• add asset laser printer\n"
+                        . "• add candidate Sara Ahmed\n"
+                        . "• add contract annual maintenance",
                 'domain' => '',
                 'class' => self::CLASS_RECOMMENDATION,
             ];
@@ -1532,6 +1680,13 @@ final class ErpActionPlanner
             'create_inventory_item' => 'إضافة صنف مخزون',
             'create_employee' => 'إضافة موظف',
             'create_supplier' => 'إضافة مورد',
+            'create_crm_lead' => 'إضافة فرصة / عميل محتمل',
+            'create_crm_followup' => 'إضافة متابعة عميل',
+            'create_customer' => 'إضافة عميل',
+            'create_project' => 'إضافة مشروع',
+            'create_asset' => 'إضافة أصل',
+            'create_recruitment_candidate' => 'إضافة مرشح',
+            'create_contract' => 'إضافة عقد',
             'duplicate_action' => 'إجراء مكرر',
             'tool_exception' => 'تعذر تنفيذ الأداة',
             'verification_incomplete' => 'التحقق غير مكتمل',
@@ -1557,6 +1712,13 @@ final class ErpActionPlanner
             'create_inventory_item' => 'Add inventory item',
             'create_employee' => 'Add employee',
             'create_supplier' => 'Add supplier',
+            'create_crm_lead' => 'Add CRM lead',
+            'create_crm_followup' => 'Add CRM follow-up',
+            'create_customer' => 'Add customer',
+            'create_project' => 'Add project',
+            'create_asset' => 'Add asset',
+            'create_recruitment_candidate' => 'Add recruitment candidate',
+            'create_contract' => 'Add contract',
             'duplicate_action' => 'Duplicate action',
             'tool_exception' => 'Tool execution failed',
             'verification_incomplete' => 'Verification incomplete',
@@ -1665,6 +1827,12 @@ final class ErpActionPlanner
         }
         if ($tool === 'create_supplier') {
             return ['exists' => false, 'entity' => 'supplier', 'status' => null];
+        }
+        if (in_array($tool, [
+            'create_crm_lead', 'create_crm_followup', 'create_customer',
+            'create_project', 'create_asset', 'create_recruitment_candidate', 'create_contract',
+        ], true)) {
+            return ['exists' => false, 'entity' => $tool, 'status' => null];
         }
         $id = (int) ($args['id'] ?? 0);
         if ($id < 1) {
@@ -1861,6 +2029,41 @@ final class ErpActionPlanner
             }
         }
 
+        $verifyMap = [
+            'create_crm_lead' => ['table' => 'rateb_crm_leads', 'cols' => 'id, lead_no, title, status', 'msg' => 'verified_crm_lead_created'],
+            'create_crm_followup' => ['table' => 'rateb_crm_tasks', 'cols' => 'id, subject, status', 'msg' => 'verified_crm_followup_created'],
+            'create_customer' => ['table' => 'rateb_customers', 'cols' => 'id, code, name, is_active', 'msg' => 'verified_customer_created'],
+            'create_project' => ['table' => 'rateb_projects', 'cols' => 'id, project_no, name, status', 'msg' => 'verified_project_created'],
+            'create_asset' => ['table' => 'rateb_eam_assets', 'cols' => 'id, asset_no, name, status', 'msg' => 'verified_asset_created'],
+            'create_recruitment_candidate' => ['table' => 'rateb_recruitment_candidates', 'cols' => 'id, candidate_no, full_name, status', 'msg' => 'verified_candidate_created'],
+            'create_contract' => ['table' => 'rateb_contracts', 'cols' => 'id, contract_no, title, status', 'msg' => 'verified_contract_created'],
+        ];
+        if (isset($verifyMap[$tool])) {
+            $id = (int) ($execResult['data']['id'] ?? 0);
+            if ($id < 1) {
+                return ['verified' => false, 'incomplete' => true, 'new_state' => null, 'message' => 'verification_incomplete_missing_id'];
+            }
+            $meta = $verifyMap[$tool];
+            try {
+                $model = new \Rateb\App\Models\Customer();
+                $rows = $model->query(
+                    'SELECT ' . $meta['cols'] . ' FROM ' . $meta['table']
+                    . ' WHERE id = :id AND company_id = :cid LIMIT 1',
+                    ['id' => $id, 'cid' => (int) $ctx->companyId]
+                );
+                $row = $rows[0] ?? null;
+                $ok = is_array($row);
+                return [
+                    'verified' => $ok,
+                    'incomplete' => !$ok,
+                    'new_state' => $ok ? ['exists' => true, 'entity' => $tool, 'id' => $id] + $row : null,
+                    'message' => $ok ? $meta['msg'] : 'verification_incomplete',
+                ];
+            } catch (\Throwable $e) {
+                return ['verified' => false, 'incomplete' => true, 'new_state' => null, 'message' => 'verification_incomplete'];
+            }
+        }
+
         $id = (int) ($action['arguments']['id'] ?? $execResult['data']['id'] ?? 0);
         $state = self::readStateSnapshot($tool, ['id' => $id], $ctx);
         if ($state === null) {
@@ -1899,7 +2102,9 @@ final class ErpActionPlanner
                    AND status = 'success'
                    AND tool_name IN (
                      'create_draft_purchase_request','update_purchase_request','cancel_purchase_request','submit_purchase_request',
-                     'submit_journal_for_approval','create_inventory_item','create_employee','create_supplier'
+                     'submit_journal_for_approval','create_inventory_item','create_employee','create_supplier',
+                     'create_crm_lead','create_crm_followup','create_customer','create_project','create_asset',
+                     'create_recruitment_candidate','create_contract'
                    )
                  ORDER BY id DESC LIMIT 30"
             );
@@ -2030,6 +2235,21 @@ final class ErpActionPlanner
             $t = trim($m[1]);
             $t = preg_replace('/\s*(بريد|email|جوال|phone|هاتف).*$/ui', '', $t) ?? $t;
             return mb_substr(trim($t, " \t\"'«»"), 0, 120);
+        }
+        return '';
+    }
+
+    /** Extract trailing name/title after a domain keyword; strips test filler. */
+    private static function extractTitleLike(string $message, string $pattern): string
+    {
+        if (preg_match($pattern, $message, $m)) {
+            $t = trim($m[1]);
+            $t = preg_replace('/\s*(من\s*عندك|تجربه|تجربة|اختبار|test).*$/ui', '', $t) ?? $t;
+            $t = trim($t, " \t\"'«»");
+            if ($t === '' || self::match($t, '/^(من\s*عندك|تجربه|تجربة|اختبار|test)$/ui')) {
+                return '';
+            }
+            return mb_substr($t, 0, 120);
         }
         return '';
     }

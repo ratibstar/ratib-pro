@@ -42,6 +42,13 @@ final class AssetsToolExecutor
         if ($companyId < 1) {
             return ErpAiDb::fail('tenant_mismatch');
         }
+        if ($toolName === 'create_asset') {
+            try {
+                return self::createAsset($arguments, $companyId, (int) $ctx->userId);
+            } catch (\Throwable $e) {
+                return ErpAiDb::fail('tool_exception');
+            }
+        }
         if (!isset(self::TOOLS[$toolName])) {
             return ErpAiDb::fail('tool_not_implemented');
         }
@@ -50,6 +57,29 @@ final class AssetsToolExecutor
         } catch (\Throwable $e) {
             return ErpAiDb::fail('tool_exception');
         }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    private static function createAsset(array $args, int $companyId, int $userId): array
+    {
+        $name = trim((string) ($args['name'] ?? ''));
+        if ($name === '') {
+            return ErpAiDb::fail('name_required');
+        }
+        $created = (new AssetService())->create([
+            'name' => $name,
+            'notes' => trim((string) ($args['notes'] ?? '')),
+            'serial_no' => trim((string) ($args['serial_no'] ?? '')),
+            'priority' => trim((string) ($args['priority'] ?? 'normal')) ?: 'normal',
+        ]);
+        return ErpAiDb::ok([
+            'id' => (int) ($created['id'] ?? 0),
+            'asset_no' => (string) ($created['asset_no'] ?? ''),
+            'name' => $name,
+            'created_by' => $userId > 0 ? $userId : null,
+        ]);
     }
 
     /**

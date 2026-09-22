@@ -543,6 +543,22 @@ final class ErpDomainRegistry
         if (self::isDomainEntitled(self::DOMAIN_SUPPLIERS, $ctx)) {
             $createChips[] = ['id' => 'add_supplier', 'domain' => self::DOMAIN_SUPPLIERS, 'label' => 'ai_cap_add_supplier', 'prompt' => 'ai_suggest_add_supplier'];
         }
+        if (self::isDomainEntitled(self::DOMAIN_CRM, $ctx)) {
+            $createChips[] = ['id' => 'add_customer', 'domain' => self::DOMAIN_CRM, 'label' => 'ai_cap_add_customer', 'prompt' => 'ai_suggest_add_customer'];
+            $createChips[] = ['id' => 'add_lead', 'domain' => self::DOMAIN_CRM, 'label' => 'ai_cap_add_lead', 'prompt' => 'ai_suggest_add_lead'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_PROJECTS, $ctx)) {
+            $createChips[] = ['id' => 'add_project', 'domain' => self::DOMAIN_PROJECTS, 'label' => 'ai_cap_add_project', 'prompt' => 'ai_suggest_add_project'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_ASSETS, $ctx)) {
+            $createChips[] = ['id' => 'add_asset', 'domain' => self::DOMAIN_ASSETS, 'label' => 'ai_cap_add_asset', 'prompt' => 'ai_suggest_add_asset'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_RECRUITMENT, $ctx)) {
+            $createChips[] = ['id' => 'add_candidate', 'domain' => self::DOMAIN_RECRUITMENT, 'label' => 'ai_cap_add_candidate', 'prompt' => 'ai_suggest_add_candidate'];
+        }
+        if (self::isDomainEntitled(self::DOMAIN_CONTRACTS, $ctx)) {
+            $createChips[] = ['id' => 'add_contract', 'domain' => self::DOMAIN_CONTRACTS, 'label' => 'ai_cap_add_contract', 'prompt' => 'ai_suggest_add_contract'];
+        }
         $seen = array_column($out, 'id');
         foreach ($createChips as $chip) {
             if (in_array($chip['id'], $seen, true)) {
