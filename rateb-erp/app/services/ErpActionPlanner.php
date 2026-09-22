@@ -105,7 +105,7 @@ final class ErpActionPlanner
             '/(أنشئ|إنشاء|أضف|اضف|ضيف|إضافة|عدّل|عدل|ألغ|الغ|حدّث|حدث|أرسل|ارسل|submit|create|update|cancel|add|prepare\s+for\s+delivery|جهز|متابعة\s*للعميل|طلب\s*شراء)/ui'
         ) && (
             ErpOrchestrationPlanner::hasWriteIntent($message)
-            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|مورد|موردين|inventory|employee|supplier|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
+            || self::match($message, '/(طلب\s*شراء|purchase\s*request|مخزون|صنف|موظف|موظفين|مورد|موردين|موارد\s*بشرية|حساب|مستخدم|inventory|employee|supplier|hr|user\s*account|حالة\s*الطلب|متابعة|تسليم|delivery)/ui')
         );
     }
 
@@ -129,6 +129,28 @@ final class ErpActionPlanner
         $domains = [];
 
         // Unsupported NL actions (no real agent WRITE tools exist)
+        // Never create login accounts / passwords via AI (Online ERP remains auth authority).
+        if (self::match($message, '/(حساب\s*(مستخدم|دخول)|مستخدم\s*(جديد)?|user\s*account|login|كلمة\s*مرور|باسورد|password|credentials)/ui')
+            && self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add)/ui')
+        ) {
+            $unsupported[] = [
+                'requested' => 'create_user_account_with_password',
+                'domain' => 'users',
+                'reason' => 'agent_cannot_create_login_credentials',
+                'class' => self::CLASS_RECOMMENDATION,
+            ];
+            $recommendations[] = [
+                'message' => self::isAr($ctx)
+                    ? "لا يمكن إنشاء حساب دخول أو كلمة مرور عبر RATEB AI.\n"
+                        . "استخدم إدارة المستخدمين في لوحة التحكم لإضافة حسابات الدخول.\n"
+                        . "لإضافة سجل موظف (موارد بشرية) اكتب مثلاً: أضف موظف أحمد العتيبي"
+                    : "RATEB AI cannot create login accounts or passwords.\n"
+                        . "Use Users administration in the control panel for login accounts.\n"
+                        . "To add an HR employee record write e.g.: add employee Ahmed",
+                'domain' => 'users',
+                'class' => self::CLASS_RECOMMENDATION,
+            ];
+        }
         if (self::match($message, '/(متابعة\s*للعميل|أنشئ\s*متابعة|create\s+(a\s+)?follow[\s-]?up|crm\s+follow)/ui')) {
             $unsupported[] = [
                 'requested' => 'create_crm_followup',
@@ -222,25 +244,42 @@ final class ErpActionPlanner
             }
         }
 
-        // Employee create
-        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(موظف|موظفين|employee|employees)/ui')) {
-            $empName = self::extractPersonName($message);
-            if ($empName === '') {
-                $recommendations[] = [
-                    'message' => self::isAr($ctx)
-                        ? 'لإضافة موظف اكتب مثلاً: أضف موظف أحمد العتيبي'
-                        : 'To add an employee write e.g.: add employee Ahmed',
-                    'domain' => 'hr',
-                    'class' => self::CLASS_RECOMMENDATION,
-                ];
-            } else {
-                $args = [
-                    'name' => $empName,
-                    'status' => 'active',
-                    'notes' => mb_substr(trim($message), 0, 500),
-                ];
-                $actions[] = self::makeAction('create_employee', $args, $ctx, 'create_employee_from_chat');
-                $domains[] = 'hr';
+        // Employee / HR create (موظف or موارد بشرية)
+        if (self::match($message, '/(أضف|اضف|ضيف|إضافة|أنشئ|إنشاء|create|add).{0,40}(موظف|موظفين|الموارد\s*البشرية|موارد\s*بشرية|employee|employees|\bhr\b)/ui')
+            || self::match($message, '/ضيف\s*(الموارد\s*البشرية|موارد\s*بشرية)/ui')
+        ) {
+            // Skip if this was already handled as user-account+password (above)
+            $isLoginCreate = self::match($message, '/(حساب|مستخدم|كلمة\s*مرور|password|user\s*account)/ui');
+            if (!$isLoginCreate) {
+                $empName = self::extractPersonName($message);
+                if ($empName === '') {
+                    // Try extract after "موارد بشرية" / bare HR add
+                    if (preg_match('/(?:الموارد\s*البشرية|موارد\s*بشرية|hr)\s+(.+)$/ui', $message, $mHr)) {
+                        $t = trim($mHr[1]);
+                        $t = preg_replace('/\s*(من\s*عندك|تجربه|تجربة|اختبار|test).*$/ui', '', $t) ?? $t;
+                        $empName = mb_substr(trim($t, " \t\"'«»"), 0, 120);
+                        if (self::match($empName, '/^(من\s*عندك|تجربه|تجربة|اختبار|test)$/ui')) {
+                            $empName = '';
+                        }
+                    }
+                }
+                if ($empName === '') {
+                    $recommendations[] = [
+                        'message' => self::isAr($ctx)
+                            ? 'لإضافة موظف في الموارد البشرية اكتب مثلاً: أضف موظف أحمد العتيبي'
+                            : 'To add an HR employee write e.g.: add employee Ahmed',
+                        'domain' => 'hr',
+                        'class' => self::CLASS_RECOMMENDATION,
+                    ];
+                } else {
+                    $args = [
+                        'name' => $empName,
+                        'status' => 'active',
+                        'notes' => mb_substr(trim($message), 0, 500),
+                    ];
+                    $actions[] = self::makeAction('create_employee', $args, $ctx, 'create_employee_from_chat');
+                    $domains[] = 'hr';
+                }
             }
         }
 
@@ -328,7 +367,19 @@ final class ErpActionPlanner
         // If write intent but no mapped supported action — recommendation only
         if ($actions === [] && $unsupported === [] && ErpOrchestrationPlanner::hasWriteIntent($message)) {
             $recommendations[] = [
-                'message' => 'requested_action_not_mapped_to_registered_write_tool',
+                'message' => self::isAr($ctx)
+                    ? "هذا الإجراء غير متاح عبر الوكيل حالياً.\n"
+                        . "يمكنك مثلاً:\n"
+                        . "• أضف طلب شراء مستلزمات مكتبية\n"
+                        . "• أضف مخزون رز كمية 20\n"
+                        . "• أضف موظف أحمد العتيبي\n"
+                        . "• أضف مورد شركة النور"
+                    : "This write action is not available via the agent yet.\n"
+                        . "You can try e.g.:\n"
+                        . "• add a purchase request for office supplies\n"
+                        . "• add inventory rice qty 20\n"
+                        . "• add employee Ahmed\n"
+                        . "• add supplier Al-Noor Co",
                 'domain' => '',
                 'class' => self::CLASS_RECOMMENDATION,
             ];
@@ -2150,9 +2201,9 @@ final class ErpActionPlanner
             if (!is_array($u)) {
                 continue;
             }
-            $lines[] = $ar
-                ? 'عملية غير متاحة عبر الوكيل: ' . (string) ($u['requested'] ?? '')
-                : 'Action unavailable via agent: ' . (string) ($u['requested'] ?? '');
+            $requested = (string) ($u['requested'] ?? '');
+            $lines[] = ($ar ? 'عملية غير متاحة عبر الوكيل: ' : 'Action unavailable via agent: ')
+                . self::labelRecommendationKey($requested, $ar);
         }
         foreach (($plan['recommendations'] ?? []) as $rec) {
             if (!is_array($rec)) {
@@ -2162,7 +2213,9 @@ final class ErpActionPlanner
             if ($msg === '' || str_contains($msg, 'controlled_test')) {
                 continue;
             }
-            $lines[] = ($ar ? 'توصية: ' : 'Recommendation: ') . $msg;
+            // Already localized prose (contains spaces / Arabic) — show as-is.
+            $shown = self::labelRecommendationKey($msg, $ar);
+            $lines[] = ($ar ? 'توصية: ' : 'Recommendation: ') . $shown;
         }
 
         if ($lines === []) {
@@ -2172,5 +2225,55 @@ final class ErpActionPlanner
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Map internal recommendation/unsupported keys to user-facing AR/EN text.
+     */
+    public static function labelRecommendationKey(string $key, bool $ar): string
+    {
+        $key = trim($key);
+        if ($key === '') {
+            return '';
+        }
+        // Already human prose (Arabic or multi-word sentence)
+        if (preg_match('/[\x{0600}-\x{06FF}]/u', $key) === 1 || str_contains($key, ' ') || str_contains($key, "\n")) {
+            // Still remap known snake_case if somehow mixed — otherwise return as-is when has space/newline/Arabic
+            if (!preg_match('/^[a-z0-9_]+$/i', $key)) {
+                return $key;
+            }
+        }
+        $mapAr = [
+            'requested_action_not_mapped_to_registered_write_tool' => 'هذا الإجراء غير متاح عبر الوكيل حالياً.',
+            'create_user_account_with_password' => 'إنشاء حساب دخول / كلمة مرور',
+            'agent_cannot_create_login_credentials' => 'لا يمكن إنشاء بيانات الدخول عبر الوكيل',
+            'crm_followup_write_not_available_via_agent' => 'إنشاء متابعة عميل غير متاح عبر الوكيل',
+            'create_crm_followup' => 'متابعة عميل',
+            'update_logistics_status' => 'تحديث حالة الشحن',
+            'direct_accounting_mutation' => 'تعديل محاسبي مباشر',
+            'accounting_write_requires_existing_workflow_tool' => 'الكتابة المحاسبية تتم عبر مسار الموافقة الحالي فقط',
+            'update_sales_order_status' => 'تحديث حالة طلب البيع',
+            'submit_requires_journal_id' => 'أرسل رقم القيد، مثلاً: أرسل القيد 12 للموافقة',
+            'submit_requires_purchase_request_id' => 'أرسل رقم طلب الشراء، مثلاً: أرسل طلب الشراء 5 للموافقة',
+            'cancel_requires_purchase_request_id' => 'ألغِ برقم طلب الشراء، مثلاً: ألغ طلب الشراء 5',
+            'update_requires_purchase_request_id' => 'عدّل برقم طلب الشراء، مثلاً: عدّل طلب الشراء 5',
+        ];
+        $mapEn = [
+            'requested_action_not_mapped_to_registered_write_tool' => 'This write action is not available via the agent yet.',
+            'create_user_account_with_password' => 'create login account / password',
+            'agent_cannot_create_login_credentials' => 'login credentials cannot be created via the agent',
+            'crm_followup_write_not_available_via_agent' => 'CRM follow-up create is not available via the agent',
+            'create_crm_followup' => 'CRM follow-up',
+            'update_logistics_status' => 'update shipment status',
+            'direct_accounting_mutation' => 'direct accounting mutation',
+            'accounting_write_requires_existing_workflow_tool' => 'accounting writes require the existing approval workflow tool',
+            'update_sales_order_status' => 'update sales order status',
+            'submit_requires_journal_id' => 'Include the journal id, e.g.: submit journal 12 for approval',
+            'submit_requires_purchase_request_id' => 'Include the purchase request id, e.g.: submit purchase request 5',
+            'cancel_requires_purchase_request_id' => 'Include the purchase request id, e.g.: cancel purchase request 5',
+            'update_requires_purchase_request_id' => 'Include the purchase request id, e.g.: update purchase request 5',
+        ];
+        $map = $ar ? $mapAr : $mapEn;
+        return $map[$key] ?? $key;
     }
 }
