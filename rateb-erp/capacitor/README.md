@@ -33,7 +33,15 @@ Set `server.url` in `capacitor.config.json` to your deployed ERP base URL when p
 
 ## Deep links
 
-Configure Android App Links / iOS Universal Links for your ERP host in the generated native projects after `cap add`.
+Android App Links (P1):
+
+- `https://rateb.sa/rateb-erp/public/admin…` (`autoVerify`, pathPrefix `/rateb-erp/public/admin`)
+- Custom scheme: `rateberp://app…`
+
+Prepared Digital Asset Links (not published until approved):  
+`native-templates/well-known/assetlinks.json` → must be served at `https://rateb.sa/.well-known/assetlinks.json`.
+
+See `native-templates/well-known/README.md`.
 
 ## Note
 

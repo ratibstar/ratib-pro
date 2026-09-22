@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  RATEB ERP (sa.rateb.erp) FileProvider paths — tightened for P1.
+  Based on Capacitor Camera / Share / Filesystem / BridgeWebChromeClient usage:
+  - Camera + HTML capture → getExternalFilesDir(DIRECTORY_PICTURES)
+  - Camera temp / Filesystem CACHE → getCacheDir()
+  - Filesystem DATA / Share of app files → getFilesDir()
+  - Filesystem EXTERNAL → getExternalFilesDir(null)
+  Intentionally NO <external-path> (shared storage root).
+-->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <external-files-path name="cap_pictures" path="Pictures/" />
+    <external-files-path name="cap_external_files" path="." />
+    <cache-path name="cap_cache" path="." />
+    <files-path name="cap_files" path="." />
 </paths>

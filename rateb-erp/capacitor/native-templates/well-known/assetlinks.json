@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sa.rateb.erp",
+      "sha256_cert_fingerprints": [
+        "21:18:FB:5E:5C:3B:DC:50:87:6E:54:35:37:4B:BD:BA:3B:25:83:67:34:88:7C:AC:61:E7:58:D2:65:4D:B0:F2"
+      ]
+    }
+  }
+]
