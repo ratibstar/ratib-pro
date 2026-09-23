@@ -2361,25 +2361,46 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $this->assertBranchAssignmentForRoles($data, $roleIds, rateb_url($this->routePrefix . '/create'));
-        $id = $this->model->create($data);
-        if ($this->wantsPlatformStaffForm() || strtolower(trim((string) $this->input('for', ''))) === 'staff') {
-            $this->forcePlatformStaffUserRow($id);
-            $data['is_super_admin'] = 0;
-            $data['company_id'] = null;
+        try {
+            $id = $this->model->create($data);
+            if ($this->wantsPlatformStaffForm() || strtolower(trim((string) $this->input('for', ''))) === 'staff') {
+                $this->forcePlatformStaffUserRow($id);
+                $data['is_super_admin'] = 0;
+                $data['company_id'] = null;
+            }
+            (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
+            $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
+            (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);
+            if ((string) ($data['status'] ?? '') === 'active') {
+                (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
+            }
+            if (trim((string) $this->input('password', '')) !== '') {
+                (new \Rateb\App\Services\AccountLockoutService())->clearLock($id);
+            }
+            (new AuditService())->log('create', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+            $isStaff = empty($data['is_super_admin']) && (int) ($data['company_id'] ?? 0) < 1;
+            $this->redirect($this->usersListRedirectUrl(!empty($data['is_super_admin']), $isStaff));
+        } catch (\Throwable $e) {
+            $this->flashUserWriteError($e);
+            $createFail = rateb_url($this->routePrefix . '/create');
+            if ($this->wantsPlatformUserForm()) {
+                $createFail = rateb_url_query(rateb_url('admin/users/create'), ['for' => 'platform']);
+            } elseif ($this->wantsPlatformStaffForm()) {
+                $createFail = rateb_url_query(rateb_url('admin/users/create'), ['for' => 'staff']);
+            }
+            $this->redirect($createFail);
         }
-        (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
-        $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
-        (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);
-        if ((string) ($data['status'] ?? '') === 'active') {
-            (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
+    }
+
+    private function flashUserWriteError(\Throwable $e): void
+    {
+        $msg = \Rateb\App\Services\DatabaseErrorService::userMessage($e);
+        SessionManager::flash('error', $msg);
+        $dupEmail = function_exists('__') ? (string) __('db_duplicate_email') : '';
+        if ($dupEmail !== '' && $msg === $dupEmail) {
+            SessionManager::flash('error_title', (string) __('db_duplicate_email_title'));
         }
-        if (trim((string) $this->input('password', '')) !== '') {
-            (new \Rateb\App\Services\AccountLockoutService())->clearLock($id);
-        }
-        (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
-        $isStaff = empty($data['is_super_admin']) && (int) ($data['company_id'] ?? 0) < 1;
-        $this->redirect($this->usersListRedirectUrl(!empty($data['is_super_admin']), $isStaff));
     }
 
     private function usersListRedirectUrl(bool $platformSa, bool $platformStaff = false): string
@@ -2424,6 +2445,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             rateb_url_query(rateb_url('admin/users/' . $id . '/edit'), ['for' => 'staff'])
         );
         $companyId = (int) ($data['company_id'] ?? 0);
+        $failUrl = rateb_url($this->routePrefix . '/' . $id . '/edit');
         if ($companyId > 0) {
             $wasOtherCompany = (int) ($existing['company_id'] ?? 0) !== $companyId;
             if ($wasOtherCompany) {
@@ -2431,30 +2453,35 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
                     (new \Rateb\App\Services\PlanLimitService())->assertCanAddUser($companyId);
                 } catch (\RuntimeException $e) {
                     SessionManager::flash('error', $e->getMessage());
-                    $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+                    $this->redirect($failUrl);
                 }
             }
         }
-        $this->assertBranchAssignmentForRoles($data, $roleIds, rateb_url($this->routePrefix . '/' . $id . '/edit'));
-        $this->model->update($id, $data);
-        if ($this->wantsPlatformStaffForm() || strtolower(trim((string) $this->input('for', ''))) === 'staff') {
-            $this->forcePlatformStaffUserRow($id);
-            $data['is_super_admin'] = 0;
-            $data['company_id'] = null;
+        $this->assertBranchAssignmentForRoles($data, $roleIds, $failUrl);
+        try {
+            $this->model->update($id, $data);
+            if ($this->wantsPlatformStaffForm() || strtolower(trim((string) $this->input('for', ''))) === 'staff') {
+                $this->forcePlatformStaffUserRow($id);
+                $data['is_super_admin'] = 0;
+                $data['company_id'] = null;
+            }
+            (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
+            $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
+            (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);
+            if ((string) ($data['status'] ?? '') === 'active') {
+                (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
+            }
+            if (trim((string) $this->input('password', '')) !== '') {
+                (new \Rateb\App\Services\AccountLockoutService())->clearLock($id);
+            }
+            (new AuditService())->log('update', $this->entityName, $id, $data);
+            SessionManager::flash('success', __('save') . ' OK');
+            $isStaff = empty($data['is_super_admin']) && (int) ($data['company_id'] ?? 0) < 1;
+            $this->redirect($this->usersListRedirectUrl(!empty($data['is_super_admin']), $isStaff));
+        } catch (\Throwable $e) {
+            $this->flashUserWriteError($e);
+            $this->redirect($failUrl);
         }
-        (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
-        $branchIds = array_map('intval', (array) $this->input('branch_ids', []));
-        (new \Rateb\App\Services\BranchService())->syncUserBranches($id, $companyId, $branchIds);
-        if ((string) ($data['status'] ?? '') === 'active') {
-            (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
-        }
-        if (trim((string) $this->input('password', '')) !== '') {
-            (new \Rateb\App\Services\AccountLockoutService())->clearLock($id);
-        }
-        (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
-        $isStaff = empty($data['is_super_admin']) && (int) ($data['company_id'] ?? 0) < 1;
-        $this->redirect($this->usersListRedirectUrl(!empty($data['is_super_admin']), $isStaff));
     }
 
     public function destroy(array $params): void

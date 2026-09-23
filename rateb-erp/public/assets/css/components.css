@@ -619,6 +619,39 @@ html[dir="rtl"] .rateb-date-wrap[data-empty="1"]::after {
     margin-bottom: 1rem;
 }
 
+/* Flash error as themed modal (dark / light via CSS variables) */
+.rateb-flash-error-modal .rateb-flash-error-modal__content {
+    background: var(--rateb-surface-elevated, var(--rateb-surface, #fff));
+    color: var(--rateb-text, #1a3354);
+    border: 1px solid var(--rateb-border, #c5d9f0);
+    border-radius: var(--rateb-radius, 12px);
+    box-shadow: var(--rateb-shadow, 0 8px 32px rgba(0, 0, 0, 0.25));
+}
+.rateb-flash-error-modal .rateb-flash-error-modal__header {
+    border-bottom-color: var(--rateb-border, #c5d9f0);
+}
+.rateb-flash-error-modal .rateb-flash-error-modal__footer {
+    border-top-color: var(--rateb-border, #c5d9f0);
+}
+.rateb-flash-error-modal .modal-title {
+    color: var(--rateb-text, #1a3354);
+    font-weight: 700;
+}
+.rateb-flash-error-modal .rateb-flash-error-modal__body {
+    color: var(--rateb-text-muted, #4a6b94);
+    line-height: 1.65;
+}
+html[data-theme="dark"] .rateb-flash-error-modal .btn-close,
+[data-theme="dark"] .rateb-flash-error-modal .btn-close {
+    filter: invert(1) grayscale(100%);
+    opacity: 0.85;
+}
+html[data-theme="light"] .rateb-flash-error-modal .btn-close,
+[data-theme="light"] .rateb-flash-error-modal .btn-close {
+    filter: none;
+    opacity: 0.7;
+}
+
 /* Global system flash alerts — all ERP pages */
 .rateb-system-flash-stack {
     position: sticky;
