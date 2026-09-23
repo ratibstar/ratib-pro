@@ -25,7 +25,17 @@ $companyLoginUrl = (string) ($companyLoginUrl ?? '');
 $companyAdminUrl = (string) ($companyAdminUrl ?? '');
 $linkedAgency = (isset($linkedAgency) && is_array($linkedAgency)) ? $linkedAgency : null;
 $agencyPortalMode = !empty($agencyPortalMode);
+$activateFormId = 'rateb-company-activate-form';
 ?>
+<?php
+// Activate must be OUTSIDE the main edit form — nested <form> is invalid HTML and
+// the browser submits the outer save instead (leaving status=suspended).
+$currentStatusEarly = (string) ($item['status'] ?? 'pending');
+if ($isEdit && $currentStatusEarly === 'suspended' && (rateb_is_super_admin() || rateb_can('companies.manage'))) { ?>
+<form method="post" action="<?php echo rateb_url('admin/companies/' . (int) $item['id'] . '/activate'); ?>" id="<?php echo Rateb\App\Core\View::escape($activateFormId); ?>" class="d-none" aria-hidden="true">
+    <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+</form>
+<?php } ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
@@ -106,12 +116,11 @@ $agencyPortalMode = !empty($agencyPortalMode);
                         <span class="badge bg-<?php echo $statusBadge; ?>"><?php echo __($currentStatus); ?></span>
                     </div>
                     <?php if ($currentStatus === 'suspended' && (rateb_is_super_admin() || rateb_can('companies.manage'))) { ?>
-                    <form method="post" action="<?php echo rateb_url('admin/companies/' . (int) $item['id'] . '/activate'); ?>" class="mt-2">
-                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                        <button type="submit" class="btn btn-sm btn-success">
-                            <i class="fas fa-play"></i> <?php echo __('bulk_activate'); ?>
+                    <div class="mt-2">
+                        <button type="submit" form="<?php echo Rateb\App\Core\View::escape($activateFormId); ?>" class="btn btn-sm btn-success">
+                            <i class="fas fa-play"></i> <?php echo __('company_activate'); ?>
                         </button>
-                    </form>
+                    </div>
                     <?php } ?>
                     <p class="form-text mb-0"><?php echo $currentStatus === 'suspended' ? __('company_status_suspended_activate_hint') : __('company_status_oversight_hint'); ?></p>
                 </div>
@@ -119,9 +128,11 @@ $agencyPortalMode = !empty($agencyPortalMode);
                     <label class="form-label"><?php echo __('plans'); ?></label>
                     <select class="form-select" name="plan_id" id="rateb-company-plan">
                         <option value="">—</option>
-                        <?php foreach ($plans as $plan) { ?>
+                        <?php foreach ($plans as $plan) {
+                            $planLabel = \Rateb\App\Models\Plan::marketingName($plan);
+                            ?>
                         <option value="<?php echo (int) $plan['id']; ?>"<?php echo (int) ($item['plan_id'] ?? 0) === (int) $plan['id'] ? ' selected' : ''; ?>>
-                            <?php echo Rateb\App\Core\View::escape($plan['name']); ?>
+                            <?php echo Rateb\App\Core\View::escape($planLabel); ?>
                         </option>
                         <?php } ?>
                     </select>

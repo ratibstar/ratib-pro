@@ -37,7 +37,12 @@ final class Plan extends Model
                 return $label;
             }
         }
-        return (string) ($plan['name'] ?? '');
+        $raw = trim((string) ($plan['name'] ?? ''));
+        // Guard corrupted DB placeholders (literal "label" from bad seed/migration).
+        if ($raw !== '' && strcasecmp($raw, 'label') !== 0) {
+            return $raw;
+        }
+        return $slug !== '' ? $slug : $raw;
     }
 
     /** @param array<string, mixed> $plan */
