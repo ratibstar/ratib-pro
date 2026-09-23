@@ -43,17 +43,21 @@ final class DatabaseErrorService
                 ? self::t('db_schema_outdated') . ' [' . $detail . ']'
                 : self::t('db_schema_outdated');
         }
+        // Duplicate (MySQL 1062) also uses SQLSTATE 23000 — must run before FK checks.
+        if (self::isDuplicateEntry($raw)) {
+            if (stripos($raw, 'uk_attendance_day') !== false) {
+                return self::t('hr_attendance_duplicate_day');
+            }
+            if (self::isDuplicateEmailKey($raw)) {
+                return self::t('db_duplicate_email');
+            }
+            return self::t('db_duplicate_record');
+        }
         if (self::isCompanyFkViolation($raw)) {
             return self::t('company_not_found_ops');
         }
         if (self::isFkViolation($raw)) {
             return self::t('db_fk_violation');
-        }
-        if (self::isDuplicateEntry($raw)) {
-            if (stripos($raw, 'uk_attendance_day') !== false) {
-                return self::t('hr_attendance_duplicate_day');
-            }
-            return self::t('db_duplicate_record');
         }
         if (self::isNotNullViolation($raw)) {
             return self::t('form_required_fields');
@@ -117,6 +121,12 @@ final class DatabaseErrorService
 
     public static function renderHttpError(\Throwable $e, int $status = 500): void
     {
+        $raw = self::rawMessage($e);
+        $isDuplicate = self::isDuplicateEntry($raw);
+        if ($isDuplicate && $status === 500) {
+            $status = 409;
+        }
+
         if (!headers_sent()) {
             http_response_code($status);
             header('Content-Type: text/html; charset=UTF-8');
@@ -129,7 +139,9 @@ final class DatabaseErrorService
         $company = self::isCompanyFkIssue($e);
         $locale = function_exists('rateb_locale') ? rateb_locale() : 'ar';
         $dir = $locale === 'ar' ? 'rtl' : 'ltr';
-        $title = self::t('db_error_title');
+        $title = $isDuplicate && self::isDuplicateEmailKey($raw)
+            ? self::t('db_duplicate_email_title')
+            : self::t('db_error_title');
         if (function_exists('rateb_asset')) {
             $varsCss = rateb_asset('css/variables.css');
             $lightCss = rateb_asset('css/light.css');
@@ -160,7 +172,8 @@ final class DatabaseErrorService
         if ($agencyMigrateHint !== '') {
             echo '<p class="small text-muted">' . htmlspecialchars($agencyMigrateHint, ENT_QUOTES, 'UTF-8') . '</p>';
         }
-        $tech = self::technicalDetail($e);
+        // Duplicate email/username is a validation conflict — do not dump SQLSTATE on the page.
+        $tech = $isDuplicate ? '' : self::technicalDetail($e);
         if ($tech !== '' && function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
             echo '<p style="font-size:.85rem;color:#5a6a7e;margin-top:.75rem"><code style="white-space:pre-wrap">'
                 . htmlspecialchars($tech, ENT_QUOTES, 'UTF-8') . '</code></p>';
@@ -241,7 +254,13 @@ final class DatabaseErrorService
 
     private static function isFkViolation(string $raw): bool
     {
+        // SQLSTATE 23000 covers both FK failures and unique violations — exclude duplicates.
+        if (self::isDuplicateEntry($raw)) {
+            return false;
+        }
+
         return strpos($raw, '23000') !== false
+            || strpos($raw, '1451') !== false
             || strpos($raw, '1452') !== false
             || stripos($raw, 'foreign key constraint') !== false;
     }
@@ -250,6 +269,21 @@ final class DatabaseErrorService
     {
         return strpos($raw, '1062') !== false
             || stripos($raw, 'Duplicate entry') !== false;
+    }
+
+    private static function isDuplicateEmailKey(string $raw): bool
+    {
+        if (!self::isDuplicateEntry($raw)) {
+            return false;
+        }
+        // MySQL: Duplicate entry 'x' for key 'email' | 'users.email' | 'PRIMARY' with @ address, etc.
+        if (preg_match("/for key ['\"]([^'\"]+)['\"]/i", $raw, $m)) {
+            $key = strtolower((string) $m[1]);
+            if ($key === 'email' || str_ends_with($key, '.email') || str_contains($key, 'email')) {
+                return true;
+            }
+        }
+        return (bool) preg_match("/Duplicate entry '[^']*@[^']*'/i", $raw);
     }
 
     private static function isNotNullViolation(string $raw): bool

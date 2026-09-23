@@ -2605,6 +2605,8 @@ return [
     'db_access_denied' => 'Could not connect to the database. Check MySQL permissions on the server.',
     'db_operation_failed' => 'The database operation failed. Try again or run migrations.',
     'db_duplicate_record' => 'This record already exists. Check the data you entered.',
+    'db_duplicate_email_title' => 'Email already in use',
+    'db_duplicate_email' => 'This email is already in use. Choose another email or use the existing account.',
     'form_required_fields' => 'Please fill in the required fields',
     'hr_attendance_need_employee' => 'Add at least one employee under Employees before recording attendance.',
     'hr_attendance_duplicate_day' => 'Attendance for this employee on this date already exists.',
