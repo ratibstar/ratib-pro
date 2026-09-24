@@ -25,8 +25,12 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
     </a>
 </div>
 
+<?php if ($canToggleEnable && isset($appCard)) {
+    require __DIR__ . '/_company-app-card.php';
+} ?>
+
 <div class="rateb-card mb-3">
-    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape(__('mobile_apps_edit')); ?></div>
+    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape(__($canToggleEnable ? 'mobile_apps_hr_branding' : 'mobile_apps_edit')); ?></div>
     <div class="rateb-card-body">
         <p class="mb-3">
             <strong><?php echo Rateb\App\Core\View::escape(__('company')); ?>:</strong>
@@ -37,18 +41,7 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
         <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cid); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf ?? ''); ?>">
 
-            <?php if ($canToggleEnable) { ?>
-            <div class="form-check form-switch mb-3">
-                <input type="hidden" name="status" value="inactive">
-                <input class="form-check-input" type="checkbox" role="switch" id="mobile_status"
-                       name="status" value="active" <?php echo $statusActive ? 'checked' : ''; ?> <?php echo $disabled; ?>>
-                <label class="form-check-label" for="mobile_status">
-                    <?php echo Rateb\App\Core\View::escape(__('mobile_apps_enable')); ?>
-                </label>
-            </div>
-            <?php } else { ?>
             <input type="hidden" name="status" value="<?php echo $statusActive ? 'active' : 'inactive'; ?>">
-            <?php } ?>
 
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
@@ -106,42 +99,3 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
         </form>
     </div>
 </div>
-
-<?php if ($canToggleEnable) {
-    $apk = is_array($apk ?? null) ? $apk : null;
-    $apkUrl = (string) ($apkUrl ?? '');
-    ?>
-<div class="rateb-card mb-3" id="rateb-hr-apk-card">
-    <div class="rateb-card-header d-flex justify-content-between align-items-center gap-2">
-        <span><i class="fas fa-mobile-screen-button"></i> <?php echo Rateb\App\Core\View::escape(__('mobile_apps_apk_card')); ?></span>
-        <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cid . '/toggle'); ?>" class="d-inline">
-            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf ?? ''); ?>">
-            <input type="hidden" name="back" value="edit">
-            <input type="hidden" name="status" value="<?php echo $statusActive ? 'inactive' : 'active'; ?>">
-            <?php if ($statusActive) { ?>
-                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-power-off"></i> <?php echo Rateb\App\Core\View::escape(__('mobile_apps_disable_btn')); ?></button>
-            <?php } else { ?>
-                <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-plus"></i> <?php echo Rateb\App\Core\View::escape(__('mobile_apps_enable_btn')); ?></button>
-            <?php } ?>
-        </form>
-    </div>
-    <div class="rateb-card-body">
-        <div class="mb-3">
-            <label class="form-label small text-muted mb-1"><?php echo Rateb\App\Core\View::escape(__('mobile_apps_server_url')); ?></label>
-            <input class="form-control form-control-sm" dir="ltr" readonly value="<?php echo Rateb\App\Core\View::escape((string) ($erpBaseUrl ?? '')); ?>">
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted mb-1"><?php echo Rateb\App\Core\View::escape(__('mobile_apps_build_command')); ?></label>
-            <input class="form-control form-control-sm font-monospace" dir="ltr" readonly onclick="this.select()" value="<?php echo Rateb\App\Core\View::escape((string) ($buildCommand ?? '')); ?>">
-            <div class="form-text"><?php echo Rateb\App\Core\View::escape(__('mobile_apps_build_hint')); ?></div>
-        </div>
-
-        <?php
-        $apkChunkUrl = rateb_url('admin/mobile-apps/' . $cid . '/apk-chunk');
-        $apkDeleteUrl = rateb_url('admin/mobile-apps/' . $cid . '/apk-delete');
-        $apkInactive = !$statusActive;
-        require __DIR__ . '/_apk-panel.php';
-        ?>
-    </div>
-</div>
-<?php } ?>

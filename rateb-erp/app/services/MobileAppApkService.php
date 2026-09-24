@@ -6,50 +6,116 @@ namespace Rateb\App\Services;
 use Rateb\App\Models\Company;
 
 /**
- * Signed mobile APK slots managed from platform oversight.
- * - HR app (RATEB HR): one slot per company, key = company id — each build targets that company's ERP host.
- * - ERP / Customer apps: one platform-wide slot each, key = 'erp' | 'customer'.
- * Files live outside the web root: storage/mobile-apks/<key>.apk + <key>.json.
+ * The three RATEB mobile apps (HR / ERP / Customer), handled the same way from platform oversight:
+ * enable per company, one signed APK per company (built for that company's server) with a stable
+ * public link + QR, and a shared build used by companies that live on the platform server.
+ *
+ * Slot keys (storage/mobile-apks/<key>.json + <key>.apk, outside the web root):
+ *   <cid>           HR app for company (kept for existing uploads)
+ *   erp-<cid>       ERP app for company
+ *   customer-<cid>  Customer app for company
+ *   hr|erp|customer shared build (platform server)
  */
-final class HrMobileApkService
+final class MobileAppApkService
 {
     public const CHUNK_BYTES = 2 * 1024 * 1024;
     public const MAX_BYTES = 250 * 1024 * 1024;
 
-    public const PLATFORM_APPS = ['erp', 'customer'];
+    public const APPS = ['hr', 'erp', 'customer'];
 
     /** @var array<int, array<string, mixed>>|null */
     private ?array $agencyByCompany = null;
 
-    /**
-     * Static facts for the platform-wide apps (shown on their oversight tab).
-     *
-     * @return array{package:string, server:string, file:string, build_dir:string, build_command:string, output:string}|null
-     */
-    public function platformAppInfo(string $app): ?array
+    public static function normalizeApp(string $app): string
     {
-        if ($app === 'erp') {
-            return [
-                'package' => 'sa.rateb.erp',
-                'server' => rtrim(rateb_public_url('admin'), '/'),
-                'file' => 'rateb-erp.apk',
-                'build_dir' => 'rateb-erp\\capacitor',
-                'build_command' => 'npm run cap:sync; cd android; .\\gradlew assembleRelease',
-                'output' => 'android\\app\\build\\outputs\\apk\\release\\app-release.apk',
-            ];
+        $app = strtolower(trim($app));
+
+        return in_array($app, self::APPS, true) ? $app : 'hr';
+    }
+
+    public function slotKey(string $app, int $companyId): string
+    {
+        $app = self::normalizeApp($app);
+
+        return $app === 'hr' ? (string) $companyId : $app . '-' . $companyId;
+    }
+
+    /** @return array{app:string, company_id:int}|null */
+    public function parseKey(string $key): ?array
+    {
+        if (in_array($key, self::APPS, true)) {
+            return ['app' => $key, 'company_id' => 0];
         }
-        if ($app === 'customer') {
-            return [
-                'package' => 'com.ratib.rateb_mobile',
-                'server' => 'https://rateb.sa/api',
-                'file' => 'rateb-customer.apk',
-                'build_dir' => 'rateb_mobile',
-                'build_command' => 'C:\\flutter_sdk\\bin\\flutter.bat build apk --release',
-                'output' => 'build\\app\\outputs\\flutter-apk\\app-release.apk',
-            ];
+        if (preg_match('/^[1-9][0-9]{0,9}$/', $key)) {
+            return ['app' => 'hr', 'company_id' => (int) $key];
+        }
+        if (preg_match('/^(erp|customer)-([1-9][0-9]{0,9})$/', $key, $m)) {
+            return ['app' => $m[1], 'company_id' => (int) $m[2]];
         }
 
         return null;
+    }
+
+    /** @return array{package:string, build_dir:string, file_prefix:string} */
+    public function appInfo(string $app): array
+    {
+        $app = self::normalizeApp($app);
+        if ($app === 'erp') {
+            return ['package' => 'sa.rateb.erp', 'build_dir' => 'rateb-erp\\capacitor', 'file_prefix' => 'rateb-erp'];
+        }
+        if ($app === 'customer') {
+            return ['package' => 'com.ratib.rateb_mobile', 'build_dir' => 'rateb_mobile', 'file_prefix' => 'rateb-customer'];
+        }
+
+        return ['package' => 'sa.rateb.hr.mobile', 'build_dir' => 'ratib_hr_mobile', 'file_prefix' => 'rateb-hr'];
+    }
+
+    /** Server the shared (platform) build of this app talks to. */
+    public function platformServer(string $app): string
+    {
+        $app = self::normalizeApp($app);
+        if ($app === 'erp') {
+            return rtrim(rateb_public_url('admin'), '/');
+        }
+        if ($app === 'customer') {
+            return rtrim(rateb_site_origin(), '/') . '/api';
+        }
+
+        return rtrim(rateb_public_url(''), '/');
+    }
+
+    /** Server this company's build of the app must talk to. */
+    public function serverForCompany(string $app, array $company): string
+    {
+        $app = self::normalizeApp($app);
+        $erpBase = $this->erpBaseUrlForCompany($company);
+        if ($app === 'erp') {
+            return $erpBase . '/admin';
+        }
+        if ($app === 'customer') {
+            $host = strtolower((string) parse_url($erpBase, PHP_URL_HOST));
+            $platformHost = strtolower((string) parse_url(rateb_site_origin(), PHP_URL_HOST));
+            if ($host === '' || $host === $platformHost || $host === 'www.' . $platformHost) {
+                return $this->platformServer('customer');
+            }
+
+            return (string) parse_url($erpBase, PHP_URL_SCHEME) . '://' . $host . '/api';
+        }
+
+        return $erpBase;
+    }
+
+    public function buildCommand(string $app, string $server, string $slug): string
+    {
+        $app = self::normalizeApp($app);
+        if ($app === 'erp') {
+            return '.\\build-company-apk.ps1 -AdminUrl "' . $server . '" -Slug "' . $slug . '"';
+        }
+        if ($app === 'customer') {
+            return '.\\tool\\build_company_apk.ps1 -ApiBaseUrl "' . $server . '" -Slug "' . $slug . '"';
+        }
+
+        return '.\\tool\\build_company_apk.ps1 -ErpBaseUrl "' . $server . '" -Slug "' . $slug . '"';
     }
 
     public function storageDir(): string
@@ -62,12 +128,6 @@ final class HrMobileApkService
         return $dir;
     }
 
-    private function validKey(string $key): bool
-    {
-        return in_array($key, self::PLATFORM_APPS, true)
-            || (preg_match('/^[1-9][0-9]{0,9}$/', $key) === 1);
-    }
-
     private function apkPath(string $key): string
     {
         return $this->storageDir() . '/' . $key . '.apk';
@@ -78,29 +138,46 @@ final class HrMobileApkService
         return $this->storageDir() . '/' . $key . '.json';
     }
 
-    /** @return array<string, mixed>|null */
-    public function meta(string $key): ?array
+    /** Slot record (token + last upload info) even when no APK is stored. */
+    public function slot(string $key): ?array
     {
-        if (!$this->validKey($key)) {
-            return null;
-        }
+        $parsed = $this->parseKey($key);
         $metaFile = $this->metaPath($key);
-        if (!is_file($metaFile) || !is_file($this->apkPath($key))) {
+        if ($parsed === null || !is_file($metaFile)) {
             return null;
         }
         $data = json_decode((string) file_get_contents($metaFile), true);
         if (!is_array($data) || !preg_match('/^[a-f0-9]{32}$/', (string) ($data['token'] ?? ''))) {
             return null;
         }
-        $data['key'] = $key;
-        $data['company_id'] = ctype_digit($key) ? (int) $key : 0;
 
-        return $data;
+        return $data + $parsed + ['key' => $key, 'has_apk' => is_file($this->apkPath($key))];
     }
 
-    public function downloadUrl(array $meta): string
+    /** Stored APK info for the slot, or null when nothing is uploaded. */
+    public function meta(string $key): ?array
     {
-        return rateb_public_url('hr-app/' . (string) ($meta['token'] ?? ''));
+        $slot = $this->slot($key);
+
+        return ($slot !== null && $slot['has_apk']) ? $slot : null;
+    }
+
+    /** Stable per-slot link token (created on first use, survives APK replace/delete). */
+    public function ensureToken(string $key): string
+    {
+        $slot = $this->slot($key);
+        if ($slot !== null) {
+            return (string) $slot['token'];
+        }
+        $token = bin2hex(random_bytes(16));
+        $this->writeSlot($key, ['token' => $token]);
+
+        return $token;
+    }
+
+    public function downloadUrlForToken(string $token): string
+    {
+        return rateb_public_url('hr-app/' . $token);
     }
 
     public function qrImageUrl(string $url, int $size = 220): string
@@ -108,8 +185,20 @@ final class HrMobileApkService
         return rateb_local_qr_url($url, max(120, min(500, $size)), true);
     }
 
-    /** @return array{key:string, company_id:int, path:string, meta:array<string,mixed>}|null */
-    public function findByToken(string $token): ?array
+    /** Shared build this company falls back to (same server as the platform build), if any. */
+    public function sharedFallback(string $app, array $company): ?array
+    {
+        if ($this->serverForCompany($app, $company) !== $this->platformServer($app)) {
+            return null;
+        }
+
+        return $this->meta(self::normalizeApp($app));
+    }
+
+    /**
+     * @return array{key:string, app:string, company_id:int, path:string, shared:bool}|null
+     */
+    public function resolveToken(string $token): ?array
     {
         $token = strtolower(trim($token));
         if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
@@ -117,18 +206,61 @@ final class HrMobileApkService
         }
         foreach (glob($this->storageDir() . '/*.json') ?: [] as $metaFile) {
             $key = basename($metaFile, '.json');
-            $meta = $this->meta($key);
-            if ($meta !== null && hash_equals((string) $meta['token'], $token)) {
-                return [
-                    'key' => $key,
-                    'company_id' => (int) $meta['company_id'],
-                    'path' => $this->apkPath($key),
-                    'meta' => $meta,
-                ];
+            $slot = $this->slot($key);
+            if ($slot === null || !hash_equals((string) $slot['token'], $token)) {
+                continue;
             }
+            $base = ['key' => $key, 'app' => $slot['app'], 'company_id' => (int) $slot['company_id']];
+            if ($slot['has_apk']) {
+                return $base + ['path' => $this->apkPath($key), 'shared' => false];
+            }
+            if ($slot['company_id'] > 0) {
+                $company = (new Company())->find((int) $slot['company_id']);
+                if (is_array($company) && $this->sharedFallback($slot['app'], $company) !== null) {
+                    return $base + ['path' => $this->apkPath($slot['app']), 'shared' => true];
+                }
+            }
+
+            return null;
         }
 
         return null;
+    }
+
+    public function isEnabled(string $app, array $company, ?array $hrConfig = null): bool
+    {
+        $app = self::normalizeApp($app);
+        if ($app === 'hr') {
+            if ($hrConfig === null) {
+                $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) ($company['id'] ?? 0));
+            }
+
+            return is_array($hrConfig) && (string) ($hrConfig['status'] ?? '') === MobileAppConfigService::STATUS_ACTIVE;
+        }
+        $settings = json_decode((string) ($company['settings'] ?? ''), true);
+
+        return is_array($settings)
+            && (string) ($settings['mobile_apps'][$app] ?? '') === MobileAppConfigService::STATUS_ACTIVE;
+    }
+
+    /** ERP / Customer enablement lives in rateb_companies.settings.mobile_apps (HR uses its config table). */
+    public function setEnabledInSettings(string $app, int $companyId, bool $enabled): bool
+    {
+        $model = new Company();
+        $company = $model->find($companyId);
+        if (!is_array($company) || !in_array($app, ['erp', 'customer'], true)) {
+            return false;
+        }
+        $settings = json_decode((string) ($company['settings'] ?? ''), true);
+        if (!is_array($settings)) {
+            $settings = [];
+        }
+        if (!isset($settings['mobile_apps']) || !is_array($settings['mobile_apps'])) {
+            $settings['mobile_apps'] = [];
+        }
+        $settings['mobile_apps'][$app] = $enabled ? MobileAppConfigService::STATUS_ACTIVE : MobileAppConfigService::STATUS_INACTIVE;
+
+        return (bool) $model->update($companyId, ['settings' => json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
     }
 
     public function companySlug(array $company): string
@@ -140,7 +272,7 @@ final class HrMobileApkService
     }
 
     /**
-     * ERP public base the HR app must call for this company (agency dedicated host or platform).
+     * ERP public base for this company (agency dedicated host or platform).
      */
     public function erpBaseUrlForCompany(array $company): string
     {
@@ -164,12 +296,6 @@ final class HrMobileApkService
         return rtrim(rateb_public_url(''), '/');
     }
 
-    public function buildCommand(array $company): string
-    {
-        return '.\\tool\\build_company_apk.ps1 -ErpBaseUrl "' . $this->erpBaseUrlForCompany($company)
-            . '" -Slug "' . $this->companySlug($company) . '"';
-    }
-
     /** @return array<string, mixed>|null */
     private function agencyForCompany(int $companyId, array $company): ?array
     {
@@ -187,7 +313,7 @@ final class HrMobileApkService
                     $this->agencyByCompany[-(int) ($row['id'] ?? 0)] = $row;
                 }
             } catch (\Throwable $e) {
-                error_log('HrMobileApkService agencies: ' . $e->getMessage());
+                error_log('MobileAppApkService agencies: ' . $e->getMessage());
             }
         }
         if (isset($this->agencyByCompany[$companyId])) {
@@ -203,11 +329,12 @@ final class HrMobileApkService
      * Append one chunk; on the last chunk validate + publish the APK.
      *
      * @param array<string, mixed> $file $_FILES entry
-     * @return array{ok:bool, done:bool, message:string, meta?:array<string,mixed>}
+     * @return array{ok:bool, done:bool, message:string}
      */
     public function storeChunk(string $key, string $uploadId, int $index, int $total, array $file, string $originalName, int $userId): array
     {
-        if (!$this->validKey($key) || (ctype_digit($key) && (new Company())->find((int) $key) === null)) {
+        $parsed = $this->parseKey($key);
+        if ($parsed === null || ($parsed['company_id'] > 0 && (new Company())->find($parsed['company_id']) === null)) {
             return ['ok' => false, 'done' => false, 'message' => __('not_found')];
         }
         if (!preg_match('/^[a-f0-9]{32}$/', $uploadId) || $total < 1 || $index < 0 || $index >= $total
@@ -247,11 +374,14 @@ final class HrMobileApkService
             return ['ok' => true, 'done' => false, 'message' => ''];
         }
 
-        return $this->publish($key, $part, $originalName, $userId);
+        return $this->publish($key, $parsed, $part, $originalName, $userId);
     }
 
-    /** @return array{ok:bool, done:bool, message:string, meta?:array<string,mixed>} */
-    private function publish(string $key, string $part, string $originalName, int $userId): array
+    /**
+     * @param array{app:string, company_id:int} $parsed
+     * @return array{ok:bool, done:bool, message:string}
+     */
+    private function publish(string $key, array $parsed, string $part, string $originalName, int $userId): array
     {
         $size = (int) filesize($part);
         $fh = fopen($part, 'rb');
@@ -273,31 +403,44 @@ final class HrMobileApkService
             return ['ok' => false, 'done' => true, 'message' => __('mobile_apps_apk_upload_failed')];
         }
 
-        $previous = $this->meta($key);
-        $meta = [
-            'token' => is_array($previous) ? (string) $previous['token'] : bin2hex(random_bytes(16)),
+        $server = $this->platformServer($parsed['app']);
+        if ($parsed['company_id'] > 0) {
+            $company = (new Company())->find($parsed['company_id']) ?? ['id' => $parsed['company_id']];
+            $server = $this->serverForCompany($parsed['app'], $company);
+        }
+        $this->writeSlot($key, [
+            'token' => $this->ensureToken($key),
             'size' => $size,
             'sha256' => (string) hash_file('sha256', $apk),
             'original_name' => mb_substr(basename(str_replace('\\', '/', $originalName)), 0, 150),
             'uploaded_at' => date('Y-m-d H:i:s'),
             'uploaded_by' => $userId,
-        ];
-        if (ctype_digit($key)) {
-            $company = (new Company())->find((int) $key) ?? ['id' => (int) $key];
-            $meta['erp_base_url'] = $this->erpBaseUrlForCompany($company);
-        }
-        file_put_contents($this->metaPath($key), (string) json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+            'server' => $server,
+        ]);
 
-        return ['ok' => true, 'done' => true, 'message' => __('mobile_apps_apk_uploaded'), 'meta' => $meta];
+        return ['ok' => true, 'done' => true, 'message' => __('mobile_apps_apk_uploaded')];
     }
 
+    /** Delete the stored APK; the slot keeps its token so the company link stays the same. */
     public function remove(string $key): void
     {
-        if (!$this->validKey($key)) {
+        if ($this->parseKey($key) === null) {
             return;
         }
         @unlink($this->apkPath($key));
-        @unlink($this->metaPath($key));
+        $slot = $this->slot($key);
+        if ($slot !== null) {
+            $this->writeSlot($key, ['token' => (string) $slot['token']]);
+        }
+    }
+
+    /** @param array<string, mixed> $data */
+    private function writeSlot(string $key, array $data): void
+    {
+        file_put_contents(
+            $this->metaPath($key),
+            (string) json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)
+        );
     }
 
     private function purgeStaleParts(string $tmpDir): void

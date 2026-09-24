@@ -11,3 +11,4 @@ android/build/
 android/captures/
 ios/App/Pods/
 ios/DerivedData/
+dist/
