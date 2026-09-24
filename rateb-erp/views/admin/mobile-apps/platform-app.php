@@ -29,7 +29,7 @@ $activeApp = $app;
                 <input class="form-control form-control-sm font-monospace" dir="ltr" readonly value="<?php echo $e($info['package'] ?? ''); ?>">
             </div>
             <div class="col-md-6">
-                <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_apps_server_url')); ?></label>
+                <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_apps_server')); ?></label>
                 <input class="form-control form-control-sm" dir="ltr" readonly value="<?php echo $e($info['server'] ?? ''); ?>">
             </div>
             <div class="col-12">
@@ -43,6 +43,7 @@ $activeApp = $app;
         $apkChunkUrl = rateb_url('admin/mobile-apps/platform/' . $app . '/apk-chunk');
         $apkDeleteUrl = rateb_url('admin/mobile-apps/platform/' . $app . '/apk-delete');
         $apkInactive = false;
+        $apkNoneKey = 'mobile_apps_apk_none_yet_app';
         require __DIR__ . '/_apk-panel.php';
         ?>
     </div>

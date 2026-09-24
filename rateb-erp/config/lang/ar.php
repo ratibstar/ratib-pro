@@ -3253,6 +3253,8 @@ return [
     'mobile_apps_platform_erp_desc' => 'تطبيق واحد لكل المشتركين يفتح لوحة إدارة ERP على المنصة. ارفع النسخة الموقّعة وشارك الرابط.',
     'mobile_apps_platform_customer_desc' => 'تطبيق العملاء (التوظيف وإدارة العمالة) المتصل بمنصة رتب الرئيسية. ارفع النسخة وشارك الرابط مع العملاء.',
     'mobile_apps_package_id' => 'معرّف التطبيق (Package)',
+    'mobile_apps_server' => 'الخادم الذي يتصل به التطبيق',
+    'mobile_apps_apk_none_yet_app' => 'لم تُرفع نسخة APK لهذا التطبيق بعد.',
     'mobile_apps_build_command_in' => 'أمر البناء داخل مجلد',
     'mobile_apps_build_output' => 'الملف الناتج:',
     'agent_apps_section' => 'إدارة التطبيق',

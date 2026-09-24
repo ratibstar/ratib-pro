@@ -51,7 +51,7 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
     </div>
 </div>
 <?php } else { ?>
-    <div class="alert alert-info py-2 small"><?php echo $e(__('mobile_apps_apk_none_yet')); ?></div>
+    <div class="alert alert-info py-2 small"><?php echo $e(__($apkNoneKey ?? 'mobile_apps_apk_none_yet')); ?></div>
 <?php } ?>
 
 <div data-rateb-apk-upload

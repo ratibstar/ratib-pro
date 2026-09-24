@@ -3255,6 +3255,8 @@ return [
     'mobile_apps_platform_erp_desc' => 'One app for all subscribers that opens the ERP admin console on the platform. Upload the signed build and share the link.',
     'mobile_apps_platform_customer_desc' => 'The customer app (recruitment & workforce) connected to the main RATEB platform. Upload the build and share the link with customers.',
     'mobile_apps_package_id' => 'App ID (package)',
+    'mobile_apps_server' => 'Server the app connects to',
+    'mobile_apps_apk_none_yet_app' => 'No APK has been uploaded for this app yet.',
     'mobile_apps_build_command_in' => 'Build command inside',
     'mobile_apps_build_output' => 'Output file:',
     'agent_apps_section' => 'App Management',
