@@ -25,9 +25,27 @@ final class MobileAppsController extends Controller
             return;
         }
 
-        $svc = new MobileAppConfigService();
         $apkSvc = new HrMobileApkService();
         $showApk = $this->canToggleEnable();
+        $app = $showApk ? strtolower((string) ($_GET['app'] ?? 'hr')) : 'hr';
+        if ($showApk && in_array($app, HrMobileApkService::PLATFORM_APPS, true)) {
+            $apk = $apkSvc->meta($app);
+            $apkUrl = $apk !== null ? $apkSvc->downloadUrl($apk) : '';
+            $this->view('admin/mobile-apps/platform-app', [
+                'title' => __('mobile_apps_title'),
+                'app' => $app,
+                'info' => $apkSvc->platformAppInfo($app),
+                'apk' => $apk,
+                'apkUrl' => $apkUrl,
+                'apkQr' => $apkUrl !== '' ? $apkSvc->qrImageUrl($apkUrl) : '',
+                'csrf' => Csrf::token(),
+                'apkChunkBytes' => HrMobileApkService::CHUNK_BYTES,
+                'apkMaxBytes' => HrMobileApkService::MAX_BYTES,
+            ], 'main');
+            return;
+        }
+
+        $svc = new MobileAppConfigService();
         $rows = $svc->listCompaniesWithConfig();
         foreach ($rows as &$row) {
             $row['features'] = $svc->decodeFeatures($row['enabled_features'] ?? null);
@@ -35,7 +53,7 @@ final class MobileAppsController extends Controller
             if ($showApk) {
                 $companyRow = ['id' => (int) $row['company_id']] + $row;
                 $row['erp_base_url'] = $apkSvc->erpBaseUrlForCompany($companyRow);
-                $row['apk'] = $apkSvc->meta((int) $row['company_id']);
+                $row['apk'] = $apkSvc->meta((string) (int) $row['company_id']);
             }
         }
         unset($row);
@@ -72,7 +90,7 @@ final class MobileAppsController extends Controller
         $features = $svc->enableSalaryFeaturesForHrCompany($companyId);
         $row = $svc->findByCompanyId($companyId);
         $apkSvc = new HrMobileApkService();
-        $apk = $this->canToggleEnable() ? $apkSvc->meta($companyId) : null;
+        $apk = $this->canToggleEnable() ? $apkSvc->meta((string) $companyId) : null;
         $apkUrl = $apk !== null ? $apkSvc->downloadUrl($apk) : '';
 
         $this->view('admin/mobile-apps/edit', [
@@ -137,8 +155,37 @@ final class MobileAppsController extends Controller
         Response::redirect(rateb_url($back));
     }
 
-    /** Chunked upload so large APKs pass hosts with small upload_max_filesize. */
     public function uploadApkChunk(array $params = []): void
+    {
+        $this->receiveApkChunk((string) (int) ($params['id'] ?? 0));
+    }
+
+    public function uploadPlatformApkChunk(array $params = []): void
+    {
+        $this->receiveApkChunk($this->platformAppParam($params));
+    }
+
+    public function deleteApk(array $params = []): void
+    {
+        $companyId = (int) ($params['id'] ?? 0);
+        $this->removeApk((string) $companyId, 'admin/mobile-apps/' . $companyId);
+    }
+
+    public function deletePlatformApk(array $params = []): void
+    {
+        $app = $this->platformAppParam($params);
+        $this->removeApk($app, 'admin/mobile-apps?app=' . rawurlencode($app));
+    }
+
+    private function platformAppParam(array $params): string
+    {
+        $app = strtolower((string) ($params['app'] ?? ''));
+
+        return in_array($app, HrMobileApkService::PLATFORM_APPS, true) ? $app : '';
+    }
+
+    /** Chunked upload so large APKs pass hosts with small upload_max_filesize. */
+    private function receiveApkChunk(string $key): void
     {
         if (!$this->canToggleEnable()) {
             Response::json(['ok' => false, 'message' => '403'], 403);
@@ -154,7 +201,7 @@ final class MobileAppsController extends Controller
             return;
         }
         $result = (new HrMobileApkService())->storeChunk(
-            (int) ($params['id'] ?? 0),
+            $key,
             strtolower((string) $this->input('upload_id', '')),
             (int) $this->input('index', -1),
             (int) $this->input('total', 0),
@@ -168,29 +215,34 @@ final class MobileAppsController extends Controller
         Response::json(['ok' => $result['ok'], 'done' => $result['done'], 'message' => $result['message']], $result['ok'] ? 200 : 422);
     }
 
-    public function deleteApk(array $params = []): void
+    private function removeApk(string $key, string $back): void
     {
         if (!$this->canToggleEnable()) {
             http_response_code(403);
             echo '403';
             return;
         }
-        $companyId = (int) ($params['id'] ?? 0);
         if ($this->validateCsrf()) {
-            (new HrMobileApkService())->remove($companyId);
+            (new HrMobileApkService())->remove($key);
             SessionManager::flash('success', __('mobile_apps_apk_deleted'));
         }
-        Response::redirect(rateb_url('admin/mobile-apps/' . $companyId));
+        Response::redirect(rateb_url($back));
     }
 
-    /** Public employee download (no login) — only while the company app is enabled. */
+    /**
+     * Public download (no login). Company HR builds only while that company's app is enabled;
+     * platform ERP / Customer builds whenever uploaded.
+     */
     public function downloadApk(array $params = []): void
     {
         $apkSvc = new HrMobileApkService();
         $found = $apkSvc->findByToken((string) ($params['token'] ?? ''));
-        $config = $found !== null ? (new MobileAppConfigService())->findByCompanyId($found['company_id']) : null;
-        if ($found === null || !is_file($found['path'])
-            || !is_array($config) || (string) ($config['status'] ?? '') !== MobileAppConfigService::STATUS_ACTIVE) {
+        $available = $found !== null && is_file($found['path']);
+        if ($available && $found['company_id'] > 0) {
+            $config = (new MobileAppConfigService())->findByCompanyId($found['company_id']);
+            $available = is_array($config) && (string) ($config['status'] ?? '') === MobileAppConfigService::STATUS_ACTIVE;
+        }
+        if (!$available) {
             http_response_code(404);
             header('Content-Type: text/plain; charset=UTF-8');
             echo __('mobile_apps_apk_unavailable');
@@ -199,8 +251,12 @@ final class MobileAppsController extends Controller
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_write_close();
         }
-        $company = (new Company())->find($found['company_id']) ?? ['id' => $found['company_id']];
-        $name = 'rateb-hr-' . $apkSvc->companySlug($company) . '.apk';
+        if ($found['company_id'] > 0) {
+            $company = (new Company())->find($found['company_id']) ?? ['id' => $found['company_id']];
+            $name = 'rateb-hr-' . $apkSvc->companySlug($company) . '.apk';
+        } else {
+            $name = (string) ($apkSvc->platformAppInfo($found['key'])['file'] ?? 'rateb.apk');
+        }
         while (ob_get_level() > 0) {
             ob_end_clean();
         }

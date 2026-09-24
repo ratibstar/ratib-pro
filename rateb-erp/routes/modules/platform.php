@@ -83,6 +83,8 @@ $router->post('/admin/mobile-apps/{id}', [MobileAppsController::class, 'save'], 
 $router->post('/admin/mobile-apps/{id}/toggle', [MobileAppsController::class, 'toggle'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/{id}/apk-chunk', [MobileAppsController::class, 'uploadApkChunk'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/{id}/apk-delete', [MobileAppsController::class, 'deleteApk'], rateb_platform_oversight_mw('mobile_apps.manage'));
+$router->post('/admin/mobile-apps/platform/{app}/apk-chunk', [MobileAppsController::class, 'uploadPlatformApkChunk'], rateb_platform_oversight_mw('mobile_apps.manage'));
+$router->post('/admin/mobile-apps/platform/{app}/apk-delete', [MobileAppsController::class, 'deletePlatformApk'], rateb_platform_oversight_mw('mobile_apps.manage'));
 
 $router->get('/admin/agent-apps', [AgentAppsController::class, 'dashboard'], rateb_admin_mw('mobile_apps.view'));
 $router->post('/admin/agent-apps/complaints/action', [AgentAppsController::class, 'complaintAction'], rateb_admin_mw('mobile_apps.manage'));

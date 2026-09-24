@@ -27,6 +27,11 @@ $colCount = $canToggleEnable ? 7 : 5;
     </div>
 </div>
 
+<?php if ($canToggleEnable) {
+    $activeApp = 'hr';
+    require __DIR__ . '/_tabs.php';
+} ?>
+
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape(__('mobile_apps_companies')); ?></div>
     <div class="rateb-card-body table-responsive">

@@ -6,16 +6,51 @@ namespace Rateb\App\Services;
 use Rateb\App\Models\Company;
 
 /**
- * Per-company signed HR mobile APK (RATEB HR) — each build targets one company ERP host.
- * Files live outside the web root: storage/mobile-apks/<company_id>.apk + <company_id>.json.
+ * Signed mobile APK slots managed from platform oversight.
+ * - HR app (RATEB HR): one slot per company, key = company id — each build targets that company's ERP host.
+ * - ERP / Customer apps: one platform-wide slot each, key = 'erp' | 'customer'.
+ * Files live outside the web root: storage/mobile-apks/<key>.apk + <key>.json.
  */
 final class HrMobileApkService
 {
     public const CHUNK_BYTES = 2 * 1024 * 1024;
     public const MAX_BYTES = 250 * 1024 * 1024;
 
+    public const PLATFORM_APPS = ['erp', 'customer'];
+
     /** @var array<int, array<string, mixed>>|null */
     private ?array $agencyByCompany = null;
+
+    /**
+     * Static facts for the platform-wide apps (shown on their oversight tab).
+     *
+     * @return array{package:string, server:string, file:string, build_dir:string, build_command:string, output:string}|null
+     */
+    public function platformAppInfo(string $app): ?array
+    {
+        if ($app === 'erp') {
+            return [
+                'package' => 'sa.rateb.erp',
+                'server' => rtrim(rateb_public_url('admin'), '/'),
+                'file' => 'rateb-erp.apk',
+                'build_dir' => 'rateb-erp\\capacitor',
+                'build_command' => 'npm run cap:sync; cd android; .\\gradlew assembleRelease',
+                'output' => 'android\\app\\build\\outputs\\apk\\release\\app-release.apk',
+            ];
+        }
+        if ($app === 'customer') {
+            return [
+                'package' => 'com.ratib.rateb_mobile',
+                'server' => 'https://rateb.sa/api',
+                'file' => 'rateb-customer.apk',
+                'build_dir' => 'rateb_mobile',
+                'build_command' => 'C:\\flutter_sdk\\bin\\flutter.bat build apk --release',
+                'output' => 'build\\app\\outputs\\flutter-apk\\app-release.apk',
+            ];
+        }
+
+        return null;
+    }
 
     public function storageDir(): string
     {
@@ -27,31 +62,38 @@ final class HrMobileApkService
         return $dir;
     }
 
-    private function apkPath(int $companyId): string
+    private function validKey(string $key): bool
     {
-        return $this->storageDir() . '/' . $companyId . '.apk';
+        return in_array($key, self::PLATFORM_APPS, true)
+            || (preg_match('/^[1-9][0-9]{0,9}$/', $key) === 1);
     }
 
-    private function metaPath(int $companyId): string
+    private function apkPath(string $key): string
     {
-        return $this->storageDir() . '/' . $companyId . '.json';
+        return $this->storageDir() . '/' . $key . '.apk';
+    }
+
+    private function metaPath(string $key): string
+    {
+        return $this->storageDir() . '/' . $key . '.json';
     }
 
     /** @return array<string, mixed>|null */
-    public function meta(int $companyId): ?array
+    public function meta(string $key): ?array
     {
-        if ($companyId < 1) {
+        if (!$this->validKey($key)) {
             return null;
         }
-        $metaFile = $this->metaPath($companyId);
-        if (!is_file($metaFile) || !is_file($this->apkPath($companyId))) {
+        $metaFile = $this->metaPath($key);
+        if (!is_file($metaFile) || !is_file($this->apkPath($key))) {
             return null;
         }
         $data = json_decode((string) file_get_contents($metaFile), true);
         if (!is_array($data) || !preg_match('/^[a-f0-9]{32}$/', (string) ($data['token'] ?? ''))) {
             return null;
         }
-        $data['company_id'] = $companyId;
+        $data['key'] = $key;
+        $data['company_id'] = ctype_digit($key) ? (int) $key : 0;
 
         return $data;
     }
@@ -66,7 +108,7 @@ final class HrMobileApkService
         return rateb_local_qr_url($url, max(120, min(500, $size)), true);
     }
 
-    /** @return array{company_id:int, path:string, meta:array<string,mixed>}|null */
+    /** @return array{key:string, company_id:int, path:string, meta:array<string,mixed>}|null */
     public function findByToken(string $token): ?array
     {
         $token = strtolower(trim($token));
@@ -74,10 +116,15 @@ final class HrMobileApkService
             return null;
         }
         foreach (glob($this->storageDir() . '/*.json') ?: [] as $metaFile) {
-            $cid = (int) basename($metaFile, '.json');
-            $meta = $this->meta($cid);
+            $key = basename($metaFile, '.json');
+            $meta = $this->meta($key);
             if ($meta !== null && hash_equals((string) $meta['token'], $token)) {
-                return ['company_id' => $cid, 'path' => $this->apkPath($cid), 'meta' => $meta];
+                return [
+                    'key' => $key,
+                    'company_id' => (int) $meta['company_id'],
+                    'path' => $this->apkPath($key),
+                    'meta' => $meta,
+                ];
             }
         }
 
@@ -158,9 +205,9 @@ final class HrMobileApkService
      * @param array<string, mixed> $file $_FILES entry
      * @return array{ok:bool, done:bool, message:string, meta?:array<string,mixed>}
      */
-    public function storeChunk(int $companyId, string $uploadId, int $index, int $total, array $file, string $originalName, int $userId): array
+    public function storeChunk(string $key, string $uploadId, int $index, int $total, array $file, string $originalName, int $userId): array
     {
-        if ($companyId < 1 || (new Company())->find($companyId) === null) {
+        if (!$this->validKey($key) || (ctype_digit($key) && (new Company())->find((int) $key) === null)) {
             return ['ok' => false, 'done' => false, 'message' => __('not_found')];
         }
         if (!preg_match('/^[a-f0-9]{32}$/', $uploadId) || $total < 1 || $index < 0 || $index >= $total
@@ -176,7 +223,7 @@ final class HrMobileApkService
         if (!is_dir($tmpDir)) {
             @mkdir($tmpDir, 0775, true);
         }
-        $part = $tmpDir . '/' . $companyId . '-' . $uploadId . '.part';
+        $part = $tmpDir . '/' . $key . '-' . $uploadId . '.part';
         if ($index === 0) {
             @unlink($part);
             $this->purgeStaleParts($tmpDir);
@@ -200,11 +247,11 @@ final class HrMobileApkService
             return ['ok' => true, 'done' => false, 'message' => ''];
         }
 
-        return $this->publish($companyId, $part, $originalName, $userId);
+        return $this->publish($key, $part, $originalName, $userId);
     }
 
     /** @return array{ok:bool, done:bool, message:string, meta?:array<string,mixed>} */
-    private function publish(int $companyId, string $part, string $originalName, int $userId): array
+    private function publish(string $key, string $part, string $originalName, int $userId): array
     {
         $size = (int) filesize($part);
         $fh = fopen($part, 'rb');
@@ -218,7 +265,7 @@ final class HrMobileApkService
             return ['ok' => false, 'done' => true, 'message' => __('mobile_apps_apk_not_apk')];
         }
 
-        $apk = $this->apkPath($companyId);
+        $apk = $this->apkPath($key);
         @unlink($apk);
         if (!@rename($part, $apk)) {
             @unlink($part);
@@ -226,8 +273,7 @@ final class HrMobileApkService
             return ['ok' => false, 'done' => true, 'message' => __('mobile_apps_apk_upload_failed')];
         }
 
-        $company = (new Company())->find($companyId) ?? ['id' => $companyId];
-        $previous = $this->meta($companyId);
+        $previous = $this->meta($key);
         $meta = [
             'token' => is_array($previous) ? (string) $previous['token'] : bin2hex(random_bytes(16)),
             'size' => $size,
@@ -235,21 +281,23 @@ final class HrMobileApkService
             'original_name' => mb_substr(basename(str_replace('\\', '/', $originalName)), 0, 150),
             'uploaded_at' => date('Y-m-d H:i:s'),
             'uploaded_by' => $userId,
-            'erp_base_url' => $this->erpBaseUrlForCompany($company),
         ];
-        file_put_contents($this->metaPath($companyId), (string) json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
-        $meta['company_id'] = $companyId;
+        if (ctype_digit($key)) {
+            $company = (new Company())->find((int) $key) ?? ['id' => (int) $key];
+            $meta['erp_base_url'] = $this->erpBaseUrlForCompany($company);
+        }
+        file_put_contents($this->metaPath($key), (string) json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 
         return ['ok' => true, 'done' => true, 'message' => __('mobile_apps_apk_uploaded'), 'meta' => $meta];
     }
 
-    public function remove(int $companyId): void
+    public function remove(string $key): void
     {
-        if ($companyId < 1) {
+        if (!$this->validKey($key)) {
             return;
         }
-        @unlink($this->apkPath($companyId));
-        @unlink($this->metaPath($companyId));
+        @unlink($this->apkPath($key));
+        @unlink($this->metaPath($key));
     }
 
     private function purgeStaleParts(string $tmpDir): void
