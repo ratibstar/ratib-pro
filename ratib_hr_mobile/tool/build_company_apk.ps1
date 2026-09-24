@@ -1,0 +1,77 @@
+# Build the signed production RATEB HR APK for ONE company ERP host.
+# The ERP Admin page (Platform -> Oversight -> Mobile Apps -> company) shows the exact command.
+# Usage:
+#   .\tool\build_company_apk.ps1 -ErpBaseUrl "https://admin.rateb.sa/rateb-erp/public" -Slug "admin-rateb"
+#   .\tool\build_company_apk.ps1 -ErpBaseUrl "https://rateb.sa/rateb-erp/public" -Slug "acme" -Universal
+# Output: dist\android\rateb-hr-<slug>.apk  -> upload it on the company's Mobile Apps page.
+
+param(
+    [Parameter(Mandatory = $true)][string]$ErpBaseUrl,
+    [Parameter(Mandatory = $true)][string]$Slug,
+    [switch]$Universal
+)
+
+$ErrorActionPreference = "Stop"
+
+$ErpBaseUrl = $ErpBaseUrl.Trim().TrimEnd("/")
+if ($ErpBaseUrl -notmatch '^https://[^/\s]+(/[^\s]*)?$') {
+    throw "ErpBaseUrl must be an https URL, e.g. https://admin.rateb.sa/rateb-erp/public"
+}
+$Slug = ($Slug.Trim().ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-')
+if (-not $Slug) {
+    throw "Slug is empty after sanitizing"
+}
+
+$flutter = $null
+foreach ($candidate in @(
+    "C:\flutter_sdk\bin\flutter.bat",
+    "C:\flutter-sdk\bin\flutter.bat",
+    (Join-Path $env:LOCALAPPDATA "flutter\bin\flutter.bat")
+)) {
+    if (Test-Path $candidate) {
+        $flutter = $candidate
+        break
+    }
+}
+if (-not $flutter) {
+    throw "Flutter SDK not found (checked C:\flutter_sdk, C:\flutter-sdk, %LOCALAPPDATA%\flutter)"
+}
+
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
+
+if (-not (Test-Path (Join-Path $root "android\key.properties"))) {
+    throw "android\key.properties is missing - release signing is required (see android\key.properties.example)"
+}
+
+$dist = Join-Path $root "dist\android"
+New-Item -ItemType Directory -Force -Path $dist | Out-Null
+
+$buildArgs = @(
+    "build", "apk", "--release",
+    "--flavor", "production",
+    "--dart-define=APP_FLAVOR=production",
+    "--dart-define=ERP_BASE_URL=$ErpBaseUrl"
+)
+if (-not $Universal) {
+    $buildArgs += @("--target-platform", "android-arm64")
+}
+
+Write-Host "=== RATEB HR for $Slug ===" -ForegroundColor Cyan
+Write-Host "ERP: $ErpBaseUrl"
+& $flutter @buildArgs
+if ($LASTEXITCODE -ne 0) {
+    throw "Build failed for $Slug"
+}
+
+$src = Join-Path $root "build\app\outputs\flutter-apk\app-production-release.apk"
+if (-not (Test-Path $src)) {
+    throw "Expected APK missing: $src"
+}
+$dest = Join-Path $dist ("rateb-hr-{0}.apk" -f $Slug)
+Copy-Item -Force $src $dest
+$sizeMb = [math]::Round((Get-Item $dest).Length / 1MB, 1)
+$sha = (Get-FileHash -Algorithm SHA256 $dest).Hash.ToLowerInvariant()
+Write-Host "OK -> $dest ($sizeMb MB)" -ForegroundColor Green
+Write-Host "SHA-256: $sha"
+Write-Host "Next: upload this file on the company's Mobile Apps page in ERP Admin."

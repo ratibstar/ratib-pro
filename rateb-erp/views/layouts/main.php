@@ -904,6 +904,7 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                 ['type' => 'link', 'link' => ['admin/companies', 'companies', 'fa-building', 'companies.view']],
                 ['type' => 'link', 'link' => ['admin/company-permissions', 'company_permissions', 'fa-toggle-on', 'company_permissions.manage']],
                 ['type' => 'link', 'link' => ['admin/module-addons', 'module_addon_catalog', 'fa-store', 'module_addons.manage']],
+                ['type' => 'link', 'link' => ['admin/mobile-apps', 'mobile_apps_nav', 'fa-mobile-screen-button', 'mobile_apps.view']],
             ]);
             if (rateb_is_super_admin()
                 && function_exists('rateb_is_platform_oversight_host')

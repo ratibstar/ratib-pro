@@ -205,7 +205,7 @@ final class MobileAppConfigService
     public function listCompaniesWithConfig(int $limit = 200): array
     {
         $limit = max(1, min(500, $limit));
-        $sql = 'SELECT c.id AS company_id, c.name AS company_name, c.status AS company_status,'
+        $sql = 'SELECT c.id AS company_id, c.name AS company_name, c.status AS company_status, c.slug, c.settings,'
             . ' m.id AS config_id, m.app_name, m.logo_path, m.icon_path, m.splash_path,'
             . ' m.theme_color, m.status AS mobile_status, m.enabled_features, m.updated_at'
             . ' FROM rateb_companies c'

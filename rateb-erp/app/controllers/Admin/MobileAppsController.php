@@ -8,6 +8,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\Company;
+use Rateb\App\Services\HrMobileApkService;
 use Rateb\App\Services\MobileAppConfigService;
 
 /**
@@ -25,10 +26,17 @@ final class MobileAppsController extends Controller
         }
 
         $svc = new MobileAppConfigService();
+        $apkSvc = new HrMobileApkService();
+        $showApk = $this->canToggleEnable();
         $rows = $svc->listCompaniesWithConfig();
         foreach ($rows as &$row) {
             $row['features'] = $svc->decodeFeatures($row['enabled_features'] ?? null);
             $row['mobile_active'] = (string) ($row['mobile_status'] ?? '') === MobileAppConfigService::STATUS_ACTIVE;
+            if ($showApk) {
+                $companyRow = ['id' => (int) $row['company_id']] + $row;
+                $row['erp_base_url'] = $apkSvc->erpBaseUrlForCompany($companyRow);
+                $row['apk'] = $apkSvc->meta((int) $row['company_id']);
+            }
         }
         unset($row);
 
@@ -37,6 +45,7 @@ final class MobileAppsController extends Controller
             'rows' => $rows,
             'csrf' => Csrf::token(),
             'canManage' => $this->canManage(),
+            'canToggleEnable' => $showApk,
             'consoleUrl' => rateb_url('admin/hr-mobile'),
             'consoleAccessible' => function_exists('rateb_hr_mobile_console_accessible')
                 && rateb_hr_mobile_console_accessible(),
@@ -62,6 +71,9 @@ final class MobileAppsController extends Controller
         $svc = new MobileAppConfigService();
         $features = $svc->enableSalaryFeaturesForHrCompany($companyId);
         $row = $svc->findByCompanyId($companyId);
+        $apkSvc = new HrMobileApkService();
+        $apk = $this->canToggleEnable() ? $apkSvc->meta($companyId) : null;
+        $apkUrl = $apk !== null ? $apkSvc->downloadUrl($apk) : '';
 
         $this->view('admin/mobile-apps/edit', [
             'title' => __('mobile_apps_edit'),
@@ -72,7 +84,133 @@ final class MobileAppsController extends Controller
             'csrf' => Csrf::token(),
             'canManage' => $this->canManage(),
             'canToggleEnable' => $this->canToggleEnable(),
+            'apk' => $apk,
+            'apkUrl' => $apkUrl,
+            'apkQr' => $apkUrl !== '' ? $apkSvc->qrImageUrl($apkUrl) : '',
+            'erpBaseUrl' => $apkSvc->erpBaseUrlForCompany($company),
+            'buildCommand' => $apkSvc->buildCommand($company),
+            'apkChunkBytes' => HrMobileApkService::CHUNK_BYTES,
+            'apkMaxBytes' => HrMobileApkService::MAX_BYTES,
         ], 'main');
+    }
+
+    /** Quick enable/disable from the companies list (platform super-admin only). */
+    public function toggle(array $params = []): void
+    {
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('admin/mobile-apps'));
+            return;
+        }
+        $companyId = (int) ($params['id'] ?? 0);
+        $svc = new MobileAppConfigService();
+        $existing = $svc->findByCompanyId($companyId);
+        $status = (string) $this->input('status', '') === MobileAppConfigService::STATUS_ACTIVE
+            ? MobileAppConfigService::STATUS_ACTIVE
+            : MobileAppConfigService::STATUS_INACTIVE;
+        $result = $svc->upsertForCompany($companyId, [
+            'app_name' => (string) ($existing['app_name'] ?? ''),
+            'logo_path' => $existing['logo_path'] ?? null,
+            'icon_path' => $existing['icon_path'] ?? null,
+            'splash_path' => $existing['splash_path'] ?? null,
+            'theme_color' => (string) ($existing['theme_color'] ?? '#0D6EFD'),
+            'status' => $status,
+            'enabled_features' => is_array($existing)
+                ? $svc->decodeFeatures($existing['enabled_features'] ?? null)
+                : MobileAppConfigService::defaultFeatures(),
+        ]);
+        if ($result['ok']) {
+            $msg = $status === MobileAppConfigService::STATUS_ACTIVE
+                ? __('mobile_apps_enabled_flash')
+                : __('mobile_apps_disabled_flash');
+        } else {
+            $msg = __('mobile_apps_save_failed');
+        }
+        SessionManager::flash($result['ok'] ? 'success' : 'error', $msg);
+        $back = (string) $this->input('back', '') === 'edit'
+            ? 'admin/mobile-apps/' . $companyId
+            : 'admin/mobile-apps';
+        Response::redirect(rateb_url($back));
+    }
+
+    /** Chunked upload so large APKs pass hosts with small upload_max_filesize. */
+    public function uploadApkChunk(array $params = []): void
+    {
+        if (!$this->canToggleEnable()) {
+            Response::json(['ok' => false, 'message' => '403'], 403);
+            return;
+        }
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false, 'message' => __('csrf_invalid')], 419);
+            return;
+        }
+        $file = $_FILES['chunk'] ?? null;
+        if (!is_array($file)) {
+            Response::json(['ok' => false, 'message' => __('mobile_apps_apk_upload_too_large')], 422);
+            return;
+        }
+        $result = (new HrMobileApkService())->storeChunk(
+            (int) ($params['id'] ?? 0),
+            strtolower((string) $this->input('upload_id', '')),
+            (int) $this->input('index', -1),
+            (int) $this->input('total', 0),
+            $file,
+            (string) $this->input('original_name', 'app.apk'),
+            (int) (\Rateb\App\Core\Auth::user()['id'] ?? 0)
+        );
+        if ($result['ok'] && $result['done']) {
+            SessionManager::flash('success', $result['message']);
+        }
+        Response::json(['ok' => $result['ok'], 'done' => $result['done'], 'message' => $result['message']], $result['ok'] ? 200 : 422);
+    }
+
+    public function deleteApk(array $params = []): void
+    {
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        $companyId = (int) ($params['id'] ?? 0);
+        if ($this->validateCsrf()) {
+            (new HrMobileApkService())->remove($companyId);
+            SessionManager::flash('success', __('mobile_apps_apk_deleted'));
+        }
+        Response::redirect(rateb_url('admin/mobile-apps/' . $companyId));
+    }
+
+    /** Public employee download (no login) — only while the company app is enabled. */
+    public function downloadApk(array $params = []): void
+    {
+        $apkSvc = new HrMobileApkService();
+        $found = $apkSvc->findByToken((string) ($params['token'] ?? ''));
+        $config = $found !== null ? (new MobileAppConfigService())->findByCompanyId($found['company_id']) : null;
+        if ($found === null || !is_file($found['path'])
+            || !is_array($config) || (string) ($config['status'] ?? '') !== MobileAppConfigService::STATUS_ACTIVE) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo __('mobile_apps_apk_unavailable');
+            return;
+        }
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+        $company = (new Company())->find($found['company_id']) ?? ['id' => $found['company_id']];
+        $name = 'rateb-hr-' . $apkSvc->companySlug($company) . '.apk';
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        http_response_code(200);
+        header('Content-Type: application/vnd.android.package-archive');
+        header('Content-Disposition: attachment; filename="' . $name . '"');
+        header('Content-Length: ' . (string) filesize($found['path']));
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: no-store');
+        readfile($found['path']);
     }
 
     public function save(array $params = []): void
