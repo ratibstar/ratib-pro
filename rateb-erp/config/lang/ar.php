@@ -3185,6 +3185,7 @@ return [
     'hr_mobile_console_setting_label' => 'تفعيل وحدة جوال الموارد البشرية (المشغّل)',
     'hr_mobile_console_setting_help' => 'مشغّل المنصة تحت الإدارة → جوال الموارد البشرية. تفعيل كل شركة والعلامة التجارية عبر إدارة تطبيقات الجوال. الافتراضي: معطّل.',
     'mobile_apps_nav' => 'تطبيقات الجوال',
+    'mobile_apps_distribution' => 'توزيع التطبيقات',
     'mobile_apps_title' => 'إدارة تطبيقات الجوال',
     'mobile_apps_intro' => 'تفعيل ووسم تطبيق RATEB Workforce المشترك لكل وكالة/شركة.',
     'mobile_apps_companies' => 'الشركات',

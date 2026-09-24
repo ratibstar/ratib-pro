@@ -3187,6 +3187,7 @@ return [
     'hr_mobile_console_setting_label' => 'Enable HR Mobile Console (launcher)',
     'hr_mobile_console_setting_help' => 'Platform launcher under Admin → HR Mobile. Per-company enablement and branding use Mobile Apps Management (rateb_mobile_app_configs). Default off.',
     'mobile_apps_nav' => 'Mobile Apps',
+    'mobile_apps_distribution' => 'App distribution',
     'mobile_apps_title' => 'Mobile Apps Management',
     'mobile_apps_intro' => 'Enable and brand the shared RATEB Workforce mobile app per agency/company.',
     'mobile_apps_companies' => 'Companies',
