@@ -56,7 +56,9 @@ function rateb_mobile_qr_ensure_nonce_table(PDO $pdo): void
 function rateb_mobile_qr_purge_expired_nonces(PDO $pdo): void
 {
     try {
-        $pdo->exec('DELETE FROM mobile_qr_used_nonces WHERE expires_at < NOW()');
+        // UTC on both sides (see consume_nonce): MySQL NOW() and PHP date() may use different zones.
+        $stmt = $pdo->prepare('DELETE FROM mobile_qr_used_nonces WHERE expires_at < ?');
+        $stmt->execute([gmdate('Y-m-d H:i:s')]);
     } catch (Throwable $e) {
         // Best-effort cleanup.
     }
@@ -82,7 +84,7 @@ function rateb_mobile_qr_consume_nonce(PDO $pdo, string $nonce, int $subjectId, 
         return ['ok' => false, 'message' => 'QR code already used.', 'code' => 'nonce_reused'];
     }
 
-    $expDt = date('Y-m-d H:i:s', $exp);
+    $expDt = gmdate('Y-m-d H:i:s', $exp);
     $insert = $pdo->prepare(
         'INSERT INTO mobile_qr_used_nonces (nonce_hash, subject_id, account_type, expires_at)
          VALUES (?, ?, ?, ?)'
