@@ -49,6 +49,23 @@ function rateb_mobile_resolve_agency_id(array $claims): ?int
     return $agencyId > 0 ? $agencyId : null;
 }
 
+/**
+ * True when the request is connected to the token's own dedicated agency database: every row
+ * there belongs to that agency, so the database is the tenant boundary. Shared databases
+ * (use_country_filter) and tokens without an agency keep the country-column scope.
+ */
+function rateb_mobile_agency_db_is_tenant_boundary(array $claims): bool
+{
+    $context = $GLOBALS['rateb_mobile_agency_context'] ?? null;
+    if (!is_array($context) || !empty($context['use_country_filter'])) {
+        return false;
+    }
+
+    $claimAgencyId = (int) ($claims['agency_id'] ?? 0);
+
+    return $claimAgencyId > 0 && $claimAgencyId === (int) ($context['agency_id'] ?? 0);
+}
+
 function rateb_mobile_table_has_column(PDO $pdo, string $table, string $column): bool
 {
     static $cache = [];
@@ -87,6 +104,10 @@ function rateb_mobile_apply_worker_tenant_scope(
     array &$params
 ): void {
     if (($claims['typ'] ?? '') !== 'staff') {
+        return;
+    }
+
+    if (rateb_mobile_agency_db_is_tenant_boundary($claims)) {
         return;
     }
 
@@ -151,6 +172,10 @@ function rateb_mobile_apply_cases_tenant_scope(
     array &$params
 ): void {
     if (($claims['typ'] ?? '') !== 'staff') {
+        return;
+    }
+
+    if (rateb_mobile_agency_db_is_tenant_boundary($claims)) {
         return;
     }
 

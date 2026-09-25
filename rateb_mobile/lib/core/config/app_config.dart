@@ -18,6 +18,10 @@ class AppConfig {
     'RATEB_COMPANY_SLUG',
   );
 
+  /// Control Panel agency (control_agencies.id) whose database staff log in to.
+  /// 0 = not configured.
+  static const int agencyId = int.fromEnvironment('RATEB_AGENCY_ID');
+
   static String get erpBaseUrl {
     if (_erpBaseUrlOverride.trim().isNotEmpty) {
       return _erpBaseUrlOverride.trim().replaceAll(RegExp(r'/+$'), '');

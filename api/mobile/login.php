@@ -21,6 +21,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../../core/Auth.php';
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/ensure-global-partnerships-schema.php';
+require_once __DIR__ . '/agency.inc.php';
 
 try {
     if (strtoupper($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -100,6 +101,27 @@ try {
         }
     }
 
+    $agencyContext = null;
+    if ($agencyId > 0) {
+        $agencyContext = rateb_mobile_connect_agency($agencyId);
+        $tenantCountryId = $agencyContext['country_id'] ?? 0;
+        if ($agencyContext === null
+            || $tenantCountryId <= 0
+            || (defined('TENANT_ID') && (int) TENANT_ID !== $tenantCountryId)
+        ) {
+            rateb_mobile_json([
+                'success' => false,
+                'message' => 'Server configuration error',
+                'code' => 'config_error',
+            ], 503);
+        }
+        if (!defined('TENANT_ID')) {
+            define('TENANT_ID', $tenantCountryId);
+        }
+        $pdo = Database::getInstance()->getConnection();
+        ratebEnsureGlobalPartnershipsSchema($pdo);
+    }
+
     $authResult = Auth::login($login, $password);
     if (!$authResult['success']) {
         rateb_mobile_json([
@@ -127,8 +149,10 @@ try {
         'staff',
         $userId,
         $portalRole,
-        isset($_SESSION['country_id']) ? (int) $_SESSION['country_id'] : null,
-        isset($_SESSION['agency_id']) ? (int) $_SESSION['agency_id'] : null
+        $agencyContext !== null
+            ? $agencyContext['country_id']
+            : (isset($_SESSION['country_id']) ? (int) $_SESSION['country_id'] : null),
+        $agencyContext !== null ? $agencyContext['agency_id'] : null
     );
     $token = rateb_mobile_issue_token($claims);
 

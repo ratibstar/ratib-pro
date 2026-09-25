@@ -17,6 +17,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/ensure-global-partnerships-schema.php';
+require_once __DIR__ . '/agency.inc.php';
 
 try {
     if (strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
@@ -57,6 +58,7 @@ try {
     }
 
     if ($accountType === 'staff' && $subjectId > 0) {
+        rateb_mobile_apply_agency_context($claims);
         $pdo = Database::getInstance()->getConnection();
         $stmt = $pdo->prepare(
             'SELECT u.user_id, u.username, u.email, u.phone, u.status, u.country_id, r.role_name

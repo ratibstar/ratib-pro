@@ -1,6 +1,7 @@
 import '../api/api_client.dart';
 import '../api/api_endpoints.dart';
 import '../api/api_exception.dart';
+import '../config/app_config.dart';
 import '../models/auth_response.dart';
 import '../models/user_role.dart';
 import 'token_storage.dart';
@@ -33,6 +34,7 @@ class AuthRepository {
       body: {
         'email': email.trim(),
         'password': password,
+        if (AppConfig.agencyId > 0) 'agency_id': AppConfig.agencyId,
       },
     );
 

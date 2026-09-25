@@ -16,8 +16,6 @@ try {
 
     if ($worker !== null) {
         $workerId = (int) $worker['id'];
-        $workerName = (string) ($worker['worker_name'] ?? 'Worker');
-        $status = strtolower((string) ($worker['status'] ?? 'pending'));
 
         $requiredDocs = [
             'passport' => 'Upload passport copy',
@@ -42,29 +40,8 @@ try {
                     ];
                 }
             } catch (Throwable $docErr) {
-                // Table may not exist — add one generic doc task.
-                if ($docKey === 'passport') {
-                    $tasks[] = [
-                        'id' => 'doc-passport',
-                        'title' => 'Complete onboarding documents',
-                        'subtitle' => $workerName,
-                        'due_label' => 'This week',
-                        'status' => 'pending',
-                        'category' => 'document',
-                    ];
-                }
+                // worker_documents table may not exist on all installs.
             }
-        }
-
-        if ($status === 'pending') {
-            $tasks[] = [
-                'id' => 'profile-verify',
-                'title' => 'Verify contact information',
-                'subtitle' => 'Keep your profile up to date',
-                'due_label' => 'This week',
-                'status' => 'pending',
-                'category' => 'profile',
-            ];
         }
 
         try {
@@ -102,14 +79,6 @@ try {
             'title' => 'Link your worker profile',
             'subtitle' => 'Ask HR to match your account email with your worker record',
             'due_label' => 'Action needed',
-            'status' => 'pending',
-            'category' => 'profile',
-        ];
-        $tasks[] = [
-            'id' => 'update-contact',
-            'title' => 'Update contact information',
-            'subtitle' => (string) ($profile['email'] ?? ''),
-            'due_label' => 'This week',
             'status' => 'pending',
             'category' => 'profile',
         ];

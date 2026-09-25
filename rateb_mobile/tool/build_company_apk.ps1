@@ -3,6 +3,8 @@
 # Usage:
 #   .\tool\build_company_apk.ps1 -ApiBaseUrl "https://admin.rateb.sa/api" -Slug "admin-rateb"
 #   .\tool\build_company_apk.ps1 -ApiBaseUrl "https://rateb.sa/api" -Slug "platform" -Universal
+#   .\tool\build_company_apk.ps1 -ApiBaseUrl "https://rateb.sa/api" -Slug "ethiopia" -AgencyId 7
+#     -AgencyId = Control Panel agency id (control_agencies.id); staff sign in to that agency's data.
 # Output: dist\android\rateb-customer-<slug>.apk  -> upload it on the company's Mobile Apps page.
 
 param(
@@ -10,6 +12,7 @@ param(
     [Parameter(Mandatory = $true)][string]$Slug,
     # ERP that publishes offers/content; default = same host + /rateb-erp/public
     [string]$ErpBaseUrl = "",
+    [int]$AgencyId = 0,
     [switch]$Universal
 )
 
@@ -64,12 +67,21 @@ if ($ErpBaseUrl) {
     }
     $buildArgs += "--dart-define=RATEB_ERP_BASE_URL=$ErpBaseUrl"
 }
+if ($AgencyId -lt 0) {
+    throw "AgencyId must be a positive Control Panel agency id"
+}
+if ($AgencyId -gt 0) {
+    $buildArgs += "--dart-define=RATEB_AGENCY_ID=$AgencyId"
+}
 if (-not $Universal) {
     $buildArgs += @("--target-platform", "android-arm64")
 }
 
 Write-Host "=== RATEB Customer for $Slug ===" -ForegroundColor Cyan
 Write-Host "API: $ApiBaseUrl"
+if ($AgencyId -gt 0) {
+    Write-Host "Agency: $AgencyId"
+}
 & $flutter @buildArgs
 if ($LASTEXITCODE -ne 0) {
     throw "Build failed for $Slug"

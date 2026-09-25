@@ -10,6 +10,7 @@ require_once __DIR__ . '/tenant.inc.php';
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/ensure-global-partnerships-schema.php';
 require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/agency.inc.php';
 
 /**
  * @return array<string, mixed>
@@ -29,6 +30,8 @@ function rateb_mobile_require_auth(?string $requiredRole = null): array
         rateb_mobile_json(['success' => false, 'message' => 'Forbidden', 'code' => 'forbidden'], 403);
     }
 
+    rateb_mobile_apply_agency_context($claims);
+
     return $claims;
 }
 
@@ -41,7 +44,7 @@ function rateb_mobile_pdo(): PDO
 }
 
 /**
- * Resolve a workers row for a staff JWT (match by user email).
+ * Resolve a workers row for a staff JWT: linked only when exactly one worker has the user's email.
  *
  * @param array<string, mixed> $claims
  * @return array<string, mixed>|null
@@ -57,7 +60,7 @@ function rateb_mobile_resolve_worker(PDO $pdo, array $claims): ?array
         return null;
     }
 
-    $userStmt = $pdo->prepare('SELECT email, username FROM users WHERE user_id = ? LIMIT 1');
+    $userStmt = $pdo->prepare('SELECT email FROM users WHERE user_id = ? LIMIT 1');
     $userStmt->execute([$userId]);
     $user = $userStmt->fetch(PDO::FETCH_ASSOC);
     if (!$user) {
@@ -65,50 +68,26 @@ function rateb_mobile_resolve_worker(PDO $pdo, array $claims): ?array
     }
 
     $email = trim((string) ($user['email'] ?? ''));
-    if ($email !== '') {
-        $scopeWhere = ["w.status != 'deleted'"];
-        $scopeParams = [];
-        rateb_mobile_apply_worker_tenant_scope($pdo, $claims, 'w', $scopeWhere, $scopeParams);
-        $scopeSql = implode(' AND ', $scopeWhere);
-
-        $stmt = $pdo->prepare(
-            "SELECT w.id, w.worker_name, w.email, w.status, w.passport_number, w.contact_number
-             FROM workers w
-             WHERE LOWER(TRIM(w.email)) = LOWER(?)
-             AND {$scopeSql}
-             ORDER BY w.id DESC
-             LIMIT 1"
-        );
-        $stmt->execute(array_merge([$email], $scopeParams));
-        $worker = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($worker) {
-            return $worker;
-        }
+    if ($email === '') {
+        return null;
     }
 
-    $username = trim((string) ($user['username'] ?? ''));
-    if ($username !== '') {
-        $scopeWhere = ["w.status != 'deleted'"];
-        $scopeParams = [];
-        rateb_mobile_apply_worker_tenant_scope($pdo, $claims, 'w', $scopeWhere, $scopeParams);
-        $scopeSql = implode(' AND ', $scopeWhere);
+    $scopeWhere = ["w.status != 'deleted'"];
+    $scopeParams = [];
+    rateb_mobile_apply_worker_tenant_scope($pdo, $claims, 'w', $scopeWhere, $scopeParams);
+    $scopeSql = implode(' AND ', $scopeWhere);
 
-        $stmt = $pdo->prepare(
-            "SELECT w.id, w.worker_name, w.email, w.status, w.passport_number, w.contact_number
-             FROM workers w
-             WHERE w.worker_name LIKE ?
-             AND {$scopeSql}
-             ORDER BY w.id DESC
-             LIMIT 1"
-        );
-        $stmt->execute(array_merge(['%' . $username . '%'], $scopeParams));
-        $worker = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($worker) {
-            return $worker;
-        }
-    }
+    $stmt = $pdo->prepare(
+        "SELECT w.id, w.worker_name, w.email, w.status, w.passport_number, w.contact_number
+         FROM workers w
+         WHERE LOWER(TRIM(w.email)) = LOWER(?)
+         AND {$scopeSql}
+         LIMIT 2"
+    );
+    $stmt->execute(array_merge([$email], $scopeParams));
+    $matches = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-    return null;
+    return count($matches) === 1 ? $matches[0] : null;
 }
 
 /**

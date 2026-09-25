@@ -13,59 +13,43 @@ try {
     $worker = rateb_mobile_resolve_worker($pdo, $claims);
 
     $pendingTasks = 0;
+    // No task source carries a due date, so nothing is reported as due today.
     $dueToday = 0;
+    $missingDocs = 0;
 
     if ($worker !== null) {
         $workerId = (int) $worker['id'];
-        $status = strtolower((string) ($worker['status'] ?? 'pending'));
-        if (in_array($status, ['pending', 'approved'], true)) {
-            $pendingTasks++;
-            $dueToday++;
-        }
-        if ($status === 'pending') {
-            $pendingTasks++;
-        }
 
-        $docStmt = $pdo->prepare(
-            "SELECT COUNT(*) AS missing
-             FROM (
-                 SELECT 'passport' AS doc_key
-                 UNION SELECT 'visa'
-                 UNION SELECT 'medical'
-             ) required_docs
-             LEFT JOIN worker_documents wd
-               ON wd.worker_id = ? AND wd.document_type = required_docs.doc_key
-             WHERE wd.id IS NULL"
-        );
         try {
+            $docStmt = $pdo->prepare(
+                "SELECT COUNT(*) AS missing
+                 FROM (
+                     SELECT 'passport' AS doc_key
+                     UNION SELECT 'visa'
+                     UNION SELECT 'medical'
+                 ) required_docs
+                 LEFT JOIN worker_documents wd
+                   ON wd.worker_id = ? AND wd.document_type = required_docs.doc_key
+                 WHERE wd.id IS NULL"
+            );
             $docStmt->execute([$workerId]);
-            $missing = (int) ($docStmt->fetchColumn() ?: 0);
-            $pendingTasks += $missing;
-            if ($missing > 0) {
-                $dueToday = max($dueToday, 1);
-            }
+            $missingDocs = (int) ($docStmt->fetchColumn() ?: 0);
+            $pendingTasks += $missingDocs;
         } catch (Throwable $docErr) {
             // worker_documents table may not exist on all installs.
-            if ($status === 'pending') {
-                $pendingTasks = max($pendingTasks, 2);
-                $dueToday = max($dueToday, 1);
-            }
         }
 
-        $deployStmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM worker_deployments
-             WHERE worker_id = ? AND status IN ('processing', 'issue')"
-        );
         try {
+            $deployStmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM worker_deployments
+                 WHERE worker_id = ? AND status IN ('processing', 'issue')"
+            );
             $deployStmt->execute([$workerId]);
             $openDeployments = (int) ($deployStmt->fetchColumn() ?: 0);
             $pendingTasks += $openDeployments;
         } catch (Throwable $deployErr) {
             // ignore
         }
-    } else {
-        $pendingTasks = 2;
-        $dueToday = 1;
     }
 
     rateb_mobile_json([
@@ -82,7 +66,7 @@ try {
                 'pending_tasks' => $pendingTasks,
                 'due_today' => $dueToday,
                 'has_worker_record' => $worker !== null,
-                'documents_pending' => $worker !== null && $pendingTasks > 0,
+                'documents_pending' => $missingDocs > 0,
             ],
         ],
     ]);
