@@ -4,8 +4,6 @@
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/tenant.inc.php';
-
 const RATEB_MOBQR_PREFIX = 'RATEBMOBQR:';
 const RATEB_MOBQR_VERSION = 1;
 const RATEB_MOBQR_DEFAULT_TTL = 600;
@@ -131,128 +129,6 @@ function rateb_mobile_qr_build_payload(
         'payload' => $payload,
         'expires_at' => $exp,
     ];
-}
-
-/**
- * @return array<string, mixed>|null
- */
-function rateb_mobile_qr_load_user(PDO $pdo, int $userId): ?array
-{
-    $cols = ['user_id', 'username', 'status', 'role_id', 'country_id'];
-    foreach (['agency_id', 'tenant_role', 'permissions'] as $optional) {
-        if (rateb_mobile_table_has_column($pdo, 'users', $optional)) {
-            $cols[] = $optional;
-        }
-    }
-    $stmt = $pdo->prepare('SELECT ' . implode(', ', $cols) . ' FROM users WHERE user_id = ? LIMIT 1');
-    $stmt->execute([$userId]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    return $row ?: null;
-}
-
-/**
- * Same rule as core/Auth.php isSuperAdmin(): tenant_role super_admin or legacy role_id 1.
- *
- * @param array<string, mixed> $user
- */
-function rateb_mobile_qr_is_super_admin(array $user): bool
-{
-    return (int) ($user['role_id'] ?? 0) === 1
-        || strtolower(trim((string) ($user['tenant_role'] ?? ''))) === 'super_admin';
-}
-
-/**
- * Mirrors includes/permissions.php hasPermission() for a users row (no web session on mobile):
- * user-specific permissions override all, then role_id 1, then roles.permissions.
- *
- * @param array<string, mixed> $user
- */
-function rateb_mobile_qr_user_has_permission(PDO $pdo, array $user, string $permission): bool
-{
-    if (strncmp((string) ($user['username'] ?? ''), 'Control:', 8) === 0) {
-        return false;
-    }
-
-    $raw = trim((string) ($user['permissions'] ?? ''));
-    if ($raw !== '' && $raw !== '[]') {
-        $userPermissions = json_decode($raw, true);
-        if (is_array($userPermissions) && $userPermissions !== []) {
-            return in_array($permission, $userPermissions, true);
-        }
-    }
-
-    $roleId = (int) ($user['role_id'] ?? 0);
-    if ($roleId === 1) {
-        return true;
-    }
-    if ($roleId <= 0) {
-        return false;
-    }
-
-    $stmt = $pdo->prepare('SELECT permissions FROM roles WHERE role_id = ? LIMIT 1');
-    $stmt->execute([$roleId]);
-    $rolePermissions = json_decode((string) ($stmt->fetchColumn() ?: ''), true);
-
-    return is_array($rolePermissions) && in_array($permission, $rolePermissions, true);
-}
-
-/**
- * Who may mint a QR for whom. Anyone may mint for their own account. Minting for another
- * account is limited to staff holding `edit_user` (same permission as System Settings
- * workforce QR), for an active non-super-admin staff user in the caller's own
- * country/agency. Scope is read from `users`, never from token claims (login.php lets the
- * client pick the country_id claim).
- *
- * @param array<string, mixed> $claims
- * @return array{ok:bool,account_type?:string,status?:int,message?:string,code?:string}
- */
-function rateb_mobile_qr_authorize_generate(PDO $pdo, array $claims, int $targetId, string $accountType): array
-{
-    $deny = ['ok' => false, 'status' => 403, 'message' => 'Forbidden', 'code' => 'forbidden'];
-
-    $callerType = (string) ($claims['typ'] ?? '');
-    $callerId = (int) ($claims['sub'] ?? 0);
-    if ($callerId <= 0 || $targetId <= 0 || !in_array($callerType, ['staff', 'partner'], true)) {
-        return $deny;
-    }
-
-    $targetType = $accountType === 'partner' ? 'partner' : 'staff';
-    if ($targetType === $callerType && $targetId === $callerId) {
-        return ['ok' => true, 'account_type' => $targetType];
-    }
-
-    if ($callerType !== 'staff' || $targetType !== 'staff' || (string) ($claims['role'] ?? '') === 'worker') {
-        return $deny;
-    }
-
-    $caller = rateb_mobile_qr_load_user($pdo, $callerId);
-    $target = rateb_mobile_qr_load_user($pdo, $targetId);
-    if ($caller === null || $target === null) {
-        return $deny;
-    }
-    if (strtolower((string) ($caller['status'] ?? 'active')) === 'inactive'
-        || strtolower((string) ($target['status'] ?? 'active')) === 'inactive') {
-        return $deny;
-    }
-    if (rateb_mobile_qr_is_super_admin($target)) {
-        return $deny;
-    }
-
-    $callerCountry = (int) ($caller['country_id'] ?? 0);
-    if ($callerCountry <= 0 || $callerCountry !== (int) ($target['country_id'] ?? 0)) {
-        return $deny;
-    }
-    if (array_key_exists('agency_id', $caller)
-        && (int) ($caller['agency_id'] ?? 0) !== (int) ($target['agency_id'] ?? 0)) {
-        return $deny;
-    }
-
-    if (!rateb_mobile_qr_user_has_permission($pdo, $caller, 'edit_user')) {
-        return $deny;
-    }
-
-    return ['ok' => true, 'account_type' => 'staff'];
 }
 
 /**

@@ -42,16 +42,6 @@ try {
     $pdo = Database::getInstance()->getConnection();
     ratebEnsureGlobalPartnershipsSchema($pdo);
 
-    $authz = rateb_mobile_qr_authorize_generate($pdo, $claims, $userId, $accountType);
-    if (empty($authz['ok'])) {
-        rateb_mobile_json([
-            'success' => false,
-            'message' => (string) ($authz['message'] ?? 'Forbidden'),
-            'code' => (string) ($authz['code'] ?? 'forbidden'),
-        ], (int) ($authz['status'] ?? 403));
-    }
-    $accountType = (string) $authz['account_type'];
-
     if ($accountType === 'partner') {
         $check = $pdo->prepare(
             'SELECT id FROM partner_agencies WHERE id = ? AND portal_enabled = 1 LIMIT 1'

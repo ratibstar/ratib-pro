@@ -82,36 +82,11 @@ function rateb_mobile_token_secret(): string
         return (string) MOBILE_AUTH_SECRET;
     }
 
-    if (rateb_mobile_dev_secret_allowed()) {
+    if (!rateb_mobile_is_production()) {
         return 'rateb-mobile-dev-only-not-for-production';
     }
 
     rateb_mobile_config_error();
-}
-
-/**
- * The dev secret is limited to CLI and loopback requests addressed to a local host name.
- * Anything else without MOBILE_AUTH_SECRET fails closed: HTTP_HOST is client-controlled,
- * so "not a rateb.sa host" alone must never unlock a public signing key.
- */
-function rateb_mobile_dev_secret_allowed(): bool
-{
-    if (rateb_mobile_is_production()) {
-        return false;
-    }
-    if (PHP_SAPI === 'cli') {
-        return true;
-    }
-
-    $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-    if ($remote !== '127.0.0.1' && $remote !== '::1') {
-        return false;
-    }
-
-    $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
-    $host = (string) preg_replace('/:\d+$/', '', $host);
-
-    return in_array($host, ['localhost', '127.0.0.1', '[::1]', '10.0.2.2'], true);
 }
 
 function rateb_mobile_b64url_encode(string $data): string
