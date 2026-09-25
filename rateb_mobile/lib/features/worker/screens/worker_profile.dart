@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/models/auth_response.dart';
+import '../../../core/models/user_role.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -51,6 +53,8 @@ class _WorkerProfileState extends State<WorkerProfile> {
     final theme = Theme.of(context);
     final result = _result;
     final profile = result?.data;
+    final l10n = AppLocalizations.of(context);
+    final roleLabel = profile != null ? l10n.roleName(profile.role) : null;
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -90,13 +94,15 @@ class _WorkerProfileState extends State<WorkerProfile> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              profile?.username ?? auth.username ?? 'Worker',
+                              profile?.username ??
+                                  auth.username ??
+                                  l10n.roleName(UserRole.worker),
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             Text(
-                              profile?.role.displayName ?? 'Worker account',
+                              roleLabel ?? l10n.workerAccount,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurface
                                     .withValues(alpha: 0.65),
@@ -109,24 +115,35 @@ class _WorkerProfileState extends State<WorkerProfile> {
                   ),
                   const Divider(height: 32),
                   _ProfileRow(
-                    label: 'Role',
-                    value: profile?.role.displayName ?? 'Worker',
+                    label: l10n.profileRole,
+                    value: roleLabel ?? l10n.roleName(UserRole.worker),
                   ),
                   _ProfileRow(
-                    label: 'Status',
-                    value: profile?.status ?? 'Active',
+                    label: l10n.profileStatus,
+                    value: profile?.status != null
+                        ? l10n.server(profile!.status!)
+                        : l10n.statusActive,
                   ),
                   if (profile?.email != null && profile!.email!.isNotEmpty)
-                    _ProfileRow(label: 'Email', value: profile.email!),
+                    _ProfileRow(
+                      label: l10n.profileEmail,
+                      value: profile.email!,
+                    ),
                   if (profile?.phone != null && profile!.phone!.isNotEmpty)
-                    _ProfileRow(label: 'Phone', value: profile.phone!),
+                    _ProfileRow(
+                      label: l10n.profilePhone,
+                      value: profile.phone!,
+                    ),
                   if (profile?.countryName != null &&
                       profile!.countryName!.isNotEmpty)
                     _ProfileRow(
-                      label: 'Country',
+                      label: l10n.profileCountry,
                       value: profile.countryName!,
                     ),
-                  _ProfileRow(label: 'Portal', value: 'Mobile workforce'),
+                  _ProfileRow(
+                    label: l10n.profilePortal,
+                    value: l10n.mobileWorkforce,
+                  ),
                 ],
               ),
             ),

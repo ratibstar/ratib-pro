@@ -4,6 +4,7 @@ import '../../../core/models/agency_models.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -63,6 +64,7 @@ class _RecruitmentPipelineState extends State<RecruitmentPipeline> {
     final stages = result?.data?.stages ?? const <PipelineStage>[];
     final visibleStages = stages.where((s) => s.count > 0).toList();
     final isEmpty = visibleStages.isEmpty && result?.isLoading != true;
+    final l10n = AppLocalizations.of(context);
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -79,7 +81,7 @@ class _RecruitmentPipelineState extends State<RecruitmentPipeline> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Recruitment pipeline',
+            l10n.recruitmentPipelineTitle,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -101,8 +103,8 @@ class _RecruitmentPipelineState extends State<RecruitmentPipeline> {
                       ),
                     ),
                   ),
-                  title: Text(stage.name),
-                  subtitle: Text('${stage.count} candidates'),
+                  title: Text(l10n.server(stage.name)),
+                  subtitle: Text(l10n.stageCandidates(stage.count)),
                   trailing: const Icon(Icons.chevron_right),
                 ),
               );

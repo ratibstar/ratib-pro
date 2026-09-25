@@ -10,6 +10,7 @@ import '../../core/debug/qr_scanner_telemetry.dart';
 import '../../core/models/user_role.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import '../auth/providers/auth_provider.dart';
 import 'qr_badge_preview_screen.dart';
 import 'qr_login_controller.dart';
@@ -226,6 +227,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
         final error = _controller.errorMessage;
         final isProcessing =
             _controller.status == QrLoginStatus.processing;
+        final l10n = AppLocalizations.of(context);
 
         return Scaffold(
           backgroundColor:
@@ -238,26 +240,28 @@ class _QrScannerScreenState extends State<QrScannerScreen>
             elevation: 0,
             foregroundColor:
                 qrUsesNativeCamera ? Colors.white : AppColors.darkText,
-            title: const Text('Workforce identity'),
+            title: Text(l10n.workforceIdentity),
             systemOverlayStyle: qrUsesNativeCamera
                 ? SystemUiOverlayStyle.light
                 : null,
             leading: IconButton(
               icon: const Icon(Icons.close),
-              tooltip: 'Close',
+              tooltip: l10n.close,
               onPressed: () => Navigator.of(context).pop(),
             ),
             actions: [
               if (qrUsesNativeCamera)
                 IconButton(
-                  tooltip: _torchOn ? 'Turn off flashlight' : 'Turn on flashlight',
+                  tooltip: _torchOn
+                      ? l10n.turnOffFlashlight
+                      : l10n.turnOnFlashlight,
                   icon: Icon(
                     _torchOn ? Icons.flashlight_on : Icons.flashlight_off_outlined,
                   ),
                   onPressed: _toggleTorch,
                 ),
               IconButton(
-                tooltip: 'Preview workforce badge',
+                tooltip: l10n.previewBadge,
                 icon: const Icon(Icons.badge_outlined),
                 onPressed: () {
                   Navigator.of(context).push(
@@ -366,8 +370,8 @@ class _NativeScannerBody extends StatelessWidget {
           ),
         ),
         if (isProcessing)
-          const _ProcessingOverlay(
-            message: 'Verifying workforce identity…',
+          _ProcessingOverlay(
+            message: AppLocalizations.of(context).verifyingIdentity,
           ),
         if (showSuccess) const QrScanSuccessOverlay(),
         if (errorMessage != null)
@@ -414,6 +418,7 @@ class _FallbackBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -426,11 +431,11 @@ class _FallbackBody extends StatelessWidget {
               Icons.verified_user_outlined,
               size: 52,
               color: AppColors.accent,
-              semanticLabel: 'Workforce identity',
+              semanticLabel: l10n.workforceIdentity,
             ),
             const SizedBox(height: 20),
             Text(
-              'Paste workforce identity payload',
+              l10n.pastePayloadTitle,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: AppColors.darkText,
@@ -438,7 +443,7 @@ class _FallbackBody extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Use the QR payload generated from RATEB System Settings.',
+              l10n.pastePayloadHint,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: AppColors.darkMuted,
                 height: 1.45,
@@ -451,9 +456,9 @@ class _FallbackBody extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                'Verifying workforce identity…',
+                l10n.verifyingIdentity,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.darkMuted),
+                style: const TextStyle(color: AppColors.darkMuted),
               ),
             ],
             if (errorMessage != null) ...[
@@ -466,16 +471,17 @@ class _FallbackBody extends StatelessWidget {
             ],
             const SizedBox(height: 28),
             Semantics(
-              label: 'Workforce identity payload',
+              label: l10n.identityPayload,
               child: TextField(
                 controller: manualController,
+                textDirection: TextDirection.ltr,
                 style: const TextStyle(
                   color: AppColors.darkText,
                   fontFamily: 'monospace',
                   fontSize: 13,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Identity payload',
+                  labelText: l10n.identityPayload,
                   hintText: 'RATEBMOBQR:…',
                   filled: true,
                   fillColor: AppColors.darkSurface,
@@ -505,7 +511,7 @@ class _FallbackBody extends StatelessWidget {
             FilledButton.icon(
               onPressed: controller.isBusy ? null : onSubmitPaste,
               icon: const Icon(Icons.login_rounded),
-              label: const Text('Verify and sign in'),
+              label: Text(l10n.verifyAndSignIn),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -568,6 +574,7 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final bg = lightBackground
         ? AppColors.error.withValues(alpha: 0.12)
         : AppColors.error.withValues(alpha: 0.92);
@@ -590,7 +597,7 @@ class _ErrorBanner extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    message,
+                    l10n.message(message),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: lightBackground
                               ? AppColors.darkText
@@ -602,11 +609,11 @@ class _ErrorBanner extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerEnd,
               child: TextButton(
                 onPressed: onRetry,
                 child: Text(
-                  qrUsesNativeCamera ? 'Scan again' : 'Try again',
+                  qrUsesNativeCamera ? l10n.scanAgain : l10n.tryAgain,
                   style: TextStyle(
                     color: lightBackground ? AppColors.accent : Colors.white,
                   ),
@@ -644,7 +651,7 @@ class _CameraPermissionView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              message,
+              AppLocalizations.of(context).message(message),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.white,
@@ -653,7 +660,7 @@ class _CameraPermissionView extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton(
               onPressed: onRetry,
-              child: const Text('Try again'),
+              child: Text(AppLocalizations.of(context).tryAgain),
             ),
           ],
         ),

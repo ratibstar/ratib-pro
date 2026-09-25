@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'empty_state.dart';
 import 'offline_banner.dart';
 import 'skeleton_loader.dart';
 
-/// Role-aware empty state copy.
+/// Role-aware empty state copy (English source; translated in [DataStateView]).
 class EmptyStateCopy {
   EmptyStateCopy._();
 
@@ -71,13 +72,15 @@ class DataStateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (_showSkeleton) {
       return SkeletonLoader(type: skeletonType);
     }
 
     if (_showError) {
       return _ErrorBody(
-        message: errorMessage!,
+        message: l10n.message(errorMessage!),
         onRetry: onRetry,
         isAutoRetrying: isAutoRetrying,
         autoRetryAttempt: autoRetryAttempt,
@@ -86,8 +89,8 @@ class DataStateView extends StatelessWidget {
 
     if (isEmpty && !isLoading) {
       return EmptyState(
-        title: emptyTitle,
-        message: emptyMessage,
+        title: l10n.message(emptyTitle),
+        message: l10n.message(emptyMessage),
         icon: emptyIcon,
       );
     }
@@ -105,7 +108,10 @@ class DataStateView extends StatelessWidget {
         if (isLoading && isFromCache)
           const LinearProgressIndicator(minHeight: 2),
         if (staleMessage != null && staleMessage!.isNotEmpty)
-          StaleDataBanner(message: staleMessage!, onRetry: onRetry),
+          StaleDataBanner(
+            message: l10n.message(staleMessage!),
+            onRetry: onRetry,
+          ),
         Expanded(child: child),
       ],
     );
@@ -127,6 +133,7 @@ class _ErrorBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -140,7 +147,7 @@ class _ErrorBody extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load data',
+              l10n.couldNotLoadData,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -166,7 +173,7 @@ class _ErrorBody extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Retrying… (attempt $autoRetryAttempt/2)',
+                l10n.retryingAttempt(autoRetryAttempt),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -175,7 +182,7 @@ class _ErrorBody extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(l10n.retry),
               ),
             ],
           ],

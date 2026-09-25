@@ -4,6 +4,7 @@ import '../../../core/models/worker_models.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -57,6 +58,7 @@ class _WorkerTasksState extends State<WorkerTasks> {
   Widget build(BuildContext context) {
     final result = _result;
     final tasks = result?.data ?? const <WorkerTask>[];
+    final l10n = AppLocalizations.of(context);
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -73,7 +75,7 @@ class _WorkerTasksState extends State<WorkerTasks> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Tasks',
+            l10n.tasksTitle,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -84,8 +86,10 @@ class _WorkerTasksState extends State<WorkerTasks> {
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 leading: Icon(_iconFor(task)),
-                title: Text(task.title),
-                subtitle: Text('${task.subtitle} · ${task.dueLabel}'),
+                title: Text(l10n.server(task.title)),
+                subtitle: Text(
+                  l10n.server('${task.subtitle} · ${task.dueLabel}'),
+                ),
                 trailing: const Icon(Icons.chevron_right),
               ),
             ),

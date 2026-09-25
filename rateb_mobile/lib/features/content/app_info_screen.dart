@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/services/app_content_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/empty_state.dart';
 
 /// Offers + app information pages managed from ERP Admin → Mobile Apps.
@@ -31,8 +32,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     'home': 'مرحباً',
   };
 
-  bool get _arabic =>
-      WidgetsBinding.instance.platformDispatcher.locale.languageCode == 'ar';
+  bool get _arabic => AppLocalizations.of(context).isArabic;
 
   @override
   void initState() {

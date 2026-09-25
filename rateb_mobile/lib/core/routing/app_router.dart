@@ -14,6 +14,7 @@ import '../../features/worker/screens/worker_home_tab.dart';
 import '../../features/worker/screens/worker_profile.dart';
 import '../../features/worker/screens/worker_tasks.dart';
 import '../models/user_role.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/widgets/portal_shell.dart';
 
 class AppRouter {
@@ -34,7 +35,8 @@ class AppRouter {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            state.error?.toString() ?? 'Something went wrong',
+            state.error?.toString() ??
+                AppLocalizations.of(context).somethingWentWrong,
             textAlign: TextAlign.center,
           ),
         ),
@@ -79,24 +81,25 @@ class AppRouter {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
+          final l10n = AppLocalizations.of(context);
           return PortalShell(
-            title: 'Worker Portal',
+            title: l10n.workerPortal,
             navigationShell: navigationShell,
-            destinations: const [
+            destinations: [
               NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: 'Dashboard',
+                icon: const Icon(Icons.dashboard_outlined),
+                selectedIcon: const Icon(Icons.dashboard),
+                label: l10n.navDashboard,
               ),
               NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: 'Profile',
+                icon: const Icon(Icons.person_outline),
+                selectedIcon: const Icon(Icons.person),
+                label: l10n.navProfile,
               ),
               NavigationDestination(
-                icon: Icon(Icons.task_alt_outlined),
-                selectedIcon: Icon(Icons.task_alt),
-                label: 'Tasks',
+                icon: const Icon(Icons.task_alt_outlined),
+                selectedIcon: const Icon(Icons.task_alt),
+                label: l10n.navTasks,
               ),
             ],
           );
@@ -108,7 +111,10 @@ class AppRouter {
                 path: workerHome,
                 builder: (context, state) {
                   final auth = context.watch<AuthProvider>();
-                  return WorkerHomeTab(username: auth.username ?? 'Worker');
+                  return WorkerHomeTab(
+                    username: auth.username ??
+                        AppLocalizations.of(context).roleName(UserRole.worker),
+                  );
                 },
               ),
             ],
@@ -133,24 +139,25 @@ class AppRouter {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
+          final l10n = AppLocalizations.of(context);
           return PortalShell(
-            title: 'Company Portal',
+            title: l10n.companyPortal,
             navigationShell: navigationShell,
-            destinations: const [
+            destinations: [
               NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: 'Dashboard',
+                icon: const Icon(Icons.dashboard_outlined),
+                selectedIcon: const Icon(Icons.dashboard),
+                label: l10n.navDashboard,
               ),
               NavigationDestination(
-                icon: Icon(Icons.groups_outlined),
-                selectedIcon: Icon(Icons.groups),
-                label: 'Workers',
+                icon: const Icon(Icons.groups_outlined),
+                selectedIcon: const Icon(Icons.groups),
+                label: l10n.navWorkers,
               ),
               NavigationDestination(
-                icon: Icon(Icons.inbox_outlined),
-                selectedIcon: Icon(Icons.inbox),
-                label: 'Requests',
+                icon: const Icon(Icons.inbox_outlined),
+                selectedIcon: const Icon(Icons.inbox),
+                label: l10n.navRequests,
               ),
             ],
           );
@@ -162,7 +169,10 @@ class AppRouter {
                 path: companyHome,
                 builder: (context, state) {
                   final auth = context.watch<AuthProvider>();
-                  return CompanyHomeTab(username: auth.username ?? 'Company');
+                  return CompanyHomeTab(
+                    username: auth.username ??
+                        AppLocalizations.of(context).roleName(UserRole.company),
+                  );
                 },
               ),
             ],
@@ -187,24 +197,25 @@ class AppRouter {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
+          final l10n = AppLocalizations.of(context);
           return PortalShell(
-            title: 'Agency Portal',
+            title: l10n.agencyPortal,
             navigationShell: navigationShell,
-            destinations: const [
+            destinations: [
               NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: 'Dashboard',
+                icon: const Icon(Icons.dashboard_outlined),
+                selectedIcon: const Icon(Icons.dashboard),
+                label: l10n.navDashboard,
               ),
               NavigationDestination(
-                icon: Icon(Icons.timeline_outlined),
-                selectedIcon: Icon(Icons.timeline),
-                label: 'Pipeline',
+                icon: const Icon(Icons.timeline_outlined),
+                selectedIcon: const Icon(Icons.timeline),
+                label: l10n.navPipeline,
               ),
               NavigationDestination(
-                icon: Icon(Icons.assignment_ind_outlined),
-                selectedIcon: Icon(Icons.assignment_ind),
-                label: 'Assignments',
+                icon: const Icon(Icons.assignment_ind_outlined),
+                selectedIcon: const Icon(Icons.assignment_ind),
+                label: l10n.navAssignments,
               ),
             ],
           );
@@ -216,7 +227,10 @@ class AppRouter {
                 path: agencyHome,
                 builder: (context, state) {
                   final auth = context.watch<AuthProvider>();
-                  return AgencyHomeTab(username: auth.username ?? 'Agency');
+                  return AgencyHomeTab(
+                    username: auth.username ??
+                        AppLocalizations.of(context).roleName(UserRole.agency),
+                  );
                 },
               ),
             ],

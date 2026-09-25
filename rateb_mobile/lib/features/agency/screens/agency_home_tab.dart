@@ -6,6 +6,7 @@ import '../../../core/routing/app_router.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
@@ -49,6 +50,7 @@ class _AgencyHomeTabState extends State<AgencyHomeTab> {
   Widget build(BuildContext context) {
     final result = _result;
     final data = result?.data;
+    final l10n = AppLocalizations.of(context);
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -64,14 +66,14 @@ class _AgencyHomeTabState extends State<AgencyHomeTab> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Pipeline flow',
+            l10n.pipelineFlow,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Welcome, ${widget.username}',
+            l10n.welcome(widget.username),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -81,7 +83,7 @@ class _AgencyHomeTabState extends State<AgencyHomeTab> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Track candidates, deployments, and client assignments.',
+            l10n.agencyHomeSubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -91,28 +93,28 @@ class _AgencyHomeTabState extends State<AgencyHomeTab> {
           ),
           const SizedBox(height: 20),
           DashboardCard(
-            title: 'Candidates in pipeline',
+            title: l10n.candidatesInPipeline,
             subtitle: data == null
                 ? '—'
-                : '${data.totalCandidates} total · ${data.deployed} deployed',
+                : l10n.candidatesDetail(data.totalCandidates, data.deployed),
             icon: Icons.timeline_outlined,
             onTap: () => context.go('${AppRouter.agencyHome}/pipeline'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'Active assignments',
+            title: l10n.activeAssignments,
             subtitle: data == null
                 ? '—'
-                : '${data.activeAssignments} client destination${data.activeAssignments == 1 ? '' : 's'} with workers',
+                : l10n.activeAssignmentsDetail(data.activeAssignments),
             icon: Icons.assignment_ind_outlined,
             onTap: () => context.go('${AppRouter.agencyHome}/assignments'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'CV pool',
+            title: l10n.cvPool,
             subtitle: data == null
                 ? '—'
-                : '${data.cvs} shared CV${data.cvs == 1 ? '' : 's'} ready for clients',
+                : l10n.cvPoolDetail(data.cvs),
             icon: Icons.folder_shared_outlined,
             onTap: () => context.go('${AppRouter.agencyHome}/pipeline'),
           ),

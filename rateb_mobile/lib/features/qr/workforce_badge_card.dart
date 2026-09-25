@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import 'workforce_badge_data.dart';
 
 /// Printable-style workforce identity card — dark enterprise theme.
@@ -21,6 +22,7 @@ class WorkforceBadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final surface = darkTheme ? AppColors.darkSurface : Colors.white;
     final textPrimary = darkTheme ? AppColors.darkText : AppColors.lightText;
     final textMuted = darkTheme ? AppColors.darkMuted : AppColors.lightMuted;
@@ -29,7 +31,7 @@ class WorkforceBadgeCard extends StatelessWidget {
         : const Color(0xFFE2E8F0);
 
     return Semantics(
-      label: 'RATEB workforce identity badge for ${data.workerName}',
+      label: '${l10n.badgeCredential}: ${data.workerName}',
       child: Container(
         width: compact ? 320 : 360,
         decoration: BoxDecoration(
@@ -71,7 +73,7 @@ class WorkforceBadgeCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Workforce identity credential',
+                    l10n.badgeCredential,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.white.withValues(alpha: 0.88),
                     ),
@@ -113,7 +115,7 @@ class WorkforceBadgeCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    data.roleLabel,
+                    l10n.server(data.roleLabel),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.accent,
@@ -122,14 +124,14 @@ class WorkforceBadgeCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    data.companyName,
+                    l10n.server(data.companyName),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: textMuted,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  _StatusChip(label: data.statusLabel),
+                  _StatusChip(label: l10n.server(data.statusLabel)),
                   const SizedBox(height: 8),
                   Text(
                     'ID ${data.workerId}',
@@ -167,7 +169,7 @@ class WorkforceBadgeCard extends StatelessWidget {
                   if (!compact) ...[
                     const SizedBox(height: 12),
                     Text(
-                      'Scan to sign in to RATEB Mobile',
+                      l10n.badgeScanHint,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: textMuted,

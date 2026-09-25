@@ -6,6 +6,8 @@ import '../../../core/config/app_config.dart';
 import '../../../core/models/user_role.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/language_toggle.dart';
 import '../providers/auth_provider.dart';
 import '../../debug/pilot_tools_screen.dart';
 import '../../qr/qr_scanner_screen.dart';
@@ -57,16 +59,17 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     if (auth.status == AuthStatus.unknown) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Restoring session…'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(l10n.restoringSession),
             ],
           ),
         ),
@@ -83,6 +86,11 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: LanguageToggle(),
+                  ),
+                  const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -105,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Secure workforce access using your RATEB identity badge.',
+                          l10n.loginIntro,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface
                                 .withValues(alpha: 0.55),
@@ -131,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                auth.sessionMessage!,
+                                l10n.message(auth.sessionMessage!),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onErrorContainer,
                                 ),
@@ -152,13 +160,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
-                            labelText: 'Email or username',
-                            prefixIcon: Icon(Icons.person_outline),
+                          decoration: InputDecoration(
+                            labelText: l10n.emailOrUsername,
+                            prefixIcon: const Icon(Icons.person_outline),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Enter your email or username';
+                              return l10n.enterEmailOrUsername;
                             }
                             return null;
                           },
@@ -169,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: _obscurePassword,
                           autofillHints: const [AutofillHints.password],
                           decoration: InputDecoration(
-                            labelText: 'Password',
+                            labelText: l10n.password,
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               onPressed: () => setState(
@@ -184,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Enter your password';
+                              return l10n.enterPassword;
                             }
                             return null;
                           },
@@ -193,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (auth.errorMessage != null) ...[
                           const SizedBox(height: 12),
                           Text(
-                            auth.errorMessage!,
+                            l10n.message(auth.errorMessage!),
                             style: TextStyle(color: theme.colorScheme.error),
                           ),
                         ],
@@ -210,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Sign in'),
+                                : Text(l10n.signIn),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -227,11 +235,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   );
                                 },
                           icon: const Icon(Icons.qr_code_scanner_rounded),
-                          label: const Text('Workforce identity login'),
+                          label: Text(l10n.identityLogin),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Scan your badge QR code from RATEB System Settings',
+                          l10n.scanBadgeHint,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface
                                 .withValues(alpha: 0.5),
@@ -249,7 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                             icon: const Icon(Icons.build_circle_outlined, size: 18),
-                            label: const Text('Pilot tools (internal)'),
+                            label: Text(l10n.pilotTools),
                           ),
                         ],
                       ],
@@ -257,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    AppConfig.appTagline,
+                    l10n.appTagline,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                     ),

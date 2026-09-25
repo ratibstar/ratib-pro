@@ -4,6 +4,7 @@ import '../../../core/models/company_models.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -44,6 +45,7 @@ class _WorkersManagementState extends State<WorkersManagement> {
   Widget build(BuildContext context) {
     final result = _result;
     final workers = result?.data?.workers ?? const <CompanyWorker>[];
+    final l10n = AppLocalizations.of(context);
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -60,7 +62,7 @@ class _WorkersManagementState extends State<WorkersManagement> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Workers',
+            l10n.workersTitle,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -72,7 +74,7 @@ class _WorkersManagementState extends State<WorkersManagement> {
               child: ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.person)),
                 title: Text(worker.name),
-                subtitle: Text(worker.subtitle),
+                subtitle: Text(l10n.server(worker.subtitle)),
                 trailing: const Icon(Icons.more_vert),
               ),
             ),

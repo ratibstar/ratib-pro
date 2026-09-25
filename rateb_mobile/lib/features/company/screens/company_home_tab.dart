@@ -6,6 +6,7 @@ import '../../../core/routing/app_router.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
@@ -49,6 +50,7 @@ class _CompanyHomeTabState extends State<CompanyHomeTab> {
   Widget build(BuildContext context) {
     final result = _result;
     final data = result?.data;
+    final l10n = AppLocalizations.of(context);
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -64,14 +66,14 @@ class _CompanyHomeTabState extends State<CompanyHomeTab> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Workforce status',
+            l10n.workforceStatus,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Welcome, ${widget.username}',
+            l10n.welcome(widget.username),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -81,7 +83,7 @@ class _CompanyHomeTabState extends State<CompanyHomeTab> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Live view of your roster, approvals, and open requests.',
+            l10n.companyHomeSubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -91,28 +93,31 @@ class _CompanyHomeTabState extends State<CompanyHomeTab> {
           ),
           const SizedBox(height: 20),
           DashboardCard(
-            title: 'Active workers',
+            title: l10n.activeWorkers,
             subtitle: data == null
                 ? '—'
-                : '${data.activeWorkers} on assignment · ${data.pendingWorkers} pending approval',
+                : l10n.activeWorkersDetail(
+                    data.activeWorkers,
+                    data.pendingWorkers,
+                  ),
             icon: Icons.groups_outlined,
             onTap: () => context.go('${AppRouter.companyHome}/workers'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'Open requests',
+            title: l10n.openRequests,
             subtitle: data == null
                 ? '—'
-                : '${data.openRequests} recruitment request${data.openRequests == 1 ? '' : 's'} in progress',
+                : l10n.openRequestsDetail(data.openRequests),
             icon: Icons.request_quote_outlined,
             onTap: () => context.go('${AppRouter.companyHome}/requests'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'Total roster',
+            title: l10n.totalRoster,
             subtitle: data == null
                 ? '—'
-                : '${data.totalWorkers} worker${data.totalWorkers == 1 ? '' : 's'} in your workforce',
+                : l10n.totalRosterDetail(data.totalWorkers),
             icon: Icons.verified_user_outlined,
             onTap: () => context.go('${AppRouter.companyHome}/workers'),
           ),

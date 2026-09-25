@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import '../../../core/routing/app_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/content/app_info_screen.dart';
+import '../../l10n/app_localizations.dart';
 import 'app_scaffold.dart';
+import 'language_toggle.dart';
 
 /// Bottom-nav shell for role portals — keeps one scaffold instance so tabs stay tappable.
 class PortalShell extends StatelessWidget {
@@ -27,8 +29,9 @@ class PortalShell extends StatelessWidget {
     return AppScaffold(
       title: title,
       actions: [
+        const LanguageToggle(compact: true),
         IconButton(
-          tooltip: 'Offers & info',
+          tooltip: AppLocalizations.of(context).offersInfo,
           icon: const Icon(Icons.local_offer_outlined),
           onPressed: () => Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => const AppInfoScreen()),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
     super.key,
@@ -29,7 +31,7 @@ class AppScaffold extends StatelessWidget {
           ...?actions,
           if (showLogout)
             IconButton(
-              tooltip: 'Sign out',
+              tooltip: AppLocalizations.of(context).signOut,
               onPressed: onLogout,
               icon: const Icon(Icons.logout_rounded),
             ),

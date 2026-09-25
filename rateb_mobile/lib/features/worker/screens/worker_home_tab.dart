@@ -6,6 +6,7 @@ import '../../../core/routing/app_router.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
@@ -49,6 +50,7 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
   Widget build(BuildContext context) {
     final result = _result;
     final data = result?.data;
+    final l10n = AppLocalizations.of(context);
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -66,14 +68,14 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            "Today's overview",
+            l10n.todaysOverview,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Welcome, ${data?.profile.username ?? widget.username}',
+            l10n.welcome(data?.profile.username ?? widget.username),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -83,7 +85,7 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Tasks due today and your current workforce status.',
+            l10n.workerHomeSubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -93,28 +95,30 @@ class _WorkerHomeTabState extends State<WorkerHomeTab> {
           ),
           const SizedBox(height: 20),
           DashboardCard(
-            title: 'Due today',
+            title: l10n.dueToday,
             subtitle: data == null
                 ? '—'
-                : '${data.stats.dueToday} task${data.stats.dueToday == 1 ? '' : 's'} need attention today',
+                : l10n.dueTodayDetail(data.stats.dueToday),
             icon: Icons.today_outlined,
             onTap: () => context.go('${AppRouter.workerHome}/tasks'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'Pending tasks',
+            title: l10n.pendingTasks,
             subtitle: data == null
                 ? '—'
-                : '${data.stats.pendingTasks} open item${data.stats.pendingTasks == 1 ? '' : 's'} in your queue',
+                : l10n.pendingTasksDetail(data.stats.pendingTasks),
             icon: Icons.assignment_outlined,
             onTap: () => context.go('${AppRouter.workerHome}/tasks'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'Your status',
+            title: l10n.yourStatus,
             subtitle: data?.worker != null
-                ? '${data!.worker!.name} · ${data.worker!.status}'
-                : data?.profile.status ?? 'Active account',
+                ? '${data!.worker!.name} · ${l10n.server(data.worker!.status)}'
+                : data?.profile.status != null
+                    ? l10n.server(data!.profile.status!)
+                    : l10n.activeAccount,
             icon: Icons.badge_outlined,
             onTap: () => context.go('${AppRouter.workerHome}/profile'),
           ),

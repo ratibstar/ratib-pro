@@ -4,6 +4,7 @@ import '../../../core/models/agency_models.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -45,6 +46,7 @@ class _AssignmentsState extends State<Assignments> {
     final result = _result;
     final assignments =
         result?.data?.assignments ?? const <AgencyAssignment>[];
+    final l10n = AppLocalizations.of(context);
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -61,7 +63,7 @@ class _AssignmentsState extends State<Assignments> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Assignments',
+            l10n.assignmentsTitle,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -72,8 +74,8 @@ class _AssignmentsState extends State<Assignments> {
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 leading: const Icon(Icons.business_outlined),
-                title: Text(item.clientName),
-                subtitle: Text(item.subtitle),
+                title: Text(l10n.server(item.clientName)),
+                subtitle: Text(l10n.server(item.subtitle)),
                 trailing: const Icon(Icons.chevron_right),
               ),
             ),

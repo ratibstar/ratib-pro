@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Dark mask with transparent scan window, blue glow frame, and animated scan beam.
 class QrScanOverlay extends StatelessWidget {
@@ -33,7 +34,7 @@ class QrScanOverlay extends StatelessWidget {
         );
 
         return Semantics(
-          label: 'Scan workforce identity QR code inside the frame',
+          label: AppLocalizations.of(context).scanFrameSemantics,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -68,7 +69,7 @@ class QrScanOverlay extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Align QR inside frame',
+                          AppLocalizations.of(context).alignQr,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: Colors.white,
@@ -77,7 +78,7 @@ class QrScanOverlay extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Hold steady — sign-in is automatic',
+                          AppLocalizations.of(context).holdSteady,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.75),
@@ -267,7 +268,7 @@ class _QrScanSuccessOverlayState extends State<QrScanSuccessOverlay>
               ),
               const SizedBox(height: 16),
               Text(
-                'Identity verified',
+                AppLocalizations.of(context).identityVerified,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,

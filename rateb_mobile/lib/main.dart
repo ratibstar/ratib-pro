@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/auth/auth_repository.dart';
@@ -10,12 +11,16 @@ import 'core/services/rateb_api_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/api/api_client.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'l10n/app_localizations.dart';
+import 'l10n/locale_controller.dart';
 import 'shared/widgets/offline_banner.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _configureErrorHandling();
-  runApp(const RatebMobileApp());
+  final localeController = LocaleController();
+  await localeController.load();
+  runApp(RatebMobileApp(localeController: localeController));
 }
 
 void _configureErrorHandling() {
@@ -39,7 +44,9 @@ void _configureErrorHandling() {
 }
 
 class RatebMobileApp extends StatefulWidget {
-  const RatebMobileApp({super.key});
+  const RatebMobileApp({super.key, required this.localeController});
+
+  final LocaleController localeController;
 
   @override
   State<RatebMobileApp> createState() => _RatebMobileAppState();
@@ -80,20 +87,33 @@ class _RatebMobileAppState extends State<RatebMobileApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _authProvider,
-      child: MaterialApp.router(
-        title: AppConfig.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.system,
-        routerConfig: _appRouter.router,
-        builder: (context, child) {
-          return OfflineBannerHost(
-            child: child ?? const SizedBox.shrink(),
-          );
-        },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _authProvider),
+        ChangeNotifierProvider.value(value: widget.localeController),
+      ],
+      child: Consumer<LocaleController>(
+        builder: (context, localeController, _) => MaterialApp.router(
+          title: AppConfig.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: ThemeMode.system,
+          locale: localeController.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          routerConfig: _appRouter.router,
+          builder: (context, child) {
+            return OfflineBannerHost(
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+        ),
       ),
     );
   }

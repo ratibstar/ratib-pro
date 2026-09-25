@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 import 'workforce_badge_card.dart';
 import 'workforce_badge_data.dart';
 
@@ -14,10 +15,11 @@ class QrBadgePreviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
       appBar: AppBar(
-        title: const Text('Workforce badge'),
+        title: Text(l10n.badgeTitle),
         backgroundColor: AppColors.darkSurface,
       ),
       body: SafeArea(
@@ -27,7 +29,7 @@ class QrBadgePreviewScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Workforce identity preview',
+                l10n.badgePreviewTitle,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.darkText,
@@ -35,7 +37,7 @@ class QrBadgePreviewScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Live badges are issued from RATEB System Settings on rateb.sa.',
+                l10n.badgePreviewHint,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.darkMuted,
                     ),
@@ -48,7 +50,7 @@ class QrBadgePreviewScreen extends StatelessWidget {
               FilledButton.icon(
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.check),
-                label: const Text('Done'),
+                label: Text(l10n.done),
               ),
             ],
           ),

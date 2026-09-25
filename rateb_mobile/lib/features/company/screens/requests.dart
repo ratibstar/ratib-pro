@@ -4,6 +4,7 @@ import '../../../core/models/company_models.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
 
@@ -44,6 +45,7 @@ class _RequestsState extends State<Requests> {
   Widget build(BuildContext context) {
     final result = _result;
     final requests = result?.data?.requests ?? const <CompanyRequest>[];
+    final l10n = AppLocalizations.of(context);
 
     return DataStateView(
       isLoading: result?.isLoading ?? true,
@@ -63,7 +65,7 @@ class _RequestsState extends State<Requests> {
             children: [
               Expanded(
                 child: Text(
-                  'Requests',
+                  l10n.requestsTitle,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -72,7 +74,7 @@ class _RequestsState extends State<Requests> {
               FilledButton.tonalIcon(
                 onPressed: () {},
                 icon: const Icon(Icons.add),
-                label: const Text('New'),
+                label: Text(l10n.newRequest),
               ),
             ],
           ),
@@ -82,11 +84,13 @@ class _RequestsState extends State<Requests> {
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 leading: const Icon(Icons.description_outlined),
-                title: Text(request.title),
+                title: Text(l10n.server(request.title)),
                 subtitle: Text(
-                  request.updatedLabel != null
-                      ? '${request.subtitle} · ${request.updatedLabel}'
-                      : request.subtitle,
+                  l10n.server(
+                    request.updatedLabel != null
+                        ? '${request.subtitle} · ${request.updatedLabel}'
+                        : request.subtitle,
+                  ),
                 ),
                 trailing: const Icon(Icons.chevron_right),
               ),

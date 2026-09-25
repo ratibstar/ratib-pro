@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/services/network_monitor.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Offline indicator overlay — uses [Stack] so it never blocks bottom nav taps.
 class OfflineBannerHost extends StatelessWidget {
@@ -48,7 +49,7 @@ class OfflineBannerHost extends StatelessWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'You are offline. Showing saved data where available.',
+                              AppLocalizations.of(context).offlineBanner,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
@@ -109,7 +110,7 @@ class StaleDataBanner extends StatelessWidget {
             if (onRetry != null)
               TextButton(
                 onPressed: onRetry,
-                child: const Text('Retry'),
+                child: Text(AppLocalizations.of(context).retry),
               ),
           ],
         ),
