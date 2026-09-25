@@ -94,6 +94,10 @@ $router->post('/api/v1/agent/procurement', [ProcurementAgentController::class, '
 $router->get('/api/v1/inventory', [ApiController::class, 'listInventory'], rateb_api_mw('inventory'));
 $router->post('/api/v1/inventory', [ApiController::class, 'createInventory'], rateb_api_mw('inventory'));
 
+if (is_file(RATEB_ROOT . '/routes/modules/customer-portal-api.php')) {
+    require RATEB_ROOT . '/routes/modules/customer-portal-api.php';
+}
+
 if (is_file(RATEB_ROOT . '/modules/pos/routes/pos-api.php')) {
     require RATEB_ROOT . '/modules/pos/routes/pos-api.php';
 }

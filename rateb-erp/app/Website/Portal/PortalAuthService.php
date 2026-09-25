@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Website\Portal;
 
 use Rateb\App\Core\SessionManager;
+use Rateb\App\CustomerPortal\CustomerPortalTokenService;
 use Rateb\App\Website\TenantWebsiteRepository;
 
 /**
@@ -171,6 +172,9 @@ final class PortalAuthService
         if ($patch === []) {
             return;
         }
+        if (isset($patch['password_hash'])) {
+            $this->revokeAppTokens($userId, (int) $user['company_id']);
+        }
         $sets = [];
         $params = ['id' => $userId, 'cid' => (int) $user['company_id']];
         foreach ($patch as $k => $v) {
@@ -209,8 +213,29 @@ final class PortalAuthService
         );
     }
 
+    /**
+     * Password change must invalidate every Customer Portal app token before the new hash is saved.
+     * A missing token table (migration 270 not applied) means no tokens can exist.
+     */
+    private function revokeAppTokens(int $userId, int $companyId): void
+    {
+        try {
+            (new CustomerPortalTokenService())->revokeAllForAccount(
+                $companyId,
+                $userId,
+                CustomerPortalTokenService::REVOKE_PASSWORD_CHANGE,
+                time()
+            );
+        } catch (\PDOException $e) {
+            if ((string) $e->getCode() !== '42S02') {
+                throw $e;
+            }
+        }
+    }
+
     private function establishSession(int $userId, string $portalType): void
     {
+        SessionManager::regenerate();
         SessionManager::set(self::SESSION_USER, $userId);
         SessionManager::set(self::SESSION_COMPANY, $this->repo->companyId());
         SessionManager::set(self::SESSION_TYPE, $portalType);
