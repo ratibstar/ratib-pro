@@ -290,7 +290,7 @@ final class AgentAppsOpsService
     /**
      * @return array{items:list<array<string,mixed>>,total:int}
      */
-    public function listContents(int $companyFilter = 0, int $limit = 100): array
+    public function listContents(int $companyFilter = 0, int $limit = 100, string $appFilter = ''): array
     {
         MobileAppContentSchemaBootstrap::ensure();
         $limit = max(1, min(200, $limit));
@@ -300,6 +300,10 @@ final class AgentAppsOpsService
         if ($companyFilter > 0) {
             $where .= ' AND t.company_id = :cf';
             $params['cf'] = $companyFilter;
+        }
+        if (in_array($appFilter, ['hr', 'erp', 'customer'], true)) {
+            $where .= " AND t.target_app IN ('all', :ta)";
+            $params['ta'] = $appFilter;
         }
         try {
             $pdo = Database::connection();
@@ -331,16 +335,21 @@ final class AgentAppsOpsService
     {
         MobileAppContentSchemaBootstrap::ensure();
         $id = (int) ($input['id'] ?? 0);
-        $companyId = $this->resolveWriteCompanyId((int) ($input['company_id'] ?? $userCompanyHint));
+        $companyId = $this->writeCompanyIdFromInput($input, $userCompanyHint);
         $slug = strtolower(trim((string) ($input['slug'] ?? '')));
-        if ($companyId < 1) {
+        if ($companyId < 0) {
             return ['ok' => false, 'message' => 'company_required'];
         }
         if ($slug === '' || !preg_match('/^[a-z0-9_\-]{2,64}$/', $slug)) {
             return ['ok' => false, 'message' => 'slug_invalid'];
         }
+        $targetApp = self::normalizeTargetApp((string) ($input['target_app'] ?? 'all'));
+        if ($this->contentSlotTaken($companyId, $targetApp, $slug, $id)) {
+            return ['ok' => false, 'message' => 'duplicate'];
+        }
         $payload = [
-            'company_id' => $companyId,
+            'company_id' => $companyId > 0 ? $companyId : null,
+            'target_app' => $targetApp,
             'slug' => $slug,
             'title_ar' => mb_substr(trim((string) ($input['title_ar'] ?? '')), 0, 255),
             'title_en' => mb_substr(trim((string) ($input['title_en'] ?? '')), 0, 255),
@@ -394,7 +403,7 @@ final class AgentAppsOpsService
     /**
      * @return array{items:list<array<string,mixed>>,total:int}
      */
-    public function listOffers(int $companyFilter = 0, int $limit = 100, bool $activeOnly = false): array
+    public function listOffers(int $companyFilter = 0, int $limit = 100, bool $activeOnly = false, string $appFilter = ''): array
     {
         MobileAppContentSchemaBootstrap::ensure();
         $limit = max(1, min(200, $limit));
@@ -404,6 +413,10 @@ final class AgentAppsOpsService
         if ($companyFilter > 0) {
             $where .= ' AND t.company_id = :cf';
             $params['cf'] = $companyFilter;
+        }
+        if (in_array($appFilter, ['hr', 'erp', 'customer'], true)) {
+            $where .= " AND t.target_app IN ('all', :ta)";
+            $params['ta'] = $appFilter;
         }
         if ($activeOnly) {
             $where .= ' AND t.is_active = 1'
@@ -440,8 +453,8 @@ final class AgentAppsOpsService
     {
         MobileAppContentSchemaBootstrap::ensure();
         $id = (int) ($input['id'] ?? 0);
-        $companyId = $this->resolveWriteCompanyId((int) ($input['company_id'] ?? $userCompanyHint));
-        if ($companyId < 1) {
+        $companyId = $this->writeCompanyIdFromInput($input, $userCompanyHint);
+        if ($companyId < 0) {
             return ['ok' => false, 'message' => 'company_required'];
         }
         $titleAr = mb_substr(trim((string) ($input['title_ar'] ?? '')), 0, 255);
@@ -452,7 +465,8 @@ final class AgentAppsOpsService
         $starts = trim((string) ($input['starts_at'] ?? ''));
         $ends = trim((string) ($input['ends_at'] ?? ''));
         $payload = [
-            'company_id' => $companyId,
+            'company_id' => $companyId > 0 ? $companyId : null,
+            'target_app' => self::normalizeTargetApp((string) ($input['target_app'] ?? 'all')),
             'title_ar' => $titleAr,
             'title_en' => $titleEn,
             'body_ar' => (string) ($input['body_ar'] ?? ''),
@@ -514,48 +528,26 @@ final class AgentAppsOpsService
      *
      * @return array<string, string>
      */
-    public function mobileExtensionsForCompany(int $companyId): array
+    public function mobileExtensionsForCompany(int $companyId, string $app = 'hr'): array
     {
-        if ($companyId < 1) {
-            return [];
-        }
-        MobileAppContentSchemaBootstrap::ensure();
         $ext = [];
-        try {
-            $stmt = Database::connection()->prepare(
-                'SELECT slug, body_ar, body_en, title_ar, title_en
-                 FROM rateb_mobile_app_contents
-                 WHERE company_id = :cid AND is_active = 1
-                   AND slug IN (\'privacy\',\'terms\',\'about\',\'faq\',\'help\',\'home\')'
-            );
-            $stmt->execute(['cid' => $companyId]);
-            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
-            foreach ($rows as $row) {
-                $slug = (string) ($row['slug'] ?? '');
-                $body = trim((string) ($row['body_ar'] ?? ''));
-                if ($body === '') {
-                    $body = trim((string) ($row['body_en'] ?? ''));
-                }
-                if ($body === '') {
-                    continue;
-                }
-                if ($slug === 'privacy') {
-                    $ext['privacy_policy'] = $body;
-                } elseif ($slug === 'terms') {
-                    $ext['terms_of_service'] = $body;
-                } else {
-                    $ext[$slug] = $body;
-                    $title = trim((string) ($row['title_ar'] ?? ''));
-                    if ($title === '') {
-                        $title = trim((string) ($row['title_en'] ?? ''));
-                    }
-                    if ($title !== '') {
-                        $ext[$slug . '_title'] = $title;
-                    }
+        foreach ($this->publishedContent($companyId, $app) as $page) {
+            $slug = $page['slug'];
+            $body = $page['body_ar'] !== '' ? $page['body_ar'] : $page['body_en'];
+            if ($body === '') {
+                continue;
+            }
+            if ($slug === 'privacy') {
+                $ext['privacy_policy'] = $body;
+            } elseif ($slug === 'terms') {
+                $ext['terms_of_service'] = $body;
+            } else {
+                $ext[$slug] = $body;
+                $title = $page['title_ar'] !== '' ? $page['title_ar'] : $page['title_en'];
+                if ($title !== '') {
+                    $ext[$slug . '_title'] = $title;
                 }
             }
-        } catch (\Throwable $e) {
-            error_log('AgentAppsOpsService::mobileExtensionsForCompany: ' . $e->getMessage());
         }
 
         return $ext;
@@ -564,31 +556,147 @@ final class AgentAppsOpsService
     /**
      * @return list<array<string,mixed>>
      */
-    public function apiActiveOffers(int $companyId): array
+    public function apiActiveOffers(int $companyId, string $app = 'hr'): array
     {
-        if ($companyId < 1) {
+        return $this->publishedOffers($companyId, $app);
+    }
+
+    /** @return list<string> */
+    public static function targetApps(): array
+    {
+        return ['all', 'hr', 'erp', 'customer'];
+    }
+
+    public static function normalizeTargetApp(string $app): string
+    {
+        $app = strtolower(trim($app));
+
+        return in_array($app, self::targetApps(), true) ? $app : 'all';
+    }
+
+    /**
+     * Active content pages one app shows for one company: the company's own rows plus
+     * rows published to every company (company_id NULL). Per slug, the company row beats
+     * the global one and an app-specific row beats an "all apps" row.
+     *
+     * @return list<array{slug:string,title_ar:string,title_en:string,body_ar:string,body_en:string}>
+     */
+    public function publishedContent(int $companyId, string $app): array
+    {
+        if ($companyId < 0) {
             return [];
         }
-        $list = $this->listOffers($companyId, 50, true);
-        $out = [];
-        foreach ($list['items'] as $row) {
-            if ((int) ($row['company_id'] ?? 0) !== $companyId) {
-                continue;
+        MobileAppContentSchemaBootstrap::ensure();
+        $bySlug = [];
+        try {
+            $stmt = Database::connection()->prepare(
+                'SELECT slug, title_ar, title_en, body_ar, body_en
+                 FROM rateb_mobile_app_contents
+                 WHERE (company_id IS NULL OR company_id = :cid) AND is_active = 1
+                   AND target_app IN (\'all\', :app)
+                 ORDER BY (company_id IS NOT NULL) ASC, (target_app <> \'all\') ASC, sort_order ASC, id ASC'
+            );
+            $stmt->execute(['cid' => $companyId, 'app' => self::normalizeTargetApp($app)]);
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                $slug = (string) ($row['slug'] ?? '');
+                $bySlug[$slug] = [
+                    'slug' => $slug,
+                    'title_ar' => trim((string) ($row['title_ar'] ?? '')),
+                    'title_en' => trim((string) ($row['title_en'] ?? '')),
+                    'body_ar' => trim((string) ($row['body_ar'] ?? '')),
+                    'body_en' => trim((string) ($row['body_en'] ?? '')),
+                ];
             }
-            $out[] = [
-                'id' => (int) ($row['id'] ?? 0),
-                'title_ar' => (string) ($row['title_ar'] ?? ''),
-                'title_en' => (string) ($row['title_en'] ?? ''),
-                'body_ar' => (string) ($row['body_ar'] ?? ''),
-                'body_en' => (string) ($row['body_en'] ?? ''),
-                'image' => $this->publicMediaUrl((string) ($row['image_path'] ?? '')),
-                'discount_label' => (string) ($row['discount_label'] ?? ''),
-                'starts_at' => $row['starts_at'] ?? null,
-                'ends_at' => $row['ends_at'] ?? null,
-            ];
+        } catch (\Throwable $e) {
+            error_log('AgentAppsOpsService::publishedContent: ' . $e->getMessage());
+        }
+
+        return array_values($bySlug);
+    }
+
+    /**
+     * Offers currently running for one app and company (company rows + global rows).
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function publishedOffers(int $companyId, string $app): array
+    {
+        if ($companyId < 0) {
+            return [];
+        }
+        MobileAppContentSchemaBootstrap::ensure();
+        $out = [];
+        try {
+            $stmt = Database::connection()->prepare(
+                'SELECT id, title_ar, title_en, body_ar, body_en, image_path, discount_label, starts_at, ends_at
+                 FROM rateb_mobile_app_offers
+                 WHERE (company_id IS NULL OR company_id = :cid) AND is_active = 1
+                   AND target_app IN (\'all\', :app)
+                   AND (starts_at IS NULL OR starts_at <= CURDATE())
+                   AND (ends_at IS NULL OR ends_at >= CURDATE())
+                 ORDER BY sort_order ASC, id DESC
+                 LIMIT 50'
+            );
+            $stmt->execute(['cid' => $companyId, 'app' => self::normalizeTargetApp($app)]);
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                $out[] = [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'title_ar' => (string) ($row['title_ar'] ?? ''),
+                    'title_en' => (string) ($row['title_en'] ?? ''),
+                    'body_ar' => (string) ($row['body_ar'] ?? ''),
+                    'body_en' => (string) ($row['body_en'] ?? ''),
+                    'image' => $this->publicMediaUrl((string) ($row['image_path'] ?? '')),
+                    'discount_label' => (string) ($row['discount_label'] ?? ''),
+                    'starts_at' => $row['starts_at'] ?? null,
+                    'ends_at' => $row['ends_at'] ?? null,
+                ];
+            }
+        } catch (\Throwable $e) {
+            error_log('AgentAppsOpsService::publishedOffers: ' . $e->getMessage());
         }
 
         return $out;
+    }
+
+    /** One page per (company or all-companies, app, slug); NULL-safe so global rows are unique too. */
+    private function contentSlotTaken(int $companyId, string $targetApp, string $slug, int $exceptId): bool
+    {
+        try {
+            $stmt = Database::connection()->prepare(
+                'SELECT id FROM rateb_mobile_app_contents
+                 WHERE company_id <=> :cid AND target_app = :ta AND slug = :slug AND id <> :id
+                 LIMIT 1'
+            );
+            $stmt->execute([
+                'cid' => $companyId > 0 ? $companyId : null,
+                'ta' => $targetApp,
+                'slug' => $slug,
+                'id' => $exceptId,
+            ]);
+
+            return $stmt->fetchColumn() !== false;
+        } catch (\Throwable $e) {
+            error_log('AgentAppsOpsService::contentSlotTaken: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Company for a content/offer write: -1 = invalid, 0 = every company (super admin only; stored as NULL).
+     *
+     * @param array<string,mixed> $input
+     */
+    private function writeCompanyIdFromInput(array $input, int $userCompanyHint): int
+    {
+        $isSuper = TenantContext::isSuperAdmin()
+            || (function_exists('rateb_is_super_admin') && rateb_is_super_admin());
+        if (!empty($input['all_companies'])) {
+            return $isSuper ? 0 : -1;
+        }
+        $cid = $this->resolveWriteCompanyId((int) ($input['company_id'] ?? $userCompanyHint));
+
+        return $cid > 0 ? $cid : -1;
     }
 
     /**
@@ -865,11 +973,12 @@ final class AgentAppsOpsService
 
     private function canAccessCompanyRow(int $companyId): bool
     {
+        $isSuper = TenantContext::isSuperAdmin()
+            || (function_exists('rateb_is_super_admin') && rateb_is_super_admin());
         if ($companyId < 1) {
-            return false;
+            return $companyId === 0 && $isSuper;
         }
-        if (TenantContext::isSuperAdmin()
-            || (function_exists('rateb_is_super_admin') && rateb_is_super_admin())) {
+        if ($isSuper) {
             return true;
         }
         $cid = $this->resolveWriteCompanyId(0);

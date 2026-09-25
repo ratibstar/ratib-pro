@@ -55,6 +55,69 @@ $hcLang = $hcDir === 'ltr' ? 'en' : 'ar';
         <?php } ?>
     </section>
 
+    <?php
+    $appOffers = is_array($appOffers ?? null) ? $appOffers : [];
+    $appPages = is_array($appPages ?? null) ? $appPages : [];
+    $pickLang = static function (string $ar, string $en) use ($hcLang): string {
+        return $hcLang === 'en' ? ($en !== '' ? $en : $ar) : ($ar !== '' ? $ar : $en);
+    };
+    ?>
+    <?php if ($appOffers !== []) { ?>
+    <section class="hc-section" aria-labelledby="hc-offers-title">
+        <div class="hc-section__head">
+            <h3 id="hc-offers-title"><?php echo View::escape(__('mobile_apps_offers_title')); ?></h3>
+        </div>
+        <div class="row g-3">
+            <?php foreach ($appOffers as $offer) {
+                $oTitle = $pickLang((string) ($offer['title_ar'] ?? ''), (string) ($offer['title_en'] ?? ''));
+                $oBody = $pickLang((string) ($offer['body_ar'] ?? ''), (string) ($offer['body_en'] ?? ''));
+                $oImage = (string) ($offer['image'] ?? '');
+                $oBadge = (string) ($offer['discount_label'] ?? '');
+                ?>
+            <div class="col-md-6 col-lg-4">
+                <div class="rateb-card h-100">
+                    <?php if ($oImage !== '') { ?>
+                    <img src="<?php echo View::escape($oImage); ?>" alt="" class="w-100" style="max-height:160px;object-fit:cover" loading="lazy">
+                    <?php } ?>
+                    <div class="rateb-card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <strong><?php echo View::escape($oTitle); ?></strong>
+                            <?php if ($oBadge !== '') { ?><span class="badge text-bg-danger"><?php echo View::escape($oBadge); ?></span><?php } ?>
+                        </div>
+                        <?php if ($oBody !== '') { ?><p class="small text-muted mb-0 mt-2"><?php echo nl2br(View::escape($oBody)); ?></p><?php } ?>
+                    </div>
+                </div>
+            </div>
+            <?php } ?>
+        </div>
+    </section>
+    <?php } ?>
+
+    <?php if ($appPages !== []) { ?>
+    <section class="hc-section" aria-labelledby="hc-app-pages-title">
+        <div class="hc-section__head">
+            <h3 id="hc-app-pages-title"><?php echo View::escape(__('mobile_apps_app_pages_title')); ?></h3>
+        </div>
+        <div class="hc-faq-list">
+            <?php foreach ($appPages as $page) {
+                $pTitle = $pickLang((string) $page['title_ar'], (string) $page['title_en']);
+                if ($pTitle === '') {
+                    $pTitle = __('agent_apps_slug_' . (string) $page['slug']);
+                }
+                $pBody = $pickLang((string) $page['body_ar'], (string) $page['body_en']);
+                if ($pBody === '') {
+                    continue;
+                }
+                ?>
+            <details class="hc-faq">
+                <summary><?php echo View::escape($pTitle); ?></summary>
+                <p><?php echo nl2br(View::escape($pBody)); ?></p>
+            </details>
+            <?php } ?>
+        </div>
+    </section>
+    <?php } ?>
+
     <section class="hc-section" aria-labelledby="hc-modules-title">
         <div class="hc-section__head">
             <h3 id="hc-modules-title"><?php echo View::escape(__('help_modules_title')); ?></h3>

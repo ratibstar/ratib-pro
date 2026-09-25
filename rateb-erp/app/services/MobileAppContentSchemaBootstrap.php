@@ -53,7 +53,36 @@ final class MobileAppContentSchemaBootstrap
                 KEY idx_mobile_offers_window (company_id, starts_at, ends_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
+        self::ensureTargetAppColumns($pdo);
         self::$done = true;
+    }
+
+    /** company_id NULL = every company (keeps the company FK valid); target_app: all | hr | erp | customer. */
+    private static function ensureTargetAppColumns(\PDO $pdo): void
+    {
+        try {
+            foreach (['rateb_mobile_app_contents', 'rateb_mobile_app_offers'] as $table) {
+                $company = $pdo->query("SHOW COLUMNS FROM {$table} LIKE 'company_id'");
+                $companyCol = $company ? $company->fetch(\PDO::FETCH_ASSOC) : false;
+                if (is_array($companyCol) && strtoupper((string) ($companyCol['Null'] ?? '')) === 'NO') {
+                    $pdo->exec("ALTER TABLE {$table} MODIFY company_id INT UNSIGNED NULL");
+                }
+                $stmt = $pdo->query("SHOW COLUMNS FROM {$table} LIKE 'target_app'");
+                if ($stmt && $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    continue;
+                }
+                $pdo->exec("ALTER TABLE {$table} ADD COLUMN target_app VARCHAR(16) NOT NULL DEFAULT 'all' AFTER company_id");
+                if ($table === 'rateb_mobile_app_contents') {
+                    $idx = $pdo->query("SHOW INDEX FROM {$table} WHERE Key_name = 'uq_mobile_content_company_slug'");
+                    if ($idx && $idx->fetch(\PDO::FETCH_ASSOC)) {
+                        $pdo->exec("ALTER TABLE {$table} DROP INDEX uq_mobile_content_company_slug");
+                    }
+                    $pdo->exec("ALTER TABLE {$table} ADD UNIQUE KEY uq_mobile_content_company_app_slug (company_id, target_app, slug)");
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('MobileAppContentSchemaBootstrap::ensureTargetAppColumns: ' . $e->getMessage());
+        }
     }
 
     public static function ensurePaymentMethodsColumn(): void

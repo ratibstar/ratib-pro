@@ -29,7 +29,29 @@ final class HelpCenterController extends Controller
             'modules' => $this->repo->modulesForUser(),
             'faqs' => $this->repo->faqs(),
             'canManage' => $this->repo->gate()->canManageContent(),
-        ]), 'main');
+        ], $this->erpAppPublished()), 'main');
+    }
+
+    /**
+     * Offers + content pages the platform published for the ERP app (this company + all companies).
+     *
+     * @return array{appOffers:list<array<string,mixed>>,appPages:list<array<string,string>>}
+     */
+    private function erpAppPublished(): array
+    {
+        try {
+            $cid = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+            $ops = new \Rateb\App\Services\AgentAppsOpsService();
+
+            return [
+                'appOffers' => $ops->publishedOffers(max(0, $cid), 'erp'),
+                'appPages' => $ops->publishedContent(max(0, $cid), 'erp'),
+            ];
+        } catch (\Throwable $e) {
+            error_log('HelpCenterController::erpAppPublished: ' . $e->getMessage());
+
+            return ['appOffers' => [], 'appPages' => []];
+        }
     }
 
     public function module(string $slug): void

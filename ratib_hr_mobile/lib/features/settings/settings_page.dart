@@ -60,7 +60,7 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               Text(title, style: Theme.of(ctx).textTheme.titleLarge),
               const SizedBox(height: AppSpacing.md),
-              Text(body),
+              Flexible(child: SingleChildScrollView(child: Text(body))),
               const SizedBox(height: AppSpacing.lg),
               DsPrimaryButton(
                 label: AppLocalizations.of(ctx).settingsClose,
@@ -178,6 +178,14 @@ class _SettingsPageState extends State<SettingsPage> {
         .toString();
     final terms = (cfg?.extensions['terms_of_service'] ?? l10n.settingsTermsBody)
         .toString();
+    String ext(String key) => (cfg?.extensions[key] ?? '').toString().trim();
+    String extTitle(String slug, String fallback) {
+      final t = ext('${slug}_title');
+      return t.isNotEmpty ? t : fallback;
+    }
+    final aboutBody = ext('about');
+    final faqBody = ext('faq');
+    final helpBody = ext('help');
 
     if (_loading) {
       return DsPageScaffold(
@@ -294,8 +302,32 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.info_outline,
               color: AppColors.badgeNeutral,
             ),
-            trailing: const SizedBox.shrink(),
+            trailing: aboutBody.isEmpty ? const SizedBox.shrink() : null,
+            onTap: aboutBody.isEmpty
+                ? null
+                : () => _showLegal(
+                      extTitle('about', l10n.settingsAbout),
+                      aboutBody,
+                    ),
           ),
+          if (faqBody.isNotEmpty)
+            DsListItem(
+              title: extTitle('faq', l10n.settingsFaq),
+              leading: const DsIconBadge(
+                icon: Icons.quiz_outlined,
+                color: AppColors.auroraTeal,
+              ),
+              onTap: () => _showLegal(extTitle('faq', l10n.settingsFaq), faqBody),
+            ),
+          if (helpBody.isNotEmpty)
+            DsListItem(
+              title: extTitle('help', l10n.settingsHelp),
+              leading: const DsIconBadge(
+                icon: Icons.help_outline,
+                color: AppColors.auroraRose,
+              ),
+              onTap: () => _showLegal(extTitle('help', l10n.settingsHelp), helpBody),
+            ),
           DsListItem(
             title: l10n.settingsPrivacy,
             leading: const DsIconBadge(

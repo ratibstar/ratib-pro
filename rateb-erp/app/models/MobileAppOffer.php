@@ -12,6 +12,7 @@ final class MobileAppOffer extends Model
     protected bool $tenantScoped = false;
     protected array $fillable = [
         'company_id',
+        'target_app',
         'title_ar',
         'title_en',
         'body_ar',

@@ -196,6 +196,8 @@ class AppLocalizations {
       'settingsAbout': 'حول',
       'settingsPrivacy': 'سياسة الخصوصية',
       'settingsTerms': 'الشروط والأحكام',
+      'settingsFaq': 'الأسئلة الشائعة',
+      'settingsHelp': 'المساعدة',
       'settingsPrivacyBody':
           'تُدار بياناتك وفق سياسات الخصوصية الخاصة بشركتك ونظام رتب ERP.',
       'settingsTermsBody':
@@ -444,6 +446,8 @@ class AppLocalizations {
       'settingsAbout': 'About',
       'settingsPrivacy': 'Privacy policy',
       'settingsTerms': 'Terms of service',
+      'settingsFaq': 'FAQ',
+      'settingsHelp': 'Help',
       'settingsPrivacyBody':
           'Your data is handled under your company privacy policy and RATEB ERP.',
       'settingsTermsBody':
@@ -690,6 +694,8 @@ class AppLocalizations {
   String get settingsAbout => _t('settingsAbout');
   String get settingsPrivacy => _t('settingsPrivacy');
   String get settingsTerms => _t('settingsTerms');
+  String get settingsFaq => _t('settingsFaq');
+  String get settingsHelp => _t('settingsHelp');
   String get settingsPrivacyBody => _t('settingsPrivacyBody');
   String get settingsTermsBody => _t('settingsTermsBody');
   String get attendanceWorkingDuration => _t('attendanceWorkingDuration');

@@ -14,7 +14,12 @@ $csrf = (string) ($csrf ?? '');
 $companyFilter = (int) ($companyFilter ?? 0);
 $defaultCompanyId = (int) ($defaultCompanyId ?? 0);
 $tone = (string) (($sectionMeta['tone'] ?? 'purple'));
-$formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFilter : $defaultCompanyId));
+$formCompany = $editRow !== null
+    ? (int) ($editRow['company_id'] ?? 0)
+    : ($companyFilter > 0 ? $companyFilter : $defaultCompanyId);
+$appFilter = (string) ($appFilter ?? '');
+$formApp = (string) ($editRow['target_app'] ?? ($appFilter !== '' ? $appFilter : 'all'));
+$appQuery = $appFilter !== '' ? '&app=' . $appFilter : '';
 ?>
 <div class="raa" data-raa="content">
     <header class="raa-hero raa-hero--compact">
@@ -32,8 +37,16 @@ $formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFi
         </a>
     </header>
 
+    <?php
+    $activeApp = $appFilter;
+    $tabsRoute = 'admin/agent-apps/content';
+    $tabsWithAll = true;
+    require RATEB_ROOT . '/views/admin/mobile-apps/_tabs.php';
+    ?>
+
     <?php if (count($companies) > 1) { ?>
     <form method="get" class="rateb-card mb-3 p-3">
+        <?php if ($appFilter !== '') { ?><input type="hidden" name="app" value="<?php echo Rateb\App\Core\View::escape($appFilter); ?>"><?php } ?>
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
                 <label class="form-label small"><?php echo Rateb\App\Core\View::escape(__('company')); ?></label>
@@ -63,9 +76,16 @@ $formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFi
                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                 <input type="hidden" name="id" value="<?php echo (int) ($editRow['id'] ?? 0); ?>">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('mobile_apps_target_app')); ?></label>
+                        <?php require RATEB_ROOT . '/views/admin/agent-apps/_target-app-select.php'; ?>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('company')); ?></label>
                         <select name="company_id" class="form-select" required>
+                            <?php if (rateb_is_super_admin()) { ?>
+                            <option value="0"<?php echo $formCompany === 0 ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape(__('mobile_apps_all_companies')); ?></option>
+                            <?php } ?>
                             <?php foreach ($companies as $c) { ?>
                             <option value="<?php echo (int) $c['id']; ?>"<?php echo $formCompany === (int) $c['id'] ? ' selected' : ''; ?>>
                                 <?php echo Rateb\App\Core\View::escape((string) $c['name']); ?>
@@ -73,7 +93,7 @@ $formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFi
                             <?php } ?>
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                         <label class="form-label"><?php echo Rateb\App\Core\View::escape(__('agent_apps_content_slug')); ?></label>
                         <select name="slug" class="form-select" required>
                             <?php foreach ($slugs as $slug) { ?>
@@ -128,6 +148,7 @@ $formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFi
             <table class="table table-sm align-middle mb-0">
                 <thead>
                 <tr>
+                    <th><?php echo Rateb\App\Core\View::escape(__('mobile_apps_target_app')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('company')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('agent_apps_content_slug')); ?></th>
                     <th><?php echo Rateb\App\Core\View::escape(__('agent_apps_title_ar')); ?></th>
@@ -137,14 +158,15 @@ $formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFi
                 </thead>
                 <tbody>
                 <?php if ($rows === []) { ?>
-                <tr><td colspan="5" class="text-muted text-center py-4"><?php echo Rateb\App\Core\View::escape(__('agent_apps_list_empty')); ?></td></tr>
+                <tr><td colspan="6" class="text-muted text-center py-4"><?php echo Rateb\App\Core\View::escape(__('agent_apps_list_empty')); ?></td></tr>
                 <?php } ?>
                 <?php foreach ($rows as $row) {
                     $id = (int) ($row['id'] ?? 0);
                     $slug = (string) ($row['slug'] ?? '');
                     ?>
                 <tr>
-                    <td><?php echo Rateb\App\Core\View::escape((string) ($row['company_name'] ?? '—')); ?></td>
+                    <td><span class="badge text-bg-light border"><?php echo Rateb\App\Core\View::escape(__('mobile_apps_target_' . \Rateb\App\Services\AgentAppsOpsService::normalizeTargetApp((string) ($row['target_app'] ?? 'all')))); ?></span></td>
+                    <td><?php echo Rateb\App\Core\View::escape((int) ($row['company_id'] ?? 0) === 0 ? __('mobile_apps_all_companies') : (string) ($row['company_name'] ?? '—')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape(__('agent_apps_slug_' . $slug)); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape((string) ($row['title_ar'] ?: ($row['title_en'] ?? ''))); ?></td>
                     <td>
@@ -154,7 +176,7 @@ $formCompany = (int) ($editRow['company_id'] ?? ($companyFilter > 0 ? $companyFi
                     </td>
                     <td class="text-end text-nowrap">
                         <?php if ($canManage) { ?>
-                        <a class="btn btn-sm btn-outline-primary" href="<?php echo rateb_url('admin/agent-apps/content?edit=' . $id . ($companyFilter ? '&company_id=' . $companyFilter : '')); ?>">
+                        <a class="btn btn-sm btn-outline-primary" href="<?php echo rateb_url('admin/agent-apps/content?edit=' . $id . ($companyFilter ? '&company_id=' . $companyFilter : '') . $appQuery); ?>">
                             <?php echo Rateb\App\Core\View::escape(__('edit')); ?>
                         </a>
                         <form method="post" action="<?php echo Rateb\App\Core\View::escape((string) ($deleteUrl ?? '')); ?>" class="d-inline" onsubmit="return confirm(<?php echo json_encode(__('confirm_delete'), JSON_UNESCAPED_UNICODE); ?>);">

@@ -8,6 +8,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Services\AgentAppsOpsService;
+use Rateb\App\Services\MobileAppApkService;
 use Rateb\App\Services\MobileAppConfigService;
 use Rateb\App\Services\MobileAppContentSchemaBootstrap;
 
@@ -132,13 +133,17 @@ final class AgentAppsController extends Controller
         ];
 
         if ($mode === 'settings') {
+            $settingsApp = MobileAppApkService::normalizeApp((string) ($_GET['app'] ?? 'hr'));
             $rows = [];
             try {
                 $svc = new MobileAppConfigService();
+                $apk = new MobileAppApkService();
                 $rows = $svc->listCompaniesWithConfig();
                 foreach ($rows as &$row) {
                     $row['features'] = $svc->decodeFeatures($row['enabled_features'] ?? null);
-                    $row['mobile_active'] = (string) ($row['mobile_status'] ?? '') === MobileAppConfigService::STATUS_ACTIVE;
+                    $row['mobile_active'] = $settingsApp === 'hr'
+                        ? (string) ($row['mobile_status'] ?? '') === MobileAppConfigService::STATUS_ACTIVE
+                        : $apk->isEnabled($settingsApp, $row);
                 }
                 unset($row);
             } catch (\Throwable $e) {
@@ -146,6 +151,7 @@ final class AgentAppsController extends Controller
             }
             $this->view('admin/agent-apps/settings', array_merge($common, [
                 'rows' => $rows,
+                'settingsApp' => $settingsApp,
             ]), 'main');
             return;
         }
@@ -189,10 +195,14 @@ final class AgentAppsController extends Controller
             return;
         }
 
+        $appFilter = (string) ($_GET['app'] ?? '');
+        $appFilter = in_array($appFilter, AgentAppsOpsService::targetApps(), true) ? $appFilter : '';
+        $common['appFilter'] = $appFilter;
+
         if ($mode === 'content') {
             $companyFilter = (int) ($_GET['company_id'] ?? 0);
             $editId = (int) ($_GET['edit'] ?? 0);
-            $list = $ops->listContents($companyFilter, 100);
+            $list = $ops->listContents($companyFilter, 100, $appFilter);
             $editRow = null;
             if ($editId > 0) {
                 foreach ($list['items'] as $row) {
@@ -217,7 +227,7 @@ final class AgentAppsController extends Controller
         if ($mode === 'offers') {
             $companyFilter = (int) ($_GET['company_id'] ?? 0);
             $editId = (int) ($_GET['edit'] ?? 0);
-            $list = $ops->listOffers($companyFilter, 100, false);
+            $list = $ops->listOffers($companyFilter, 100, false, $appFilter);
             $editRow = null;
             if ($editId > 0) {
                 foreach ($list['items'] as $row) {
@@ -440,6 +450,8 @@ final class AgentAppsController extends Controller
         $input = [
             'id' => (int) $this->input('id', 0),
             'company_id' => (int) $this->input('company_id', 0),
+            'all_companies' => (string) $this->input('company_id', '') === '0',
+            'target_app' => (string) $this->input('target_app', 'all'),
             'slug' => (string) $this->input('slug', ''),
             'title_ar' => (string) $this->input('title_ar', ''),
             'title_en' => (string) $this->input('title_en', ''),
@@ -486,6 +498,7 @@ final class AgentAppsController extends Controller
                 'company_required' => __('agent_apps_company_required'),
                 'slug_invalid' => __('agent_apps_slug_invalid'),
                 'title_required' => __('agent_apps_title_required'),
+                'duplicate' => __('agent_apps_content_duplicate'),
                 'not_found' => __('agent_apps_action_failed'),
                 'save_failed' => __('agent_apps_action_failed'),
             ];

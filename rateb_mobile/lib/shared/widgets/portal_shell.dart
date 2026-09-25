@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/routing/app_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/content/app_info_screen.dart';
 import 'app_scaffold.dart';
 
 /// Bottom-nav shell for role portals — keeps one scaffold instance so tabs stay tappable.
@@ -25,6 +26,15 @@ class PortalShell extends StatelessWidget {
 
     return AppScaffold(
       title: title,
+      actions: [
+        IconButton(
+          tooltip: 'Offers & info',
+          icon: const Icon(Icons.local_offer_outlined),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const AppInfoScreen()),
+          ),
+        ),
+      ],
       showLogout: true,
       onLogout: () async {
         await auth.logout();

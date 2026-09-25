@@ -8,6 +8,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$ApiBaseUrl,
     [Parameter(Mandatory = $true)][string]$Slug,
+    # ERP that publishes offers/content; default = same host + /rateb-erp/public
+    [string]$ErpBaseUrl = "",
     [switch]$Universal
 )
 
@@ -51,6 +53,17 @@ $buildArgs = @(
     "build", "apk", "--release",
     "--dart-define=RATEB_API_BASE_URL=$ApiBaseUrl"
 )
+# "platform" = shared build: shows offers/content published to all companies.
+if ($Slug -ne "platform") {
+    $buildArgs += "--dart-define=RATEB_COMPANY_SLUG=$Slug"
+}
+$ErpBaseUrl = $ErpBaseUrl.Trim().TrimEnd("/")
+if ($ErpBaseUrl) {
+    if ($ErpBaseUrl -notmatch '^https://[^/\s]+(/[^\s]*)?$') {
+        throw "ErpBaseUrl must be an https URL, e.g. https://rateb.sa/rateb-erp/public"
+    }
+    $buildArgs += "--dart-define=RATEB_ERP_BASE_URL=$ErpBaseUrl"
+}
 if (-not $Universal) {
     $buildArgs += @("--target-platform", "android-arm64")
 }

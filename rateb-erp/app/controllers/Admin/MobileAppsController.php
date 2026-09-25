@@ -161,9 +161,12 @@ final class MobileAppsController extends Controller
         } else {
             SessionManager::flash('error', __('mobile_apps_save_failed'));
         }
-        $back = (string) $this->input('back', '') === 'edit'
-            ? 'admin/mobile-apps/' . $companyId
-            : 'admin/mobile-apps';
+        $backInput = (string) $this->input('back', '');
+        $back = match ($backInput) {
+            'edit' => 'admin/mobile-apps/' . $companyId,
+            'settings' => 'admin/agent-apps/settings',
+            default => 'admin/mobile-apps',
+        };
         Response::redirect(rateb_url($back) . '?app=' . $app);
     }
 
