@@ -193,6 +193,10 @@ if (!rateb_is_super_admin()
 $opsLink('notifications', 'notifications', 'fa-bell', 'notifications');
 $opsLink('profile', 'profile', 'fa-user-gear', 'profile');
 if (rateb_can('website.view') || rateb_can('website.manage') || rateb_is_super_admin()) {
+    $websitePortalUsersLabel = __('website_portal_users');
+    if ($websitePortalUsersLabel === 'website_portal_users') {
+        $websitePortalUsersLabel = rateb_locale() === 'ar' ? 'مستخدمو البوابة' : 'Portal Users';
+    }
     $opsSection(__('website') ?: 'Website', [
         ['website', 'website', 'fa-globe', 'website', 'website.view'],
         ['website/builder', 'website_builder', 'fa-table-columns', 'website', 'website.builder.manage'],
@@ -201,5 +205,6 @@ if (rateb_can('website.view') || rateb_can('website.manage') || rateb_is_super_a
         ['website/media', 'website_media', 'fa-images', 'website', 'website.media.manage'],
         ['website/menus', 'website_menus', 'fa-bars', 'website', 'website.builder.manage'],
         ['website/forms', 'website_forms', 'fa-list-check', 'website', 'website.forms.manage'],
+        ['website/portal-users', $websitePortalUsersLabel, 'fa-user-shield', 'website', 'website.portal.view'],
     ], 'fa-globe');
 }

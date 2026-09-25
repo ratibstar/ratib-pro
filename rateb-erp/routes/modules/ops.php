@@ -1486,4 +1486,6 @@ $router->post($app('website/forms'), [WebsiteFormsController::class, 'store'], $
 $router->get($app('website/forms/{id}/edit'), [WebsiteFormsController::class, 'edit'], $websiteFormsMw);
 $router->post($app('website/forms/{id}'), [WebsiteFormsController::class, 'update'], $websiteFormsMw);
 
+require RATEB_ROOT . '/routes/modules/website-portal-users.php';
+
 require RATEB_ROOT . '/routes/company-access.php';

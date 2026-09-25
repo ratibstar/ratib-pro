@@ -8,10 +8,11 @@ use Rateb\App\Models\LoginActivity;
 
 final class AuditService
 {
-    public function log(string $action, ?string $entityType = null, ?int $entityId = null, ?array $payload = null): void
+    /** @param int|null $companyId Tenant the action applies to; defaults to the session company. */
+    public function log(string $action, ?string $entityType = null, ?int $entityId = null, ?array $payload = null, ?int $companyId = null): void
     {
         $userId = $_SESSION['rateb_user_id'] ?? null;
-        $companyId = $_SESSION['rateb_company_id'] ?? null;
+        $companyId = $companyId ?? ($_SESSION['rateb_company_id'] ?? null);
 
         (new AuditLog())->create([
             'company_id' => $companyId,

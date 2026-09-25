@@ -842,4 +842,9 @@ return [
         'view' => 'website.forms.manage',
         'manage' => 'website.forms.manage',
     ],
+    'website-portal-users' => [
+        'module' => 'website',
+        'view' => 'website.portal.view',
+        'manage' => 'website.portal.manage',
+    ],
 ];
