@@ -7,6 +7,7 @@ use Rateb\App\Core\Response;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\CustomerPortal\CustomerPortalAuthService;
 use Rateb\App\CustomerPortal\CustomerPortalContext;
+require_once __DIR__ . '/Middleware.php';
 
 /**
  * Bearer guard for Customer Portal app routes (rcp_ tokens only).
