@@ -171,53 +171,39 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 28),
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                color: const Color(0xFFFF0000),
-                child: const Text(
-                  AppConfig.buildStamp,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 22,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
               Center(
                 child: Container(
                   width: 88,
                   height: 88,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
-                    color: const Color(0xFFFF0000),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF14B8A6), Color(0xFF0F766E)],
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF0000).withValues(alpha: 0.4),
+                        color: AppColors.teal.withValues(alpha: 0.4),
                         blurRadius: 24,
                         offset: const Offset(0, 12),
                       ),
                     ],
                   ),
                   child: const Icon(
-                    Icons.warning_amber_rounded,
+                    Icons.badge_rounded,
                     color: Colors.white,
                     size: 42,
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'رتب جديد 0.1.20',
+              const SizedBox(height: 28),
+              Text(
+                l10n.appTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFFFF0000),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 28,
-                ),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
               ),
               const SizedBox(height: 8),
               Text(
