@@ -19,10 +19,12 @@ if (!function_exists('rateb_agency_erp_sync_rateb_erp_skip_rel')) {
             'views/admin/agency-updates',
             'views/admin/executive-dashboard',
             'views/partials/platform-catalog-nav-link.php',
-            'storage/backups',
-            'storage/logs',
-            'storage/cache',
-            'storage/sessions',
+            // Per-install runtime state (uploads, markers, tokens, APK slots, rate limits); agencies build their own.
+            'storage',
+            'scripts',
+            'tools',
+            'tests',
+            'tmp_phase2',
         ];
     }
 }
@@ -55,6 +57,7 @@ if (!function_exists('rateb_agency_erp_sync_include_files')) {
         return [
             'includes/rateb-agency-super-admin-restore.php',
             'includes/rateb-test-domain-sync.php',
+            'rateb-erp/storage/.htaccess',
         ];
     }
 }
