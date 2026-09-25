@@ -78,6 +78,9 @@ $router->get('/admin/hr-mobile', [HrMobileDevController::class, 'console'], rate
 $router->get('/admin/hr-mobile/health', [HrMobileDevController::class, 'health'], rateb_admin_mw('settings.manage'));
 
 $router->get('/admin/mobile-apps', [MobileAppsController::class, 'index'], rateb_admin_mw('mobile_apps.view'));
+$router->get('/admin/mobile-apps/updates', [MobileAppsController::class, 'updates'], rateb_platform_oversight_mw('mobile_apps.manage'));
+$router->post('/admin/mobile-apps/updates/{app}/apply', [MobileAppsController::class, 'applyPublished'], rateb_platform_oversight_mw('mobile_apps.manage'));
+$router->post('/admin/mobile-apps/updates/{app}/push', [MobileAppsController::class, 'pushUpdates'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->get('/admin/mobile-apps/{id}', [MobileAppsController::class, 'edit'], rateb_admin_mw('mobile_apps.view'));
 $router->post('/admin/mobile-apps/{id}', [MobileAppsController::class, 'save'], rateb_admin_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/{id}/toggle', [MobileAppsController::class, 'toggle'], rateb_platform_oversight_mw('mobile_apps.manage'));

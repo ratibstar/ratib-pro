@@ -1,0 +1,20 @@
+{
+    "hr": {
+        "file": "rateb-hr-mobile-latest.apk",
+        "package": "sa.rateb.hr.mobile",
+        "version": "1.0.0",
+        "version_code": 209
+    },
+    "erp": {
+        "file": "rateb-erp-latest.apk",
+        "package": "sa.rateb.erp",
+        "version": "1.0.1",
+        "version_code": 2
+    },
+    "customer": {
+        "file": "rateb-customer-latest.apk",
+        "package": "com.ratib.rateb_mobile",
+        "version": "1.0.0",
+        "version_code": 1
+    }
+}

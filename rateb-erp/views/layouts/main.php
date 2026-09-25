@@ -910,7 +910,10 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
                     'icon' => 'fa-mobile-screen-button',
                     'gate' => ['mobile_apps.view'],
                     'links' => array_merge(
-                        [['admin/mobile-apps', 'mobile_apps_distribution', 'fa-download', 'mobile_apps.view']],
+                        [
+                            ['admin/mobile-apps', 'mobile_apps_distribution', 'fa-download', 'mobile_apps.view'],
+                            ['admin/mobile-apps/updates', 'mobile_apps_updates_nav', 'fa-cloud-arrow-up', 'mobile_apps.manage'],
+                        ],
                         require RATEB_ROOT . '/views/partials/agent-apps-nav-links.php'
                     ),
                 ],

@@ -23,6 +23,14 @@ final class MobileAppApkService
 
     public const APPS = ['hr', 'erp', 'customer'];
 
+    /** Newest builds shipped with each deploy under public/downloads (see mobile-apps-latest.json). */
+    public const PUBLISHED_FILES = [
+        'hr' => 'rateb-hr-mobile-latest.apk',
+        'erp' => 'rateb-erp-latest.apk',
+        'customer' => 'rateb-customer-latest.apk',
+    ];
+    public const PUBLISHED_MANIFEST = 'mobile-apps-latest.json';
+
     /** @var array<int, array<string, mixed>>|null */
     private ?array $agencyByCompany = null;
 
@@ -404,9 +412,13 @@ final class MobileAppApkService
         }
 
         $server = $this->platformServer($parsed['app']);
+        $publishedSha = null;
         if ($parsed['company_id'] > 0) {
             $company = (new Company())->find($parsed['company_id']) ?? ['id' => $parsed['company_id']];
             $server = $this->serverForCompany($parsed['app'], $company);
+        } else {
+            // A manual shared upload wins until a different build is published by deploy.
+            $publishedSha = $this->publishedBuild($parsed['app'])['sha256'] ?? null;
         }
         $this->writeSlot($key, [
             'token' => $this->ensureToken($key),
@@ -416,9 +428,174 @@ final class MobileAppApkService
             'uploaded_at' => date('Y-m-d H:i:s'),
             'uploaded_by' => $userId,
             'server' => $server,
+            'source' => 'upload',
+            'published_sha' => $publishedSha,
         ]);
 
         return ['ok' => true, 'done' => true, 'message' => __('mobile_apps_apk_uploaded')];
+    }
+
+    /**
+     * Newest build of the app shipped by deploy (public/downloads), or null when none is published.
+     *
+     * @return array{app:string, file:string, path:string, url:string, size:int, published_at:string,
+     *               sha256:string, version:string, version_code:int}|null
+     */
+    public function publishedBuild(string $app): ?array
+    {
+        $app = self::normalizeApp($app);
+        $dir = rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/public/downloads';
+        $manifest = [];
+        if (is_file($dir . '/' . self::PUBLISHED_MANIFEST)) {
+            $decoded = json_decode((string) file_get_contents($dir . '/' . self::PUBLISHED_MANIFEST), true);
+            $manifest = is_array($decoded) && is_array($decoded[$app] ?? null) ? $decoded[$app] : [];
+        }
+        $file = basename((string) ($manifest['file'] ?? self::PUBLISHED_FILES[$app]));
+        $path = $dir . '/' . $file;
+        if (!preg_match('/^[a-z0-9][a-z0-9.\-]*\.apk$/', $file) || !is_file($path)) {
+            return null;
+        }
+        clearstatcache(true, $path);
+        $size = (int) filesize($path);
+        $mtime = (int) filemtime($path);
+
+        return [
+            'app' => $app,
+            'file' => $file,
+            'path' => $path,
+            'url' => rateb_public_url('downloads/' . $file),
+            'size' => $size,
+            'published_at' => date('Y-m-d H:i:s', $mtime),
+            'sha256' => $this->cachedSha256($app, $path, $size, $mtime),
+            'version' => (string) ($manifest['version'] ?? ''),
+            'version_code' => (int) ($manifest['version_code'] ?? 0),
+        ];
+    }
+
+    /**
+     * Keep the shared (platform) build in step with the newest published build.
+     * A manual shared upload is kept until deploy publishes a different build; $force overrides it.
+     *
+     * @return string updated|current|kept_upload|none|failed
+     */
+    public function syncSharedFromPublished(string $app, int $userId = 0, bool $force = false): string
+    {
+        $app = self::normalizeApp($app);
+        $pub = $this->publishedBuild($app);
+        if ($pub === null) {
+            return 'none';
+        }
+        $slot = $this->slot($app);
+        if ($slot !== null && $slot['has_apk']) {
+            if (hash_equals((string) ($slot['sha256'] ?? ''), $pub['sha256'])) {
+                return 'current';
+            }
+            if (!$force && (string) ($slot['published_sha'] ?? '') === $pub['sha256']) {
+                return 'kept_upload';
+            }
+        }
+
+        $apk = $this->apkPath($app);
+        $tmp = $apk . '.sync-' . bin2hex(random_bytes(4));
+        if (!@copy($pub['path'], $tmp) || (string) hash_file('sha256', $tmp) !== $pub['sha256']) {
+            @unlink($tmp);
+
+            return 'failed';
+        }
+        @unlink($apk);
+        if (!@rename($tmp, $apk)) {
+            @unlink($tmp);
+
+            return 'failed';
+        }
+        $this->writeSlot($app, [
+            'token' => $this->ensureToken($app),
+            'size' => $pub['size'],
+            'sha256' => $pub['sha256'],
+            'original_name' => $pub['file'],
+            'uploaded_at' => date('Y-m-d H:i:s'),
+            'uploaded_by' => $userId,
+            'server' => $this->platformServer($app),
+            'source' => 'published',
+            'published_sha' => $pub['sha256'],
+            'version' => $pub['version'],
+            'version_code' => $pub['version_code'],
+        ]);
+
+        return 'updated';
+    }
+
+    /**
+     * Where this company's app stands against the shared build.
+     *
+     * @return string shared|own_current|own_outdated|own_dedicated|needs_own_build|missing
+     */
+    public function companyUpdateState(string $app, array $company): string
+    {
+        $app = self::normalizeApp($app);
+        $own = $this->meta($this->slotKey($app, (int) ($company['id'] ?? 0)));
+        $shared = $this->meta($app);
+        $onPlatform = $this->serverForCompany($app, $company) === $this->platformServer($app);
+        if ($own === null) {
+            if (!$onPlatform) {
+                return 'needs_own_build';
+            }
+
+            return $shared !== null ? 'shared' : 'missing';
+        }
+        if (!$onPlatform) {
+            return 'own_dedicated';
+        }
+        if ($shared === null) {
+            return 'own_current';
+        }
+
+        return hash_equals((string) ($shared['sha256'] ?? ''), (string) ($own['sha256'] ?? '')) ? 'own_current' : 'own_outdated';
+    }
+
+    /**
+     * Point a platform-server company at the shared build (its own APK is removed, its link stays),
+     * so it receives every future shared update automatically.
+     *
+     * @return string linked|already_shared|needs_own_build|no_shared
+     */
+    public function linkCompanyToShared(string $app, array $company): string
+    {
+        $app = self::normalizeApp($app);
+        if ($this->meta($app) === null) {
+            return 'no_shared';
+        }
+        if ($this->serverForCompany($app, $company) !== $this->platformServer($app)) {
+            return 'needs_own_build';
+        }
+        $key = $this->slotKey($app, (int) ($company['id'] ?? 0));
+        if ($this->meta($key) === null) {
+            return 'already_shared';
+        }
+        $this->remove($key);
+
+        return 'linked';
+    }
+
+    private function cachedSha256(string $app, string $path, int $size, int $mtime): string
+    {
+        $cacheDir = $this->storageDir() . '/cache';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0775, true);
+        }
+        $cacheFile = $cacheDir . '/published.json';
+        $cache = is_file($cacheFile) ? json_decode((string) file_get_contents($cacheFile), true) : [];
+        $cache = is_array($cache) ? $cache : [];
+        $hit = $cache[$app] ?? null;
+        if (is_array($hit) && (int) ($hit['size'] ?? -1) === $size && (int) ($hit['mtime'] ?? -1) === $mtime
+            && preg_match('/^[a-f0-9]{64}$/', (string) ($hit['sha256'] ?? ''))) {
+            return (string) $hit['sha256'];
+        }
+        $sha = (string) hash_file('sha256', $path);
+        $cache[$app] = ['size' => $size, 'mtime' => $mtime, 'sha256' => $sha];
+        @file_put_contents($cacheFile, (string) json_encode($cache, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+
+        return $sha;
     }
 
     /** Delete the stored APK; the slot keeps its token so the company link stays the same. */

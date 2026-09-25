@@ -29,6 +29,9 @@ final class MobileAppsController extends Controller
         $platform = $this->canToggleEnable();
         $app = $platform ? MobileAppApkService::normalizeApp((string) ($_GET['app'] ?? 'hr')) : 'hr';
         $apkSvc = new MobileAppApkService();
+        if ($platform) {
+            $apkSvc->syncSharedFromPublished($app, $this->currentUserId());
+        }
         $rows = (new MobileAppConfigService())->listCompaniesWithConfig();
         foreach ($rows as &$row) {
             $company = ['id' => (int) $row['company_id']] + $row;
@@ -70,6 +73,120 @@ final class MobileAppsController extends Controller
             'consoleAccessible' => function_exists('rateb_hr_mobile_console_accessible')
                 && rateb_hr_mobile_console_accessible(),
         ], 'main');
+    }
+
+    /** App updates hub: newest published build → shared build → company apps (platform super-admin). */
+    public function updates(): void
+    {
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+
+        $app = MobileAppApkService::normalizeApp((string) ($_GET['app'] ?? 'hr'));
+        $apkSvc = new MobileAppApkService();
+        $syncState = $apkSvc->syncSharedFromPublished($app, $this->currentUserId());
+        $sharedUrl = $apkSvc->downloadUrlForToken($apkSvc->ensureToken($app));
+
+        $rows = [];
+        foreach ((new MobileAppConfigService())->listCompaniesWithConfig() as $row) {
+            $company = ['id' => (int) $row['company_id']] + $row;
+            $rows[] = [
+                'company_id' => (int) $row['company_id'],
+                'company_name' => (string) ($row['company_name'] ?? ''),
+                'active' => $apkSvc->isEnabled($app, $company, ['status' => $row['mobile_status'] ?? '']),
+                'server' => $apkSvc->serverForCompany($app, $company),
+                'state' => $apkSvc->companyUpdateState($app, $company),
+            ];
+        }
+
+        $this->view('admin/mobile-apps/updates', [
+            'title' => __('mobile_apps_updates_title'),
+            'app' => $app,
+            'appInfo' => $apkSvc->appInfo($app),
+            'published' => $apkSvc->publishedBuild($app),
+            'syncState' => $syncState,
+            'sharedApk' => $apkSvc->meta($app),
+            'sharedUrl' => $sharedUrl,
+            'sharedQr' => $apkSvc->qrImageUrl($sharedUrl),
+            'rows' => $rows,
+            'csrf' => Csrf::token(),
+            'apkChunkBytes' => MobileAppApkService::CHUNK_BYTES,
+            'apkMaxBytes' => MobileAppApkService::MAX_BYTES,
+        ], 'main');
+    }
+
+    /** Replace the shared build with the newest published build (overrides a manual shared upload). */
+    public function applyPublished(array $params = []): void
+    {
+        $app = $this->platformAppParam($params);
+        $back = 'admin/mobile-apps/updates?app=' . rawurlencode($app !== '' ? $app : 'hr');
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        if ($app === '' || !$this->validateCsrf()) {
+            Response::redirect(rateb_url($back));
+            return;
+        }
+        $state = (new MobileAppApkService())->syncSharedFromPublished($app, $this->currentUserId(), true);
+        SessionManager::flash(
+            in_array($state, ['updated', 'current'], true) ? 'success' : 'error',
+            __('mobile_apps_updates_apply_' . $state)
+        );
+        Response::redirect(rateb_url($back));
+    }
+
+    /** Link selected platform-server companies to the shared build so they get this and future updates. */
+    public function pushUpdates(array $params = []): void
+    {
+        $app = $this->platformAppParam($params);
+        $back = 'admin/mobile-apps/updates?app=' . rawurlencode($app !== '' ? $app : 'hr');
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        if ($app === '' || !$this->validateCsrf()) {
+            Response::redirect(rateb_url($back));
+            return;
+        }
+        $ids = $_POST['company_ids'] ?? [];
+        $ids = is_array($ids) ? array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0))) : [];
+        if ($ids === []) {
+            SessionManager::flash('error', __('mobile_apps_updates_push_none_selected'));
+            Response::redirect(rateb_url($back));
+            return;
+        }
+
+        $apkSvc = new MobileAppApkService();
+        $model = new Company();
+        $counts = ['linked' => 0, 'already_shared' => 0, 'needs_own_build' => 0, 'no_shared' => 0];
+        foreach ($ids as $id) {
+            $company = $model->find($id);
+            if (!is_array($company)) {
+                continue;
+            }
+            $counts[$apkSvc->linkCompanyToShared($app, $company)]++;
+        }
+        if ($counts['no_shared'] > 0) {
+            SessionManager::flash('error', __('mobile_apps_updates_apply_none'));
+        } else {
+            SessionManager::flash('success', sprintf(
+                __('mobile_apps_updates_push_done'),
+                $counts['linked'],
+                $counts['already_shared'],
+                $counts['needs_own_build']
+            ));
+        }
+        Response::redirect(rateb_url($back));
+    }
+
+    private function currentUserId(): int
+    {
+        return (int) (\Rateb\App\Core\Auth::user()['id'] ?? 0);
     }
 
     public function edit(array $params = []): void
