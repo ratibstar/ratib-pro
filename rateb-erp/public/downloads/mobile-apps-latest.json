@@ -14,7 +14,7 @@
     "customer": {
         "file": "rateb-customer-latest.apk",
         "package": "com.ratib.rateb_mobile",
-        "version": "1.0.0",
-        "version_code": 1
+        "version": "1.0.1",
+        "version_code": 2
     }
 }
