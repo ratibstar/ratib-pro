@@ -40,6 +40,11 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _refreshBiometric();
+    CompanyActivation.revision.addListener(_onCompanyChanged);
+  }
+
+  void _onCompanyChanged() {
+    if (mounted) _refreshBiometric();
   }
 
   Future<void> _refreshBiometric() async {
@@ -50,6 +55,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    CompanyActivation.revision.removeListener(_onCompanyChanged);
     _identifier.dispose();
     _password.dispose();
     super.dispose();

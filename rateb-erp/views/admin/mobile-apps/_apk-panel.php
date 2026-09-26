@@ -58,10 +58,12 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
         </form>
         <?php } ?>
     </div>
+    <?php if (($apkQr ?? '') !== '') { ?>
     <div class="col-md-4 text-center">
-        <img src="<?php echo $e($apkQr ?? ''); ?>" alt="QR" width="200" height="200" class="img-fluid rounded border bg-white p-2">
+        <img src="<?php echo $e($apkQr); ?>" alt="QR" width="200" height="200" class="img-fluid rounded border bg-white p-2">
         <div class="small text-muted mt-1"><?php echo $e(__('mobile_apps_apk_qr_hint')); ?></div>
     </div>
+    <?php } ?>
 </div>
 <?php } else { ?>
     <div class="alert alert-info py-2 small"><?php echo $e(__($apkNoneKey ?? 'mobile_apps_apk_none_yet')); ?></div>

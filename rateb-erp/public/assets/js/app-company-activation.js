@@ -26,6 +26,12 @@
     }
 
     if (!inApp()) {
+        // Android browser: one tap opens the installed app already activated, or downloads it.
+        if (/Android/i.test(navigator.userAgent || '')) {
+            document.querySelectorAll('[data-rateb-app-intent]').forEach(function (el) {
+                el.setAttribute('href', el.getAttribute('data-rateb-app-intent') || el.getAttribute('href'));
+            });
+        }
         return;
     }
 
@@ -51,6 +57,19 @@
             } catch (e) {}
         });
     });
+
+    // Opened from an activation link (?auto=1): save the company panel and go there directly.
+    var autoOpen = document.querySelector('[data-rateb-app-open]');
+    if (autoOpen && /[?&]auto=1\b/.test(location.search)) {
+        try {
+            var dest = new URL(autoOpen.getAttribute('data-rateb-app-open') || '');
+            if (dest.protocol === 'https:' && /(^|\.)rateb\.sa$/.test(dest.hostname)) {
+                localStorage.setItem(KEY, dest.href);
+                location.replace(dest.href);
+                return;
+            }
+        } catch (e) {}
+    }
 
     // Platform login page: go straight to the company panel saved on this device.
     var target = saved();

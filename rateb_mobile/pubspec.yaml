@@ -1,7 +1,7 @@
 name: rateb_mobile
 description: RATEB — Recruitment & Workforce Management mobile portal (iOS & Android).
 publish_to: 'none'
-version: 1.0.2+3
+version: 1.0.3+4
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -19,6 +19,7 @@ dependencies:
   intl: any
   mobile_scanner: ^6.0.2
   url_launcher: ^6.3.2
+  app_links: ^7.2.1
 
 dev_dependencies:
   flutter_test:

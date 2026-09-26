@@ -132,19 +132,34 @@ final class MobileAppActivationService
         ]];
     }
 
-    /** Apps enabled for the company, each with its download link. @return list<array{app:string, url:string}> */
+    /**
+     * Apps enabled for the company, each with its download link and an Android link that opens
+     * the installed app already activated (or falls back to the download).
+     *
+     * @return list<array{app:string, url:string, open:string}>
+     */
     public function enabledApps(array $company): array
     {
+        $code = $this->codeFor($company);
         $out = [];
         foreach (MobileAppApkService::APPS as $app) {
             if (!$this->apks->isEnabled($app, $company)) {
                 continue;
             }
             $key = $this->apks->slotKey($app, (int) $company['id']);
-            $out[] = ['app' => $app, 'url' => $this->apks->downloadUrlForToken($this->apks->ensureToken($key))];
+            $url = $this->apks->downloadUrlForToken($this->apks->ensureToken($key));
+            $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($app, $code, $url) : ''];
         }
 
         return $out;
+    }
+
+    /** Android intent link: ratebapp://activate?code=… in the app's package, download when not installed. */
+    public function appLink(string $app, string $code, string $fallbackUrl): string
+    {
+        return 'intent://activate?code=' . rawurlencode($code)
+            . '#Intent;scheme=ratebapp;package=' . $this->apks->appInfo($app)['package']
+            . ';S.browser_fallback_url=' . rawurlencode($fallbackUrl) . ';end';
     }
 
     private function storeNewCode(array $company): string

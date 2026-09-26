@@ -28,7 +28,18 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    CompanyActivation.revision.addListener(_onCompanyChanged);
+  }
+
+  void _onCompanyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    CompanyActivation.revision.removeListener(_onCompanyChanged);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();

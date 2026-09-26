@@ -71,7 +71,7 @@ $cardActive = !empty($appCard['active']);
         $apk = $appCard['apk'];
         $sharedApk = $appCard['sharedApk'];
         $apkUrl = (string) $appCard['url'];
-        $apkQr = (string) $appCard['qr'];
+        $apkQr = ($appCard['activationCode'] ?? '') !== '' ? '' : (string) $appCard['qr'];
         $apkChunkUrl = rateb_url('admin/mobile-apps/' . $cardCid . '/apk-chunk') . '?app=' . $cardApp;
         $apkDeleteUrl = rateb_url('admin/mobile-apps/' . $cardCid . '/apk-delete');
         $apkDeleteFields = ['app' => $cardApp];

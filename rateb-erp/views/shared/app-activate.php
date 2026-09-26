@@ -46,7 +46,8 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <?php } else { ?>
         <div class="list-group mb-3" data-rateb-web-only>
             <?php foreach ($apps as $row) { ?>
-            <a class="list-group-item list-group-item-action d-flex align-items-center gap-2" href="<?php echo $e($row['url']); ?>">
+            <a class="list-group-item list-group-item-action d-flex align-items-center gap-2" href="<?php echo $e($row['url']); ?>"
+               <?php if (($row['open'] ?? '') !== '') { ?>data-rateb-app-intent="<?php echo $e($row['open']); ?>"<?php } ?>>
                 <i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?> fa-fw"></i>
                 <span class="flex-grow-1"><?php echo $e(__('mobile_apps_tab_' . $row['app'])); ?></span>
                 <i class="fas fa-download"></i>

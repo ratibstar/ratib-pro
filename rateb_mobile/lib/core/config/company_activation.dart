@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum CompanyActivationError { invalidCode, appNotEnabled, rateLimited, network }
@@ -34,6 +35,9 @@ class CompanyActivation {
   static String? get companyName => _companyName;
   static String? get code => _code;
   static bool get isActive => _apiBaseUrl != null;
+
+  /// Bumped whenever the linked company changes, so open screens can refresh.
+  static final ValueNotifier<int> revision = ValueNotifier<int>(0);
 
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -120,6 +124,7 @@ class CompanyActivation {
     _agencyId = agencyId;
     _companyName = name;
     _code = code;
+    revision.value++;
     return null;
   }
 
@@ -134,6 +139,7 @@ class CompanyActivation {
     _agencyId = 0;
     _companyName = null;
     _code = null;
+    revision.value++;
   }
 
   static String? _validBase(String? value) {

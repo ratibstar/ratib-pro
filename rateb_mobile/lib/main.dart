@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'core/auth/auth_repository.dart';
 import 'core/auth/token_storage.dart';
+import 'core/config/activation_link_listener.dart';
 import 'core/config/app_config.dart';
 import 'core/config/company_activation.dart';
 import 'core/routing/app_router.dart';
@@ -112,9 +113,16 @@ class _RatebMobileAppState extends State<RatebMobileApp> {
           ],
           routerConfig: _appRouter.router,
           builder: (context, child) {
-            return AppUpdateBanner(
-              child: OfflineBannerHost(
-                child: child ?? const SizedBox.shrink(),
+            return ActivationLinkListener(
+              onCompanyChanged: () async {
+                if (_authProvider.status == AuthStatus.authenticated) {
+                  await _authProvider.logout();
+                }
+              },
+              child: AppUpdateBanner(
+                child: OfflineBannerHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             );
           },

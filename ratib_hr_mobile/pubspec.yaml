@@ -1,7 +1,7 @@
 name: ratib_hr_mobile
 description: RATEB HR Mobile — Enterprise Employee Self-Service (ESS). Presentation layer for RATEB ERP.
 publish_to: "none"
-version: 1.0.2+211
+version: 1.0.3+212
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
@@ -25,6 +25,7 @@ dependencies:
   flutter_local_notifications: ^19.4.0
   permission_handler: ^12.0.1
   url_launcher: ^6.3.2
+  app_links: ^7.2.1
 
 dev_dependencies:
   flutter_test:
