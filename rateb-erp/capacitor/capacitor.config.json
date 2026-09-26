@@ -3,7 +3,8 @@
   "appName": "RATEB ERP",
   "webDir": "www",
   "server": {
-    "cleartext": true,
+    "url": "https://rateb.sa/rateb-erp/public/admin",
+    "cleartext": false,
     "androidScheme": "https",
     "iosScheme": "capacitor"
   },
