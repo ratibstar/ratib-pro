@@ -35,6 +35,29 @@ $cardActive = !empty($appCard['active']);
         </form>
     </div>
     <div class="rateb-card-body">
+        <?php if (($appCard['activationCode'] ?? '') !== '') { ?>
+        <div class="row g-3 align-items-center mb-3 pb-3 border-bottom">
+            <div class="col-md-8">
+                <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_activation_code')); ?></label>
+                <div class="fs-4 fw-bold font-monospace mb-2" dir="ltr"><?php echo $e($appCard['activationCode']); ?></div>
+                <div class="small text-muted mb-2"><?php echo $e(__(!empty($appCard['needsCode']) ? 'mobile_activation_hint_required' : 'mobile_activation_hint_optional')); ?></div>
+                <div class="input-group input-group-sm mb-2">
+                    <input class="form-control" dir="ltr" readonly onclick="this.select()" value="<?php echo $e($appCard['activationUrl']); ?>">
+                    <a class="btn btn-outline-primary" href="<?php echo $e($appCard['activationUrl']); ?>" target="_blank" rel="noopener"><i class="fas fa-up-right-from-square"></i></a>
+                </div>
+                <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cardCid . '/activation-code'); ?>" class="d-inline"
+                      onsubmit="return confirm(<?php echo $e((string) json_encode(__('mobile_activation_regenerate_confirm'), JSON_UNESCAPED_UNICODE)); ?>);">
+                    <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
+                    <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="fas fa-rotate"></i> <?php echo $e(__('mobile_activation_regenerate')); ?></button>
+                </form>
+            </div>
+            <div class="col-md-4 text-center">
+                <img src="<?php echo $e($appCard['activationQr']); ?>" alt="QR" width="180" height="180" class="img-fluid rounded border bg-white p-2">
+                <div class="small text-muted mt-1"><?php echo $e(__('mobile_activation_qr_hint')); ?></div>
+            </div>
+        </div>
+        <?php } ?>
         <div class="mb-3">
             <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_apps_server')); ?></label>
             <input class="form-control form-control-sm" dir="ltr" readonly value="<?php echo $e($appCard['server']); ?>">

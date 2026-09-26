@@ -3,12 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/config/company_activation.dart';
 import '../../../core/models/user_role.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/language_toggle.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/company_activation_dialog.dart';
 import '../../debug/pilot_tools_screen.dart';
 import '../../qr/qr_scanner_screen.dart';
 
@@ -52,6 +54,22 @@ class _LoginScreenState extends State<LoginScreen> {
     };
     if (destination != AppRouter.login) {
       context.go(destination);
+    }
+  }
+
+  Future<void> _changeCompany() async {
+    final l10n = AppLocalizations.of(context);
+    final auth = context.read<AuthProvider>();
+    final changed = await showCompanyActivationDialog(context);
+    if (!changed || !mounted) return;
+    auth.clearError();
+    auth.clearSessionMessage();
+    setState(() {});
+    final name = CompanyActivation.companyName ?? '';
+    if (CompanyActivation.isActive && name.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${l10n.activationDone} $name')),
+      );
     }
   }
 
@@ -245,6 +263,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                 .withValues(alpha: 0.5),
                           ),
                           textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        if (CompanyActivation.isActive &&
+                            (CompanyActivation.companyName ?? '').isNotEmpty)
+                          Text(
+                            CompanyActivation.companyName!,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        TextButton.icon(
+                          onPressed: auth.isLoading ? null : _changeCompany,
+                          icon: const Icon(Icons.apartment_rounded, size: 18),
+                          label: Text(
+                            CompanyActivation.isActive
+                                ? l10n.activationChange
+                                : l10n.activationHaveCode,
+                          ),
                         ),
                         if (PilotToolsScreen.isAvailable) ...[
                           const SizedBox(height: 20),

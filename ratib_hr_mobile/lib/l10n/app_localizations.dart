@@ -78,6 +78,19 @@ class AppLocalizations {
       'loginErpOnlyHint': 'المصادقة عبر نظام رتب ERP فقط',
       'loginEmployeeUnbound': 'لا يوجد موظف مرتبط بهذا الحساب',
       'loginEmployeeAmbiguous': 'أكثر من موظف مرتبط بهذا الحساب',
+      'activationHaveCode': 'لديك رمز شركة؟',
+      'activationChange': 'تغيير الشركة',
+      'activationTitle': 'ربط التطبيق بشركتك',
+      'activationCodeLabel': 'رمز الشركة',
+      'activationHint': 'أدخل الرمز الذي أرسلته لك شركتك (مثال: ABCD-2345)',
+      'activationSubmit': 'تفعيل',
+      'activationCancel': 'إلغاء',
+      'activationRemove': 'إلغاء ربط الشركة',
+      'activationDone': 'تم ربط التطبيق بـ',
+      'activationInvalid': 'رمز الشركة غير صحيح',
+      'activationAppDisabled': 'تطبيق الموارد البشرية غير مفعّل لهذه الشركة',
+      'activationRateLimited': 'محاولات كثيرة. حاول لاحقاً',
+      'activationNetworkError': 'تعذر الاتصال بالخادم',
       'loginPlatformSuperAdmin':
           'حساب مشرف المنصة لا يدعم تطبيق الجوال — استخدم حساب شركة مرتبط بموظف',
       'signOut': 'تسجيل الخروج',
@@ -325,6 +338,19 @@ class AppLocalizations {
       'loginErpOnlyHint': 'Authentication via RATEB ERP only',
       'loginEmployeeUnbound': 'No employee is linked to this account',
       'loginEmployeeAmbiguous': 'Multiple employees are linked to this account',
+      'activationHaveCode': 'Have a company code?',
+      'activationChange': 'Change company',
+      'activationTitle': 'Link the app to your company',
+      'activationCodeLabel': 'Company code',
+      'activationHint': 'Enter the code your company gave you (e.g. ABCD-2345)',
+      'activationSubmit': 'Activate',
+      'activationCancel': 'Cancel',
+      'activationRemove': 'Unlink company',
+      'activationDone': 'App linked to',
+      'activationInvalid': 'Invalid company code',
+      'activationAppDisabled': 'The HR app is not enabled for this company',
+      'activationRateLimited': 'Too many attempts. Try again later',
+      'activationNetworkError': 'Could not reach the server',
       'loginPlatformSuperAdmin':
           'Platform super-admin cannot use the mobile app — use a company employee account',
       'signOut': 'Sign out',
@@ -581,6 +607,19 @@ class AppLocalizations {
   String get loginErpOnlyHint => _t('loginErpOnlyHint');
   String get loginEmployeeUnbound => _t('loginEmployeeUnbound');
   String get loginEmployeeAmbiguous => _t('loginEmployeeAmbiguous');
+  String get activationHaveCode => _t('activationHaveCode');
+  String get activationChange => _t('activationChange');
+  String get activationTitle => _t('activationTitle');
+  String get activationCodeLabel => _t('activationCodeLabel');
+  String get activationHint => _t('activationHint');
+  String get activationSubmit => _t('activationSubmit');
+  String get activationCancel => _t('activationCancel');
+  String get activationRemove => _t('activationRemove');
+  String get activationDone => _t('activationDone');
+  String get activationInvalid => _t('activationInvalid');
+  String get activationAppDisabled => _t('activationAppDisabled');
+  String get activationRateLimited => _t('activationRateLimited');
+  String get activationNetworkError => _t('activationNetworkError');
   String get loginPlatformSuperAdmin => _t('loginPlatformSuperAdmin');
   String get signOut => _t('signOut');
   String get homeLoading => _t('homeLoading');

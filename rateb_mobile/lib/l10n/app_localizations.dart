@@ -53,6 +53,20 @@ class AppLocalizations {
       'signIn': 'تسجيل الدخول',
       'identityLogin': 'الدخول ببطاقة الهوية',
       'scanBadgeHint': 'امسح رمز QR لبطاقتك من إعدادات نظام راتب',
+      'activationHaveCode': 'لديك رمز شركة؟',
+      'activationChange': 'تغيير الشركة',
+      'activationTitle': 'ربط التطبيق بشركتك',
+      'activationCodeLabel': 'رمز الشركة',
+      'activationHint': 'أدخل الرمز الذي أرسلته لك شركتك أو امسح رمز QR',
+      'activationScan': 'مسح رمز QR',
+      'activationSubmit': 'تفعيل',
+      'activationCancel': 'إلغاء',
+      'activationRemove': 'إلغاء ربط الشركة',
+      'activationDone': 'تم ربط التطبيق بـ',
+      'activationInvalid': 'رمز الشركة غير صحيح',
+      'activationAppDisabled': 'التطبيق غير مفعّل لهذه الشركة',
+      'activationRateLimited': 'محاولات كثيرة. حاول لاحقاً',
+      'activationNetworkError': 'تعذر الاتصال بالخادم',
       'pilotTools': 'أدوات تجريبية (داخلية)',
       'couldNotLoadData': 'تعذّر تحميل البيانات',
       'offlineBanner': 'أنت غير متصل. يتم عرض البيانات المحفوظة عند توفرها.',
@@ -143,6 +157,20 @@ class AppLocalizations {
       'signIn': 'Sign in',
       'identityLogin': 'Workforce identity login',
       'scanBadgeHint': 'Scan your badge QR code from RATEB System Settings',
+      'activationHaveCode': 'Have a company code?',
+      'activationChange': 'Change company',
+      'activationTitle': 'Link the app to your company',
+      'activationCodeLabel': 'Company code',
+      'activationHint': 'Enter the code your company gave you or scan its QR',
+      'activationScan': 'Scan QR',
+      'activationSubmit': 'Activate',
+      'activationCancel': 'Cancel',
+      'activationRemove': 'Unlink company',
+      'activationDone': 'App linked to',
+      'activationInvalid': 'Invalid company code',
+      'activationAppDisabled': 'This app is not enabled for this company',
+      'activationRateLimited': 'Too many attempts. Try again later',
+      'activationNetworkError': 'Could not reach the server',
       'pilotTools': 'Pilot tools (internal)',
       'couldNotLoadData': 'Could not load data',
       'offlineBanner': 'You are offline. Showing saved data where available.',
@@ -238,6 +266,20 @@ class AppLocalizations {
   String get signIn => _t('signIn');
   String get identityLogin => _t('identityLogin');
   String get scanBadgeHint => _t('scanBadgeHint');
+  String get activationHaveCode => _t('activationHaveCode');
+  String get activationChange => _t('activationChange');
+  String get activationTitle => _t('activationTitle');
+  String get activationCodeLabel => _t('activationCodeLabel');
+  String get activationHint => _t('activationHint');
+  String get activationScan => _t('activationScan');
+  String get activationSubmit => _t('activationSubmit');
+  String get activationCancel => _t('activationCancel');
+  String get activationRemove => _t('activationRemove');
+  String get activationDone => _t('activationDone');
+  String get activationInvalid => _t('activationInvalid');
+  String get activationAppDisabled => _t('activationAppDisabled');
+  String get activationRateLimited => _t('activationRateLimited');
+  String get activationNetworkError => _t('activationNetworkError');
   String get pilotTools => _t('pilotTools');
   String get couldNotLoadData => _t('couldNotLoadData');
   String get offlineBanner => _t('offlineBanner');

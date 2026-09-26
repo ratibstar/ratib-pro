@@ -4,6 +4,7 @@
 /// `--dart-define=ERP_BASE_URL` (observed on Windows flavor builds).
 library;
 
+import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
 import 'package:ratib_hr_mobile/core/env/app_environment.dart';
 import 'package:ratib_hr_mobile/core/env/app_flavor.dart';
 
@@ -44,6 +45,8 @@ final class DartDefineAppEnvironment implements AppEnvironment {
 
   @override
   String get erpBaseUrl {
+    final activated = CompanyActivation.erpBaseUrl;
+    if (activated != null && activated.isNotEmpty) return activated;
     final configured = _baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
     if (configured.isNotEmpty) return configured;
     return productionErpBaseUrl;

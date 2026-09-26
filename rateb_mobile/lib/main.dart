@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'core/auth/auth_repository.dart';
 import 'core/auth/token_storage.dart';
 import 'core/config/app_config.dart';
+import 'core/config/company_activation.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/rateb_api_service.dart';
 import 'core/theme/app_theme.dart';
@@ -18,6 +19,7 @@ import 'shared/widgets/offline_banner.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _configureErrorHandling();
+  await CompanyActivation.load();
   final localeController = LocaleController();
   await localeController.load();
   runApp(RatebMobileApp(localeController: localeController));

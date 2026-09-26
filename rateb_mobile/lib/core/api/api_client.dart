@@ -32,6 +32,7 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          options.baseUrl = AppConfig.apiBaseUrl;
           if (NetworkMonitor.instance.simulateOffline) {
             handler.reject(
               DioException(

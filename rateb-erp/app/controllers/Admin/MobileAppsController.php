@@ -8,6 +8,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\Company;
+use Rateb\App\Services\MobileAppActivationService;
 use Rateb\App\Services\MobileAppApkService;
 use Rateb\App\Services\MobileAppConfigService;
 
@@ -163,7 +164,7 @@ final class MobileAppsController extends Controller
 
         $apkSvc = new MobileAppApkService();
         $model = new Company();
-        $counts = ['linked' => 0, 'already_shared' => 0, 'needs_own_build' => 0, 'no_shared' => 0];
+        $counts = ['linked' => 0, 'already_shared' => 0, 'no_shared' => 0];
         foreach ($ids as $id) {
             $company = $model->find($id);
             if (!is_array($company)) {
@@ -177,11 +178,28 @@ final class MobileAppsController extends Controller
             SessionManager::flash('success', sprintf(
                 __('mobile_apps_updates_push_done'),
                 $counts['linked'],
-                $counts['already_shared'],
-                $counts['needs_own_build']
+                $counts['already_shared']
             ));
         }
         Response::redirect(rateb_url($back));
+    }
+
+    /** New activation code for the company; the old code stops working. */
+    public function regenerateActivationCode(array $params = []): void
+    {
+        $companyId = (int) ($params['id'] ?? 0);
+        $app = MobileAppApkService::normalizeApp((string) $this->input('app', 'hr'));
+        $back = rateb_url('admin/mobile-apps/' . $companyId) . ($app === 'hr' ? '' : '?app=' . $app);
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        if ($this->validateCsrf()) {
+            $ok = (new MobileAppActivationService())->regenerate($companyId) !== '';
+            SessionManager::flash($ok ? 'success' : 'error', __($ok ? 'mobile_activation_regenerated' : 'mobile_apps_save_failed'));
+        }
+        Response::redirect($back);
     }
 
     private function currentUserId(): int
@@ -238,8 +256,15 @@ final class MobileAppsController extends Controller
         $server = $apkSvc->serverForCompany($app, $company);
         $apk = $apkSvc->meta($key);
         $url = $apkSvc->downloadUrlForToken($apkSvc->ensureToken($key));
+        $activation = new MobileAppActivationService($apkSvc);
+        $code = $activation->ensureCode($cid);
+        $activationUrl = $code !== '' ? $activation->activationUrl($code) : '';
 
         return [
+            'activationCode' => MobileAppActivationService::format($code),
+            'activationUrl' => $activationUrl,
+            'activationQr' => $activationUrl !== '' ? $apkSvc->qrImageUrl($activationUrl) : '',
+            'needsCode' => $apkSvc->needsActivationCode($app, $company),
             'app' => $app,
             'cid' => $cid,
             'active' => $apkSvc->isEnabled($app, $company, $hrConfig ?? ['status' => '']),

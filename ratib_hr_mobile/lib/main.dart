@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/di/phase1_bootstrap.dart';
@@ -14,6 +15,7 @@ import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await CompanyActivation.load();
   bootstrapPhase1();
   await AppLocator.appearance.load();
   final session = AuthSession();

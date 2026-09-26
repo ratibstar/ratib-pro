@@ -41,6 +41,8 @@ $router->get('/admin/platform-catalog/sso', [\Rateb\App\Controllers\Shared\Platf
 $router->get('/scan/doc/{code}', [\Rateb\App\Controllers\Shared\DocumentScanController::class, 'show'], [ErpAuthMiddleware::class]);
 $router->get('/scan/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::class, 'image']);
 $router->get('/hr-app/{token}', [\Rateb\App\Controllers\Admin\MobileAppsController::class, 'downloadApk']);
+$router->get('/app-activate', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'form']);
+$router->get('/app-activate/{code}', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'show']);
 $router->post('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
 $router->post('/login/2fa', [\Rateb\App\Controllers\Shared\LoginController::class, 'verifyTwoFactor'], rateb_guest_mw());
 $router->post('/login/barcode', [\Rateb\App\Controllers\Shared\BarcodeLoginController::class, 'loginBarcode'], rateb_guest_mw());

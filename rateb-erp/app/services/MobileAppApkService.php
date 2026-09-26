@@ -193,14 +193,27 @@ final class MobileAppApkService
         return rateb_local_qr_url($url, max(120, min(500, $size)), true);
     }
 
-    /** Shared build this company falls back to (same server as the platform build), if any. */
+    /**
+     * Shared build this company falls back to when it has no own build. Companies on their own
+     * server use it too: the app learns their server from the company activation code.
+     */
     public function sharedFallback(string $app, array $company): ?array
     {
-        if ($this->serverForCompany($app, $company) !== $this->platformServer($app)) {
-            return null;
-        }
-
         return $this->meta(self::normalizeApp($app));
+    }
+
+    /** True when the shared build reaches this company only after its activation code is entered. */
+    public function needsActivationCode(string $app, array $company): bool
+    {
+        return $this->serverForCompany($app, $company) !== $this->platformServer($app);
+    }
+
+    /** Control Panel agency (control_agencies.id) the company's data lives in, 0 when none. */
+    public function agencyIdForCompany(array $company): int
+    {
+        $agency = $this->agencyForCompany((int) ($company['id'] ?? $company['company_id'] ?? 0), $company);
+
+        return is_array($agency) ? (int) ($agency['id'] ?? 0) : 0;
     }
 
     /**
@@ -528,22 +541,22 @@ final class MobileAppApkService
     /**
      * Where this company's app stands against the shared build.
      *
-     * @return string shared|own_current|own_outdated|own_dedicated|needs_own_build|missing
+     * @return string shared|shared_code|own_current|own_outdated|own_dedicated|missing
      */
     public function companyUpdateState(string $app, array $company): string
     {
         $app = self::normalizeApp($app);
         $own = $this->meta($this->slotKey($app, (int) ($company['id'] ?? 0)));
         $shared = $this->meta($app);
-        $onPlatform = $this->serverForCompany($app, $company) === $this->platformServer($app);
+        $needsCode = $this->needsActivationCode($app, $company);
         if ($own === null) {
-            if (!$onPlatform) {
-                return 'needs_own_build';
+            if ($shared === null) {
+                return 'missing';
             }
 
-            return $shared !== null ? 'shared' : 'missing';
+            return $needsCode ? 'shared_code' : 'shared';
         }
-        if (!$onPlatform) {
+        if ($needsCode) {
             return 'own_dedicated';
         }
         if ($shared === null) {
@@ -554,19 +567,17 @@ final class MobileAppApkService
     }
 
     /**
-     * Point a platform-server company at the shared build (its own APK is removed, its link stays),
-     * so it receives every future shared update automatically.
+     * Point a company at the shared build (its own APK is removed, its link stays), so it receives
+     * every future shared update automatically. Companies on their own server then sign in after
+     * entering their activation code.
      *
-     * @return string linked|already_shared|needs_own_build|no_shared
+     * @return string linked|already_shared|no_shared
      */
     public function linkCompanyToShared(string $app, array $company): string
     {
         $app = self::normalizeApp($app);
         if ($this->meta($app) === null) {
             return 'no_shared';
-        }
-        if ($this->serverForCompany($app, $company) !== $this->platformServer($app)) {
-            return 'needs_own_build';
         }
         $key = $this->slotKey($app, (int) ($company['id'] ?? 0));
         if ($this->meta($key) === null) {

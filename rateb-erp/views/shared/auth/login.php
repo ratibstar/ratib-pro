@@ -54,7 +54,11 @@
     <?php require __DIR__ . '/_remember.php'; ?>
     <button type="submit" class="btn btn-primary w-100"><?php echo __('login'); ?></button>
     <p class="mt-3 mb-0 text-center"><a href="<?php echo rateb_url('password/forgot'); ?>"><?php echo __('password_forgot'); ?></a></p>
+    <p class="mt-2 mb-0 text-center small d-none" data-rateb-app-only data-rateb-app-login>
+        <a href="<?php echo Rateb\App\Core\View::escape(rateb_platform_oversight_public_url('app-activate')); ?>"><i class="fas fa-key" aria-hidden="true"></i> <?php echo __('mobile_activation_login_link'); ?></a>
+    </p>
 </form>
+<script src="<?php echo rateb_asset('js/app-company-activation.js'); ?>"></script>
 
 <div id="barcode-form" class="login-panel text-center d-none">
     <div class="barcode-this-device barcode-login-panel mb-2">

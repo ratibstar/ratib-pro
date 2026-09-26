@@ -28,6 +28,7 @@ final class DioErpHttpClient implements ErpHttpClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          options.baseUrl = _environment.erpBaseUrl;
           final token = await _tokenStore.readToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';

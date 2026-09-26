@@ -2,12 +2,14 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
 import 'package:ratib_hr_mobile/core/routing/app_router.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
+import 'package:ratib_hr_mobile/features/login/company_activation_dialog.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
@@ -127,6 +129,24 @@ class _LoginPageState extends State<LoginPage> {
       message: _messageFor(widget.session.lastError, l10n),
       kind: DsSnackbarKind.error,
     );
+  }
+
+  Future<void> _changeCompany() async {
+    final l10n = AppLocalizations.of(context);
+    final changed = await showCompanyActivationDialog(context);
+    if (!changed || !mounted) return;
+    await widget.session.signOut();
+    await _refreshBiometric();
+    if (!mounted) return;
+    setState(() {});
+    final name = CompanyActivation.companyName ?? '';
+    if (CompanyActivation.isActive && name.isNotEmpty) {
+      DsSnackbar.show(
+        context,
+        message: '${l10n.activationDone} $name',
+        kind: DsSnackbarKind.success,
+      );
+    }
   }
 
   Future<void> _unlockBiometric() async {
@@ -264,7 +284,26 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.md),
+              if (CompanyActivation.isActive &&
+                  (CompanyActivation.companyName ?? '').isNotEmpty)
+                Text(
+                  CompanyActivation.companyName!,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              TextButton.icon(
+                onPressed: _busy ? null : _changeCompany,
+                icon: const Icon(Icons.apartment_rounded, size: 18),
+                label: Text(
+                  CompanyActivation.isActive
+                      ? l10n.activationChange
+                      : l10n.activationHaveCode,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 l10n.loginErpOnlyHint,
                 textAlign: TextAlign.center,

@@ -4,6 +4,7 @@
   "webDir": "www",
   "server": {
     "url": "https://rateb.sa/rateb-erp/public/admin",
+    "allowNavigation": ["rateb.sa", "*.rateb.sa"],
     "cleartext": false,
     "androidScheme": "https",
     "iosScheme": "capacitor"

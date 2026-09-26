@@ -19,13 +19,13 @@ $sharedIsPublished = $published !== null && $sharedApk !== null
     && hash_equals((string) ($sharedApk['sha256'] ?? ''), (string) $published['sha256']);
 $stateBadges = [
     'shared' => ['text-bg-success', 'mobile_apps_updates_state_shared'],
+    'shared_code' => ['text-bg-success', 'mobile_apps_updates_state_shared_code'],
     'own_current' => ['text-bg-info', 'mobile_apps_updates_state_own_current'],
     'own_outdated' => ['text-bg-warning', 'mobile_apps_updates_state_own_outdated'],
     'own_dedicated' => ['text-bg-info', 'mobile_apps_updates_state_own_dedicated'],
-    'needs_own_build' => ['text-bg-secondary', 'mobile_apps_updates_state_needs_own_build'],
     'missing' => ['text-bg-danger', 'mobile_apps_updates_state_missing'],
 ];
-$pushStates = ['own_outdated', 'own_current'];
+$pushStates = ['own_outdated', 'own_current', 'own_dedicated'];
 $pushable = array_values(array_filter($rows, static fn (array $r): bool => in_array($r['state'], $pushStates, true)));
 ?>
 <div class="mb-3">

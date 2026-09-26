@@ -70,6 +70,7 @@ $router->post('/api/v1/hr/manager/approvals/decide', [\Rateb\App\Controllers\Api
 $router->get('/api/v1/hr/manager/employees/{id}', [\Rateb\App\Controllers\Api\HrManagerTeamController::class, 'employee'], $api);
 
 $router->get('/api/mobile/config', [\Rateb\App\Controllers\Api\MobileConfigController::class, 'config'], $api);
+$router->get('/api/v1/mobile/activation', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'api']);
 $router->get('/api/mobile/app-content', [\Rateb\App\Controllers\Api\MobileAppContentController::class, 'show']);
 
 $router->post('/api/v1/mobile/devices/register', [\Rateb\App\Controllers\Api\MobileDeviceController::class, 'register'], $api);
