@@ -10,6 +10,7 @@ import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/di/phase1_bootstrap.dart';
 import 'package:ratib_hr_mobile/core/routing/app_router.dart';
 import 'package:ratib_hr_mobile/core/theme/brand_theme_factory.dart';
+import 'package:ratib_hr_mobile/core/update/app_update_banner.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 
@@ -74,6 +75,8 @@ class _RatebHrMobileAppState extends State<RatebHrMobileApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           routerConfig: _router,
+          builder: (context, child) =>
+              AppUpdateBanner(child: child ?? const SizedBox.shrink()),
         );
       },
     );

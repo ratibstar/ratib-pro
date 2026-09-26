@@ -10,6 +10,7 @@ import 'core/config/company_activation.dart';
 import 'core/routing/app_router.dart';
 import 'core/services/rateb_api_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/update/app_update_banner.dart';
 import 'core/api/api_client.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'l10n/app_localizations.dart';
@@ -111,8 +112,10 @@ class _RatebMobileAppState extends State<RatebMobileApp> {
           ],
           routerConfig: _appRouter.router,
           builder: (context, child) {
-            return OfflineBannerHost(
-              child: child ?? const SizedBox.shrink(),
+            return AppUpdateBanner(
+              child: OfflineBannerHost(
+                child: child ?? const SizedBox.shrink(),
+              ),
             );
           },
         ),

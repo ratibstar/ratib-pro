@@ -29,6 +29,46 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
     require __DIR__ . '/_company-app-card.php';
 } ?>
 
+<?php if (!$canToggleEnable && isset($share) && is_array($share)) {
+    $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
+    ?>
+<div class="rateb-card mb-3">
+    <div class="rateb-card-header"><i class="fas fa-share-nodes"></i> <?php echo $e(__('mobile_share_title')); ?></div>
+    <div class="rateb-card-body">
+        <p class="small text-muted"><?php echo $e(__('mobile_share_intro')); ?></p>
+        <?php if (($share['code'] ?? '') !== '') { ?>
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <div>
+                    <div class="small text-muted"><?php echo $e(__('mobile_activation_code')); ?></div>
+                    <div class="fs-4 fw-bold font-monospace" dir="ltr"><?php echo $e($share['code']); ?></div>
+                    <a class="small" href="<?php echo $e($share['activationUrl']); ?>" target="_blank" rel="noopener" dir="ltr"><?php echo $e($share['activationUrl']); ?></a>
+                </div>
+                <?php if (($share['activationQr'] ?? '') !== '') { ?>
+                    <img src="<?php echo $e($share['activationQr']); ?>" alt="QR" width="120" height="120" class="bg-white p-1 rounded">
+                <?php } ?>
+            </div>
+        <?php } else { ?>
+            <div class="alert alert-info py-2 small"><?php echo $e(__('mobile_share_code_ask')); ?></div>
+        <?php } ?>
+        <?php if (empty($share['apps'])) { ?>
+            <div class="alert alert-warning py-2 small mb-0"><?php echo $e(__('mobile_activation_no_apps')); ?></div>
+        <?php } else { ?>
+            <div class="row g-3">
+                <?php foreach ($share['apps'] as $shareApp) { ?>
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="border rounded p-2 h-100 text-center">
+                            <div class="fw-semibold mb-2"><?php echo $e(__('mobile_apps_tab_' . $shareApp['app'])); ?></div>
+                            <img src="<?php echo $e($shareApp['qr']); ?>" alt="QR" width="120" height="120" class="bg-white p-1 rounded mb-2">
+                            <div><a class="btn btn-sm btn-outline-primary" href="<?php echo $e($shareApp['url']); ?>"><i class="fas fa-download"></i> <?php echo $e(__('mobile_share_download')); ?></a></div>
+                        </div>
+                    </div>
+                <?php } ?>
+            </div>
+        <?php } ?>
+    </div>
+</div>
+<?php } ?>
+
 <div class="rateb-card mb-3">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape(__($canToggleEnable ? 'mobile_apps_hr_branding' : 'mobile_apps_edit')); ?></div>
     <div class="rateb-card-body">

@@ -53,5 +53,8 @@ class AppConfig {
   static const String appTagline = 'Workforce Management Portal';
 
   /// Keep aligned with pubspec.yaml version.
-  static const String appVersion = '1.0.1+2';
+  static const String appVersion = '1.0.2+3';
+
+  /// Keep aligned with the pubspec.yaml build number (after "+").
+  static const int buildNumber = 3;
 }

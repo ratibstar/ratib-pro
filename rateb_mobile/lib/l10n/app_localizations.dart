@@ -67,6 +67,9 @@ class AppLocalizations {
       'activationAppDisabled': 'التطبيق غير مفعّل لهذه الشركة',
       'activationRateLimited': 'محاولات كثيرة. حاول لاحقاً',
       'activationNetworkError': 'تعذر الاتصال بالخادم',
+      'updateAvailable': 'يتوفر تحديث جديد للتطبيق',
+      'updateNow': 'تحديث',
+      'updateLater': 'لاحقاً',
       'pilotTools': 'أدوات تجريبية (داخلية)',
       'couldNotLoadData': 'تعذّر تحميل البيانات',
       'offlineBanner': 'أنت غير متصل. يتم عرض البيانات المحفوظة عند توفرها.',
@@ -171,6 +174,9 @@ class AppLocalizations {
       'activationAppDisabled': 'This app is not enabled for this company',
       'activationRateLimited': 'Too many attempts. Try again later',
       'activationNetworkError': 'Could not reach the server',
+      'updateAvailable': 'A new version of the app is available',
+      'updateNow': 'Update',
+      'updateLater': 'Later',
       'pilotTools': 'Pilot tools (internal)',
       'couldNotLoadData': 'Could not load data',
       'offlineBanner': 'You are offline. Showing saved data where available.',
@@ -280,6 +286,9 @@ class AppLocalizations {
   String get activationAppDisabled => _t('activationAppDisabled');
   String get activationRateLimited => _t('activationRateLimited');
   String get activationNetworkError => _t('activationNetworkError');
+  String get updateAvailable => _t('updateAvailable');
+  String get updateNow => _t('updateNow');
+  String get updateLater => _t('updateLater');
   String get pilotTools => _t('pilotTools');
   String get couldNotLoadData => _t('couldNotLoadData');
   String get offlineBanner => _t('offlineBanner');

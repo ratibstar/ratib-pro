@@ -216,7 +216,7 @@ final class MobileAppsController extends Controller
         }
 
         $companyId = (int) ($params['id'] ?? 0);
-        $company = (new Company())->find($companyId);
+        $company = $this->ownsCompany($companyId) ? (new Company())->find($companyId) : null;
         if (!$company) {
             SessionManager::flash('error', __('not_found'));
             Response::redirect(rateb_url('admin/mobile-apps'));
@@ -242,9 +242,58 @@ final class MobileAppsController extends Controller
         ];
         if ($platform) {
             $data['appCard'] = $this->companyAppCard($app, $company, $row);
+        } else {
+            $data['share'] = $this->companyShare($company);
         }
 
         $this->view($app === 'hr' ? 'admin/mobile-apps/edit' : 'admin/mobile-apps/company-app', $data, 'main');
+    }
+
+    /**
+     * Read-only sharing info for the company's own admins: activation code + download links.
+     * Codes are issued on the platform only; agency hosts have their own DB, so never mint one there.
+     *
+     * @return array{code:string, activationUrl:string, activationQr:string, apps:list<array{app:string, url:string, qr:string}>}
+     */
+    private function companyShare(array $company): array
+    {
+        $apkSvc = new MobileAppApkService();
+        $activation = new MobileAppActivationService($apkSvc);
+        $agencyHost = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
+        $code = $agencyHost ? $activation->codeFor($company) : $activation->ensureCode((int) $company['id']);
+        $activationUrl = $code !== ''
+            ? rateb_platform_oversight_public_url('app-activate/' . MobileAppActivationService::format($code))
+            : '';
+        $apps = [];
+        foreach (MobileAppApkService::APPS as $app) {
+            if (!$apkSvc->isEnabled($app, $company)) {
+                continue;
+            }
+            $url = $agencyHost
+                ? rateb_platform_oversight_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES[$app])
+                : $apkSvc->downloadUrlForToken($apkSvc->ensureToken($apkSvc->slotKey($app, (int) $company['id'])));
+            $apps[] = ['app' => $app, 'url' => $url, 'qr' => $apkSvc->qrImageUrl($url, 160)];
+        }
+
+        return [
+            'code' => MobileAppActivationService::format($code),
+            'activationUrl' => $activationUrl,
+            'activationQr' => $activationUrl !== '' ? $apkSvc->qrImageUrl($activationUrl, 160) : '',
+            'apps' => $apps,
+        ];
+    }
+
+    /** Platform super-admin sees every company; company users only their own. */
+    private function ownsCompany(int $companyId): bool
+    {
+        if ($companyId < 1) {
+            return false;
+        }
+        if (function_exists('rateb_is_super_admin') && rateb_is_super_admin()) {
+            return true;
+        }
+
+        return (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0) === $companyId;
     }
 
     /** @return array<string, mixed> */
@@ -457,6 +506,11 @@ final class MobileAppsController extends Controller
         }
 
         $companyId = (int) ($params['id'] ?? 0);
+        if (!$this->ownsCompany($companyId)) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
         $postedFeatures = $_POST['features'] ?? [];
         if (!is_array($postedFeatures)) {
             $postedFeatures = [];

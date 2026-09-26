@@ -91,6 +91,9 @@ class AppLocalizations {
       'activationAppDisabled': 'تطبيق الموارد البشرية غير مفعّل لهذه الشركة',
       'activationRateLimited': 'محاولات كثيرة. حاول لاحقاً',
       'activationNetworkError': 'تعذر الاتصال بالخادم',
+      'updateAvailable': 'يتوفر تحديث جديد للتطبيق',
+      'updateNow': 'تحديث',
+      'updateLater': 'لاحقاً',
       'loginPlatformSuperAdmin':
           'حساب مشرف المنصة لا يدعم تطبيق الجوال — استخدم حساب شركة مرتبط بموظف',
       'signOut': 'تسجيل الخروج',
@@ -351,6 +354,9 @@ class AppLocalizations {
       'activationAppDisabled': 'The HR app is not enabled for this company',
       'activationRateLimited': 'Too many attempts. Try again later',
       'activationNetworkError': 'Could not reach the server',
+      'updateAvailable': 'A new version of the app is available',
+      'updateNow': 'Update',
+      'updateLater': 'Later',
       'loginPlatformSuperAdmin':
           'Platform super-admin cannot use the mobile app — use a company employee account',
       'signOut': 'Sign out',
@@ -620,6 +626,9 @@ class AppLocalizations {
   String get activationAppDisabled => _t('activationAppDisabled');
   String get activationRateLimited => _t('activationRateLimited');
   String get activationNetworkError => _t('activationNetworkError');
+  String get updateAvailable => _t('updateAvailable');
+  String get updateNow => _t('updateNow');
+  String get updateLater => _t('updateLater');
   String get loginPlatformSuperAdmin => _t('loginPlatformSuperAdmin');
   String get signOut => _t('signOut');
   String get homeLoading => _t('homeLoading');
