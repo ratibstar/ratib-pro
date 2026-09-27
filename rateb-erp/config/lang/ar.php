@@ -3378,6 +3378,7 @@ return [
     'mobile_activation_not_apk_update' => 'مسح QR يربط الشركة بالتطبيق المثبّت — لا يستبدل نسخة التطبيق. لتحديث الشاشات والميزات: من الجوال اضغط «تحديث» في الشريط السفلي أو حمّل APK من رابط التفعيل.',
     'mobile_activation_qr_scope' => 'باركود هذه الشركة فقط: :name (#:id) — الخادم :host',
     'mobile_activation_qr_payload' => 'محتوى الباركود',
+    'mobile_activation_qr_scan_hint' => 'امسح الباركود بكاميرا الجوال — يفتح تطبيق HR ويربط الشركة مباشرة (بدون كتابة الرمز).',
     'mobile_activation_page_company_id' => 'شركة #:id',
     'mobile_activation_duplicate_alert' => 'تعارض: نفس رمز التفعيل مربوط بأكثر من شركة. أنشئ «رمز جديد» لكل شركة متأثرة حتى لا يختلط التفعيل.',
     'mobile_activation_duplicate_companies' => 'معرّفات الشركات',

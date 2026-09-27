@@ -562,7 +562,8 @@ final class MobileAppsController extends Controller
         return [
             'code' => MobileAppActivationService::format($code),
             'activationUrl' => $activationUrl,
-            'activationQr' => $activationUrl !== '' ? $apkSvc->qrDataUri($activationUrl, 160) : '',
+            'activationQr' => $code !== '' ? $apkSvc->qrDataUri($activation->qrActivationPayload($code), 160) : '',
+            'activationQrPayload' => $code !== '' ? $activation->qrActivationPayload($code) : '',
             'apps' => $apps,
         ];
     }
@@ -641,7 +642,8 @@ final class MobileAppsController extends Controller
             'dispatchEnabled' => trim((string) (getenv('RATEB_GITHUB_DISPATCH_TOKEN') ?: '')) !== '',
             'activationCode' => MobileAppActivationService::format($code),
             'activationUrl' => $activationUrl,
-            'activationQr' => $activationUrl !== '' ? $apkSvc->qrDataUri($activationUrl, 180) : '',
+            'activationQr' => $code !== '' ? $apkSvc->qrDataUri($activation->qrActivationPayload($code), 180) : '',
+            'activationQrPayload' => $code !== '' ? $activation->qrActivationPayload($code) : '',
             'needsCode' => $apkSvc->needsActivationCode($app, $company),
             'app' => $app,
             'cid' => $cid,

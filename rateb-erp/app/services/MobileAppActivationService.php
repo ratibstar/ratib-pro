@@ -98,6 +98,17 @@ final class MobileAppActivationService
         return rateb_public_url($path);
     }
 
+    /** What the admin QR encodes — opens the HR app directly when scanned (not the browser). */
+    public function qrActivationPayload(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+
+        return 'ratebapp://activate?code=' . rawurlencode(self::format($code));
+    }
+
     /**
      * Every company with a stored code (for admin audit — no codes are minted here).
      *
