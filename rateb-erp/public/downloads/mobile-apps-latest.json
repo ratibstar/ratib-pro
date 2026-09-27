@@ -1,20 +1,20 @@
 {
-    "hr": {
-        "file": "rateb-hr-mobile-latest.apk",
-        "package": "sa.rateb.hr.mobile",
-        "version": "1.0.3",
-        "version_code": 212
-    },
-    "erp": {
-        "file": "rateb-erp-latest.apk",
-        "package": "sa.rateb.erp",
-        "version": "1.0.4",
-        "version_code": 5
-    },
-    "customer": {
-        "file": "rateb-customer-latest.apk",
-        "package": "com.ratib.rateb_mobile",
-        "version": "1.0.3",
-        "version_code": 4
-    }
+    "hr":  {
+               "file":  "rateb-hr-mobile-latest.apk",
+               "package":  "sa.rateb.hr.mobile",
+               "version":  "1.0.4",
+               "version_code":  213
+           },
+    "erp":  {
+                "file":  "rateb-erp-latest.apk",
+                "package":  "sa.rateb.erp",
+                "version":  "1.0.4",
+                "version_code":  5
+            },
+    "customer":  {
+                     "file":  "rateb-customer-latest.apk",
+                     "package":  "com.ratib.rateb_mobile",
+                     "version":  "1.0.4",
+                     "version_code":  5
+                 }
 }
