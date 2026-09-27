@@ -42,6 +42,7 @@ final class MobileAppsController extends Controller
                 $row['server'] = $apkSvc->serverForCompany($app, $company);
                 $row['apk'] = $apkSvc->meta($apkSvc->slotKey($app, (int) $row['company_id']));
                 $row['uses_shared'] = $row['apk'] === null && $apkSvc->sharedFallback($app, $company) !== null;
+                $row['needs_app_update'] = $apkSvc->companyNeedsAppUpdate($app, $company);
             }
         }
         unset($row);
@@ -172,6 +173,56 @@ final class MobileAppsController extends Controller
         } else {
             SessionManager::flash('warning', __('mobile_platform_update_partial'));
         }
+        Response::redirect($back);
+    }
+
+    /** Update one company to the latest platform unified APK (sync publish → shared, then link company). */
+    public function updateCompanyApp(array $params = []): void
+    {
+        $companyId = (int) ($params['id'] ?? 0);
+        $app = MobileAppApkService::normalizeApp((string) $this->input('app', 'hr'));
+        $back = (string) $this->input('back', '');
+        if ($back === '') {
+            $back = rateb_url('admin/mobile-apps/' . $companyId) . ($app === 'hr' ? '' : '?app=' . $app) . '#mobile-distribution';
+        }
+        if (!$this->canToggleEnable()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect($back);
+            return;
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            Response::redirect($back);
+            return;
+        }
+        $company = (new Company())->find($companyId);
+        if (!is_array($company)) {
+            SessionManager::flash('error', __('not_found'));
+            Response::redirect($back);
+            return;
+        }
+        $apkSvc = new MobileAppApkService();
+        if ($apkSvc->companyUpdateState($app, $company) === 'own_branded') {
+            SessionManager::flash('error', __('mobile_company_update_branded'));
+            Response::redirect($back);
+            return;
+        }
+        if ($apkSvc->sharedDiffersFromPublished($app)) {
+            $apkSvc->syncSharedFromPublished($app, $this->currentUserId(), true);
+        }
+        $link = $apkSvc->linkCompanyToShared($app, $company);
+        $still = $apkSvc->companyNeedsAppUpdate($app, $company);
+        $msgKey = match ($link) {
+            'linked' => 'mobile_company_update_done',
+            'already_shared' => $still ? 'mobile_company_update_partial' : 'mobile_company_update_already',
+            'no_shared' => 'mobile_use_shared_no_platform_apk',
+            'branded' => 'mobile_company_update_branded',
+            default => 'mobile_apps_save_failed',
+        };
+        SessionManager::flash(
+            $still && $link !== 'linked' ? 'warning' : ($link === 'no_shared' || $link === 'branded' ? 'error' : 'success'),
+            __($msgKey)
+        );
         Response::redirect($back);
     }
 
@@ -558,7 +609,7 @@ final class MobileAppsController extends Controller
         return [
             'distribution' => $distribution,
             'companyUpdateState' => $companyUpdateState,
-            'platformUpdatePending' => (new MobileAppApkService())->platformUpdateStatus($app)['pending'],
+            'needsAppUpdate' => $apkSvc->companyNeedsAppUpdate($app, $company),
             'identityLogo' => $identityLogo,
             'showHrBrandingLink' => $app === 'hr',
             'branded' => [

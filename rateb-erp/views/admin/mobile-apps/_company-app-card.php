@@ -128,27 +128,26 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
         <div class="mb-3 pb-3 border-bottom" id="mobile-distribution">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
                 <span class="fw-semibold"><i class="fas fa-cloud-arrow-down"></i> <?php echo $e(__('mobile_distribution_title')); ?></span>
-                <div class="d-flex flex-wrap gap-2">
-                <?php if (!empty($appCard['platformUpdatePending'])) { ?>
-                <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/updates/' . $cardApp . '/apply-platform')); ?>" class="d-inline">
-                    <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
-                    <input type="hidden" name="back" value="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid) . ($cardApp === 'hr' ? '' : '?app=' . $cardApp) . '#mobile-distribution'); ?>">
-                    <button type="submit" class="btn btn-sm btn-warning fw-semibold">
-                        <i class="fas fa-bell"></i> <?php echo $e(__('mobile_platform_update_btn')); ?>
-                    </button>
-                </form>
-                <?php } ?>
                 <a class="btn btn-sm btn-outline-secondary" href="<?php echo $e(rateb_url('admin/mobile-apps/updates') . '?app=' . $cardApp); ?>">
                     <i class="fas fa-cloud-arrow-up"></i> <?php echo $e(__('mobile_apps_updates_title')); ?>
                 </a>
-                </div>
             </div>
             <p class="small text-muted"><?php echo $e(__('mobile_distribution_intro')); ?></p>
-            <?php if (($appCard['companyUpdateState'] ?? '') === 'own_outdated') { ?>
-                <div class="alert alert-warning py-2 small mb-2">
-                    <i class="fas fa-exclamation-triangle"></i> <?php echo $e(__('mobile_company_update_outdated')); ?>
-                </div>
-            <?php } ?>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3 p-2 rounded border">
+                <?php if (!empty($appCard['needsAppUpdate'])) { ?>
+                    <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/app-update')); ?>" class="m-0">
+                        <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
+                        <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
+                        <button type="submit" class="btn btn-warning fw-semibold">
+                            <i class="fas fa-cloud-arrow-up"></i> <?php echo $e(__('mobile_company_update_btn')); ?>
+                        </button>
+                    </form>
+                    <span class="small text-muted"><?php echo $e(__('mobile_company_update_hint')); ?></span>
+                <?php } else { ?>
+                    <span class="badge text-bg-success py-2 px-3"><i class="fas fa-check"></i> <?php echo $e(__('mobile_company_update_current')); ?></span>
+                    <span class="small text-muted"><?php echo $e(__('mobile_company_update_current_hint')); ?></span>
+                <?php } ?>
+            </div>
             <?php if ($distribution === 'missing' && $cardActive) { ?>
                 <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/use-shared')); ?>" class="mb-2">
                     <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">

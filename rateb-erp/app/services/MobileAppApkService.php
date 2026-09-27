@@ -655,6 +655,30 @@ final class MobileAppApkService
         ];
     }
 
+    /** Whether this company should offer «Update app» in Admin (unified model, not branded APK). */
+    public function companyNeedsAppUpdate(string $app, array $company): bool
+    {
+        $app = self::normalizeApp($app);
+        $state = $this->companyUpdateState($app, $company);
+        if ($state === 'own_branded') {
+            return false;
+        }
+        if ($this->sharedDiffersFromPublished($app)) {
+            return true;
+        }
+        if (in_array($state, ['own_outdated', 'missing'], true)) {
+            return true;
+        }
+        $cid = (int) ($company['id'] ?? 0);
+        $own = $this->meta($this->slotKey($app, $cid));
+        $shared = $this->meta($app);
+        if ($own !== null && $shared !== null && !$this->isBranded($own)) {
+            return !hash_equals((string) ($own['sha256'] ?? ''), (string) ($shared['sha256'] ?? ''));
+        }
+
+        return false;
+    }
+
     /**
      * Point a company at the shared build (its own APK is removed, its link stays), so it receives
      * every future shared update automatically. Companies on their own server then sign in after

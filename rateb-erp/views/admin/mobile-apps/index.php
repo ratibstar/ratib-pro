@@ -162,6 +162,16 @@ $colCount = $canToggleEnable ? 5 : 3;
                             <?php } ?>
                         </form>
                         <?php } ?>
+                        <?php if ($canToggleEnable && !empty($row['needs_app_update'])) { ?>
+                        <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cid . '/app-update')); ?>" class="d-inline">
+                            <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
+                            <input type="hidden" name="app" value="<?php echo $e($app); ?>">
+                            <input type="hidden" name="back" value="<?php echo $e(rateb_url('admin/mobile-apps') . '?app=' . $app); ?>">
+                            <button type="submit" class="btn btn-sm btn-warning" title="<?php echo $e(__('mobile_company_update_btn')); ?>">
+                                <i class="fas fa-cloud-arrow-up"></i> <?php echo $e(__('mobile_company_update_btn_short')); ?>
+                            </button>
+                        </form>
+                        <?php } ?>
                         <a class="btn btn-sm btn-outline-primary" href="<?php echo $e($manageUrl); ?>">
                             <i class="fas fa-sliders"></i> <?php echo $e($canManage ? __('mobile_apps_manage') : __('view')); ?>
                         </a>
