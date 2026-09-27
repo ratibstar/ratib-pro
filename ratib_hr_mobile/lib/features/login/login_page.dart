@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
+import 'package:ratib_hr_mobile/core/brand/promo_backdrop.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/errors/app_failure.dart';
@@ -178,143 +179,187 @@ class _LoginPageState extends State<LoginPage> {
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final companyName = CompanyActivation.localizedName(arabic: isAr);
+    final logoUrl = CompanyActivation.logoUrl;
 
     return DsPageBackdrop(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-            children: [
-              Align(
-                alignment: AlignmentDirectional.topEnd,
-                child: TextButton(
-                  onPressed: () {
-                    widget.onLocaleChanged(
-                      isAr ? const Locale('en') : AppConfig.defaultLocale,
-                    );
-                  },
-                  child: Text(isAr ? l10n.english : l10n.arabic),
-                ),
+      child: Stack(
+        children: [
+          Positioned.fill(child: PromoBackdrop(arabic: isAr)),
+          _form(context, l10n, isAr, isDark, companyName, logoUrl),
+        ],
+      ),
+    );
+  }
+
+  Widget _form(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isAr,
+    bool isDark,
+    String companyName,
+    String? logoUrl,
+  ) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          children: [
+            Align(
+              alignment: AlignmentDirectional.topEnd,
+              child: TextButton(
+                onPressed: () {
+                  widget.onLocaleChanged(
+                    isAr ? const Locale('en') : AppConfig.defaultLocale,
+                  );
+                },
+                child: Text(isAr ? l10n.english : l10n.arabic),
               ),
-              const SizedBox(height: 28),
-              Center(
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF14B8A6), Color(0xFF0F766E)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.teal.withValues(alpha: 0.4),
-                        blurRadius: 24,
-                        offset: const Offset(0, 12),
+            ),
+            const SizedBox(height: 28),
+            Center(
+              child: logoUrl != null
+                  ? Container(
+                      width: 168,
+                      height: 92,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            blurRadius: 24,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.badge_rounded,
-                    color: Colors.white,
-                    size: 42,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 28),
-              Text(
-                companyName.isNotEmpty
-                    ? '$companyName - ${l10n.appShortName}'
-                    : l10n.appTitle,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.loginSubtitle,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: 36),
-              DsGlassTile(
-                padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    DsTextField(
-                      controller: _identifier,
-                      label: l10n.loginEmailLabel,
-                      hint: l10n.loginEmailHint,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      enabled: !_busy,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    DsTextField(
-                      controller: _password,
-                      label: l10n.loginPasswordLabel,
-                      obscureText: _obscure,
-                      textInputAction: TextInputAction.done,
-                      enabled: !_busy,
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                        icon: Icon(
-                          _obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                      child: Image.network(
+                        logoUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.badge_rounded,
+                          color: AppColors.teal,
+                          size: 42,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    if (_busy)
-                      const DsLoadingState()
-                    else ...[
-                      DsPrimaryButton(
-                        label: l10n.loginSubmit,
-                        onPressed: _submit,
-                        icon: Icons.login_rounded,
-                      ),
-                      if (_biometricAvailable) ...[
-                        const SizedBox(height: AppSpacing.md),
-                        OutlinedButton.icon(
-                          onPressed: _unlockBiometric,
-                          icon: const Icon(Icons.fingerprint_rounded),
-                          label: Text(l10n.loginBiometric),
+                    )
+                  : Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF14B8A6), Color(0xFF0F766E)],
                         ),
-                      ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.teal.withValues(alpha: 0.4),
+                            blurRadius: 24,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.badge_rounded,
+                        color: Colors.white,
+                        size: 42,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              companyName.isNotEmpty
+                  ? '$companyName - ${l10n.appShortName}'
+                  : l10n.appTitle,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.loginSubtitle,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 36),
+            DsGlassTile(
+              padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  DsTextField(
+                    controller: _identifier,
+                    label: l10n.loginEmailLabel,
+                    hint: l10n.loginEmailHint,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    enabled: !_busy,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  DsTextField(
+                    controller: _password,
+                    label: l10n.loginPasswordLabel,
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.done,
+                    enabled: !_busy,
+                    suffixIcon: IconButton(
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                      icon: Icon(
+                        _obscure
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  if (_busy)
+                    const DsLoadingState()
+                  else ...[
+                    DsPrimaryButton(
+                      label: l10n.loginSubmit,
+                      onPressed: _submit,
+                      icon: Icons.login_rounded,
+                    ),
+                    if (_biometricAvailable) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      OutlinedButton.icon(
+                        onPressed: _unlockBiometric,
+                        icon: const Icon(Icons.fingerprint_rounded),
+                        label: Text(l10n.loginBiometric),
+                      ),
                     ],
                   ],
-                ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              TextButton.icon(
-                onPressed: _busy ? null : _changeCompany,
-                icon: const Icon(Icons.apartment_rounded, size: 18),
-                label: Text(
-                  CompanyActivation.isActive
-                      ? l10n.activationChange
-                      : l10n.activationHaveCode,
-                ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextButton.icon(
+              onPressed: _busy ? null : _changeCompany,
+              icon: const Icon(Icons.apartment_rounded, size: 18),
+              label: Text(
+                CompanyActivation.isActive
+                    ? l10n.activationChange
+                    : l10n.activationHaveCode,
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                l10n.loginErpOnlyHint,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondary,
-                    ),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.loginErpOnlyHint,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondary,
+                  ),
+            ),
+          ],
         ),
       ),
     );
