@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-/** @var array{name:string}|null $company */
+/** @var array{name:string, logo:string}|null $company */
 /** @var string|null $error */
 /** @var string $code */
-/** @var list<array{app:string, url:string, label?:string}> $apps */
+/** @var list<array{app:string, url:string, open:string}> $apps */
 /** @var string $adminUrl */
 $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
 $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users'];
@@ -29,6 +29,16 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
         <a href="<?php echo $e(rateb_url('login') . '?stay=1'); ?>" data-rateb-app-clear><?php echo $e(__('mobile_activation_use_platform')); ?></a>
     </p>
 <?php } else { ?>
+    <div class="rateb-act-head">
+        <?php if (($company['logo'] ?? '') !== '') { ?>
+            <img class="rateb-act-logo" src="<?php echo $e($company['logo']); ?>" alt="">
+        <?php } else { ?>
+            <span class="rateb-act-logo rateb-act-logo--icon"><i class="fas fa-building"></i></span>
+        <?php } ?>
+        <div class="rateb-act-name"><bdi><?php echo $e($company['name']); ?></bdi></div>
+        <div class="rateb-act-sub"><?php echo $e(__('mobile_activation_apps_title')); ?></div>
+    </div>
+
     <?php if ($adminUrl !== '') { ?>
     <div class="d-none mb-3" data-rateb-app-only>
         <a class="btn btn-primary w-100" href="<?php echo $e($adminUrl); ?>" data-rateb-app-open="<?php echo $e($adminUrl); ?>">
@@ -40,20 +50,23 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <?php if ($apps === []) { ?>
         <div class="alert alert-warning py-2 small"><?php echo $e(__('mobile_activation_no_apps')); ?></div>
     <?php } else { ?>
-        <div class="list-group mb-3" data-rateb-web-only>
+        <div class="rateb-act-apps" data-rateb-web-only>
             <?php foreach ($apps as $row) { ?>
-            <a class="list-group-item list-group-item-action d-flex align-items-center gap-2" href="<?php echo $e($row['url']); ?>"
+            <a class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?>" href="<?php echo $e($row['url']); ?>"
                <?php if (($row['open'] ?? '') !== '') { ?>data-rateb-app-intent="<?php echo $e($row['open']); ?>"<?php } ?>>
-                <i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?> fa-fw"></i>
-                <span class="flex-grow-1"><?php echo $e($row['label'] ?? __('mobile_apps_tab_' . $row['app'])); ?></span>
-                <i class="fas fa-download"></i>
+                <span class="rateb-act-app-icon"><i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?>"></i></span>
+                <span class="rateb-act-app-text">
+                    <b><?php echo $e(__('mobile_app_short_' . $row['app'])); ?></b>
+                    <small><bdi><?php echo $e($company['name']); ?></bdi></small>
+                </span>
+                <span class="rateb-act-app-dl"><i class="fas fa-download"></i></span>
             </a>
             <?php } ?>
         </div>
-        <ol class="small text-muted ps-3 mb-0" data-rateb-web-only>
+        <ol class="rateb-act-steps" data-rateb-web-only>
             <li><?php echo $e(__('mobile_activation_step_install')); ?></li>
             <li><?php echo $e(__('mobile_activation_step_open')); ?></li>
-            <li><?php echo $e(sprintf(__('mobile_activation_step_code'), $code)); ?></li>
+            <li><?php echo str_replace('%s', '<bdi dir="ltr" class="rateb-act-code">' . $e($code) . '</bdi>', $e(__('mobile_activation_step_code'))); ?></li>
         </ol>
     <?php } ?>
 <?php } ?>

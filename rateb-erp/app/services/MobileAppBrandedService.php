@@ -95,16 +95,6 @@ final class MobileAppBrandedService
         });
     }
 
-    /** "شركة العرفج - الموارد البشرية" / "Al Arfaj - HR" for the current (or given) locale. */
-    public function appLabel(string $app, array $company, ?string $locale = null): string
-    {
-        $locale = $locale ?? (function_exists('rateb_locale') ? rateb_locale() : 'ar');
-        $name = $this->names($company)[$locale === 'ar' ? 'ar' : 'en'];
-        $short = __('mobile_app_short_' . MobileAppApkService::normalizeApp($app));
-
-        return $name !== '' ? $name . ' - ' . $short : $short;
-    }
-
     /** @param callable(array<string, mixed>): array<string, mixed> $change */
     private function updateSettings(int $companyId, callable $change): bool
     {

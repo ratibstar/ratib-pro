@@ -8,6 +8,8 @@ use Rateb\App\Core\IpRateLimiter;
 use Rateb\App\Core\Response;
 use Rateb\App\Services\MobileAppActivationService;
 use Rateb\App\Services\MobileAppApkService;
+use Rateb\App\Services\MobileAppBrandedService;
+use Rateb\App\Services\MobileAppConfigService;
 
 /**
  * Public company activation for the shared mobile apps (no login).
@@ -76,8 +78,14 @@ final class MobileAppActivationController extends Controller
         }
         $apks = new MobileAppApkService();
         $erpBase = $apks->erpBaseUrlForCompany($company);
+        $branded = new MobileAppBrandedService($apks);
+        $names = $branded->names($company);
+        $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
         $this->view('shared/app-activate', array_merge($data, [
-            'company' => ['name' => (string) ($company['name'] ?? '')],
+            'company' => [
+                'name' => $names[rateb_locale() === 'ar' ? 'ar' : 'en'],
+                'logo' => $branded->iconUrl($company, $hrConfig, $erpBase),
+            ],
             'code' => MobileAppActivationService::format($code),
             'apps' => $svc->enabledApps($company),
             'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',

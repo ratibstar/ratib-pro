@@ -384,6 +384,28 @@
     }
 }
 
+/* auth-promo-bg.js: phrases roam the whole page (phones included), raised with a reflection. */
+.rateb-auth-bg .rateb-auth-tag.is-roaming {
+    display: block;
+    inset: 0 auto auto 0;
+    animation: none;
+}
+
+.rateb-auth-bg .rateb-auth-tag.is-roaming > b {
+    filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.55)) drop-shadow(-1px -1px 0 rgba(255, 255, 255, 0.28)) drop-shadow(0 0 14px var(--glow, rgba(56, 189, 248, 0.35)));
+    -webkit-box-reflect: below -6px linear-gradient(transparent 40%, rgba(255, 255, 255, 0.3));
+}
+
+@media (max-width: 575.98px) {
+    .rateb-auth-bg {
+        display: block;
+    }
+
+    .rateb-auth-bg .rateb-auth-tag.is-roaming > b {
+        font-size: 1.2rem;
+    }
+}
+
 /* --- Compact auth card ------------------------------------------------- */
 
 .rateb-auth-head {
@@ -483,4 +505,128 @@
     .rateb-auth-card .mb-3 {
         margin-bottom: 0.7rem !important;
     }
+}
+
+/* --- Company app download page (/app-activate/{code}) --------------------- */
+
+.rateb-act-head {
+    text-align: center;
+    margin-bottom: 1.1rem;
+}
+
+.rateb-act-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 132px;
+    height: 72px;
+    padding: 8px 10px;
+    border-radius: 16px;
+    background: #fff;
+    object-fit: contain;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.rateb-act-logo--icon {
+    width: 72px;
+    font-size: 1.9rem;
+    color: #fff;
+    background: linear-gradient(135deg, #14b8a6, #0f766e);
+}
+
+.rateb-act-name {
+    margin-top: 0.75rem;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.rateb-act-sub {
+    margin-top: 0.15rem;
+    font-size: 0.9rem;
+    color: var(--bs-secondary-color);
+}
+
+.rateb-act-apps {
+    display: grid;
+    gap: 0.6rem;
+    margin-bottom: 1.1rem;
+}
+
+.rateb-act-app {
+    --tone: #14b8a6;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--tone) 35%, transparent);
+    background: color-mix(in srgb, var(--tone) 10%, transparent);
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.rateb-act-app:hover,
+.rateb-act-app:focus-visible {
+    color: inherit;
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--tone) 18%, transparent);
+}
+
+.rateb-act-app--erp { --tone: #6366f1; }
+.rateb-act-app--customer { --tone: #f59e0b; }
+
+.rateb-act-app-icon {
+    flex: 0 0 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #fff;
+    background: var(--tone);
+}
+
+.rateb-act-app-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.rateb-act-app-text b {
+    font-size: 1.02rem;
+}
+
+.rateb-act-app-text small {
+    color: var(--bs-secondary-color);
+}
+
+.rateb-act-app-dl {
+    flex: 0 0 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tone);
+    border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+}
+
+.rateb-act-steps {
+    margin: 0;
+    padding-inline-start: 1.2rem;
+    font-size: 0.86rem;
+    line-height: 1.7;
+    color: var(--bs-secondary-color);
+}
+
+.rateb-act-code {
+    display: inline-block;
+    white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 700;
+    color: var(--bs-body-color);
 }

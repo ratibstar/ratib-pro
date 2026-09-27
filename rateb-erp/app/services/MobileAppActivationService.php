@@ -117,7 +117,9 @@ final class MobileAppActivationService
             return ['status' => 403, 'body' => ['success' => false, 'code' => 'app_not_enabled', 'message' => __('mobile_activation_app_disabled')]];
         }
         $erpBase = $this->apks->erpBaseUrlForCompany($company);
-        $names = (new MobileAppBrandedService($this->apks))->names($company);
+        $branded = new MobileAppBrandedService($this->apks);
+        $names = $branded->names($company);
+        $logo = $branded->iconUrl($company, (new MobileAppConfigService())->findByCompanyId((int) $company['id']), $erpBase);
 
         return ['status' => 200, 'body' => [
             'success' => true,
@@ -126,6 +128,7 @@ final class MobileAppActivationService
                 'name' => (string) ($company['name'] ?? ''),
                 'name_ar' => $names['ar'],
                 'name_en' => $names['en'],
+                'logo_url' => $logo,
                 'slug' => $this->apks->companySlug($company),
             ],
             'erp_base_url' => $erpBase,
@@ -139,12 +142,11 @@ final class MobileAppActivationService
      * Apps enabled for the company, each with its download link and an Android link that opens
      * the installed app already activated (or falls back to the download).
      *
-     * @return list<array{app:string, url:string, open:string, label:string}>
+     * @return list<array{app:string, url:string, open:string}>
      */
     public function enabledApps(array $company): array
     {
         $code = $this->codeFor($company);
-        $branded = new MobileAppBrandedService($this->apks);
         $out = [];
         foreach (MobileAppApkService::APPS as $app) {
             if (!$this->apks->isEnabled($app, $company)) {
@@ -153,12 +155,7 @@ final class MobileAppActivationService
             $key = $this->apks->slotKey($app, (int) $company['id']);
             $url = $this->apks->downloadUrlForToken($this->apks->ensureToken($key));
             $package = $this->apks->packageForCompany($app, $company);
-            $out[] = [
-                'app' => $app,
-                'url' => $url,
-                'open' => $code !== '' ? $this->appLink($package, $code, $url) : '',
-                'label' => $branded->appLabel($app, $company),
-            ];
+            $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($package, $code, $url) : ''];
         }
 
         return $out;
