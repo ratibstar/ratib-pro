@@ -26,8 +26,15 @@ class PortalShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
 
+    final showBack = navigationShell.currentIndex != 0;
+
     return AppScaffold(
       title: title,
+      leading: showBack
+          ? BackButton(
+              onPressed: () => navigationShell.goBranch(0),
+            )
+          : null,
       actions: [
         const LanguageToggle(compact: true),
         IconButton(

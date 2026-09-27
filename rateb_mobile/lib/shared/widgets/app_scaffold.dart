@@ -8,6 +8,7 @@ class AppScaffold extends StatelessWidget {
     required this.title,
     required this.body,
     this.actions,
+    this.leading,
     this.floatingActionButton,
     this.bottomNavigationBar,
     this.showLogout = false,
@@ -17,6 +18,7 @@ class AppScaffold extends StatelessWidget {
   final String title;
   final Widget body;
   final List<Widget>? actions;
+  final Widget? leading;
   final Widget? floatingActionButton;
   final Widget? bottomNavigationBar;
   final bool showLogout;
@@ -27,6 +29,8 @@ class AppScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
+        leading: leading,
+        automaticallyImplyLeading: leading != null,
         actions: [
           ...?actions,
           if (showLogout)

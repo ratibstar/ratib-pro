@@ -176,7 +176,13 @@ class _HomePageState extends State<HomePage> {
         extendBodyBehindAppBar: true,
         appBar: DsAppBar(
           title: title,
+          automaticallyImplyLeading: false,
           actions: [
+            IconButton(
+              tooltip: l10n.signOut,
+              icon: const Icon(Icons.logout_rounded),
+              onPressed: () => AppLocator.signOut(),
+            ),
             if (cfg?.isFeatureEnabled(MobileFeatureKey.notifications) == true)
               IconButton(
                 icon: Badge(

@@ -2,6 +2,8 @@
 library;
 
 import 'package:flutter/material.dart';
+
+import 'ds_nav_back.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 
 /// Soft atmospheric backdrop used behind transparent app bars.
@@ -206,6 +208,7 @@ class DsPageScaffold extends StatelessWidget {
     this.actions,
     this.floatingActionButton,
     this.bottomBar,
+    this.showBack = true,
   });
 
   final String title;
@@ -213,15 +216,21 @@ class DsPageScaffold extends StatelessWidget {
   final List<Widget>? actions;
   final Widget? floatingActionButton;
   final Widget? bottomBar;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
+    final back = showBack && dsShouldShowBackButton(context);
     return DsPageBackdrop(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         extendBodyBehindAppBar: false,
         appBar: AppBar(
           title: Text(title),
+          leading: back
+              ? BackButton(onPressed: () => dsNavigateBack(context))
+              : null,
+          automaticallyImplyLeading: back,
           actions: actions,
           backgroundColor: Colors.transparent,
           elevation: 0,

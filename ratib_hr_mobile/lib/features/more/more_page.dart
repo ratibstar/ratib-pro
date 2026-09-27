@@ -57,20 +57,18 @@ class MorePage extends StatelessWidget {
                   accentColor: _accent(item),
                   onTap: () => context.go(_route(item)),
                 ),
-              if (cfg == null ||
-                  !cfg.isFeatureEnabled(ShellMoreItem.settings.featureKey))
-                DsListItem(
-                  title: l10n.signOut,
-                  leading: const DsIconBadge(
-                    icon: Icons.logout_rounded,
-                    color: AppColors.auroraRose,
-                  ),
-                  accentColor: AppColors.auroraRose,
-                  trailing: const SizedBox.shrink(),
-                  onTap: () async {
-                    await AppLocator.signOut();
-                  },
+              DsListItem(
+                title: l10n.signOut,
+                leading: const DsIconBadge(
+                  icon: Icons.logout_rounded,
+                  color: AppColors.auroraRose,
                 ),
+                accentColor: AppColors.auroraRose,
+                trailing: const SizedBox.shrink(),
+                onTap: () async {
+                  await AppLocator.signOut();
+                },
+              ),
             ],
           ),
         );

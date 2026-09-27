@@ -271,22 +271,36 @@ class _LoginPageState extends State<LoginPage> {
                     ),
             ),
             const SizedBox(height: 28),
-            Text(
-              companyName.isNotEmpty
-                  ? '$companyName - ${l10n.appShortName}'
-                  : l10n.appTitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surface
+                    .withValues(alpha: isDark ? 0.88 : 0.92),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    companyName.isNotEmpty
+                        ? '$companyName - ${l10n.appShortName}'
+                        : l10n.appTitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
                   ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.loginSubtitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.loginSubtitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                   ),
+                ],
+              ),
             ),
             const SizedBox(height: 36),
             DsGlassTile(
