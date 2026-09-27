@@ -23,6 +23,7 @@ $stateBadges = [
     'own_current' => ['text-bg-info', 'mobile_apps_updates_state_own_current'],
     'own_outdated' => ['text-bg-warning', 'mobile_apps_updates_state_own_outdated'],
     'own_dedicated' => ['text-bg-info', 'mobile_apps_updates_state_own_dedicated'],
+    'own_branded' => ['text-bg-primary', 'mobile_apps_updates_state_own_branded'],
     'missing' => ['text-bg-danger', 'mobile_apps_updates_state_missing'],
 ];
 $pushStates = ['own_outdated', 'own_current', 'own_dedicated'];

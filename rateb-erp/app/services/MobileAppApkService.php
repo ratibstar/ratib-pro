@@ -508,34 +508,64 @@ final class MobileAppApkService
             }
         }
 
-        $apk = $this->apkPath($app);
-        $tmp = $apk . '.sync-' . bin2hex(random_bytes(4));
-        if (!@copy($pub['path'], $tmp) || (string) hash_file('sha256', $tmp) !== $pub['sha256']) {
-            @unlink($tmp);
-
-            return 'failed';
-        }
-        @unlink($apk);
-        if (!@rename($tmp, $apk)) {
-            @unlink($tmp);
-
-            return 'failed';
-        }
-        $this->writeSlot($app, [
-            'token' => $this->ensureToken($app),
-            'size' => $pub['size'],
-            'sha256' => $pub['sha256'],
+        return $this->installFile($app, $pub['path'], $pub['sha256'], [
             'original_name' => $pub['file'],
-            'uploaded_at' => date('Y-m-d H:i:s'),
             'uploaded_by' => $userId,
             'server' => $this->platformServer($app),
             'source' => 'published',
             'published_sha' => $pub['sha256'],
             'version' => $pub['version'],
             'version_code' => $pub['version_code'],
-        ]);
+        ]) ? 'updated' : 'failed';
+    }
 
-        return 'updated';
+    /**
+     * Copy an APK shipped by deploy into a slot (checksum-verified; the slot keeps its link token).
+     *
+     * @param array<string, mixed> $meta
+     */
+    public function installFile(string $key, string $source, string $sha256, array $meta): bool
+    {
+        if ($this->parseKey($key) === null) {
+            return false;
+        }
+        $apk = $this->apkPath($key);
+        $tmp = $apk . '.sync-' . bin2hex(random_bytes(4));
+        if (!@copy($source, $tmp) || (string) hash_file('sha256', $tmp) !== $sha256) {
+            @unlink($tmp);
+
+            return false;
+        }
+        @unlink($apk);
+        if (!@rename($tmp, $apk)) {
+            @unlink($tmp);
+
+            return false;
+        }
+        $this->writeSlot($key, array_merge([
+            'token' => $this->ensureToken($key),
+            'size' => (int) filesize($apk),
+            'sha256' => $sha256,
+            'original_name' => basename($source),
+            'uploaded_at' => date('Y-m-d H:i:s'),
+        ], $meta));
+
+        return true;
+    }
+
+    /** Android package of the app this company's link serves (its branded build, else the shared one). */
+    public function packageForCompany(string $app, array $company): string
+    {
+        $own = $this->meta($this->slotKey($app, (int) ($company['id'] ?? 0)));
+        $package = is_array($own) ? (string) ($own['package'] ?? '') : '';
+
+        return preg_match('/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/', $package) ? $package : $this->appInfo($app)['package'];
+    }
+
+    /** True when the company's slot holds its branded build (never replaced by the shared build). */
+    public function isBranded(?array $own): bool
+    {
+        return is_array($own) && (string) ($own['source'] ?? '') === 'branded';
     }
 
     /**
@@ -556,6 +586,9 @@ final class MobileAppApkService
 
             return $needsCode ? 'shared_code' : 'shared';
         }
+        if ($this->isBranded($own)) {
+            return 'own_branded';
+        }
         if ($needsCode) {
             return 'own_dedicated';
         }
@@ -571,7 +604,7 @@ final class MobileAppApkService
      * every future shared update automatically. Companies on their own server then sign in after
      * entering their activation code.
      *
-     * @return string linked|already_shared|no_shared
+     * @return string linked|already_shared|branded|no_shared
      */
     public function linkCompanyToShared(string $app, array $company): string
     {
@@ -580,8 +613,12 @@ final class MobileAppApkService
             return 'no_shared';
         }
         $key = $this->slotKey($app, (int) ($company['id'] ?? 0));
-        if ($this->meta($key) === null) {
+        $own = $this->meta($key);
+        if ($own === null) {
             return 'already_shared';
+        }
+        if ($this->isBranded($own)) {
+            return 'branded';
         }
         $this->remove($key);
 

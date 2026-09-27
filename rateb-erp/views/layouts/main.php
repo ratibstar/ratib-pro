@@ -1533,7 +1533,15 @@ if ($approvalsOversightJs && rateb_is_super_admin()) {
 $ratebAppManifest = RATEB_ROOT . '/public/downloads/mobile-apps-latest.json';
 $ratebAppLatest = is_file($ratebAppManifest) ? json_decode((string) file_get_contents($ratebAppManifest), true) : null;
 $ratebErpLatest = is_array($ratebAppLatest['erp'] ?? null) ? $ratebAppLatest['erp'] : null;
-if ($ratebErpLatest !== null && preg_match('/^[a-z0-9][a-z0-9.\-]*\.apk$/', (string) ($ratebErpLatest['file'] ?? ''))) { ?>
+// Company-branded ERP builds announce their update channel in the user agent (capacitor appendUserAgent).
+if (preg_match('#\bRatebBrand/(erp-[1-9][0-9]{0,9}-[a-f0-9]{10})\b#', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), $ratebBrandMatch)) {
+    $ratebBrandMeta = RATEB_ROOT . '/public/downloads/company/' . $ratebBrandMatch[1] . '.json';
+    $ratebBrandLatest = is_file($ratebBrandMeta) ? json_decode((string) file_get_contents($ratebBrandMeta), true) : null;
+    $ratebErpLatest = is_array($ratebBrandLatest) && preg_match('/^[a-z0-9][a-z0-9.\-]*\.apk$/', (string) ($ratebBrandLatest['file'] ?? ''))
+        ? ['version_code' => (int) ($ratebBrandLatest['version_code'] ?? 0), 'file' => 'company/' . $ratebBrandLatest['file']]
+        : null;
+}
+if ($ratebErpLatest !== null && preg_match('#^(company/)?[a-z0-9][a-z0-9.\-]*\.apk$#', (string) ($ratebErpLatest['file'] ?? ''))) { ?>
 <div id="rateb-app-update" hidden
      data-latest="<?php echo (int) ($ratebErpLatest['version_code'] ?? 0); ?>"
      data-url="<?php echo Rateb\App\Core\View::escape(rateb_platform_oversight_public_url('downloads/' . $ratebErpLatest['file'])); ?>"

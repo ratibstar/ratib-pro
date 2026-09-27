@@ -10,6 +10,7 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\Company;
 use Rateb\App\Services\MobileAppActivationService;
 use Rateb\App\Services\MobileAppApkService;
+use Rateb\App\Services\MobileAppBrandedService;
 use Rateb\App\Services\MobileAppConfigService;
 
 /**
@@ -34,10 +35,12 @@ final class MobileAppsController extends Controller
             $apkSvc->syncSharedFromPublished($app, $this->currentUserId());
         }
         $rows = (new MobileAppConfigService())->listCompaniesWithConfig();
+        $branded = new MobileAppBrandedService($apkSvc);
         foreach ($rows as &$row) {
             $company = ['id' => (int) $row['company_id']] + $row;
             $row['mobile_active'] = $apkSvc->isEnabled($app, $company, ['status' => $row['mobile_status'] ?? '']);
             if ($platform) {
+                $branded->sync($app, $company, $this->currentUserId());
                 $row['server'] = $apkSvc->serverForCompany($app, $company);
                 $row['apk'] = $apkSvc->meta($apkSvc->slotKey($app, (int) $row['company_id']));
                 $row['uses_shared'] = $row['apk'] === null && $apkSvc->sharedFallback($app, $company) !== null;
@@ -91,8 +94,10 @@ final class MobileAppsController extends Controller
         $sharedUrl = $apkSvc->downloadUrlForToken($apkSvc->ensureToken($app));
 
         $rows = [];
+        $branded = new MobileAppBrandedService($apkSvc);
         foreach ((new MobileAppConfigService())->listCompaniesWithConfig() as $row) {
             $company = ['id' => (int) $row['company_id']] + $row;
+            $branded->sync($app, $company, $this->currentUserId());
             $rows[] = [
                 'company_id' => (int) $row['company_id'],
                 'company_name' => (string) ($row['company_name'] ?? ''),
@@ -164,7 +169,7 @@ final class MobileAppsController extends Controller
 
         $apkSvc = new MobileAppApkService();
         $model = new Company();
-        $counts = ['linked' => 0, 'already_shared' => 0, 'no_shared' => 0];
+        $counts = ['linked' => 0, 'already_shared' => 0, 'branded' => 0, 'no_shared' => 0];
         foreach ($ids as $id) {
             $company = $model->find($id);
             if (!is_array($company)) {
@@ -182,6 +187,28 @@ final class MobileAppsController extends Controller
             ));
         }
         Response::redirect(rateb_url($back));
+    }
+
+    /** Request or cancel the company-branded build of one app (platform super-admin only). */
+    public function branded(array $params = []): void
+    {
+        $companyId = (int) ($params['id'] ?? 0);
+        $app = MobileAppApkService::normalizeApp((string) $this->input('app', 'hr'));
+        $back = rateb_url('admin/mobile-apps/' . $companyId) . ($app === 'hr' ? '' : '?app=' . $app);
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        if ($this->validateCsrf()) {
+            $on = (string) $this->input('requested', '') === '1';
+            $ok = (new MobileAppBrandedService())->setRequested($app, $companyId, $on);
+            SessionManager::flash(
+                $ok ? 'success' : 'error',
+                __($ok ? ($on ? 'mobile_branded_requested' : 'mobile_branded_cancelled') : 'mobile_apps_save_failed')
+            );
+        }
+        Response::redirect($back);
     }
 
     /** New activation code for the company; the old code stops working. */
@@ -300,16 +327,28 @@ final class MobileAppsController extends Controller
     private function companyAppCard(string $app, array $company, ?array $hrConfig): array
     {
         $apkSvc = new MobileAppApkService();
+        $branded = new MobileAppBrandedService($apkSvc);
         $cid = (int) $company['id'];
         $key = $apkSvc->slotKey($app, $cid);
         $server = $apkSvc->serverForCompany($app, $company);
+        $branded->sync($app, $company, $this->currentUserId());
         $apk = $apkSvc->meta($key);
         $url = $apkSvc->downloadUrlForToken($apkSvc->ensureToken($key));
         $activation = new MobileAppActivationService($apkSvc);
         $code = $activation->ensureCode($cid);
         $activationUrl = $code !== '' ? $activation->activationUrl($code) : '';
+        $brandedKey = $branded->keyFor($app, $company);
 
         return [
+            'branded' => [
+                'requested' => $brandedKey !== '',
+                'built' => $apkSvc->isBranded($apk),
+                'version' => $apkSvc->isBranded($apk) ? (string) ($apk['version'] ?? '') : '',
+                'package' => $branded->packageFor($app, $cid),
+                'name' => $branded->displayName($app, $company, $hrConfig),
+                'icon' => $branded->iconUrl($company, $hrConfig),
+                'command' => $branded->buildCommand($app, $company, $hrConfig, MobileAppActivationService::format($code)),
+            ],
             'activationCode' => MobileAppActivationService::format($code),
             'activationUrl' => $activationUrl,
             'activationQr' => $activationUrl !== '' ? $apkSvc->qrImageUrl($activationUrl) : '',

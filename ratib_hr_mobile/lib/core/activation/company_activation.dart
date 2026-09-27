@@ -4,6 +4,8 @@
 /// company's ERP server. Stores routing data only — never credentials.
 library;
 
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ratib_hr_mobile/core/env/dart_define_app_environment.dart';
@@ -37,7 +39,13 @@ final class CompanyActivation {
     _erpBaseUrl = _validBase(base);
     _companyName = _erpBaseUrl == null ? null : prefs.getString(_kName);
     _code = _erpBaseUrl == null ? null : prefs.getString(_kCode);
+    if (!isActive && embeddedCode.isNotEmpty) {
+      unawaited(activate(embeddedCode));
+    }
   }
+
+  /// Code baked into a company-branded build: links the app to its company on first launch.
+  static const String embeddedCode = String.fromEnvironment('RATEB_ACTIVATION_CODE');
 
   /// "ABCD-2345", "abcd2345" or an activation link → "ABCD2345", or null.
   static String? normalize(String input) {

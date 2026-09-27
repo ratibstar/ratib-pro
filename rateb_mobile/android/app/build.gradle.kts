@@ -24,7 +24,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ratib.rateb_mobile"
+        // Company-branded builds (scripts/build-branded-app.ps1) install as their own app.
+        applicationId = System.getenv("RATEB_BRAND_APP_ID")?.takeIf { it.isNotBlank() } ?: "com.ratib.rateb_mobile"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

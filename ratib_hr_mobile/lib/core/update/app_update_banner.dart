@@ -12,6 +12,9 @@ class AppUpdateBanner extends StatefulWidget {
 
   static const String _downloads = 'https://rateb.sa/rateb-erp/public/downloads/';
 
+  /// Company-branded builds (scripts/build-branded-app.ps1) follow their own update channel.
+  static const String _brandKey = String.fromEnvironment('RATEB_BRAND_KEY');
+
   final Widget child;
 
   @override
@@ -28,15 +31,21 @@ class _AppUpdateBannerState extends State<AppUpdateBanner> {
   }
 
   Future<void> _check() async {
+    const branded = AppUpdateBanner._brandKey != '';
+    const dir = branded
+        ? '${AppUpdateBanner._downloads}company/'
+        : AppUpdateBanner._downloads;
     try {
       final response = await Dio(
         BaseOptions(
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
         ),
-      ).get<dynamic>('${AppUpdateBanner._downloads}mobile-apps-latest.json');
+      ).get<dynamic>(
+        branded ? '$dir${AppUpdateBanner._brandKey}.json' : '${dir}mobile-apps-latest.json',
+      );
       final data = response.data;
-      final app = data is Map ? data['hr'] : null;
+      final app = data is Map ? (branded ? data : data['hr']) : null;
       if (app is! Map) return;
       final latest = int.tryParse('${app['version_code'] ?? 0}') ?? 0;
       final file = '${app['file'] ?? ''}';
@@ -45,7 +54,7 @@ class _AppUpdateBannerState extends State<AppUpdateBanner> {
         return;
       }
       if (!mounted) return;
-      setState(() => _downloadUrl = '${AppUpdateBanner._downloads}$file');
+      setState(() => _downloadUrl = '$dir$file');
     } catch (_) {
       // Offline or manifest unavailable: no prompt.
     }

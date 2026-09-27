@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,7 +44,10 @@ class CompanyActivation {
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final api = _validBase(prefs.getString(_kApiBaseUrl));
-    if (api == null) return;
+    if (api == null) {
+      if (embeddedCode.isNotEmpty) unawaited(activate(embeddedCode));
+      return;
+    }
     _apiBaseUrl = api;
     _erpBaseUrl = _validBase(prefs.getString(_kErpBaseUrl));
     _slug = prefs.getString(_kSlug) ?? '';
@@ -50,6 +55,9 @@ class CompanyActivation {
     _companyName = prefs.getString(_kName);
     _code = prefs.getString(_kCode);
   }
+
+  /// Code baked into a company-branded build: links the app to its company on first launch.
+  static const String embeddedCode = String.fromEnvironment('RATEB_ACTIVATION_CODE');
 
   /// "ABCD-2345", "abcd2345" or an activation link / QR → "ABCD2345", or null.
   static String? normalize(String input) {

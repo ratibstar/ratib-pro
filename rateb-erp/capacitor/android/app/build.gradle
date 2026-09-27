@@ -11,7 +11,8 @@ android {
     namespace "sa.rateb.erp"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "sa.rateb.erp"
+        // Company-branded builds (scripts/build-branded-app.ps1) install as their own app.
+        applicationId System.getenv("RATEB_BRAND_APP_ID") ?: "sa.rateb.erp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // P2: first Play-uploadable release after P0/P1 shell hardening

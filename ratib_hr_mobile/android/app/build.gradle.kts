@@ -53,7 +53,8 @@ android {
         }
         create("production") {
             dimension = "env"
-            applicationId = "sa.rateb.hr.mobile"
+            // Company-branded builds (scripts/build-branded-app.ps1) install as their own app.
+            applicationId = System.getenv("RATEB_BRAND_APP_ID")?.takeIf { it.isNotBlank() } ?: "sa.rateb.hr.mobile"
         }
     }
 

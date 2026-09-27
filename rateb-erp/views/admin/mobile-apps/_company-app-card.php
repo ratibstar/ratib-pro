@@ -58,6 +58,52 @@ $cardActive = !empty($appCard['active']);
             </div>
         </div>
         <?php } ?>
+        <?php $brand = $appCard['branded'] ?? null; ?>
+        <?php if (is_array($brand)) { ?>
+        <div class="mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                <span class="fw-semibold"><i class="fas fa-palette"></i> <?php echo $e(__('mobile_branded_title')); ?></span>
+                <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cardCid . '/branded'); ?>" class="d-inline"
+                      <?php if ($brand['requested']) { ?>onsubmit="return confirm(<?php echo $e((string) json_encode(__('mobile_branded_cancel_confirm'), JSON_UNESCAPED_UNICODE)); ?>);"<?php } ?>>
+                    <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
+                    <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
+                    <input type="hidden" name="requested" value="<?php echo $brand['requested'] ? '0' : '1'; ?>">
+                    <?php if ($brand['requested']) { ?>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary"><?php echo $e(__('mobile_branded_cancel')); ?></button>
+                    <?php } else { ?>
+                        <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-wand-magic-sparkles"></i> <?php echo $e(__('mobile_branded_request')); ?></button>
+                    <?php } ?>
+                </form>
+            </div>
+            <?php if (!$brand['requested']) { ?>
+                <div class="small text-muted"><?php echo $e(__('mobile_branded_hint')); ?></div>
+            <?php } else { ?>
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <?php if ($brand['icon'] !== '') { ?>
+                        <img src="<?php echo $e($brand['icon']); ?>" alt="" width="48" height="48" class="rounded border bg-white" style="object-fit:contain">
+                    <?php } ?>
+                    <div class="small">
+                        <div class="fw-semibold"><?php echo $e($brand['name']); ?></div>
+                        <div class="text-muted font-monospace" dir="ltr"><?php echo $e($brand['package']); ?></div>
+                    </div>
+                    <div class="ms-auto">
+                        <?php if ($brand['built']) { ?>
+                            <span class="badge text-bg-success"><?php echo $e(sprintf(__('mobile_branded_ready'), $brand['version'])); ?></span>
+                        <?php } else { ?>
+                            <span class="badge text-bg-warning"><?php echo $e(__('mobile_branded_pending')); ?></span>
+                        <?php } ?>
+                    </div>
+                </div>
+                <?php if ($brand['icon'] === '') { ?>
+                    <div class="alert alert-warning py-2 small mb-0"><?php echo $e(__('mobile_branded_no_icon')); ?></div>
+                <?php } else { ?>
+                    <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_branded_command')); ?></label>
+                    <input class="form-control form-control-sm font-monospace" dir="ltr" readonly onclick="this.select()" value="<?php echo $e($brand['command']); ?>">
+                    <div class="form-text"><?php echo $e(__('mobile_branded_command_hint')); ?></div>
+                <?php } ?>
+            <?php } ?>
+        </div>
+        <?php } ?>
         <div class="mb-3">
             <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_apps_server')); ?></label>
             <input class="form-control form-control-sm" dir="ltr" readonly value="<?php echo $e($appCard['server']); ?>">

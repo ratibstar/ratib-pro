@@ -148,17 +148,18 @@ final class MobileAppActivationService
             }
             $key = $this->apks->slotKey($app, (int) $company['id']);
             $url = $this->apks->downloadUrlForToken($this->apks->ensureToken($key));
-            $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($app, $code, $url) : ''];
+            $package = $this->apks->packageForCompany($app, $company);
+            $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($package, $code, $url) : ''];
         }
 
         return $out;
     }
 
-    /** Android intent link: ratebapp://activate?code=… in the app's package, download when not installed. */
-    public function appLink(string $app, string $code, string $fallbackUrl): string
+    /** Android intent link: ratebapp://activate?code=… in the given package, download when not installed. */
+    public function appLink(string $package, string $code, string $fallbackUrl): string
     {
         return 'intent://activate?code=' . rawurlencode($code)
-            . '#Intent;scheme=ratebapp;package=' . $this->apks->appInfo($app)['package']
+            . '#Intent;scheme=ratebapp;package=' . $package
             . ';S.browser_fallback_url=' . rawurlencode($fallbackUrl) . ';end';
     }
 
