@@ -558,6 +558,7 @@ final class MobileAppsController extends Controller
         return [
             'distribution' => $distribution,
             'companyUpdateState' => $companyUpdateState,
+            'platformUpdatePending' => (new MobileAppApkService())->platformUpdateStatus($app)['pending'],
             'identityLogo' => $identityLogo,
             'showHrBrandingLink' => $app === 'hr',
             'branded' => [

@@ -25,8 +25,20 @@ $colCount = $canToggleEnable ? 5 : 3;
     </div>
     <div class="d-flex flex-wrap gap-2">
     <?php if ($canToggleEnable) { ?>
+    <?php if (!empty($platformUpdate['pending'])) { ?>
+    <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/updates/' . $app . '/apply-platform')); ?>" class="d-inline">
+        <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
+        <input type="hidden" name="back" value="<?php echo $e(rateb_url('admin/mobile-apps') . '?app=' . $app); ?>">
+        <button type="submit" class="btn btn-sm btn-warning fw-semibold">
+            <i class="fas fa-bell"></i> <?php echo $e(__('mobile_platform_update_btn')); ?>
+        </button>
+    </form>
+    <?php } ?>
     <a class="btn btn-sm btn-primary" href="<?php echo $e(rateb_url('admin/mobile-apps/updates') . '?app=' . $app); ?>">
         <i class="fas fa-cloud-arrow-up"></i> <?php echo $e(__('mobile_apps_updates_title')); ?>
+        <?php if (!empty($platformUpdate['pending'])) { ?>
+            <span class="badge text-bg-danger ms-1">!</span>
+        <?php } ?>
     </a>
     <a class="btn btn-sm btn-outline-secondary" href="<?php echo $e(rateb_url('admin/mobile-apps/branded-queue') . '?app=' . $app); ?>">
         <i class="fas fa-hammer"></i> <?php echo $e(__('mobile_branded_queue_link')); ?>
