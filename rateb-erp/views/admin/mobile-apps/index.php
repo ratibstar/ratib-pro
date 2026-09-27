@@ -119,11 +119,9 @@ $colCount = $canToggleEnable ? 7 : 4;
 
 <div class="rateb-card rateb-mobile-apps-companies-card">
     <div class="rateb-card-header"><?php echo $e(__('mobile_apps_companies')); ?></div>
-    <div class="rateb-card-body pt-2 pb-0 px-3">
+    <div class="rateb-card-body p-0 pt-2 px-3">
         <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
-    </div>
-    <div class="rateb-card-body p-0 pt-0">
-        <div class="table-responsive rateb-mobile-apps-table-wrap" data-rateb-table-search-host="1">
+        <div class="table-responsive rateb-mobile-apps-table-wrap px-0" data-rateb-table-search-host="1">
         <table class="table table-sm rateb-table rateb-mobile-apps-companies-table align-middle mb-0">
             <thead>
             <tr>
