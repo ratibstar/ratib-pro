@@ -133,6 +133,11 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
                 </a>
             </div>
             <p class="small text-muted"><?php echo $e(__('mobile_distribution_intro')); ?></p>
+            <?php if (($appCard['companyUpdateState'] ?? '') === 'own_outdated') { ?>
+                <div class="alert alert-warning py-2 small mb-2">
+                    <i class="fas fa-exclamation-triangle"></i> <?php echo $e(__('mobile_company_update_outdated')); ?>
+                </div>
+            <?php } ?>
             <?php if ($distribution === 'missing' && $cardActive) { ?>
                 <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/use-shared')); ?>" class="mb-2">
                     <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">

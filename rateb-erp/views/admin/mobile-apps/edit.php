@@ -29,6 +29,10 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
 <div class="alert alert-secondary py-2 small mb-3" role="note">
     <?php echo Rateb\App\Core\View::escape(__('mobile_unified_platform_note')); ?>
 </div>
+<?php if (!empty($platformUpdate)) {
+    $backUrl = rateb_url('admin/mobile-apps/' . $cid) . ($app === 'hr' ? '' : '?app=' . $app);
+    require __DIR__ . '/_platform-update-alert.php';
+} ?>
 <?php } ?>
 
 <?php if ($canToggleEnable && isset($appCard)) {

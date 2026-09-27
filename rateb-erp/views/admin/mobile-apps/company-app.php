@@ -18,6 +18,11 @@ $cid = (int) ($company['id'] ?? 0);
     <?php echo $e(__('mobile_unified_platform_note')); ?>
 </div>
 
+<?php if (!empty($platformUpdate)) {
+    $backUrl = rateb_url('admin/mobile-apps/' . $cid) . '?app=' . $app;
+    require __DIR__ . '/_platform-update-alert.php';
+} ?>
+
 <p class="mb-3">
     <strong><?php echo $e(__('company')); ?>:</strong>
     <?php echo $e($company['name'] ?? ''); ?>

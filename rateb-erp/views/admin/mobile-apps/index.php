@@ -40,6 +40,11 @@ $colCount = $canToggleEnable ? 5 : 3;
     </div>
 </div>
 
+<?php if ($canToggleEnable && !empty($platformUpdate)) {
+    $backUrl = rateb_url('admin/mobile-apps') . '?app=' . $app;
+    require __DIR__ . '/_platform-update-alert.php';
+} ?>
+
 <?php if ($canToggleEnable) {
     $activeApp = $app;
     require __DIR__ . '/_tabs.php';

@@ -34,6 +34,12 @@ $pushable = array_values(array_filter($rows, static fn (array $r): bool => in_ar
     <p class="text-muted small mb-0"><?php echo $e(__('mobile_apps_updates_intro')); ?></p>
 </div>
 
+<?php if (!empty($platformUpdate)) {
+    $backUrl = rateb_url('admin/mobile-apps/updates') . '?app=' . $app;
+    $showUpToDate = true;
+    require __DIR__ . '/_platform-update-alert.php';
+} ?>
+
 <?php
 $activeApp = $app;
 $tabsRoute = 'admin/mobile-apps/updates';

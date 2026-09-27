@@ -83,6 +83,7 @@ $router->post('/admin/mobile-apps/branded-queue/{app}/build-all', [MobileAppsCon
 $router->post('/admin/mobile-apps/{id}/branded-build', [MobileAppsController::class, 'brandedBuild'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->get('/admin/mobile-apps/updates', [MobileAppsController::class, 'updates'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/updates/{app}/apply', [MobileAppsController::class, 'applyPublished'], rateb_platform_oversight_mw('mobile_apps.manage'));
+$router->post('/admin/mobile-apps/updates/{app}/apply-platform', [MobileAppsController::class, 'applyPlatformUpdates'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/updates/{app}/push', [MobileAppsController::class, 'pushUpdates'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->get('/admin/mobile-apps/{id}', [MobileAppsController::class, 'edit'], rateb_admin_mw('mobile_apps.view'));
 $router->post('/admin/mobile-apps/{id}', [MobileAppsController::class, 'save'], rateb_admin_mw('mobile_apps.manage'));

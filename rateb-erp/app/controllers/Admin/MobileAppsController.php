@@ -31,9 +31,7 @@ final class MobileAppsController extends Controller
         $platform = $this->canToggleEnable();
         $app = $platform ? MobileAppApkService::normalizeApp((string) ($_GET['app'] ?? 'hr')) : 'hr';
         $apkSvc = new MobileAppApkService();
-        if ($platform) {
-            $apkSvc->syncSharedFromPublished($app, $this->currentUserId());
-        }
+        $platformUpdate = $platform ? $apkSvc->platformUpdateStatus($app) : null;
         $rows = (new MobileAppConfigService())->listCompaniesWithConfig();
         $branded = new MobileAppBrandedService($apkSvc);
         foreach ($rows as &$row) {
@@ -76,6 +74,7 @@ final class MobileAppsController extends Controller
             'consoleUrl' => rateb_url('admin/hr-mobile'),
             'consoleAccessible' => function_exists('rateb_hr_mobile_console_accessible')
                 && rateb_hr_mobile_console_accessible(),
+            'platformUpdate' => $platformUpdate,
         ], 'main');
     }
 
@@ -91,6 +90,7 @@ final class MobileAppsController extends Controller
         $app = MobileAppApkService::normalizeApp((string) ($_GET['app'] ?? 'hr'));
         $apkSvc = new MobileAppApkService();
         $syncState = $apkSvc->syncSharedFromPublished($app, $this->currentUserId());
+        $platformUpdate = $apkSvc->platformUpdateStatus($app);
         $sharedUrl = $apkSvc->downloadUrlForToken($apkSvc->ensureToken($app));
 
         $rows = [];
@@ -120,7 +120,59 @@ final class MobileAppsController extends Controller
             'csrf' => Csrf::token(),
             'apkChunkBytes' => MobileAppApkService::CHUNK_BYTES,
             'apkMaxBytes' => MobileAppApkService::MAX_BYTES,
+            'platformUpdate' => $platformUpdate,
         ], 'main');
+    }
+
+    /** One click: adopt published shared APK + link companies on stale own builds. */
+    public function applyPlatformUpdates(array $params = []): void
+    {
+        $app = $this->platformAppParam($params);
+        $back = (string) $this->input('back', '');
+        if ($back === '') {
+            $back = rateb_url('admin/mobile-apps') . '?app=' . rawurlencode($app !== '' ? $app : 'hr');
+        }
+        if (!$this->canToggleEnable()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect($back);
+            return;
+        }
+        if ($app === '' || !$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            Response::redirect($back);
+            return;
+        }
+        $apkSvc = new MobileAppApkService();
+        $before = $apkSvc->platformUpdateStatus($app);
+        if ($apkSvc->sharedDiffersFromPublished($app)) {
+            $apkSvc->syncSharedFromPublished($app, $this->currentUserId(), true);
+        }
+        $linked = 0;
+        foreach ($apkSvc->outdatedCompanyIds($app) as $companyId) {
+            $company = (new Company())->find($companyId);
+            if (!is_array($company)) {
+                continue;
+            }
+            if ($apkSvc->linkCompanyToShared($app, $company) === 'linked') {
+                $linked++;
+            }
+        }
+        $after = $apkSvc->platformUpdateStatus($app);
+        if (!$before['pending']) {
+            SessionManager::flash('success', __('mobile_platform_update_none'));
+        } elseif (!$after['pending']) {
+            SessionManager::flash(
+                'success',
+                sprintf(
+                    __('mobile_platform_update_done'),
+                    $before['version'] !== '' ? $before['version'] : (string) $before['version_code'],
+                    $linked
+                )
+            );
+        } else {
+            SessionManager::flash('warning', __('mobile_platform_update_partial'));
+        }
+        Response::redirect($back);
     }
 
     /** Replace the shared build with the newest published build (overrides a manual shared upload). */
@@ -417,6 +469,7 @@ final class MobileAppsController extends Controller
         ];
         if ($platform) {
             $data['appCard'] = $this->companyAppCard($app, $company, $row);
+            $data['platformUpdate'] = (new MobileAppApkService())->platformUpdateStatus($app);
         } else {
             $data['share'] = $this->companyShare($company);
         }
@@ -500,9 +553,11 @@ final class MobileAppsController extends Controller
             $distribution = 'shared';
         }
         $identityLogo = $branded->iconUrl($company, $hrConfig, $server);
+        $companyUpdateState = $apkSvc->companyUpdateState($app, $company);
 
         return [
             'distribution' => $distribution,
+            'companyUpdateState' => $companyUpdateState,
             'identityLogo' => $identityLogo,
             'showHrBrandingLink' => $app === 'hr',
             'branded' => [

@@ -599,6 +599,62 @@ final class MobileAppApkService
         return hash_equals((string) ($shared['sha256'] ?? ''), (string) ($own['sha256'] ?? '')) ? 'own_current' : 'own_outdated';
     }
 
+    /** True when deploy published a build newer than the platform shared slot. */
+    public function sharedDiffersFromPublished(string $app): bool
+    {
+        $app = self::normalizeApp($app);
+        $pub = $this->publishedBuild($app);
+        if ($pub === null) {
+            return false;
+        }
+        $shared = $this->meta($app);
+
+        return $shared === null
+            || !hash_equals((string) ($shared['sha256'] ?? ''), (string) ($pub['sha256'] ?? ''));
+    }
+
+    /** @return list<int> */
+    public function outdatedCompanyIds(string $app): array
+    {
+        $app = self::normalizeApp($app);
+        $out = [];
+        foreach ((new MobileAppConfigService())->listCompaniesWithConfig() as $row) {
+            $company = ['id' => (int) $row['company_id']] + $row;
+            if ($this->companyUpdateState($app, $company) === 'own_outdated') {
+                $out[] = (int) $company['id'];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Platform super-admin banner: shared APK behind publish and/or companies on stale own builds.
+     *
+     * @return array{
+     *   pending:bool,
+     *   shared_apply:bool,
+     *   outdated_count:int,
+     *   version:string,
+     *   version_code:int
+     * }
+     */
+    public function platformUpdateStatus(string $app): array
+    {
+        $app = self::normalizeApp($app);
+        $pub = $this->publishedBuild($app);
+        $sharedApply = $this->sharedDiffersFromPublished($app);
+        $outdated = count($this->outdatedCompanyIds($app));
+
+        return [
+            'pending' => $sharedApply || $outdated > 0,
+            'shared_apply' => $sharedApply,
+            'outdated_count' => $outdated,
+            'version' => $pub !== null ? (string) ($pub['version'] ?? '') : '',
+            'version_code' => $pub !== null ? (int) ($pub['version_code'] ?? 0) : 0,
+        ];
+    }
+
     /**
      * Point a company at the shared build (its own APK is removed, its link stays), so it receives
      * every future shared update automatically. Companies on their own server then sign in after
