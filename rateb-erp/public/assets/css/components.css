@@ -257,6 +257,44 @@
 .rateb-companies-table .dropdown-menu {
     z-index: 1080;
 }
+
+/* Mobile apps — company list: keep action buttons inside the table (RTL + wide server URLs) */
+.rateb-mobile-apps-companies-table {
+    table-layout: auto !important;
+    width: max-content;
+    min-width: 100%;
+}
+.rateb-mobile-apps-companies-table td:not(.rateb-actions-cell),
+.rateb-mobile-apps-companies-table th:not(.rateb-th-actions) {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
+    word-break: break-word;
+    vertical-align: middle;
+}
+.rateb-mobile-apps-companies-table th[data-col-name="server"],
+.rateb-mobile-apps-companies-table td[data-col-name="server"] {
+    min-width: 11rem;
+    max-width: 22rem !important;
+    direction: ltr;
+    text-align: start;
+    unicode-bidi: isolate;
+}
+.rateb-mobile-apps-companies-table th.rateb-th-actions,
+.rateb-mobile-apps-companies-table td.rateb-actions-cell {
+    min-width: 12rem;
+    width: 1%;
+    position: sticky;
+    inset-inline-end: 0;
+    z-index: 5;
+    background: var(--rateb-surface, var(--rateb-bg, #0f172a));
+}
+.rateb-mobile-apps-companies-table thead th.rateb-th-actions {
+    z-index: 6;
+    background: var(--rateb-bg, #0f172a);
+}
+
 .rateb-card-header .btn.btn-sm {
     padding: 0.25rem 0.55rem;
     font-size: 0.8125rem;

@@ -113,18 +113,19 @@ $colCount = $canToggleEnable ? 6 : 3;
 
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo $e(__('mobile_apps_companies')); ?></div>
-    <div class="rateb-card-body table-responsive">
-        <table class="table table-sm align-middle mb-0">
+    <div class="rateb-card-body p-0">
+        <div class="table-responsive rateb-table-no-scroll">
+        <table class="table table-sm rateb-table rateb-mobile-apps-companies-table align-middle mb-0">
             <thead>
             <tr>
                 <th><?php echo $e(__('company')); ?></th>
                 <th><?php echo $e(__('status')); ?></th>
                 <?php if ($canToggleEnable) { ?>
                 <th><?php echo $e(__('mobile_activation_code')); ?></th>
-                <th><?php echo $e(__('mobile_apps_server')); ?></th>
+                <th data-col-name="server"><?php echo $e(__('mobile_apps_server')); ?></th>
                 <th><?php echo $e(__('mobile_apps_apk')); ?></th>
                 <?php } ?>
-                <th></th>
+                <th class="rateb-th-actions"><?php echo $e(__('actions')); ?></th>
             </tr>
             </thead>
             <tbody>
@@ -154,7 +155,7 @@ $colCount = $canToggleEnable ? 6 : 3;
                             <span class="text-muted">—</span>
                         <?php } ?>
                     </td>
-                    <td class="small text-break" dir="ltr"><?php echo $e($row['server'] ?? ''); ?></td>
+                    <td class="small text-break" dir="ltr" data-col-name="server"><?php echo $e($row['server'] ?? ''); ?></td>
                     <td>
                         <?php if ($apk !== null) { ?>
                             <span class="badge text-bg-info" title="<?php echo $e($apk['uploaded_at'] ?? ''); ?>">
@@ -167,7 +168,8 @@ $colCount = $canToggleEnable ? 6 : 3;
                         <?php } ?>
                     </td>
                     <?php } ?>
-                    <td class="text-end text-nowrap">
+                    <td class="rateb-actions-cell text-nowrap">
+                        <div class="rateb-actions">
                         <?php if ($canToggleEnable) { ?>
                         <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cid . '/toggle'); ?>" class="d-inline">
                             <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
@@ -197,10 +199,12 @@ $colCount = $canToggleEnable ? 6 : 3;
                         <a class="btn btn-sm btn-outline-primary" href="<?php echo $e($manageUrl); ?>">
                             <i class="fas fa-sliders"></i> <?php echo $e($canManage ? __('mobile_apps_manage') : __('view')); ?>
                         </a>
+                        </div>
                     </td>
                 </tr>
             <?php } ?>
             </tbody>
         </table>
+        </div>
     </div>
 </div>
