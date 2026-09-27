@@ -136,7 +136,8 @@ final class User extends Model
      */
     private static function passwordMatches(array $user, string $password): bool
     {
-        foreach (['password_hash', 'password'] as $column) {
+        // `password` is canonical on rateb_users; legacy rows may also have password_hash.
+        foreach (['password', 'password_hash'] as $column) {
             if (!array_key_exists($column, $user)) {
                 continue;
             }
