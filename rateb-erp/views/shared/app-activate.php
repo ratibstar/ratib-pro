@@ -28,8 +28,16 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <p class="small mt-2 mb-0 text-center d-none" data-rateb-app-only>
         <a href="<?php echo $e(rateb_url('login') . '?stay=1'); ?>" data-rateb-app-clear><?php echo $e(__('mobile_activation_use_platform')); ?></a>
     </p>
-<?php } else { ?>
-    <div class="rateb-act-head">
+<?php } else {
+    $hrOpenIntent = '';
+    foreach ($apps as $row) {
+        if (($row['app'] ?? '') === 'hr' && ($row['open'] ?? '') !== '') {
+            $hrOpenIntent = (string) $row['open'];
+            break;
+        }
+    }
+    ?>
+    <div class="rateb-act-head" data-rateb-act-code="<?php echo $e($code); ?>"<?php echo $hrOpenIntent !== '' ? ' data-rateb-hr-open="' . $e($hrOpenIntent) . '"' : ''; ?>>
         <?php if (($company['logo'] ?? '') !== '') { ?>
             <img class="rateb-act-logo" src="<?php echo $e($company['logo']); ?>" alt="">
         <?php } else { ?>

@@ -26,11 +26,23 @@
     }
 
     if (!inApp()) {
-        // Android browser: one tap opens the installed app already activated, or downloads it.
+        // Android browser: HR tile uses intent; after QR scan auto-open unified HR once per code.
         if (/Android/i.test(navigator.userAgent || '')) {
             document.querySelectorAll('[data-rateb-app-intent]').forEach(function (el) {
                 el.setAttribute('href', el.getAttribute('data-rateb-app-intent') || el.getAttribute('href'));
             });
+            var head = document.querySelector('[data-rateb-hr-open][data-rateb-act-code]');
+            if (head) {
+                var actCode = head.getAttribute('data-rateb-act-code') || '';
+                var intent = head.getAttribute('data-rateb-hr-open') || '';
+                var sk = 'rateb_hr_act_open_' + actCode;
+                if (intent && actCode && sessionStorage.getItem(sk) !== '1') {
+                    sessionStorage.setItem(sk, '1');
+                    setTimeout(function () {
+                        window.location.href = intent;
+                    }, 600);
+                }
+            }
         }
         return;
     }

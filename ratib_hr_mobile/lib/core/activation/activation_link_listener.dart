@@ -1,5 +1,4 @@
-/// Activates the company from `ratebapp://activate?code=…` (activation page / QR),
-/// so staff never type the code.
+/// Activates the company from activation links (QR / browser / `ratebapp://`).
 library;
 
 import 'dart:async';
@@ -28,11 +27,13 @@ class ActivationLinkListener extends StatefulWidget {
 class _ActivationLinkListenerState extends State<ActivationLinkListener> {
   StreamSubscription<Uri>? _sub;
   bool _busy = false;
+  final AppLinks _appLinks = AppLinks();
 
   @override
   void initState() {
     super.initState();
-    _sub = AppLinks().uriLinkStream.listen(_handle, onError: (_) {});
+    _sub = _appLinks.uriLinkStream.listen(_handle, onError: (_) {});
+    unawaited(_handleInitial());
   }
 
   @override
@@ -41,15 +42,37 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener> {
     super.dispose();
   }
 
+  Future<void> _handleInitial() async {
+    try {
+      final uri = await _appLinks.getInitialLink();
+      if (uri != null) {
+        await _handle(uri);
+      }
+    } catch (_) {}
+  }
+
+  static String? _codeFromUri(Uri uri) {
+    if (uri.scheme == 'ratebapp' && uri.host == 'activate') {
+      return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
+    }
+    if (uri.scheme == 'https' || uri.scheme == 'http') {
+      return CompanyActivation.normalize(uri.toString());
+    }
+    return null;
+  }
+
   Future<void> _handle(Uri uri) async {
-    if (uri.scheme != 'ratebapp' || uri.host != 'activate' || _busy) return;
-    final code = CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
-    if (code != null && code == CompanyActivation.code) return;
+    if (_busy) return;
+    final code = _codeFromUri(uri);
+    if (code == null) return;
+    final current = CompanyActivation.code;
+    if (current != null && code == current) return;
+
     _busy = true;
-    final error = code == null
-        ? CompanyActivationError.invalidCode
-        : await CompanyActivation.activate(code);
-    if (error == null) await widget.onCompanyChanged();
+    final error = await CompanyActivation.activate(code);
+    if (error == null) {
+      await widget.onCompanyChanged();
+    }
     _busy = false;
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
