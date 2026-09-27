@@ -1,8 +1,8 @@
-# Build a company-branded RATEB mobile app (own icon, name, package and update channel) and stage it
+﻿# Build a company-branded RATEB mobile app (own icon, name, package and update channel) and stage it
 # for deploy. Super Admin -> Mobile Apps -> company card -> "Company-branded build" shows the command.
 #
 #   .\scripts\build-branded-app.ps1 -App hr -Key "hr-51-0a1b2c3d4e" -Package "sa.rateb.hr.mobile.c51" `
-#       -Name "Acme" -IconUrl "https://rateb.sa/.../logo.png" -Server "https://rateb.sa/rateb-erp/public" -Code "ABCD-2345"
+#       -Name "Acme" [-IconUrl "https://rateb.sa/.../logo.png"] -Server "https://rateb.sa/rateb-erp/public" -Code "ABCD-2345"
 #   .\scripts\build-branded-app.ps1 -RebuildAll        # rebuild every branded app (after a new base version)
 #
 # Output (commit + push; the next Mobile Apps page view moves it into the company link/QR):
@@ -46,7 +46,7 @@ if ($RebuildAll) {
 if (-not $App) { throw '-App is required (hr|erp|customer)' }
 if ($Key -notmatch "^$App-[1-9][0-9]{0,9}-[a-f0-9]{10}$") { throw "Invalid -Key for $App" }
 if ($Package -notmatch '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$') { throw 'Invalid -Package' }
-if ($IconUrl -notmatch '^https://\S+$') { throw '-IconUrl must be an https URL' }
+if ($IconUrl -and $IconUrl -notmatch '^https://\S+$') { throw '-IconUrl must be an https URL' }
 $Server = $Server.Trim().TrimEnd('/')
 if ($Server -notmatch '^https://[^/\s]+(/\S*)?$') { throw '-Server must be an https URL' }
 $Name = ($Name -replace '[''"\\`$<>&@?\r\n]', '').Trim()
@@ -129,12 +129,45 @@ function Save-Icon {
     $bmp.Dispose()
 }
 
+# Company without a logo: a colored circle with the first letter of its name (generic words and the
+# Arabic article skipped), color picked from the key so companies look different.
+function New-InitialsLogo {
+    param([string]$Text, [string]$Seed)
+    $skip = @('شركة', 'مؤسسة', 'مجموعة', 'مصنع', 'مكتب', 'company', 'co', 'the', 'group', 'est')
+    $words = @($Text -split '\s+' | Where-Object { $_ -and ($skip -notcontains $_.ToLowerInvariant()) })
+    if (-not $words) { $words = @($Text) }
+    $first = $words[0] -replace '^ال(?=..)', ''
+    $initials = if ($first -match '^[A-Za-z0-9]') {
+        (($words | Select-Object -First 2 | ForEach-Object { $_.Substring(0, 1) }) -join '').ToUpperInvariant()
+    } else { $first.Substring(0, 1) }
+    $palette = @('#0F4C81', '#1B7F5B', '#8E3B8A', '#C0392B', '#D35400', '#2C3E50', '#00838F', '#6D4C41')
+    $color = $palette[[Convert]::ToInt32($Seed.Substring($Seed.Length - 2), 16) % $palette.Count]
+    $bmp = New-Object System.Drawing.Bitmap 512, 512, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $g = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
+    $g.Clear([System.Drawing.Color]::Transparent)
+    $brush = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml($color))
+    $g.FillEllipse($brush, 0, 0, 512, 512)
+    $font = New-Object System.Drawing.Font 'Segoe UI', ([single]($(if ($initials.Length -gt 1) { 190 } else { 240 }))), ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
+    $fmt = New-Object System.Drawing.StringFormat
+    $fmt.Alignment = [System.Drawing.StringAlignment]::Center
+    $fmt.LineAlignment = [System.Drawing.StringAlignment]::Center
+    $g.DrawString($initials, $font, [System.Drawing.Brushes]::White, (New-Object System.Drawing.RectangleF 0, ([single]($(if ($initials -match '^[A-Za-z0-9]') { 10 } else { -40 }))), 512, 512), $fmt)
+    $font.Dispose(); $fmt.Dispose(); $brush.Dispose(); $g.Dispose()
+    return $bmp
+}
+
 $iconFile = Join-Path ([IO.Path]::GetTempPath()) ("rateb-brand-{0}.img" -f $Key)
 $apk = $null
 try {
     Write-Host "=== $App for $Name ($Package) ===" -ForegroundColor Cyan
-    Invoke-WebRequest -Uri $IconUrl -OutFile $iconFile -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop
-    try { $logo = [System.Drawing.Image]::FromFile($iconFile) } catch { throw 'Icon must be a PNG/JPG image' }
+    if ($IconUrl) {
+        Invoke-WebRequest -Uri $IconUrl -OutFile $iconFile -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop
+        try { $logo = [System.Drawing.Image]::FromFile($iconFile) } catch { throw 'Icon must be a PNG/JPG image' }
+    } else {
+        $logo = New-InitialsLogo $Name $Key
+    }
 
     $densities = [ordered]@{ mdpi = 48; hdpi = 72; xhdpi = 96; xxhdpi = 144; xxxhdpi = 192 }
     foreach ($d in $densities.Keys) {

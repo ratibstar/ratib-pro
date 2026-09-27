@@ -3337,7 +3337,7 @@ return [
     'mobile_branded_cancelled' => 'Branded build cancelled; the company is on the shared build now.',
     'mobile_branded_ready' => 'Ready — version %s',
     'mobile_branded_pending' => 'Waiting for build',
-    'mobile_branded_no_icon' => 'Add the company logo or icon in App Identity (PNG/JPG image URL) before building.',
+    'mobile_branded_no_icon' => 'No company logo yet: the icon will use the company name initials. Add a logo in App Identity (PNG/JPG) to use it instead.',
     'mobile_branded_command' => 'Build command (from the repository root)',
     'mobile_branded_command_hint' => 'Once built and deployed, the build moves to the company link and QR automatically — no upload needed.',
     'mobile_apps_updates_state_own_branded' => 'Company-branded build — updates on its own',

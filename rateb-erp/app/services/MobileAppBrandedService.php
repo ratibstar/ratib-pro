@@ -119,10 +119,10 @@ final class MobileAppBrandedService
     public function buildCommand(string $app, array $company, ?array $hrConfig, string $activationCode): string
     {
         $key = $this->keyFor($app, $company);
-        $icon = $this->iconUrl($company, $hrConfig);
-        if ($key === '' || $icon === '') {
+        if ($key === '') {
             return '';
         }
+        $icon = $this->iconUrl($company, $hrConfig);
         $arg = static fn (string $v): string => '"' . str_replace('"', '', $v) . '"';
 
         return '.\\scripts\\build-branded-app.ps1'
@@ -130,7 +130,7 @@ final class MobileAppBrandedService
             . ' -Key ' . $arg($key)
             . ' -Package ' . $arg($this->packageFor($app, (int) $company['id']))
             . ' -Name ' . $arg($this->displayName($app, $company, $hrConfig))
-            . ' -IconUrl ' . $arg($icon)
+            . ($icon !== '' ? ' -IconUrl ' . $arg($icon) : '')
             . ' -Server ' . $arg($this->apks->serverForCompany($app, $company))
             . ' -Code ' . $arg($activationCode);
     }

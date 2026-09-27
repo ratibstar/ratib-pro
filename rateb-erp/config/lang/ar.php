@@ -3335,7 +3335,7 @@ return [
     'mobile_branded_cancelled' => 'تم إلغاء النسخة الخاصة، والشركة الآن على النسخة العامة.',
     'mobile_branded_ready' => 'جاهزة — إصدار %s',
     'mobile_branded_pending' => 'بانتظار البناء',
-    'mobile_branded_no_icon' => 'أضف شعار أو أيقونة الشركة في «هوية التطبيق» (رابط صورة PNG/JPG) قبل البناء.',
+    'mobile_branded_no_icon' => 'لا يوجد شعار للشركة بعد: ستكون الأيقونة بالحرف الأول من اسم الشركة. أضف شعارًا في «هوية التطبيق» (PNG/JPG) لاستخدامه بدلًا منها.',
     'mobile_branded_command' => 'أمر البناء (من جذر المشروع)',
     'mobile_branded_command_hint' => 'بعد البناء والنشر تنتقل النسخة لرابط الشركة وQR تلقائياً — لا حاجة للرفع.',
     'mobile_apps_updates_state_own_branded' => 'نسخة خاصة بشعار الشركة — تتحدث لوحدها',

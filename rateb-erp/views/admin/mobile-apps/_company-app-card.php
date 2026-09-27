@@ -95,12 +95,11 @@ $cardActive = !empty($appCard['active']);
                     </div>
                 </div>
                 <?php if ($brand['icon'] === '') { ?>
-                    <div class="alert alert-warning py-2 small mb-0"><?php echo $e(__('mobile_branded_no_icon')); ?></div>
-                <?php } else { ?>
-                    <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_branded_command')); ?></label>
-                    <input class="form-control form-control-sm font-monospace" dir="ltr" readonly onclick="this.select()" value="<?php echo $e($brand['command']); ?>">
-                    <div class="form-text"><?php echo $e(__('mobile_branded_command_hint')); ?></div>
+                    <div class="alert alert-info py-2 small mb-2"><?php echo $e(__('mobile_branded_no_icon')); ?></div>
                 <?php } ?>
+                <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_branded_command')); ?></label>
+                <input class="form-control form-control-sm font-monospace" dir="ltr" readonly onclick="this.select()" value="<?php echo $e($brand['command']); ?>">
+                <div class="form-text"><?php echo $e(__('mobile_branded_command_hint')); ?></div>
             <?php } ?>
         </div>
         <?php } ?>
