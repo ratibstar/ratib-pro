@@ -53,6 +53,7 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             if ($uid > 0 && (new \Rateb\App\Services\AuthorizationService())->userIsPlatformStaff($uid)) {
                 return true;
             }
+            Auth::logout();
             Response::redirect(
                 function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login')
             );
@@ -301,12 +302,18 @@ final class GuestMiddleware implements MiddlewareInterface
     public function handle(): bool
     {
         Auth::bootstrapFromSession();
-        if (Auth::check()) {
-            $portal = Auth::homePath();
-            Response::redirect(function_exists('rateb_url') ? rateb_url($portal) : (RATEB_BASE_URL . '/' . $portal));
-            return false;
+        if (!Auth::check()) {
+            return true;
         }
-        return true;
+        $user = Auth::user();
+        if (!is_array($user) || !Auth::shouldLandOnErpShell($user)) {
+            Auth::logout();
+            return true;
+        }
+        $portal = Auth::homePath();
+        Response::redirect(function_exists('rateb_url') ? rateb_url($portal) : (RATEB_BASE_URL . '/' . $portal));
+
+        return false;
     }
 }
 

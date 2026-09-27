@@ -31,8 +31,12 @@ final class LoginController extends Controller
         // recovery used to purgeAllAuthCookies() and log everyone out on F5 / every nav icon.
         SessionManager::start();
         if (Auth::check()) {
-            Response::redirect(rateb_url(Auth::homePath()));
-            return;
+            $user = Auth::user();
+            if (is_array($user) && Auth::shouldLandOnErpShell($user)) {
+                Response::redirect(rateb_url(Auth::homePath()));
+                return;
+            }
+            Auth::logout();
         }
 
         $err = (string) ($_GET['err'] ?? '');
