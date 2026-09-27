@@ -36,6 +36,16 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
             <span class="rateb-act-logo rateb-act-logo--icon"><i class="fas fa-building"></i></span>
         <?php } ?>
         <div class="rateb-act-name"><bdi><?php echo $e($company['name']); ?></bdi></div>
+        <?php if (!empty($company['id']) || !empty($erpHost)) { ?>
+        <div class="rateb-act-sub small text-muted">
+            <?php if (!empty($company['id'])) { ?>
+                <?php echo $e(str_replace(':id', (string) (int) $company['id'], __('mobile_activation_page_company_id'))); ?>
+            <?php } ?>
+            <?php if (!empty($erpHost)) { ?>
+                · <span dir="ltr"><?php echo $e($erpHost); ?></span>
+            <?php } ?>
+        </div>
+        <?php } ?>
         <div class="rateb-act-sub"><?php echo $e(__('mobile_activation_apps_title')); ?></div>
     </div>
 

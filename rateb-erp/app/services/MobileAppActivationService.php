@@ -78,7 +78,79 @@ final class MobileAppActivationService
 
     public function activationUrl(string $code): string
     {
-        return rateb_public_url('app-activate/' . self::format($code));
+        return $this->publicActivationUrl($code);
+    }
+
+    /** Canonical HTTPS link encoded in admin QR (always rateb.sa on platform oversight). */
+    public function publicActivationUrl(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+        $path = 'app-activate/' . self::format($code);
+        if (function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host()
+            && function_exists('rateb_platform_oversight_public_url')) {
+            return rateb_platform_oversight_public_url($path);
+        }
+
+        return rateb_public_url($path);
+    }
+
+    /**
+     * Every company with a stored code (for admin audit — no codes are minted here).
+     *
+     * @return list<array{company_id:int, company_name:string, code:string, activation_url:string, erp_host:string}>
+     */
+    public function listActivationAssignments(): array
+    {
+        $stmt = Database::connection()->query(
+            'SELECT id, name, settings FROM rateb_companies ORDER BY id ASC'
+        );
+        $out = [];
+        $apkSvc = $this->apks;
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+            $code = $this->codeFor($row);
+            if ($code === '') {
+                continue;
+            }
+            $erpBase = $apkSvc->erpBaseUrlForCompany($row);
+            $host = (string) (parse_url($erpBase, PHP_URL_HOST) ?? $erpBase);
+            $out[] = [
+                'company_id' => (int) ($row['id'] ?? 0),
+                'company_name' => (string) ($row['name'] ?? ''),
+                'code' => self::format($code),
+                'activation_url' => $this->publicActivationUrl($code),
+                'erp_host' => $host,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{code:string, company_ids:list<int>}>
+     */
+    public function findDuplicateCodes(): array
+    {
+        $byCode = [];
+        foreach ($this->listActivationAssignments() as $row) {
+            $norm = self::normalize($row['code']);
+            if ($norm === '') {
+                continue;
+            }
+            $byCode[$norm]['company_ids'][] = (int) $row['company_id'];
+        }
+        $dupes = [];
+        foreach ($byCode as $norm => $meta) {
+            $ids = array_values(array_unique($meta['company_ids'] ?? []));
+            if (count($ids) > 1) {
+                $dupes[] = ['code' => self::format($norm), 'company_ids' => $ids];
+            }
+        }
+
+        return $dupes;
     }
 
     /** @return array<string, mixed>|null */
@@ -88,8 +160,25 @@ final class MobileAppActivationService
         if ($code === '') {
             return null;
         }
-        $stmt = Database::connection()->prepare(
-            'SELECT * FROM rateb_companies WHERE settings LIKE :needle LIMIT 5'
+        $formatted = self::format($code);
+        $db = Database::connection();
+        try {
+            $stmt = $db->prepare(
+                "SELECT * FROM rateb_companies
+                 WHERE JSON_UNQUOTE(JSON_EXTRACT(settings, '$.mobile_activation_code')) IN (:raw, :fmt)
+                 LIMIT 5"
+            );
+            $stmt->execute(['raw' => $code, 'fmt' => $formatted]);
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                if (hash_equals($this->codeFor($row), $code)) {
+                    return $row;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Older MariaDB without JSON_EXTRACT on settings text — fall back below.
+        }
+        $stmt = $db->prepare(
+            'SELECT * FROM rateb_companies WHERE settings LIKE :needle LIMIT 10'
         );
         $stmt->execute(['needle' => '%' . $code . '%']);
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
@@ -177,11 +266,16 @@ final class MobileAppActivationService
         $stmt->execute(['id' => $companyId]);
         $settings = json_decode((string) ($stmt->fetchColumn() ?: ''), true);
         $settings = is_array($settings) ? $settings : [];
-        for ($i = 0; $i < 10; $i++) {
-            $code = $this->randomCode();
-            if ($this->findCompanyByCode($code) === null) {
+        $code = '';
+        for ($i = 0; $i < 20; $i++) {
+            $candidate = $this->randomCode();
+            if ($this->findCompanyByCode($candidate) === null) {
+                $code = $candidate;
                 break;
             }
+        }
+        if ($code === '') {
+            return '';
         }
         $settings[self::SETTINGS_KEY] = $code;
         $json = json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

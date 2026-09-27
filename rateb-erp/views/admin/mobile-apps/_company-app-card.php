@@ -49,6 +49,15 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
         <?php if (($appCard['activationCode'] ?? '') !== '') { ?>
         <div class="row g-3 align-items-center mb-3 pb-3 border-bottom" id="mobile-activation">
             <div class="col-md-8">
+                <div class="small text-muted mb-1"><?php echo $e(str_replace(
+                    [':name', ':id', ':host'],
+                    [
+                        (string) ($appCard['companyName'] ?? ''),
+                        (string) $cardCid,
+                        (string) parse_url((string) ($appCard['server'] ?? ''), PHP_URL_HOST),
+                    ],
+                    __('mobile_activation_qr_scope')
+                )); ?></div>
                 <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_activation_code')); ?></label>
                 <div class="fs-4 fw-bold font-monospace mb-2" dir="ltr"><?php echo $e($appCard['activationCode']); ?></div>
                 <div class="small text-muted mb-2"><?php echo $e(__(!empty($appCard['needsCode']) ? 'mobile_activation_hint_required' : 'mobile_activation_hint_optional')); ?></div>

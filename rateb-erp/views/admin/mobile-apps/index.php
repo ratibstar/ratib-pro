@@ -16,7 +16,7 @@ $rows = $rows ?? [];
 $canManage = !empty($canManage);
 $canToggleEnable = !empty($canToggleEnable);
 $consoleAccessible = !empty($consoleAccessible);
-$colCount = $canToggleEnable ? 5 : 3;
+$colCount = $canToggleEnable ? 6 : 3;
 ?>
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
@@ -97,6 +97,20 @@ $colCount = $canToggleEnable ? 5 : 3;
 </details>
 <?php } ?>
 
+<?php if (!empty($activationDuplicates)) { ?>
+<div class="alert alert-danger py-2 small" role="alert">
+    <i class="fas fa-triangle-exclamation"></i>
+    <?php echo $e(__('mobile_activation_duplicate_alert')); ?>
+    <ul class="mb-0 mt-1">
+        <?php foreach ($activationDuplicates as $dupe) { ?>
+            <li dir="ltr"><code><?php echo $e($dupe['code'] ?? ''); ?></code>
+                — <?php echo $e(__('mobile_activation_duplicate_companies')); ?>:
+                #<?php echo $e(implode(', #', array_map('strval', $dupe['company_ids'] ?? []))); ?></li>
+        <?php } ?>
+    </ul>
+</div>
+<?php } ?>
+
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo $e(__('mobile_apps_companies')); ?></div>
     <div class="rateb-card-body table-responsive">
@@ -106,6 +120,7 @@ $colCount = $canToggleEnable ? 5 : 3;
                 <th><?php echo $e(__('company')); ?></th>
                 <th><?php echo $e(__('status')); ?></th>
                 <?php if ($canToggleEnable) { ?>
+                <th><?php echo $e(__('mobile_activation_code')); ?></th>
                 <th><?php echo $e(__('mobile_apps_server')); ?></th>
                 <th><?php echo $e(__('mobile_apps_apk')); ?></th>
                 <?php } ?>
@@ -132,6 +147,13 @@ $colCount = $canToggleEnable ? 5 : 3;
                         <?php } ?>
                     </td>
                     <?php if ($canToggleEnable) { ?>
+                    <td class="small font-monospace" dir="ltr">
+                        <?php if (($row['activation_code'] ?? '') !== '') { ?>
+                            <span title="#<?php echo $e((string) $cid); ?>"><?php echo $e($row['activation_code']); ?></span>
+                        <?php } else { ?>
+                            <span class="text-muted">—</span>
+                        <?php } ?>
+                    </td>
                     <td class="small text-break" dir="ltr"><?php echo $e($row['server'] ?? ''); ?></td>
                     <td>
                         <?php if ($apk !== null) { ?>

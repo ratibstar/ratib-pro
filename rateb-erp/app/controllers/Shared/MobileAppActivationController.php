@@ -81,12 +81,15 @@ final class MobileAppActivationController extends Controller
         $branded = new MobileAppBrandedService($apks);
         $names = $branded->names($company);
         $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
+        $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
+                'id' => (int) ($company['id'] ?? 0),
                 'name' => $names[rateb_locale() === 'ar' ? 'ar' : 'en'],
                 'logo' => $branded->iconUrl($company, $hrConfig, $erpBase),
             ],
             'code' => MobileAppActivationService::format($code),
+            'erpHost' => $erpHost,
             'apps' => $svc->enabledApps($company),
             'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',
         ]), 'auth');

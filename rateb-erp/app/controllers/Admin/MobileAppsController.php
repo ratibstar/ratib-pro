@@ -34,6 +34,7 @@ final class MobileAppsController extends Controller
         $platformUpdate = $platform ? $apkSvc->platformUpdateStatus($app) : null;
         $rows = (new MobileAppConfigService())->listCompaniesWithConfig();
         $branded = new MobileAppBrandedService($apkSvc);
+        $activationSvc = new MobileAppActivationService($apkSvc);
         foreach ($rows as &$row) {
             $company = ['id' => (int) $row['company_id']] + $row;
             $row['mobile_active'] = $apkSvc->isEnabled($app, $company, ['status' => $row['mobile_status'] ?? '']);
@@ -43,9 +44,14 @@ final class MobileAppsController extends Controller
                 $row['apk'] = $apkSvc->meta($apkSvc->slotKey($app, (int) $row['company_id']));
                 $row['uses_shared'] = $row['apk'] === null && $apkSvc->sharedFallback($app, $company) !== null;
                 $row['needs_app_update'] = $apkSvc->companyNeedsAppUpdate($app, $company);
+                $storedCode = $activationSvc->codeFor($company);
+                $row['activation_code'] = $storedCode !== ''
+                    ? MobileAppActivationService::format($storedCode)
+                    : '';
             }
         }
         unset($row);
+        $activationDuplicates = $platform ? $activationSvc->findDuplicateCodes() : [];
 
         $shared = null;
         if ($platform) {
@@ -76,6 +82,7 @@ final class MobileAppsController extends Controller
             'consoleAccessible' => function_exists('rateb_hr_mobile_console_accessible')
                 && rateb_hr_mobile_console_accessible(),
             'platformUpdate' => $platformUpdate,
+            'activationDuplicates' => $activationDuplicates,
         ], 'main');
     }
 
@@ -540,9 +547,7 @@ final class MobileAppsController extends Controller
         $activation = new MobileAppActivationService($apkSvc);
         $agencyHost = function_exists('rateb_is_agency_erp_host') && rateb_is_agency_erp_host();
         $code = $agencyHost ? $activation->codeFor($company) : $activation->ensureCode((int) $company['id']);
-        $activationUrl = $code !== ''
-            ? rateb_platform_oversight_public_url('app-activate/' . MobileAppActivationService::format($code))
-            : '';
+        $activationUrl = $code !== '' ? $activation->publicActivationUrl($code) : '';
         $apps = [];
         foreach (MobileAppApkService::APPS as $app) {
             if (!$apkSvc->isEnabled($app, $company)) {
@@ -617,6 +622,7 @@ final class MobileAppsController extends Controller
             'distribution' => $distribution,
             'companyUpdateState' => $companyUpdateState,
             'needsAppUpdate' => $apkSvc->companyNeedsAppUpdate($app, $company),
+            'companyName' => (string) ($company['name'] ?? ''),
             'servedBuildLabel' => $servedBuildLabel,
             'identityLogo' => $identityLogo,
             'showHrBrandingLink' => $app === 'hr',
