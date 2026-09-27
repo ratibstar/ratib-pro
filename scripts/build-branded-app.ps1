@@ -274,6 +274,8 @@ try {
             $dart = $dart -replace "(String key = )'[^']*'", "`${1}'$Key'"
             $dart = $dart -replace "(String activationCode = )'[^']*'", "`${1}'$Code'"
             [IO.File]::WriteAllText($brandDart, $dart, (New-Object Text.UTF8Encoding($false)))
+            # Without a clean build Gradle reuses the previous Dart snapshot and ignores the edit above.
+            & $flutter clean | Out-Null
             if ($App -eq 'hr') {
                 & $flutter build apk --release --flavor production --target-platform android-arm64 `
                     --dart-define=APP_FLAVOR=production "--dart-define=ERP_BASE_URL=$Server"
