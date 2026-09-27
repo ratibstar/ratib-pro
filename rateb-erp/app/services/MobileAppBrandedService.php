@@ -86,10 +86,17 @@ final class MobileAppBrandedService
         return $this->apks->appInfo($app)['package'] . '.c' . $companyId;
     }
 
-    /** Company icon (HR white-label icon, then logo, then company logo) as an absolute https URL. */
-    public function iconUrl(array $company, ?array $hrConfig): string
+    /**
+     * Company icon (HR white-label icon, then logo, then company logo, then the logo pinned for the
+     * company's dedicated ERP host) as an absolute https URL.
+     */
+    public function iconUrl(array $company, ?array $hrConfig, string $server = ''): string
     {
-        foreach ([$hrConfig['icon_path'] ?? '', $hrConfig['logo_path'] ?? '', $company['logo_path'] ?? ''] as $path) {
+        $pinned = function_exists('rateb_erp_brand_for_context')
+            ? rateb_erp_brand_for_context('', '', (string) ($company['name'] ?? ''), $server)
+            : null;
+        $paths = [$hrConfig['icon_path'] ?? '', $hrConfig['logo_path'] ?? '', $company['logo_path'] ?? '', $pinned['logo_path'] ?? ''];
+        foreach ($paths as $path) {
             $path = trim((string) $path);
             if ($path === '') {
                 continue;
@@ -122,7 +129,8 @@ final class MobileAppBrandedService
         if ($key === '') {
             return '';
         }
-        $icon = $this->iconUrl($company, $hrConfig);
+        $server = $this->apks->serverForCompany($app, $company);
+        $icon = $this->iconUrl($company, $hrConfig, $server);
         $arg = static fn (string $v): string => '"' . str_replace('"', '', $v) . '"';
 
         return '.\\scripts\\build-branded-app.ps1'
@@ -131,7 +139,7 @@ final class MobileAppBrandedService
             . ' -Package ' . $arg($this->packageFor($app, (int) $company['id']))
             . ' -Name ' . $arg($this->displayName($app, $company, $hrConfig))
             . ($icon !== '' ? ' -IconUrl ' . $arg($icon) : '')
-            . ' -Server ' . $arg($this->apks->serverForCompany($app, $company))
+            . ' -Server ' . $arg($server)
             . ' -Code ' . $arg($activationCode);
     }
 

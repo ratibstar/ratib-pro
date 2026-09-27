@@ -129,6 +129,37 @@ function Save-Icon {
     $bmp.Dispose()
 }
 
+# Logos often come with wide white/transparent margins, which would leave the mark tiny in the icon.
+function Get-TrimmedImage {
+    param([System.Drawing.Image]$Src)
+    $sw = [Math]::Min(256, $Src.Width)
+    $sh = [Math]::Max(1, [int]($Src.Height * $sw / $Src.Width))
+    $probe = New-Object System.Drawing.Bitmap $Src, $sw, $sh
+    $minX = $sw; $minY = $sh; $maxX = -1; $maxY = -1
+    for ($y = 0; $y -lt $sh; $y++) {
+        for ($x = 0; $x -lt $sw; $x++) {
+            $p = $probe.GetPixel($x, $y)
+            if ($p.A -gt 24 -and ($p.R -lt 225 -or $p.G -lt 225 -or $p.B -lt 225)) {
+                if ($x -lt $minX) { $minX = $x }; if ($x -gt $maxX) { $maxX = $x }
+                if ($y -lt $minY) { $minY = $y }; if ($y -gt $maxY) { $maxY = $y }
+            }
+        }
+    }
+    $probe.Dispose()
+    if ($maxX -lt 0) { return $Src }
+    $f = $Src.Width / $sw
+    $pad = 2
+    $rx = [int][Math]::Max(0, ($minX - $pad) * $f); $ry = [int][Math]::Max(0, ($minY - $pad) * $f)
+    $rw = [int][Math]::Min($Src.Width - $rx, ($maxX - $minX + 1 + 2 * $pad) * $f)
+    $rh = [int][Math]::Min($Src.Height - $ry, ($maxY - $minY + 1 + 2 * $pad) * $f)
+    $out = New-Object System.Drawing.Bitmap $rw, $rh, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $g = [System.Drawing.Graphics]::FromImage($out)
+    $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    $g.DrawImage($Src, (New-Object System.Drawing.Rectangle 0, 0, $rw, $rh), $rx, $ry, $rw, $rh, [System.Drawing.GraphicsUnit]::Pixel)
+    $g.Dispose()
+    return $out
+}
+
 # Company without a logo: a colored circle with the first letter of its name (generic words and the
 # Arabic article skipped), color picked from the key so companies look different.
 function New-InitialsLogo {
@@ -164,23 +195,30 @@ try {
     Write-Host "=== $App for $Name ($Package) ===" -ForegroundColor Cyan
     if ($IconUrl) {
         Invoke-WebRequest -Uri $IconUrl -OutFile $iconFile -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop
-        try { $logo = [System.Drawing.Image]::FromFile($iconFile) } catch { throw 'Icon must be a PNG/JPG image' }
+        try { $raw = [System.Drawing.Image]::FromFile($iconFile) } catch { throw 'Icon must be a PNG/JPG image' }
+        $logo = Get-TrimmedImage $raw
+        if (-not [object]::ReferenceEquals($logo, $raw)) { $raw.Dispose() }
     } else {
         $logo = New-InitialsLogo $Name $Key
     }
 
+    # Wide (text) logos get more width; the adaptive foreground stays inside the 66dp safe zone.
+    $wide = ($logo.Width / $logo.Height) -gt 1.8
+    $sLegacy = if ($wide) { 0.88 } else { 0.74 }
+    $sRound = if ($wide) { 0.76 } else { 0.64 }
+    $sFg = if ($wide) { 0.6 } else { 0.56 }
     $densities = [ordered]@{ mdpi = 48; hdpi = 72; xhdpi = 96; xxhdpi = 144; xxxhdpi = 192 }
     foreach ($d in $densities.Keys) {
         $size = $densities[$d]
         $dir = Join-Path $res "mipmap-$d"
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
-        Save-Icon $logo $size $size 0.74 '#FFFFFF' 'rounded' (Join-Path $dir 'ic_launcher.png')
+        Save-Icon $logo $size $size $sLegacy '#FFFFFF' 'rounded' (Join-Path $dir 'ic_launcher.png')
         if (Test-Path (Join-Path $dir 'ic_launcher_round.png')) {
-            Save-Icon $logo $size $size 0.64 '#FFFFFF' 'circle' (Join-Path $dir 'ic_launcher_round.png')
+            Save-Icon $logo $size $size $sRound '#FFFFFF' 'circle' (Join-Path $dir 'ic_launcher_round.png')
         }
         if (Test-Path (Join-Path $dir 'ic_launcher_foreground.png')) {
             $fg = [int]($size * 2.25)
-            Save-Icon $logo $fg $fg 0.56 '' '' (Join-Path $dir 'ic_launcher_foreground.png')
+            Save-Icon $logo $fg $fg $sFg '' '' (Join-Path $dir 'ic_launcher_foreground.png')
         }
     }
     $bgXml = Join-Path $res 'values\ic_launcher_background.xml'
