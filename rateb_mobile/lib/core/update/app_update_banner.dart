@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -49,7 +50,9 @@ class _AppUpdateBannerState extends State<AppUpdateBanner> {
       if (app is! Map) return;
       final latest = int.tryParse('${app['version_code'] ?? 0}') ?? 0;
       final file = '${app['file'] ?? ''}';
-      if (latest <= AppConfig.buildNumber ||
+      final installed = int.tryParse((await PackageInfo.fromPlatform()).buildNumber) ??
+          AppConfig.buildNumber;
+      if (latest <= installed ||
           !RegExp(r'^[a-z0-9][a-z0-9.\-]*\.apk$').hasMatch(file)) {
         return;
       }

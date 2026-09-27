@@ -14,7 +14,7 @@ abstract final class AppConfig {
   static const String phase = 'L1';
   static const String versionLabel = '1.0.5';
 
-  /// Keep aligned with the pubspec.yaml build number (after "+"); scripts/build-branded-app.ps1 checks it.
+  /// Fallback only: the update check reads the installed build number from the platform.
   static const int buildNumber = 214;
 
   /// ERP remains the single source of truth (documentation constant only).

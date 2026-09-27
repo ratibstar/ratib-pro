@@ -55,6 +55,6 @@ class AppConfig {
   /// Keep aligned with pubspec.yaml version.
   static const String appVersion = '1.0.5+6';
 
-  /// Keep aligned with the pubspec.yaml build number (after "+"); scripts/build-branded-app.ps1 checks it.
+  /// Fallback only: the update check reads the installed build number from the platform.
   static const int buildNumber = 6;
 }
