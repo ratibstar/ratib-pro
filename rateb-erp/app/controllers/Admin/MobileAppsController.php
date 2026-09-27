@@ -595,6 +595,13 @@ final class MobileAppsController extends Controller
         $needsBuild = $brandedKey !== ''
             && ($pub === null || ($targetBuild > 0 && (int) ($pub['version_code'] ?? 0) < $targetBuild));
         $sharedApk = $apk === null ? $apkSvc->sharedFallback($app, $company) : null;
+        $servedMeta = $apk ?? $sharedApk;
+        $servedBuildLabel = '';
+        if (is_array($servedMeta)) {
+            $vc = (int) ($servedMeta['version_code'] ?? 0);
+            $ver = trim((string) ($servedMeta['version'] ?? ''));
+            $servedBuildLabel = $ver !== '' ? $ver . ($vc > 0 ? ' (build ' . $vc . ')' : '') : ($vc > 0 ? 'build ' . $vc : '');
+        }
         $distribution = 'missing';
         if ($brandedKey !== '') {
             $distribution = 'branded';
@@ -610,6 +617,7 @@ final class MobileAppsController extends Controller
             'distribution' => $distribution,
             'companyUpdateState' => $companyUpdateState,
             'needsAppUpdate' => $apkSvc->companyNeedsAppUpdate($app, $company),
+            'servedBuildLabel' => $servedBuildLabel,
             'identityLogo' => $identityLogo,
             'showHrBrandingLink' => $app === 'hr',
             'branded' => [

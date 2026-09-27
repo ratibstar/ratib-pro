@@ -3377,6 +3377,8 @@ return [
     'mobile_activation_hint_required' => 'This company is on its own server: the code must be entered once in the app before signing in.',
     'mobile_activation_hint_optional' => 'Optional for this company: the app works directly; the code links it to the company name.',
     'mobile_activation_qr_hint' => 'One code for everything: scan it with the phone camera to download the app or open it activated for the company.',
+    'mobile_activation_not_apk_update' => 'Scanning the QR links the installed app to the company — it does not replace the APK. For new screens/features: tap Update on the in-app banner or download the APK from the activation page.',
+    'mobile_company_served_build' => 'Download file',
     'mobile_activation_regenerate' => 'New code',
     'mobile_activation_regenerate_confirm' => 'Generate a new code? The current code stops working for new devices (already activated devices keep working).',
     'mobile_activation_regenerated' => 'A new activation code was generated.',

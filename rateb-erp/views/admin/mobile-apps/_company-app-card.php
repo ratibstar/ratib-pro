@@ -66,6 +66,7 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
             <div class="col-md-4 text-center">
                 <img src="<?php echo $e($appCard['activationQr']); ?>" alt="QR" width="180" height="180" class="img-fluid rounded border bg-white p-2">
                 <div class="small text-muted mt-1"><?php echo $e(__('mobile_activation_qr_hint')); ?></div>
+                <div class="small text-warning mt-2"><?php echo $e(__('mobile_activation_not_apk_update')); ?></div>
             </div>
         </div>
         <?php } ?>
@@ -145,7 +146,12 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
                     <span class="small text-muted"><?php echo $e(__('mobile_company_update_hint')); ?></span>
                 <?php } else { ?>
                     <span class="badge text-bg-success py-2 px-3"><i class="fas fa-check"></i> <?php echo $e(__('mobile_company_update_current')); ?></span>
-                    <span class="small text-muted"><?php echo $e(__('mobile_company_update_current_hint')); ?></span>
+                    <span class="small text-muted">
+                        <?php echo $e(__('mobile_company_update_current_hint')); ?>
+                        <?php if (($appCard['servedBuildLabel'] ?? '') !== '') { ?>
+                            <span dir="ltr" class="font-monospace"> — <?php echo $e(__('mobile_company_served_build')); ?>: <?php echo $e($appCard['servedBuildLabel']); ?></span>
+                        <?php } ?>
+                    </span>
                 <?php } ?>
             </div>
             <?php if ($distribution === 'missing' && $cardActive) { ?>
