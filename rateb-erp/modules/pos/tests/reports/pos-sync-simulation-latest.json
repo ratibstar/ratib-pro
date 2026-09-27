@@ -2,19 +2,95 @@
     "results": [
         {
             "id": "BOOT",
-            "name": "database + fixture",
-            "passed": false,
-            "detail": "set POS_V2_INTEGRATION_SEED=1 or POS_V2_TEST_*"
+            "name": "database + migration 217",
+            "passed": true,
+            "detail": "company=3"
+        },
+        {
+            "id": "A",
+            "name": "single offline sale → order\/stock\/GL\/COMMITTED",
+            "passed": true,
+            "detail": "order=4 mv=1 gl=2 journals=0 accept_ms=10.53 commit_ms=120.69",
+            "ms": 120.69
+        },
+        {
+            "id": "B",
+            "name": "duplicate commit idempotent",
+            "passed": true,
+            "detail": "order=5 mv=1->1 gl=2->2"
+        },
+        {
+            "id": "C",
+            "name": "concurrent commit CAS",
+            "passed": true,
+            "detail": "second=in_progress http=409"
+        },
+        {
+            "id": "D",
+            "name": "crash recovery COMMITTING→COMMITTED",
+            "passed": true,
+            "detail": "order=6 reconciled=1 checkout_ms=20.61 reconcile_ms=4.76",
+            "ms": 4.76
+        },
+        {
+            "id": "E",
+            "name": "missing warehouse rejected",
+            "passed": true,
+            "detail": "code=map_failed status=FAILED"
+        },
+        {
+            "id": "F",
+            "name": "permission failure without pos.sale.complete",
+            "passed": true,
+            "detail": "http=403"
+        },
+        {
+            "id": "G",
+            "name": "tenant mismatch isolation",
+            "passed": true,
+            "detail": "http=404 code=not_found"
+        },
+        {
+            "id": "H",
+            "name": "branch mismatch 403",
+            "passed": true,
+            "detail": "code=branch_isolation"
+        },
+        {
+            "id": "I",
+            "name": "large queue 100 sequential commits",
+            "passed": true,
+            "detail": "committed=100 dup=0 orphans=0 ms=3472.03 thr=28.802\/s",
+            "ms": 3472.03
+        },
+        {
+            "id": "J",
+            "name": "interrupted network retry single order\/stock\/GL",
+            "passed": true,
+            "detail": "order=107 mv=1 gl=2 already=1"
+        },
+        {
+            "id": "DB",
+            "name": "consistency orphans\/duplicates",
+            "passed": true,
+            "detail": "committed_no_order=0 dup_idem=0 orphan_stock=0 orphan_gl=0 missing_order=0"
         }
     ],
-    "perf": [],
+    "perf": {
+        "accept_ms": 10.53,
+        "commit_ms": 120.69,
+        "checkout_ms": 20.61,
+        "reconcile_ms": 4.76,
+        "batch_100_ms": 3472.03,
+        "batch_throughput_per_s": 28.802
+    },
     "summary": {
-        "passed": 0,
-        "failed": 1,
-        "coverage_pct": 0,
-        "scenarios_passed": 0,
+        "passed": 12,
+        "failed": 0,
+        "coverage_pct": 100,
+        "scenarios_passed": 11,
         "scenarios_total": 11,
-        "recommendation": "NOT READY",
-        "production_readiness_pct": 0
+        "recommendation": "READY FOR LIVE DEVICE CERTIFICATION",
+        "production_readiness_pct": 100
     }
 }

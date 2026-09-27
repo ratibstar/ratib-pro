@@ -22,6 +22,8 @@ final class MobileAppBrandedService
     public const SETTINGS_KEY = 'mobile_branded';
     public const PUBLIC_DIR = 'company';
     public const NAMES_KEY = 'mobile_names';
+    public const SPECS_KEY = 'mobile_branded_specs';
+    public const QUEUE_KEY = 'mobile_branded_queue';
 
     private MobileAppApkService $apks;
 
@@ -59,9 +61,182 @@ final class MobileAppBrandedService
                 }
             } else {
                 unset($branded[$app]);
+                if (is_array($settings[self::SPECS_KEY] ?? null)) {
+                    unset($settings[self::SPECS_KEY][$app]);
+                }
+                if (is_array($settings[self::QUEUE_KEY] ?? null)) {
+                    unset($settings[self::QUEUE_KEY][$app]);
+                }
                 $this->apks->remove($this->apks->slotKey($app, $companyId));
             }
             $settings[self::SETTINGS_KEY] = $branded;
+
+            return $settings;
+        }) && (!$requested || $this->refreshSpecSnapshot($app, $companyId));
+    }
+
+    /**
+     * Snapshot of everything scripts/build-branded-app.ps1 needs (stored in company settings for CI).
+     *
+     * @return array{app:string,key:string,package:string,name:string,name_ar:string,icon_url:string,server:string,code:string}|null
+     */
+    public function specFor(string $app, array $company, ?array $hrConfig, string $activationCode): ?array
+    {
+        $app = MobileAppApkService::normalizeApp($app);
+        $key = $this->keyFor($app, $company);
+        if ($key === '') {
+            return null;
+        }
+        $server = $this->apks->serverForCompany($app, $company);
+        $names = $this->names($company);
+
+        return [
+            'app' => $app,
+            'key' => $key,
+            'package' => $this->packageFor($app, (int) $company['id']),
+            'name' => $this->displayName($app, $company, $hrConfig),
+            'name_ar' => mb_substr((string) preg_replace('/["`$\r\n]+/', '', $names['ar']), 0, 30),
+            'icon_url' => $this->iconUrl($company, $hrConfig, $server),
+            'server' => $server,
+            'code' => MobileAppActivationService::format($activationCode),
+        ];
+    }
+
+    public function refreshSpecSnapshot(string $app, int $companyId): bool
+    {
+        $app = MobileAppApkService::normalizeApp($app);
+        $company = (new Company())->find($companyId);
+        if (!is_array($company)) {
+            return false;
+        }
+        $activation = new MobileAppActivationService($this->apks);
+        $code = $activation->codeFor($company);
+        if ($code === '') {
+            $code = $activation->ensureCode($companyId);
+        }
+        $hrConfig = $app === 'hr' ? (new MobileAppConfigService())->findByCompanyId($companyId) : null;
+        $spec = $this->specFor($app, $company, $hrConfig, $code);
+        if ($spec === null) {
+            return false;
+        }
+
+        return $this->updateSettings($companyId, static function (array $settings) use ($app, $spec): array {
+            $specs = is_array($settings[self::SPECS_KEY] ?? null) ? $settings[self::SPECS_KEY] : [];
+            $specs[$app] = $spec;
+            $settings[self::SPECS_KEY] = $specs;
+
+            return $settings;
+        });
+    }
+
+    public function queueBuild(string $app, int $companyId): bool
+    {
+        $app = MobileAppApkService::normalizeApp($app);
+        if (!$this->refreshSpecSnapshot($app, $companyId)) {
+            return false;
+        }
+
+        return $this->updateSettings($companyId, static function (array $settings) use ($app): array {
+            $queue = is_array($settings[self::QUEUE_KEY] ?? null) ? $settings[self::QUEUE_KEY] : [];
+            $queue[$app] = gmdate('c');
+            $settings[self::QUEUE_KEY] = $queue;
+
+            return $settings;
+        });
+    }
+
+    /** @return array<string, int> app => version_code from mobile-apps-latest.json */
+    public function sharedVersionCodes(): array
+    {
+        $path = rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/public/downloads/mobile-apps-latest.json';
+        $data = json_decode((string) @file_get_contents($path), true);
+        $out = [];
+        if (!is_array($data)) {
+            return $out;
+        }
+        foreach (MobileAppApkService::APPS as $app) {
+            $row = $data[$app] ?? null;
+            $out[$app] = is_array($row) ? (int) ($row['version_code'] ?? 0) : 0;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Companies that requested a branded build: pending, outdated vs platform, or manually queued.
+     *
+     * @return list<array{company_id:int, company_name:string, app:string, key:string, state:string, version:string, version_code:int, target_version_code:int, spec:array<string,string>, queued:bool}>
+     */
+    public function listBuildQueue(?string $appFilter = null, bool $actionableOnly = true): array
+    {
+        $appFilter = $appFilter !== null && $appFilter !== '' && $appFilter !== 'all'
+            ? MobileAppApkService::normalizeApp($appFilter)
+            : '';
+        $targets = $this->sharedVersionCodes();
+        $activation = new MobileAppActivationService($this->apks);
+        $configSvc = new MobileAppConfigService();
+        $out = [];
+        foreach ($configSvc->listCompaniesWithConfig() as $row) {
+            $company = ['id' => (int) $row['company_id'], 'name' => (string) ($row['company_name'] ?? '')] + $row;
+            $settings = json_decode((string) ($company['settings'] ?? ''), true);
+            $settings = is_array($settings) ? $settings : [];
+            $queuedApps = is_array($settings[self::QUEUE_KEY] ?? null) ? $settings[self::QUEUE_KEY] : [];
+            $savedSpecs = is_array($settings[self::SPECS_KEY] ?? null) ? $settings[self::SPECS_KEY] : [];
+            foreach (MobileAppApkService::APPS as $app) {
+                if ($appFilter !== '' && $app !== $appFilter) {
+                    continue;
+                }
+                $key = $this->keyFor($app, $company);
+                if ($key === '') {
+                    continue;
+                }
+                $pub = $this->published($key);
+                $target = $targets[$app] ?? 0;
+                $state = 'ready';
+                if ($pub === null) {
+                    $state = 'pending';
+                } elseif ($target > 0 && $pub['version_code'] < $target) {
+                    $state = 'outdated';
+                }
+                $queued = isset($queuedApps[$app]);
+                if ($queued && $state === 'ready') {
+                    $state = 'queued';
+                }
+                if ($actionableOnly && $state === 'ready' && !$queued) {
+                    continue;
+                }
+                $hrConfig = $app === 'hr' ? $configSvc->findByCompanyId((int) $company['id']) : null;
+                $code = $activation->codeFor($company) ?: '';
+                $spec = is_array($savedSpecs[$app] ?? null) ? $savedSpecs[$app] : [];
+                if ($spec === [] || (string) ($spec['key'] ?? '') !== $key) {
+                    $fresh = $this->specFor($app, $company, $hrConfig, $code);
+                    $spec = $fresh ?? [];
+                }
+                $out[] = [
+                    'company_id' => (int) $company['id'],
+                    'company_name' => (string) ($company['name'] ?? ''),
+                    'app' => $app,
+                    'key' => $key,
+                    'state' => $state,
+                    'version' => $pub !== null ? (string) $pub['version'] : '',
+                    'version_code' => $pub !== null ? (int) $pub['version_code'] : 0,
+                    'target_version_code' => $target,
+                    'spec' => $spec,
+                    'queued' => $queued,
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    public function clearQueue(string $app, int $companyId): void
+    {
+        $app = MobileAppApkService::normalizeApp($app);
+        $this->updateSettings($companyId, static function (array $settings) use ($app): array {
+            if (is_array($settings[self::QUEUE_KEY] ?? null)) {
+                unset($settings[self::QUEUE_KEY][$app]);
+            }
 
             return $settings;
         });
@@ -228,13 +403,18 @@ final class MobileAppBrandedService
             return 'current';
         }
 
-        return $this->apks->installFile($slotKey, $pub['path'], $pub['sha256'], [
+        $ok = $this->apks->installFile($slotKey, $pub['path'], $pub['sha256'], [
             'uploaded_by' => $userId,
             'server' => $this->apks->serverForCompany($app, $company),
             'source' => 'branded',
             'package' => $pub['package'],
             'version' => $pub['version'],
             'version_code' => $pub['version_code'],
-        ]) ? 'updated' : 'failed';
+        ]);
+        if ($ok) {
+            $this->clearQueue($app, (int) $company['id']);
+        }
+
+        return $ok ? 'updated' : 'failed';
     }
 }

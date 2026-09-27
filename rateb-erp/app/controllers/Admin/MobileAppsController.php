@@ -211,6 +211,101 @@ final class MobileAppsController extends Controller
         Response::redirect($back);
     }
 
+    /** Company name shown on the download page and inside the apps (Arabic / English). */
+    public function names(array $params = []): void
+    {
+        $companyId = (int) ($params['id'] ?? 0);
+        $app = MobileAppApkService::normalizeApp((string) $this->input('app', 'hr'));
+        $back = rateb_url('admin/mobile-apps/' . $companyId) . ($app === 'hr' ? '' : '?app=' . $app);
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        if ($this->validateCsrf()) {
+            $branded = new MobileAppBrandedService();
+            $ok = $branded->setNames(
+                $companyId,
+                (string) $this->input('name_ar', ''),
+                (string) $this->input('name_en', '')
+            );
+            if ($ok && $branded->keyFor($app, (array) ((new Company())->find($companyId) ?? [])) !== '') {
+                $branded->refreshSpecSnapshot($app, $companyId);
+            }
+            SessionManager::flash($ok ? 'success' : 'error', __($ok ? 'mobile_names_saved' : 'mobile_apps_save_failed'));
+        }
+        Response::redirect($back);
+    }
+
+    /** Queue of company-branded builds (platform super-admin). */
+    public function brandedQueue(): void
+    {
+        if (!$this->canToggleEnable()) {
+            http_response_code(403);
+            echo '403';
+            return;
+        }
+        $app = MobileAppApkService::normalizeApp((string) ($_GET['app'] ?? 'hr'));
+        $branded = new MobileAppBrandedService();
+        $this->view('admin/mobile-apps/branded-queue', [
+            'title' => __('mobile_branded_queue_title'),
+            'app' => $app,
+            'rows' => $branded->listBuildQueue($app, false),
+            'actionable' => $branded->listBuildQueue($app, true),
+            'platformVersions' => $branded->sharedVersionCodes(),
+            'dispatchEnabled' => trim((string) (getenv('RATEB_GITHUB_DISPATCH_TOKEN') ?: '')) !== '',
+            'apiConfigured' => rateb_mobile_build_secret() !== '',
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    /** Queue one company branded build and optionally trigger GitHub Actions. */
+    public function brandedBuild(array $params = []): void
+    {
+        $companyId = (int) ($params['id'] ?? 0);
+        $app = MobileAppApkService::normalizeApp((string) $this->input('app', 'hr'));
+        $back = (string) $this->input('back', '');
+        if ($back === '') {
+            $back = rateb_url('admin/mobile-apps/' . $companyId) . ($app === 'hr' ? '' : '?app=' . $app);
+        }
+        if (!$this->canToggleEnable() || !$this->validateCsrf()) {
+            Response::redirect($back);
+            return;
+        }
+        $branded = new MobileAppBrandedService();
+        $ok = $branded->queueBuild($app, $companyId);
+        $dispatched = $ok && rateb_github_dispatch_mobile_build($app);
+        SessionManager::flash(
+            $ok ? 'success' : 'error',
+            __($ok ? ($dispatched ? 'mobile_branded_build_dispatched' : 'mobile_branded_build_queued') : 'mobile_apps_save_failed')
+        );
+        Response::redirect($back);
+    }
+
+    /** Queue every pending/outdated branded build for one app type. */
+    public function brandedBuildAll(array $params = []): void
+    {
+        $app = $this->platformAppParam($params);
+        $back = rateb_url('admin/mobile-apps/branded-queue') . '?app=' . rawurlencode($app !== '' ? $app : 'hr');
+        if (!$this->canToggleEnable() || !$this->validateCsrf()) {
+            Response::redirect($back);
+            return;
+        }
+        $branded = new MobileAppBrandedService();
+        $n = 0;
+        foreach ($branded->listBuildQueue($app !== '' ? $app : null, true) as $row) {
+            if ($branded->queueBuild($row['app'], (int) $row['company_id'])) {
+                $n++;
+            }
+        }
+        $dispatched = $n > 0 && rateb_github_dispatch_mobile_build($app !== '' ? $app : 'all');
+        SessionManager::flash(
+            $n > 0 ? 'success' : 'info',
+            __($n > 0 ? ($dispatched ? 'mobile_branded_build_all_dispatched' : 'mobile_branded_build_all_queued') : 'mobile_branded_build_none')
+        );
+        Response::redirect($back);
+    }
+
     /** New activation code for the company; the old code stops working. */
     public function regenerateActivationCode(array $params = []): void
     {
@@ -338,17 +433,25 @@ final class MobileAppsController extends Controller
         $code = $activation->ensureCode($cid);
         $activationUrl = $code !== '' ? $activation->activationUrl($code) : '';
         $brandedKey = $branded->keyFor($app, $company);
+        $pub = $brandedKey !== '' ? $branded->published($brandedKey) : null;
+        $targetBuild = $branded->sharedVersionCodes()[$app] ?? 0;
+        $needsBuild = $brandedKey !== ''
+            && ($pub === null || ($targetBuild > 0 && (int) ($pub['version_code'] ?? 0) < $targetBuild));
 
         return [
             'branded' => [
                 'requested' => $brandedKey !== '',
+                'needs_build' => $needsBuild,
                 'built' => $apkSvc->isBranded($apk),
                 'version' => $apkSvc->isBranded($apk) ? (string) ($apk['version'] ?? '') : '',
                 'package' => $branded->packageFor($app, $cid),
                 'name' => $branded->displayName($app, $company, $hrConfig),
-                'icon' => $branded->iconUrl($company, $hrConfig),
+                'icon' => $branded->iconUrl($company, $hrConfig, $server),
                 'command' => $branded->buildCommand($app, $company, $hrConfig, MobileAppActivationService::format($code)),
+                'queued' => $this->brandedQueued($company, $app),
             ],
+            'names' => $branded->names($company),
+            'dispatchEnabled' => trim((string) (getenv('RATEB_GITHUB_DISPATCH_TOKEN') ?: '')) !== '',
             'activationCode' => MobileAppActivationService::format($code),
             'activationUrl' => $activationUrl,
             'activationQr' => $activationUrl !== '' ? $apkSvc->qrImageUrl($activationUrl) : '',
@@ -628,5 +731,12 @@ final class MobileAppsController extends Controller
         // rateb.sa is "platform host" for everyone — do NOT use rateb_is_platform_oversight_host()
         // (that is true for the whole domain and was leaking the toggle to company admins).
         return function_exists('rateb_is_super_admin') && rateb_is_super_admin();
+    }
+
+    private function brandedQueued(array $company, string $app): bool
+    {
+        $settings = json_decode((string) ($company['settings'] ?? ''), true);
+
+        return is_array($settings) && isset($settings[MobileAppBrandedService::QUEUE_KEY][MobileAppApkService::normalizeApp($app)]);
     }
 }

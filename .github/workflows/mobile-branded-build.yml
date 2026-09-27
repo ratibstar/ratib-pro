@@ -1,0 +1,48 @@
+name: Mobile branded build
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'hr | erp | customer | all'
+        required: true
+        default: all
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Build pending branded apps
+        env:
+          MOBILE_BUILD_SECRET: ${{ secrets.MOBILE_BUILD_SECRET }}
+          MOBILE_BUILD_API_URL: ${{ vars.MOBILE_BUILD_API_URL }}
+        shell: pwsh
+        run: |
+          if (-not $env:MOBILE_BUILD_SECRET) { throw 'MOBILE_BUILD_SECRET secret is not set' }
+          .\scripts\ci-build-branded-from-api.ps1 -App '${{ inputs.app }}'
+
+      - name: Commit APK artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add rateb-erp/public/downloads/company/*.apk rateb-erp/public/downloads/company/*.json mobile-branding/*.json
+          git diff --staged --quiet || git commit -m "CI: company branded mobile builds (${{ inputs.app }})"
+          git push

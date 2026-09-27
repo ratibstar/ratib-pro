@@ -23,11 +23,21 @@ $colCount = $canToggleEnable ? 5 : 3;
         <h1 class="h4 mb-1"><?php echo $e(__('mobile_apps_title')); ?></h1>
         <p class="text-muted small mb-0"><?php echo $e(__($canToggleEnable ? 'mobile_apps_intro_hub' : 'mobile_apps_intro')); ?></p>
     </div>
+    <div class="d-flex flex-wrap gap-2">
+    <?php if ($canToggleEnable) { ?>
+    <a class="btn btn-sm btn-outline-primary" href="<?php echo $e(rateb_url('admin/mobile-apps/branded-queue') . '?app=' . $app); ?>">
+        <i class="fas fa-hammer"></i> <?php echo $e(__('mobile_branded_queue_link')); ?>
+    </a>
+    <a class="btn btn-sm btn-outline-secondary" href="<?php echo $e(rateb_url('admin/mobile-apps/updates') . '?app=' . $app); ?>">
+        <i class="fas fa-cloud-arrow-up"></i> <?php echo $e(__('mobile_apps_updates_title')); ?>
+    </a>
+    <?php } ?>
     <?php if ($consoleAccessible && $app === 'hr') { ?>
     <a class="btn btn-sm btn-outline-secondary" href="<?php echo $e($consoleUrl ?? rateb_url('admin/hr-mobile')); ?>">
         <i class="fas fa-flask"></i> <?php echo $e(__('hr_mobile_nav')); ?>
     </a>
     <?php } ?>
+    </div>
 </div>
 
 <?php if ($canToggleEnable) {

@@ -1171,6 +1171,11 @@ if (is_file($ratebTenantBranding)) {
     require_once $ratebTenantBranding;
 }
 
+$ratebMobileBuild = RATEB_ROOT . '/config/mobile-build.php';
+if (is_file($ratebMobileBuild)) {
+    require_once $ratebMobileBuild;
+}
+
 if (!function_exists('rateb_vendor_asset')) {
     /** Self-hosted vendor bundle (Bootstrap, Font Awesome, Chart.js, fonts) — no CDN. */
     function rateb_vendor_asset(string $path): string

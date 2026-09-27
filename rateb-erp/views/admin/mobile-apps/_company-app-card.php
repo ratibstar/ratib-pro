@@ -119,9 +119,18 @@ $cardActive = !empty($appCard['active']);
                 <?php if ($brand['icon'] === '') { ?>
                     <div class="alert alert-info py-2 small mb-2"><?php echo $e(__('mobile_branded_no_icon')); ?></div>
                 <?php } ?>
-                <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_branded_command')); ?></label>
-                <input class="form-control form-control-sm font-monospace" dir="ltr" readonly onclick="this.select()" value="<?php echo $e($brand['command']); ?>">
-                <div class="form-text"><?php echo $e(__('mobile_branded_command_hint')); ?></div>
+                <?php if (!empty($brand['needs_build']) || !empty($brand['queued'])) { ?>
+                <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cardCid . '/branded-build'); ?>" class="mb-2">
+                    <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
+                    <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
+                    <button type="submit" class="btn btn-sm btn-success w-100"><i class="fas fa-hammer"></i> <?php echo $e(__('mobile_branded_build_btn')); ?></button>
+                </form>
+                <div class="form-text mb-2"><?php echo $e(!empty($appCard['dispatchEnabled']) ? __('mobile_branded_build_hint_auto') : __('mobile_branded_build_hint_manual')); ?></div>
+                <?php } ?>
+                <details class="small">
+                    <summary class="text-muted"><?php echo $e(__('mobile_branded_command')); ?></summary>
+                    <input class="form-control form-control-sm font-monospace mt-1" dir="ltr" readonly onclick="this.select()" value="<?php echo $e($brand['command']); ?>">
+                </details>
             <?php } ?>
         </div>
         <?php } ?>
