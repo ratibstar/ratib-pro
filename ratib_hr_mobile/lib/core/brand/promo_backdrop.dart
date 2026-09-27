@@ -104,7 +104,7 @@ class _PromoBackdropState extends State<PromoBackdrop>
     final picked = [first, ...source.take(widget.count - 1)];
     _items = [
       for (final text in picked)
-        _Drifter(text, 17 + _rnd.nextDouble() * 9)
+        _Drifter(text, 15 + _rnd.nextDouble() * 8)
           ..phase = _rnd.nextDouble() * math.pi * 2,
     ];
     for (final it in _items) {
@@ -138,7 +138,7 @@ class _PromoBackdropState extends State<PromoBackdrop>
       base.copyWith(
         foreground: Paint()
           ..shader = LinearGradient(
-            colors: [for (final c in it.colors) c.withValues(alpha: 0.62)],
+            colors: [for (final c in it.colors) c.withValues(alpha: 0.48)],
           ).createShader(rect),
         shadows: [
           Shadow(color: it.colors.first.withValues(alpha: 0.4), blurRadius: 14)
@@ -146,9 +146,9 @@ class _PromoBackdropState extends State<PromoBackdrop>
       ),
     );
     it.dark = _painter(
-        it.text, base.copyWith(color: Colors.black.withValues(alpha: 0.45)));
+        it.text, base.copyWith(color: Colors.black.withValues(alpha: 0.35)));
     it.light = _painter(
-        it.text, base.copyWith(color: Colors.white.withValues(alpha: 0.2)));
+        it.text, base.copyWith(color: Colors.white.withValues(alpha: 0.15)));
     it.mirror = _painter(
       it.text,
       base.copyWith(

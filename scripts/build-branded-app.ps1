@@ -89,6 +89,17 @@ switch ($App) {
     }
 }
 
+# The in-app update prompt compares against AppConfig.buildNumber; a mismatch keeps prompting forever.
+if ($App -ne 'erp') {
+    $pubspec = [IO.File]::ReadAllText((Join-Path $appDir 'pubspec.yaml'))
+    $appConfig = [IO.File]::ReadAllText((Join-Path $appDir 'lib\core\config\app_config.dart'))
+    $pubBuild = if ($pubspec -match '(?m)^version:\s*[^+\s]+\+(\d+)') { $Matches[1] } else { '' }
+    $cfgBuild = if ($appConfig -match 'buildNumber\s*=\s*(\d+)') { $Matches[1] } else { '' }
+    if (-not $pubBuild -or $pubBuild -ne $cfgBuild) {
+        throw "pubspec.yaml build ($pubBuild) and AppConfig.buildNumber ($cfgBuild) differ - align them first"
+    }
+}
+
 Push-Location $root
 try {
     $dirty = git status --porcelain -- $restore
