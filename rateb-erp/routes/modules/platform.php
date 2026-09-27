@@ -88,6 +88,7 @@ $router->get('/admin/mobile-apps/{id}', [MobileAppsController::class, 'edit'], r
 $router->post('/admin/mobile-apps/{id}', [MobileAppsController::class, 'save'], rateb_admin_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/{id}/activation-code', [MobileAppsController::class, 'regenerateActivationCode'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/{id}/branded', [MobileAppsController::class, 'branded'], rateb_platform_oversight_mw('mobile_apps.manage'));
+$router->post('/admin/mobile-apps/{id}/use-shared', [MobileAppsController::class, 'useShared'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/{id}/names', [MobileAppsController::class, 'names'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/{id}/toggle', [MobileAppsController::class, 'toggle'], rateb_platform_oversight_mw('mobile_apps.manage'));
 $router->post('/admin/mobile-apps/{id}/apk-chunk', [MobileAppsController::class, 'uploadApkChunk'], rateb_platform_oversight_mw('mobile_apps.manage'));

@@ -25,6 +25,12 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
     </a>
 </div>
 
+<?php if ($canToggleEnable) { ?>
+<div class="alert alert-secondary py-2 small mb-3" role="note">
+    <?php echo Rateb\App\Core\View::escape(__('mobile_unified_platform_note')); ?>
+</div>
+<?php } ?>
+
 <?php if ($canToggleEnable && isset($appCard)) {
     require __DIR__ . '/_company-app-card.php';
 } ?>
@@ -74,8 +80,8 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
 </div>
 <?php } ?>
 
-<div class="rateb-card mb-3">
-    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape(__($canToggleEnable ? 'mobile_apps_hr_branding' : 'mobile_apps_edit')); ?></div>
+<div class="rateb-card mb-3" id="mobile-hr-branding">
+    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape(__($canToggleEnable ? 'mobile_identity_hr_card_title' : 'mobile_apps_edit')); ?></div>
     <div class="rateb-card-body">
         <p class="mb-3">
             <strong><?php echo Rateb\App\Core\View::escape(__('company')); ?>:</strong>

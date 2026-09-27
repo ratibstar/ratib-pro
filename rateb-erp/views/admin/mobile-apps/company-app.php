@@ -14,6 +14,10 @@ $cid = (int) ($company['id'] ?? 0);
     </a>
 </div>
 
+<div class="alert alert-secondary py-2 small mb-3" role="note">
+    <?php echo $e(__('mobile_unified_platform_note')); ?>
+</div>
+
 <p class="mb-3">
     <strong><?php echo $e(__('company')); ?>:</strong>
     <?php echo $e($company['name'] ?? ''); ?>

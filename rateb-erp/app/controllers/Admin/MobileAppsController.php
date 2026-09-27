@@ -202,12 +202,56 @@ final class MobileAppsController extends Controller
         }
         if ($this->validateCsrf()) {
             $on = (string) $this->input('requested', '') === '1';
-            $ok = (new MobileAppBrandedService())->setRequested($app, $companyId, $on);
-            SessionManager::flash(
-                $ok ? 'success' : 'error',
-                __($ok ? ($on ? 'mobile_branded_requested' : 'mobile_branded_cancelled') : 'mobile_apps_save_failed')
-            );
+            $brandedSvc = new MobileAppBrandedService();
+            $ok = $brandedSvc->setRequested($app, $companyId, $on);
+            $msgKey = $ok ? ($on ? 'mobile_branded_requested' : 'mobile_branded_cancelled') : 'mobile_apps_save_failed';
+            if ($ok && !$on) {
+                $company = (new Company())->find($companyId);
+                if (is_array($company)) {
+                    $link = (new MobileAppApkService())->linkCompanyToShared($app, $company);
+                    if ($link === 'linked') {
+                        $msgKey = 'mobile_use_shared_done';
+                    }
+                }
+            }
+            SessionManager::flash($ok ? 'success' : 'error', __($msgKey));
         }
+        Response::redirect($back . '#rateb-app-apk-card');
+    }
+
+    /** Point company at the platform shared APK and cancel optional separate branded APK mode. */
+    public function useShared(array $params = []): void
+    {
+        $companyId = (int) ($params['id'] ?? 0);
+        $app = MobileAppApkService::normalizeApp((string) $this->input('app', 'hr'));
+        $back = rateb_url('admin/mobile-apps/' . $companyId) . ($app === 'hr' ? '' : '?app=' . $app) . '#rateb-app-apk-card';
+        if (!$this->canToggleEnable()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect($back);
+            return;
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            Response::redirect($back);
+            return;
+        }
+        $company = (new Company())->find($companyId);
+        if (!is_array($company)) {
+            SessionManager::flash('error', __('not_found'));
+            Response::redirect($back);
+            return;
+        }
+        $brandedSvc = new MobileAppBrandedService();
+        $brandedSvc->setRequested($app, $companyId, false);
+        $link = (new MobileAppApkService())->linkCompanyToShared($app, $company);
+        $msgKey = match ($link) {
+            'linked' => 'mobile_use_shared_done',
+            'already_shared' => 'mobile_use_shared_already',
+            'no_shared' => 'mobile_use_shared_no_platform_apk',
+            'branded' => 'mobile_use_shared_branded_apk',
+            default => 'mobile_apps_save_failed',
+        };
+        SessionManager::flash($link === 'linked' || $link === 'already_shared' ? 'success' : 'error', __($msgKey));
         Response::redirect($back);
     }
 
@@ -446,8 +490,21 @@ final class MobileAppsController extends Controller
         $targetBuild = $branded->sharedVersionCodes()[$app] ?? 0;
         $needsBuild = $brandedKey !== ''
             && ($pub === null || ($targetBuild > 0 && (int) ($pub['version_code'] ?? 0) < $targetBuild));
+        $sharedApk = $apk === null ? $apkSvc->sharedFallback($app, $company) : null;
+        $distribution = 'missing';
+        if ($brandedKey !== '') {
+            $distribution = 'branded';
+        } elseif ($apk !== null) {
+            $distribution = $apkSvc->isBranded($apk) ? 'branded' : 'own_upload';
+        } elseif ($sharedApk !== null) {
+            $distribution = 'shared';
+        }
+        $identityLogo = $branded->iconUrl($company, $hrConfig, $server);
 
         return [
+            'distribution' => $distribution,
+            'identityLogo' => $identityLogo,
+            'showHrBrandingLink' => $app === 'hr',
             'branded' => [
                 'requested' => $brandedKey !== '',
                 'needs_build' => $needsBuild,
@@ -472,7 +529,7 @@ final class MobileAppsController extends Controller
             'buildDir' => $apkSvc->appInfo($app)['build_dir'],
             'buildCommand' => $apkSvc->buildCommand($app, $server, $apkSvc->companySlug($company)),
             'apk' => $apk,
-            'sharedApk' => $apk === null ? $apkSvc->sharedFallback($app, $company) : null,
+            'sharedApk' => $sharedApk,
             'url' => $url,
             'qr' => $apkSvc->qrImageUrl($url),
             'chunkBytes' => MobileAppApkService::CHUNK_BYTES,

@@ -25,11 +25,11 @@ $colCount = $canToggleEnable ? 5 : 3;
     </div>
     <div class="d-flex flex-wrap gap-2">
     <?php if ($canToggleEnable) { ?>
-    <a class="btn btn-sm btn-outline-primary" href="<?php echo $e(rateb_url('admin/mobile-apps/branded-queue') . '?app=' . $app); ?>">
-        <i class="fas fa-hammer"></i> <?php echo $e(__('mobile_branded_queue_link')); ?>
-    </a>
-    <a class="btn btn-sm btn-outline-secondary" href="<?php echo $e(rateb_url('admin/mobile-apps/updates') . '?app=' . $app); ?>">
+    <a class="btn btn-sm btn-primary" href="<?php echo $e(rateb_url('admin/mobile-apps/updates') . '?app=' . $app); ?>">
         <i class="fas fa-cloud-arrow-up"></i> <?php echo $e(__('mobile_apps_updates_title')); ?>
+    </a>
+    <a class="btn btn-sm btn-outline-secondary" href="<?php echo $e(rateb_url('admin/mobile-apps/branded-queue') . '?app=' . $app); ?>">
+        <i class="fas fa-hammer"></i> <?php echo $e(__('mobile_branded_queue_link')); ?>
     </a>
     <?php } ?>
     <?php if ($consoleAccessible && $app === 'hr') { ?>
