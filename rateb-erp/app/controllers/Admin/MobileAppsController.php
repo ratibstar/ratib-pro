@@ -268,7 +268,16 @@ final class MobileAppsController extends Controller
         if ($back === '') {
             $back = rateb_url('admin/mobile-apps/' . $companyId) . ($app === 'hr' ? '' : '?app=' . $app);
         }
-        if (!$this->canToggleEnable() || !$this->validateCsrf()) {
+        if (!str_contains($back, '#')) {
+            $back .= '#rateb-app-apk-card';
+        }
+        if (!$this->canToggleEnable()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect($back);
+            return;
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
             Response::redirect($back);
             return;
         }
@@ -277,7 +286,7 @@ final class MobileAppsController extends Controller
         $dispatched = $ok && rateb_github_dispatch_mobile_build($app);
         SessionManager::flash(
             $ok ? 'success' : 'error',
-            __($ok ? ($dispatched ? 'mobile_branded_build_dispatched' : 'mobile_branded_build_queued') : 'mobile_apps_save_failed')
+            __($ok ? ($dispatched ? 'mobile_branded_build_dispatched' : 'mobile_branded_build_queued') : 'mobile_branded_build_failed')
         );
         Response::redirect($back);
     }

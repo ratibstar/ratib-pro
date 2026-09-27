@@ -111,6 +111,8 @@ $cardActive = !empty($appCard['active']);
                     <div class="ms-auto">
                         <?php if ($brand['built']) { ?>
                             <span class="badge text-bg-success"><?php echo $e(sprintf(__('mobile_branded_ready'), $brand['version'])); ?></span>
+                        <?php } elseif (!empty($brand['queued'])) { ?>
+                            <span class="badge text-bg-primary"><?php echo $e(__('mobile_branded_state_queued')); ?></span>
                         <?php } else { ?>
                             <span class="badge text-bg-warning"><?php echo $e(__('mobile_branded_pending')); ?></span>
                         <?php } ?>
@@ -119,13 +121,27 @@ $cardActive = !empty($appCard['active']);
                 <?php if ($brand['icon'] === '') { ?>
                     <div class="alert alert-info py-2 small mb-2"><?php echo $e(__('mobile_branded_no_icon')); ?></div>
                 <?php } ?>
+                <?php if (!empty($brand['queued']) && empty($brand['built'])) { ?>
+                    <div class="alert alert-primary py-2 small mb-2" role="status">
+                        <i class="fas fa-list-check"></i> <?php echo $e(__('mobile_branded_build_queued_banner')); ?>
+                        <a class="ms-1" href="<?php echo $e(rateb_url('admin/mobile-apps/branded-queue') . '?app=' . $cardApp); ?>"><?php echo $e(__('mobile_branded_queue_link')); ?></a>
+                    </div>
+                <?php } ?>
                 <?php if (!empty($brand['needs_build']) || !empty($brand['queued'])) { ?>
-                <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cardCid . '/branded-build'); ?>" class="mb-2">
+                <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/branded-build')); ?>" class="mb-2"
+                      data-rateb-branded-build-form>
                     <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
                     <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
-                    <button type="submit" class="btn btn-sm btn-success w-100"><i class="fas fa-hammer"></i> <?php echo $e(__('mobile_branded_build_btn')); ?></button>
+                    <button type="submit" class="btn btn-sm btn-success w-100" data-rateb-branded-build-btn>
+                        <i class="fas fa-hammer"></i> <?php echo $e(__('mobile_branded_build_btn')); ?>
+                    </button>
                 </form>
                 <div class="form-text mb-2"><?php echo $e(!empty($appCard['dispatchEnabled']) ? __('mobile_branded_build_hint_auto') : __('mobile_branded_build_hint_manual')); ?></div>
+                <?php if (empty($appCard['dispatchEnabled'])) { ?>
+                    <a class="btn btn-sm btn-outline-secondary w-100 mb-2" href="https://github.com/ratibstar/ratib-pro/actions/workflows/mobile-branded-build.yml" target="_blank" rel="noopener">
+                        <i class="fab fa-github"></i> <?php echo $e(__('mobile_branded_open_github_workflow')); ?>
+                    </a>
+                <?php } ?>
                 <?php } ?>
                 <details class="small">
                     <summary class="text-muted"><?php echo $e(__('mobile_branded_command')); ?></summary>
@@ -134,6 +150,18 @@ $cardActive = !empty($appCard['active']);
             <?php } ?>
         </div>
         <?php } ?>
+        <script>
+        (function () {
+            document.querySelectorAll('[data-rateb-branded-build-form]').forEach(function (form) {
+                form.addEventListener('submit', function () {
+                    var btn = form.querySelector('[data-rateb-branded-build-btn]');
+                    if (!btn || btn.disabled) return;
+                    btn.disabled = true;
+                    btn.innerHTML = <?php echo json_encode('<i class="fas fa-spinner fa-spin"></i> ' . __('mobile_branded_build_working'), JSON_UNESCAPED_UNICODE); ?>;
+                });
+            });
+        })();
+        </script>
         <div class="mb-3">
             <label class="form-label small text-muted mb-1"><?php echo $e(__('mobile_apps_server')); ?></label>
             <input class="form-control form-control-sm" dir="ltr" readonly value="<?php echo $e($appCard['server']); ?>">

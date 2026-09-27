@@ -132,11 +132,25 @@ final class MobileAppBrandedService
     public function queueBuild(string $app, int $companyId): bool
     {
         $app = MobileAppApkService::normalizeApp($app);
-        if (!$this->refreshSpecSnapshot($app, $companyId)) {
+        $company = (new Company())->find($companyId);
+        if (!is_array($company)) {
+            return false;
+        }
+        $activation = new MobileAppActivationService($this->apks);
+        $code = $activation->codeFor($company);
+        if ($code === '') {
+            $code = $activation->ensureCode($companyId);
+        }
+        $hrConfig = $app === 'hr' ? (new MobileAppConfigService())->findByCompanyId($companyId) : null;
+        $spec = $this->specFor($app, $company, $hrConfig, $code);
+        if ($spec === null) {
             return false;
         }
 
-        return $this->updateSettings($companyId, static function (array $settings) use ($app): array {
+        return $this->updateSettings($companyId, static function (array $settings) use ($app, $spec): array {
+            $specs = is_array($settings[self::SPECS_KEY] ?? null) ? $settings[self::SPECS_KEY] : [];
+            $specs[$app] = $spec;
+            $settings[self::SPECS_KEY] = $specs;
             $queue = is_array($settings[self::QUEUE_KEY] ?? null) ? $settings[self::QUEUE_KEY] : [];
             $queue[$app] = gmdate('c');
             $settings[self::QUEUE_KEY] = $queue;
