@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use Rateb\App\Models\Company;
+
 /** @var string $app hr|erp|customer */
 /** @var array{package:string, build_dir:string, file_prefix:string} $appInfo */
 /** @var list<array<string,mixed>> $rows */
@@ -16,8 +18,9 @@ $rows = $rows ?? [];
 $canManage = !empty($canManage);
 $canToggleEnable = !empty($canToggleEnable);
 $consoleAccessible = !empty($consoleAccessible);
-$colCount = $canToggleEnable ? 6 : 3;
+$colCount = $canToggleEnable ? 7 : 4;
 ?>
+<div class="rateb-mobile-apps-sticky-head">
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <div>
         <h1 class="h4 mb-1"><?php echo $e(__('mobile_apps_title')); ?></h1>
@@ -60,7 +63,10 @@ $colCount = $canToggleEnable ? 6 : 3;
 <?php if ($canToggleEnable) {
     $activeApp = $app;
     require __DIR__ . '/_tabs.php';
-    ?>
+} ?>
+</div>
+
+<?php if ($canToggleEnable) { ?>
 <details class="rateb-card mb-3"<?php echo is_array($shared) && $shared['apk'] === null ? ' open' : ''; ?>>
     <summary class="rateb-card-header" style="cursor:pointer">
         <i class="fas fa-share-nodes"></i> <?php echo $e(__('mobile_apps_shared_title')); ?>
@@ -111,13 +117,17 @@ $colCount = $canToggleEnable ? 6 : 3;
 </div>
 <?php } ?>
 
-<div class="rateb-card">
+<div class="rateb-card rateb-mobile-apps-companies-card">
     <div class="rateb-card-header"><?php echo $e(__('mobile_apps_companies')); ?></div>
-    <div class="rateb-card-body p-0">
-        <div class="table-responsive rateb-table-no-scroll">
+    <div class="rateb-card-body pt-2 pb-0 px-3">
+        <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
+    </div>
+    <div class="rateb-card-body p-0 pt-0">
+        <div class="table-responsive rateb-mobile-apps-table-wrap" data-rateb-table-search-host="1">
         <table class="table table-sm rateb-table rateb-mobile-apps-companies-table align-middle mb-0">
             <thead>
             <tr>
+                <th data-col-name="com_ref"><?php echo $e(__('mobile_apps_company_ref')); ?></th>
                 <th><?php echo $e(__('company')); ?></th>
                 <th><?php echo $e(__('status')); ?></th>
                 <?php if ($canToggleEnable) { ?>
@@ -139,6 +149,7 @@ $colCount = $canToggleEnable ? 6 : 3;
                 $manageUrl = rateb_url('admin/mobile-apps/' . $cid) . ($app === 'hr' ? '' : '?app=' . $app);
                 ?>
                 <tr>
+                    <td class="font-monospace small" dir="ltr" data-col-name="com_ref"><?php echo $e(Company::publicRef($cid)); ?></td>
                     <td><?php echo $e($row['company_name'] ?? ''); ?></td>
                     <td>
                         <?php if ($active) { ?>

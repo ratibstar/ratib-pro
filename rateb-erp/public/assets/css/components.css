@@ -258,6 +258,41 @@
     z-index: 1080;
 }
 
+/* Mobile apps — sticky title + app tabs while scrolling the company list */
+.rateb-mobile-apps-sticky-head {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    margin: -0.25rem -0.15rem 0.75rem;
+    padding: 0.25rem 0.15rem 0.5rem;
+    background: var(--rateb-content-bg, var(--rateb-bg, #0b1220));
+    border-bottom: 1px solid var(--rateb-border);
+}
+
+.rateb-mobile-apps-companies-card .rateb-table-search {
+    margin-bottom: 0.5rem;
+}
+
+.rateb-mobile-apps-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    max-height: min(70vh, calc(var(--rateb-table-head-h, 2.75rem) + (var(--rateb-table-row-h, 2.85rem) * 14)));
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.rateb-mobile-apps-table-wrap .rateb-mobile-apps-companies-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    background: var(--rateb-bg, #0f172a);
+    box-shadow: 0 1px 0 var(--rateb-border);
+}
+
+.rateb-mobile-apps-table-wrap .rateb-mobile-apps-companies-table thead th.rateb-th-actions {
+    z-index: 7;
+}
+
 /* Mobile apps — company list: keep action buttons inside the table (RTL + wide server URLs) */
 .rateb-mobile-apps-companies-table {
     table-layout: auto !important;
@@ -272,6 +307,15 @@
     white-space: normal !important;
     word-break: break-word;
     vertical-align: middle;
+}
+.rateb-mobile-apps-companies-table th[data-col-name="com_ref"],
+.rateb-mobile-apps-companies-table td[data-col-name="com_ref"] {
+    min-width: 7.25rem;
+    max-width: 9rem !important;
+    white-space: nowrap !important;
+    direction: ltr;
+    text-align: start;
+    unicode-bidi: isolate;
 }
 .rateb-mobile-apps-companies-table th[data-col-name="server"],
 .rateb-mobile-apps-companies-table td[data-col-name="server"] {

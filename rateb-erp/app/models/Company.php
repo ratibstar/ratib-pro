@@ -125,4 +125,14 @@ final class Company extends Model
             'suspended' => (int) ($row['suspended_count'] ?? $row['suspended'] ?? 0),
         ];
     }
+
+    /** Display id for admin lists, e.g. COM-000044 */
+    public static function publicRef(int $id): string
+    {
+        if ($id < 1) {
+            return '';
+        }
+
+        return 'COM-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT);
+    }
 }
