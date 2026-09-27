@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'brand_build.dart';
+
 enum CompanyActivationError { invalidCode, appNotEnabled, rateLimited, network }
 
 /// Company activation for the shared customer build.
@@ -57,7 +59,7 @@ class CompanyActivation {
   }
 
   /// Code baked into a company-branded build: links the app to its company on first launch.
-  static const String embeddedCode = String.fromEnvironment('RATEB_ACTIVATION_CODE');
+  static const String embeddedCode = BrandBuild.activationCode;
 
   /// "ABCD-2345", "abcd2345" or an activation link / QR → "ABCD2345", or null.
   static String? normalize(String input) {

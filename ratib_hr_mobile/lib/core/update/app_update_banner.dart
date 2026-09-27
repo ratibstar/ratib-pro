@@ -3,6 +3,7 @@ library;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,7 +14,7 @@ class AppUpdateBanner extends StatefulWidget {
   static const String _downloads = 'https://rateb.sa/rateb-erp/public/downloads/';
 
   /// Company-branded builds (scripts/build-branded-app.ps1) follow their own update channel.
-  static const String _brandKey = String.fromEnvironment('RATEB_BRAND_KEY');
+  static const String _brandKey = BrandBuild.key;
 
   final Widget child;
 

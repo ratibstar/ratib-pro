@@ -64,7 +64,8 @@ switch ($App) {
     'hr' {
         $appDir = Join-Path $root 'ratib_hr_mobile'
         $res = Join-Path $appDir 'android\app\src\main\res'
-        $restore = @('ratib_hr_mobile/android/app/src/main/res', 'ratib_hr_mobile/android/app/src/production/res')
+        $brandDart = Join-Path $appDir 'lib\core\brand\brand_build.dart'
+        $restore = @('ratib_hr_mobile/android/app/src/main/res', 'ratib_hr_mobile/android/app/src/production/res', 'ratib_hr_mobile/lib/core/brand/brand_build.dart')
         $stringsFiles = @(
             (Join-Path $appDir 'android\app\src\production\res\values\strings.xml'),
             (Join-Path $appDir 'android\app\src\production\res\values-ar\strings.xml')
@@ -73,7 +74,8 @@ switch ($App) {
     'customer' {
         $appDir = Join-Path $root 'rateb_mobile'
         $res = Join-Path $appDir 'android\app\src\main\res'
-        $restore = @('rateb_mobile/android/app/src/main/res')
+        $brandDart = Join-Path $appDir 'lib\core\config\brand_build.dart'
+        $restore = @('rateb_mobile/android/app/src/main/res', 'rateb_mobile/lib/core/config/brand_build.dart')
         $stringsFiles = @(Join-Path $res 'values\strings.xml')
     }
     'erp' {
@@ -267,14 +269,17 @@ try {
             $apk = Join-Path $appDir 'android\app\build\outputs\apk\release\app-release.apk'
         } else {
             if (-not $flutter) { throw 'Flutter SDK not found' }
-            $defines = @("--dart-define=RATEB_BRAND_KEY=$Key")
-            if ($Code) { $defines += "--dart-define=RATEB_ACTIVATION_CODE=$Code" }
+            # Written into source: --dart-define values do not reliably reach Windows builds.
+            $dart = [IO.File]::ReadAllText($brandDart, [Text.Encoding]::UTF8)
+            $dart = $dart -replace "(String key = )'[^']*'", "`${1}'$Key'"
+            $dart = $dart -replace "(String activationCode = )'[^']*'", "`${1}'$Code'"
+            [IO.File]::WriteAllText($brandDart, $dart, (New-Object Text.UTF8Encoding($false)))
             if ($App -eq 'hr') {
                 & $flutter build apk --release --flavor production --target-platform android-arm64 `
-                    --dart-define=APP_FLAVOR=production "--dart-define=ERP_BASE_URL=$Server" @defines
+                    --dart-define=APP_FLAVOR=production "--dart-define=ERP_BASE_URL=$Server"
                 $apk = Join-Path $appDir 'build\app\outputs\flutter-apk\app-production-release.apk'
             } else {
-                & $flutter build apk --release --target-platform android-arm64 "--dart-define=RATEB_API_BASE_URL=$Server" @defines
+                & $flutter build apk --release --target-platform android-arm64 "--dart-define=RATEB_API_BASE_URL=$Server"
                 $apk = Join-Path $appDir 'build\app\outputs\flutter-apk\app-release.apk'
             }
             if ($LASTEXITCODE -ne 0) { throw 'flutter build failed' }

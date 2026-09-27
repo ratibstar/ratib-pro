@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/core/env/dart_define_app_environment.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,7 +46,7 @@ final class CompanyActivation {
   }
 
   /// Code baked into a company-branded build: links the app to its company on first launch.
-  static const String embeddedCode = String.fromEnvironment('RATEB_ACTIVATION_CODE');
+  static const String embeddedCode = BrandBuild.activationCode;
 
   /// "ABCD-2345", "abcd2345" or an activation link → "ABCD2345", or null.
   static String? normalize(String input) {

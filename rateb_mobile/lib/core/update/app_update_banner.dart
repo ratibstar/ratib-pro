@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../config/app_config.dart';
+import '../config/brand_build.dart';
 
 /// Shows a banner when a newer APK of this app is published on rateb.sa.
 class AppUpdateBanner extends StatefulWidget {
@@ -12,7 +13,7 @@ class AppUpdateBanner extends StatefulWidget {
   static const String _downloads = 'https://rateb.sa/rateb-erp/public/downloads/';
 
   /// Company-branded builds (scripts/build-branded-app.ps1) follow their own update channel.
-  static const String _brandKey = String.fromEnvironment('RATEB_BRAND_KEY');
+  static const String _brandKey = BrandBuild.key;
 
   final Widget child;
 
