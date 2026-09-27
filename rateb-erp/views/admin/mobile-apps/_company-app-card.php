@@ -58,6 +58,28 @@ $cardActive = !empty($appCard['active']);
             </div>
         </div>
         <?php } ?>
+        <?php $cardNames = $appCard['names'] ?? null; ?>
+        <?php if (is_array($cardNames)) { ?>
+        <form method="post" action="<?php echo rateb_url('admin/mobile-apps/' . $cardCid . '/names'); ?>" class="mb-3 pb-3 border-bottom">
+            <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
+            <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
+            <div class="fw-semibold mb-2"><i class="fas fa-signature"></i> <?php echo $e(__('mobile_names_title')); ?></div>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small text-muted mb-1" for="mobile-name-ar"><?php echo $e(__('mobile_names_ar')); ?></label>
+                    <input class="form-control form-control-sm" id="mobile-name-ar" name="name_ar" dir="rtl" maxlength="40" value="<?php echo $e($cardNames['ar']); ?>">
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small text-muted mb-1" for="mobile-name-en"><?php echo $e(__('mobile_names_en')); ?></label>
+                    <input class="form-control form-control-sm" id="mobile-name-en" name="name_en" dir="ltr" maxlength="40" value="<?php echo $e($cardNames['en']); ?>">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100"><?php echo $e(__('mobile_names_save')); ?></button>
+                </div>
+            </div>
+            <div class="form-text"><?php echo $e(__('mobile_names_hint')); ?></div>
+        </form>
+        <?php } ?>
         <?php $brand = $appCard['branded'] ?? null; ?>
         <?php if (is_array($brand)) { ?>
         <div class="mb-3 pb-3 border-bottom">

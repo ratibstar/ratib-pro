@@ -25,6 +25,7 @@ class AppLocalizations {
   static const Map<String, Map<String, String>> _text = {
     'ar': {
       'appTitle': 'رتب — الموارد البشرية',
+      'appShortName': 'الموارد البشرية',
       'tabHome': 'الرئيسية',
       'tabAttendance': 'الحضور',
       'tabLeave': 'الإجازات',
@@ -288,6 +289,7 @@ class AppLocalizations {
     },
     'en': {
       'appTitle': 'RATEB HR',
+      'appShortName': 'HR',
       'tabHome': 'Home',
       'tabAttendance': 'Attendance',
       'tabLeave': 'Leave',
@@ -560,6 +562,7 @@ class AppLocalizations {
   }
 
   String get appTitle => _t('appTitle');
+  String get appShortName => _t('appShortName');
   String get tabHome => _t('tabHome');
   String get tabAttendance => _t('tabAttendance');
   String get tabLeave => _t('tabLeave');

@@ -19,15 +19,26 @@ final class CompanyActivation {
 
   static const _kBaseUrl = 'company_activation.erp_base_url';
   static const _kName = 'company_activation.company_name';
+  static const _kNameAr = 'company_activation.company_name_ar';
+  static const _kNameEn = 'company_activation.company_name_en';
   static const _kCode = 'company_activation.code';
   static const _alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
   static String? _erpBaseUrl;
   static String? _companyName;
+  static String _nameAr = '';
+  static String _nameEn = '';
   static String? _code;
 
   static String? get erpBaseUrl => _erpBaseUrl;
   static String? get companyName => _companyName;
+
+  /// Company name in the app language ("شركة العرفج" / "Al Arfaj"), or "" when not linked.
+  static String localizedName({required bool arabic}) {
+    if (!isActive) return '';
+    final name = arabic ? _nameAr : _nameEn;
+    return name.isNotEmpty ? name : (_companyName ?? '').trim();
+  }
   static String? get code => _code;
   static bool get isActive => _erpBaseUrl != null;
 
@@ -39,9 +50,14 @@ final class CompanyActivation {
     final base = prefs.getString(_kBaseUrl);
     _erpBaseUrl = _validBase(base);
     _companyName = _erpBaseUrl == null ? null : prefs.getString(_kName);
+    _nameAr = _erpBaseUrl == null ? '' : (prefs.getString(_kNameAr) ?? '');
+    _nameEn = _erpBaseUrl == null ? '' : (prefs.getString(_kNameEn) ?? '');
     _code = _erpBaseUrl == null ? null : prefs.getString(_kCode);
     if (!isActive && embeddedCode.isNotEmpty) {
       unawaited(activate(embeddedCode));
+    } else if (isActive && (_code ?? '').isNotEmpty) {
+      // Picks up company name / server changes made by Super Admin; failures keep the saved link.
+      unawaited(activate(_code!));
     }
   }
 
@@ -103,13 +119,19 @@ final class CompanyActivation {
     if (base == null) return CompanyActivationError.network;
     final company = body['company'];
     final name = company is Map ? (company['name']?.toString() ?? '') : '';
+    final nameAr = company is Map ? (company['name_ar']?.toString() ?? '').trim() : '';
+    final nameEn = company is Map ? (company['name_en']?.toString() ?? '').trim() : '';
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kBaseUrl, base);
     await prefs.setString(_kName, name);
+    await prefs.setString(_kNameAr, nameAr);
+    await prefs.setString(_kNameEn, nameEn);
     await prefs.setString(_kCode, code);
     _erpBaseUrl = base;
     _companyName = name;
+    _nameAr = nameAr;
+    _nameEn = nameEn;
     _code = code;
     revision.value++;
     return null;
@@ -119,9 +141,13 @@ final class CompanyActivation {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kBaseUrl);
     await prefs.remove(_kName);
+    await prefs.remove(_kNameAr);
+    await prefs.remove(_kNameEn);
     await prefs.remove(_kCode);
     _erpBaseUrl = null;
     _companyName = null;
+    _nameAr = '';
+    _nameEn = '';
     _code = null;
     revision.value++;
   }

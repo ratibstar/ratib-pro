@@ -15,6 +15,7 @@ param(
     [string]$Key,
     [string]$Package,
     [string]$Name,
+    [string]$NameAr = '',
     [string]$IconUrl,
     [string]$Server,
     [string]$Code = '',
@@ -33,7 +34,7 @@ if ($RebuildAll) {
     foreach ($file in $specs) {
         $s = [IO.File]::ReadAllText($file.FullName, [Text.Encoding]::UTF8) | ConvertFrom-Json
         try {
-            & $PSCommandPath -App $s.app -Key $s.key -Package $s.package -Name $s.name -IconUrl $s.icon_url -Server $s.server -Code $s.code
+            & $PSCommandPath -App $s.app -Key $s.key -Package $s.package -Name $s.name -NameAr ([string]$s.name_ar) -IconUrl $s.icon_url -Server $s.server -Code $s.code
         } catch {
             Write-Host "$($s.key): $_" -ForegroundColor Red
             $failed += $s.key
@@ -51,6 +52,8 @@ $Server = $Server.Trim().TrimEnd('/')
 if ($Server -notmatch '^https://[^/\s]+(/\S*)?$') { throw '-Server must be an https URL' }
 $Name = ($Name -replace '[''"\\`$<>&@?\r\n]', '').Trim()
 if (-not $Name) { throw '-Name is empty' }
+$NameAr = ($NameAr -replace '[''"\\`$<>&@?\r\n]', '').Trim()
+if (-not $NameAr) { $NameAr = $Name }
 if ($Code -and $Code -notmatch '^[A-Z0-9]{4}-?[A-Z0-9]{4}$') { throw 'Invalid -Code' }
 
 if (-not $env:JAVA_HOME -or -not (Test-Path $env:JAVA_HOME)) {
@@ -241,8 +244,9 @@ try {
     $logo.Dispose()
 
     foreach ($file in $stringsFiles) {
+        $label = if ($file -match '[\\/]values-ar[\\/]') { $NameAr } else { $Name }
         $xml = [IO.File]::ReadAllText($file, [Text.Encoding]::UTF8)
-        $xml = $xml -replace '(<string name="(app_name|title_activity_main)">)[^<]*(</string>)', ('${1}' + $Name + '${3}')
+        $xml = $xml -replace '(<string name="(app_name|title_activity_main)">)[^<]*(</string>)', ('${1}' + $label + '${3}')
         [IO.File]::WriteAllText($file, $xml, (New-Object Text.UTF8Encoding($false)))
     }
 
@@ -321,7 +325,7 @@ $utf8 = New-Object Text.UTF8Encoding($false)
     sha256 = $sha; size = (Get-Item $dest).Length
 } | ConvertTo-Json), $utf8)
 [IO.File]::WriteAllText((Join-Path $specDir "$Key.json"), ([ordered]@{
-    app = $App; key = $Key; package = $Package; name = $Name; icon_url = $IconUrl; server = $Server; code = $Code
+    app = $App; key = $Key; package = $Package; name = $Name; name_ar = $NameAr; icon_url = $IconUrl; server = $Server; code = $Code
 } | ConvertTo-Json), $utf8)
 
 Write-Host ("OK -> {0} ({1} MB, {2} / {3})" -f $dest, [math]::Round((Get-Item $dest).Length / 1MB, 1), $versionName, $versionCode) -ForegroundColor Green

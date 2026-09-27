@@ -177,8 +177,7 @@ class _LoginPageState extends State<LoginPage> {
     final l10n = AppLocalizations.of(context);
     final isAr = Localizations.localeOf(context).languageCode == 'ar';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final companyName =
-        CompanyActivation.isActive ? (CompanyActivation.companyName ?? '').trim() : '';
+    final companyName = CompanyActivation.localizedName(arabic: isAr);
 
     return DsPageBackdrop(
       child: Scaffold(
@@ -227,7 +226,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 28),
               Text(
-                companyName.isNotEmpty ? companyName : l10n.appTitle,
+                companyName.isNotEmpty
+                    ? '$companyName - ${l10n.appShortName}'
+                    : l10n.appTitle,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w900,

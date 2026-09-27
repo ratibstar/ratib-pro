@@ -3,7 +3,7 @@
 library;
 
 abstract final class BrandBuild {
-  /// Company update channel: downloads/company/<key>.json.
+  /// Company update channel: `downloads/company/<key>.json`.
   static const String key = '';
 
   /// Company activation code, applied on first launch.

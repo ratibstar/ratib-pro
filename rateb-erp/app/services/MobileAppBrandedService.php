@@ -21,6 +21,7 @@ final class MobileAppBrandedService
 {
     public const SETTINGS_KEY = 'mobile_branded';
     public const PUBLIC_DIR = 'company';
+    public const NAMES_KEY = 'mobile_names';
 
     private MobileAppApkService $apks;
 
@@ -49,6 +50,64 @@ final class MobileAppBrandedService
     public function setRequested(string $app, int $companyId, bool $requested): bool
     {
         $app = MobileAppApkService::normalizeApp($app);
+
+        return $this->updateSettings($companyId, function (array $settings) use ($app, $companyId, $requested): array {
+            $branded = is_array($settings[self::SETTINGS_KEY] ?? null) ? $settings[self::SETTINGS_KEY] : [];
+            if ($requested) {
+                if (!self::validKey((string) ($branded[$app] ?? ''))) {
+                    $branded[$app] = $app . '-' . $companyId . '-' . bin2hex(random_bytes(5));
+                }
+            } else {
+                unset($branded[$app]);
+                $this->apks->remove($this->apks->slotKey($app, $companyId));
+            }
+            $settings[self::SETTINGS_KEY] = $branded;
+
+            return $settings;
+        });
+    }
+
+    /**
+     * Company name shown on the app download page and inside the apps, per language
+     * (falls back to the company name).
+     *
+     * @return array{ar:string, en:string}
+     */
+    public function names(array $company): array
+    {
+        $settings = json_decode((string) ($company['settings'] ?? ''), true);
+        $saved = is_array($settings) && is_array($settings[self::NAMES_KEY] ?? null) ? $settings[self::NAMES_KEY] : [];
+        $default = trim((string) ($company['name'] ?? ''));
+        $ar = trim((string) ($saved['ar'] ?? ''));
+        $en = trim((string) ($saved['en'] ?? ''));
+
+        return ['ar' => $ar !== '' ? $ar : $default, 'en' => $en !== '' ? $en : $default];
+    }
+
+    public function setNames(int $companyId, string $ar, string $en): bool
+    {
+        $clean = static fn (string $v): string => mb_substr(trim((string) preg_replace('/["`$<>\r\n]+/u', '', $v)), 0, 40);
+
+        return $this->updateSettings($companyId, static function (array $settings) use ($clean, $ar, $en): array {
+            $settings[self::NAMES_KEY] = ['ar' => $clean($ar), 'en' => $clean($en)];
+
+            return $settings;
+        });
+    }
+
+    /** "شركة العرفج - الموارد البشرية" / "Al Arfaj - HR" for the current (or given) locale. */
+    public function appLabel(string $app, array $company, ?string $locale = null): string
+    {
+        $locale = $locale ?? (function_exists('rateb_locale') ? rateb_locale() : 'ar');
+        $name = $this->names($company)[$locale === 'ar' ? 'ar' : 'en'];
+        $short = __('mobile_app_short_' . MobileAppApkService::normalizeApp($app));
+
+        return $name !== '' ? $name . ' - ' . $short : $short;
+    }
+
+    /** @param callable(array<string, mixed>): array<string, mixed> $change */
+    private function updateSettings(int $companyId, callable $change): bool
+    {
         $stmt = Database::connection()->prepare('SELECT settings FROM rateb_companies WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $companyId]);
         $raw = $stmt->fetchColumn();
@@ -56,17 +115,7 @@ final class MobileAppBrandedService
             return false;
         }
         $settings = json_decode((string) $raw, true);
-        $settings = is_array($settings) ? $settings : [];
-        $branded = is_array($settings[self::SETTINGS_KEY] ?? null) ? $settings[self::SETTINGS_KEY] : [];
-        if ($requested) {
-            if (!self::validKey((string) ($branded[$app] ?? ''))) {
-                $branded[$app] = $app . '-' . $companyId . '-' . bin2hex(random_bytes(5));
-            }
-        } else {
-            unset($branded[$app]);
-            $this->apks->remove($this->apks->slotKey($app, $companyId));
-        }
-        $settings[self::SETTINGS_KEY] = $branded;
+        $settings = $change(is_array($settings) ? $settings : []);
         $json = json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if (!(new Company())->update($companyId, ['settings' => $json])) {
             return false;
@@ -116,7 +165,7 @@ final class MobileAppBrandedService
     {
         $name = $app === 'hr' ? trim((string) ($hrConfig['app_name'] ?? '')) : '';
         if ($name === '') {
-            $name = trim((string) ($company['name'] ?? ''));
+            $name = $this->names($company)['en'];
         }
 
         return mb_substr((string) preg_replace('/["`$\r\n]+/', '', $name), 0, 30);
@@ -138,6 +187,7 @@ final class MobileAppBrandedService
             . ' -Key ' . $arg($key)
             . ' -Package ' . $arg($this->packageFor($app, (int) $company['id']))
             . ' -Name ' . $arg($this->displayName($app, $company, $hrConfig))
+            . ' -NameAr ' . $arg(mb_substr((string) preg_replace('/["`$\r\n]+/', '', $this->names($company)['ar']), 0, 30))
             . ($icon !== '' ? ' -IconUrl ' . $arg($icon) : '')
             . ' -Server ' . $arg($server)
             . ' -Code ' . $arg($activationCode);
