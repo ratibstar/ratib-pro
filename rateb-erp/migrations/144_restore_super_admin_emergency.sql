@@ -14,10 +14,16 @@ WHERE NOT EXISTS (SELECT 1 FROM rateb_users WHERE email = 'admin@rateb.sa');
 UPDATE rateb_users
 SET password = '$2y$10$7qR7yib4llgToR8eILDO5e3ovQA8lsjA3k8sJfJ2LZ0tak3QrczJW',
     is_super_admin = 1,
+    company_id = NULL,
     status = 'active',
     name = 'Super Admin',
-    locale = 'ar'
+    locale = 'ar',
+    failed_attempts = 0,
+    locked_until = NULL,
+    two_factor_enabled = 0,
+    two_factor_secret = NULL
 WHERE email = 'admin@rateb.sa';
+-- If login still fails, also run migrations/223_super_admin_password_both_columns.sql (password_hash column).
 
 INSERT INTO rateb_user_roles (user_id, role_id)
 SELECT u.id, r.id
