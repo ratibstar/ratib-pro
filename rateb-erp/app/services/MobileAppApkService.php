@@ -190,7 +190,40 @@ final class MobileAppApkService
 
     public function qrImageUrl(string $url, int $size = 220): string
     {
-        return rateb_local_qr_url($url, max(120, min(500, $size)), true);
+        $size = max(120, min(500, $size));
+        $sig = substr(hash('sha256', $url . '|' . $size), 0, 12);
+
+        return rateb_local_qr_url($url, $size, true) . '&sig=' . $sig;
+    }
+
+    /** Inline PNG so admin activation QR always matches the URL shown beside it (no CDN/query cache). */
+    public function qrDataUri(string $payload, int $size = 220): string
+    {
+        $payload = trim($payload);
+        if ($payload === '') {
+            return '';
+        }
+        try {
+            $bin = \Rateb\App\Core\LocalQrRenderer::png($payload, max(120, min(500, $size)));
+        } catch (\Throwable $e) {
+            error_log('activation QR inline: ' . $e->getMessage());
+
+            return $this->qrImageUrl($payload, $size);
+        }
+
+        return $bin === '' ? $this->qrImageUrl($payload, $size) : 'data:image/png;base64,' . base64_encode($bin);
+    }
+
+    /** Android package for activation deep link — shared APK uses the platform package, not a stale slot override. */
+    public function packageForActivationLink(string $app, array $company): string
+    {
+        $app = self::normalizeApp($app);
+        $own = $this->meta($this->slotKey($app, (int) ($company['id'] ?? 0)));
+        if ($this->isBranded($own)) {
+            return $this->packageForCompany($app, $company);
+        }
+
+        return $this->appInfo($app)['package'];
     }
 
     /**
@@ -205,7 +238,10 @@ final class MobileAppApkService
     /** True when the shared build reaches this company only after its activation code is entered. */
     public function needsActivationCode(string $app, array $company): bool
     {
-        return $this->serverForCompany($app, $company) !== $this->platformServer($app);
+        $companyServer = rtrim($this->serverForCompany($app, $company), '/');
+        $platformServer = rtrim($this->platformServer($app), '/');
+
+        return $companyServer !== $platformServer;
     }
 
     /** Control Panel agency (control_agencies.id) the company's data lives in, 0 when none. */

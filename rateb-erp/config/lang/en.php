@@ -3379,6 +3379,7 @@ return [
     'mobile_activation_qr_hint' => 'One code for everything: scan it with the phone camera to download the app or open it activated for the company.',
     'mobile_activation_not_apk_update' => 'Scanning the QR links the installed app to the company — it does not replace the APK. For new screens/features: tap Update on the in-app banner or download the APK from the activation page.',
     'mobile_activation_qr_scope' => 'QR for this company only: :name (#:id) — server :host',
+    'mobile_activation_qr_payload' => 'QR payload',
     'mobile_activation_page_company_id' => 'Company #:id',
     'mobile_activation_duplicate_alert' => 'Conflict: the same activation code is assigned to more than one company. Regenerate a unique code for each affected company.',
     'mobile_activation_duplicate_companies' => 'Company IDs',

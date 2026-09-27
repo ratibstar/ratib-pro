@@ -29,7 +29,8 @@ final class BarcodeQrController extends Controller
             return;
         }
         header('Content-Type: image/png');
-        header('Cache-Control: public, max-age=86400');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('ETag: "' . hash('sha256', $data . '|' . $size) . '"');
         header('Content-Length: ' . (string) strlen($bin));
         echo $bin;
         exit;

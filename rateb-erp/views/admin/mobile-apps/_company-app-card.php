@@ -73,8 +73,10 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
                 </form>
             </div>
             <div class="col-md-4 text-center">
-                <img src="<?php echo $e($appCard['activationQr']); ?>" alt="QR" width="180" height="180" class="img-fluid rounded border bg-white p-2">
+                <img src="<?php echo $e($appCard['activationQr']); ?>" alt="QR" width="180" height="180" class="img-fluid rounded border bg-white p-2"
+                     data-rateb-qr-payload="<?php echo $e($appCard['activationUrl']); ?>">
                 <div class="small text-muted mt-1"><?php echo $e(__('mobile_activation_qr_hint')); ?></div>
+                <div class="small text-muted mt-1 font-monospace text-break" dir="ltr"><?php echo $e(__('mobile_activation_qr_payload')); ?>: <?php echo $e($appCard['activationUrl']); ?></div>
                 <div class="small text-warning mt-2"><?php echo $e(__('mobile_activation_not_apk_update')); ?></div>
             </div>
         </div>

@@ -243,7 +243,7 @@ final class MobileAppActivationService
             }
             $key = $this->apks->slotKey($app, (int) $company['id']);
             $url = $this->apks->downloadUrlForToken($this->apks->ensureToken($key));
-            $package = $this->apks->packageForCompany($app, $company);
+            $package = $this->apks->packageForActivationLink($app, $company);
             $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($package, $code, $url) : ''];
         }
 
