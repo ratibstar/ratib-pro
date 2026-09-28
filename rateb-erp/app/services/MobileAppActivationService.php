@@ -167,7 +167,7 @@ final class MobileAppActivationService
         $pub = $this->apks->publishedBuild('hr');
         $apkUrl = is_array($pub) ? (string) ($pub['url'] ?? '') : '';
         if ($apkUrl === '') {
-            $apkUrl = rateb_public_url('downloads/unified-hr.apk');
+            $apkUrl = rateb_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES['hr']);
         }
 
         return 'intent://activate?code=' . rawurlencode($formatted)

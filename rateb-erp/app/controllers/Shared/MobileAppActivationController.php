@@ -135,7 +135,10 @@ final class MobileAppActivationController extends Controller
      */
     private function unifiedHrDownloadMeta(?array $pub): array
     {
-        $url = rateb_public_url('downloads/unified-hr.apk');
+        // Static file (always deployed); unified-hr.apk is an Apache alias in downloads/.htaccess.
+        $url = is_array($pub) && ($pub['url'] ?? '') !== ''
+            ? (string) $pub['url']
+            : rateb_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES['hr']);
         $size = is_array($pub) ? (int) ($pub['size'] ?? 0) : 0;
         $vc = is_array($pub) ? (int) ($pub['version_code'] ?? 0) : 0;
 

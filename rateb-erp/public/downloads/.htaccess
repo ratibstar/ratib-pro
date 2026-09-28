@@ -5,4 +5,5 @@ Options -Indexes
   RewriteEngine On
   RewriteRule ^ratib-hr-mobile-latest\.apk$ rateb-hr-mobile-latest.apk [L]
   RewriteRule ^ratib-hr-mobile-(.+)\.apk$ rateb-hr-mobile-$1.apk [L]
+  RewriteRule ^unified-hr\.apk$ rateb-hr-mobile-latest.apk [L]
 </IfModule>
