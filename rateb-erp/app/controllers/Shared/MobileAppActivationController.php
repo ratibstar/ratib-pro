@@ -68,21 +68,23 @@ final class MobileAppActivationController extends Controller
             return;
         }
         $svc = new MobileAppActivationService();
+        $apks = new MobileAppApkService();
         $code = MobileAppActivationService::normalize((string) ($params['code'] ?? ''));
         $company = $code !== '' ? $svc->findCompanyByCode($code) : null;
+        if (is_array($company)) {
+            $apks->reconcileCompanySlotPolicy('hr', $company);
+        }
         if ($company === null || (string) ($company['status'] ?? 'active') !== 'active') {
             http_response_code(404);
             $data['error'] = __('mobile_activation_invalid');
             $this->view('shared/app-activate', $data, 'auth');
             return;
         }
-        $apks = new MobileAppApkService();
         $erpBase = $apks->erpBaseUrlForCompany($company);
         $branded = new MobileAppBrandedService($apks);
         $names = $branded->names($company);
         $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
         $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
-        $hrSlot = $apks->meta($apks->slotKey('hr', (int) $company['id']));
         $hrPublished = $apks->publishedBuild('hr');
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
@@ -95,7 +97,7 @@ final class MobileAppActivationController extends Controller
             'apps' => $svc->enabledApps($company),
             'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',
             'unifiedHrApk' => is_array($hrPublished) ? (string) ($hrPublished['url'] ?? '') : '',
-            'useUnifiedHr' => !$apks->isBranded($hrSlot),
+            'useUnifiedHr' => !$apks->companyHasBrandedBuild('hr', $company),
         ]), 'auth');
     }
 

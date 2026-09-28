@@ -23,6 +23,7 @@ final class CompanyActivation {
   static const _kNameEn = 'company_activation.company_name_en';
   static const _kLogo = 'company_activation.logo_url';
   static const _kCode = 'company_activation.code';
+  static const _kCompanyId = 'company_activation.company_id';
   static const _alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
   static String? _erpBaseUrl;
@@ -46,6 +47,11 @@ final class CompanyActivation {
   }
 
   static String? get code => _code;
+  static int? _companyId;
+
+  /// RATEB company id from the last successful activation API response.
+  static int? get companyId => _companyId;
+
   static bool get isActive => _erpBaseUrl != null;
 
   /// Bumped whenever the linked company changes, so open screens can refresh.
@@ -60,6 +66,8 @@ final class CompanyActivation {
     _nameEn = _erpBaseUrl == null ? '' : (prefs.getString(_kNameEn) ?? '');
     _logoUrl = _validBase(prefs.getString(_kLogo));
     _code = _erpBaseUrl == null ? null : prefs.getString(_kCode);
+    final idRaw = prefs.getInt(_kCompanyId);
+    _companyId = _erpBaseUrl == null ? null : (idRaw != null && idRaw > 0 ? idRaw : null);
     if (!isActive && embeddedCode.isNotEmpty) {
       unawaited(activate(embeddedCode));
     } else if (isActive && (_code ?? '').isNotEmpty) {
@@ -132,6 +140,7 @@ final class CompanyActivation {
         company is Map ? (company['name_en']?.toString() ?? '').trim() : '';
     final logo =
         company is Map ? _validBase(company['logo_url']?.toString()) : null;
+    final companyId = company is Map ? int.tryParse('${company['id']}') : null;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kBaseUrl, base);
@@ -140,6 +149,13 @@ final class CompanyActivation {
     await prefs.setString(_kNameEn, nameEn);
     await prefs.setString(_kLogo, logo ?? '');
     await prefs.setString(_kCode, code);
+    if (companyId != null && companyId > 0) {
+      await prefs.setInt(_kCompanyId, companyId);
+      _companyId = companyId;
+    } else {
+      await prefs.remove(_kCompanyId);
+      _companyId = null;
+    }
     _erpBaseUrl = base;
     _companyName = name;
     _nameAr = nameAr;
@@ -158,7 +174,9 @@ final class CompanyActivation {
     await prefs.remove(_kNameEn);
     await prefs.remove(_kLogo);
     await prefs.remove(_kCode);
+    await prefs.remove(_kCompanyId);
     _erpBaseUrl = null;
+    _companyId = null;
     _companyName = null;
     _nameAr = '';
     _nameEn = '';

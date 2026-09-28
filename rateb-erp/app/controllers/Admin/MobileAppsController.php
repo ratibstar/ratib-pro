@@ -39,6 +39,7 @@ final class MobileAppsController extends Controller
             $company = ['id' => (int) $row['company_id']] + $row;
             $row['mobile_active'] = $apkSvc->isEnabled($app, $company, ['status' => $row['mobile_status'] ?? '']);
             if ($platform) {
+                $apkSvc->reconcileCompanySlotPolicy($app, $company);
                 $branded->sync($app, $company, $this->currentUserId());
                 $row['server'] = $apkSvc->serverForCompany($app, $company);
                 $row['apk'] = $apkSvc->meta($apkSvc->slotKey($app, (int) $row['company_id']));
@@ -108,6 +109,7 @@ final class MobileAppsController extends Controller
         $branded = new MobileAppBrandedService($apkSvc);
         foreach ((new MobileAppConfigService())->listCompaniesWithConfig() as $row) {
             $company = ['id' => (int) $row['company_id']] + $row;
+            $apkSvc->reconcileCompanySlotPolicy($app, $company);
             $branded->sync($app, $company, $this->currentUserId());
             $rows[] = [
                 'company_id' => (int) $row['company_id'],
@@ -592,6 +594,7 @@ final class MobileAppsController extends Controller
         $cid = (int) $company['id'];
         $key = $apkSvc->slotKey($app, $cid);
         $server = $apkSvc->serverForCompany($app, $company);
+        $apkSvc->reconcileCompanySlotPolicy($app, $company);
         $branded->sync($app, $company, $this->currentUserId());
         $apk = $apkSvc->meta($key);
         $url = $apkSvc->downloadUrlForToken($apkSvc->ensureToken($key));
@@ -812,6 +815,13 @@ final class MobileAppsController extends Controller
             header('Content-Type: text/plain; charset=UTF-8');
             echo __('mobile_apps_apk_unavailable');
             return;
+        }
+        if (is_array($company)) {
+            $apkSvc->reconcileCompanySlotPolicy($found['app'], $company);
+            $policyPath = $apkSvc->activationApkPath($found['app'], $company);
+            if ($policyPath !== null && is_file($policyPath)) {
+                $found['path'] = $policyPath;
+            }
         }
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_write_close();

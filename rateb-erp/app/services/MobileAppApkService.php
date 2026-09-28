@@ -196,8 +196,7 @@ final class MobileAppApkService
     {
         $app = self::normalizeApp($app);
         $key = $this->slotKey($app, (int) ($company['id'] ?? 0));
-        $own = $this->meta($key);
-        if ($this->isBranded($own)) {
+        if ($this->servesBrandedApk($app, $company)) {
             return $this->downloadUrlForToken($this->ensureToken($key));
         }
         $published = $this->publishedBuild($app);
@@ -238,8 +237,7 @@ final class MobileAppApkService
     public function packageForActivationLink(string $app, array $company): string
     {
         $app = self::normalizeApp($app);
-        $own = $this->meta($this->slotKey($app, (int) ($company['id'] ?? 0)));
-        if ($this->isBranded($own)) {
+        if ($this->servesBrandedApk($app, $company)) {
             return $this->packageForCompany($app, $company);
         }
 
@@ -624,6 +622,67 @@ final class MobileAppApkService
         return is_array($own) && (string) ($own['source'] ?? '') === 'branded';
     }
 
+    /** Super Admin requested a company-branded build (settings.mobile_branded[app]). */
+    public function companyHasBrandedBuild(string $app, array $company): bool
+    {
+        return (new MobileAppBrandedService($this))->keyFor($app, $company) !== '';
+    }
+
+    /** Branded APK is active only when settings and slot agree — avoids serving another company's build. */
+    public function servesBrandedApk(string $app, array $company): bool
+    {
+        if (!$this->companyHasBrandedBuild($app, $company)) {
+            return false;
+        }
+        $own = $this->meta($this->slotKey($app, (int) ($company['id'] ?? 0)));
+
+        return $this->isBranded($own);
+    }
+
+    /**
+     * Shared-model companies must not keep a branded or foreign-package slot (e.g. wrong APK uploaded).
+     * Safe to call on every admin / activation page view.
+     */
+    public function reconcileCompanySlotPolicy(string $app, array $company): void
+    {
+        $app = self::normalizeApp($app);
+        $cid = (int) ($company['id'] ?? 0);
+        if ($cid <= 0 || $this->companyHasBrandedBuild($app, $company)) {
+            return;
+        }
+        $key = $this->slotKey($app, $cid);
+        $own = $this->meta($key);
+        if ($own === null) {
+            return;
+        }
+        if ($this->isBranded($own)) {
+            $this->remove($key);
+
+            return;
+        }
+        $basePackage = $this->appInfo($app)['package'];
+        $pkg = (string) ($own['package'] ?? '');
+        $ownSuffix = '.c' . $cid;
+        if ($pkg !== '' && $pkg !== $basePackage && !str_ends_with($pkg, $ownSuffix)) {
+            $this->remove($key);
+        }
+    }
+
+    /** Path to the APK that must be served for this company (unified published build unless branded). */
+    public function activationApkPath(string $app, array $company): ?string
+    {
+        $app = self::normalizeApp($app);
+        if ($this->servesBrandedApk($app, $company)) {
+            $key = $this->slotKey($app, (int) ($company['id'] ?? 0));
+            $path = $this->apkPath($key);
+
+            return is_file($path) ? $path : null;
+        }
+        $published = $this->publishedBuild($app);
+
+        return $published !== null && is_file($published['path']) ? (string) $published['path'] : null;
+    }
+
     /**
      * Where this company's app stands against the shared build.
      *
@@ -642,7 +701,7 @@ final class MobileAppApkService
 
             return $needsCode ? 'shared_code' : 'shared';
         }
-        if ($this->isBranded($own)) {
+        if ($this->companyHasBrandedBuild($app, $company) && $this->isBranded($own)) {
             return 'own_branded';
         }
         if ($needsCode) {
@@ -753,7 +812,7 @@ final class MobileAppApkService
         if ($own === null) {
             return 'already_shared';
         }
-        if ($this->isBranded($own)) {
+        if ($this->companyHasBrandedBuild($app, $company) && $this->isBranded($own)) {
             return 'branded';
         }
         $this->remove($key);

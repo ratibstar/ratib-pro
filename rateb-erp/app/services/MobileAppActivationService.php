@@ -226,6 +226,7 @@ final class MobileAppActivationService
         if ($company === null || (string) ($company['status'] ?? 'active') !== 'active') {
             return ['status' => 404, 'body' => ['success' => false, 'code' => 'invalid_code', 'message' => __('mobile_activation_invalid')]];
         }
+        $this->apks->reconcileCompanySlotPolicy($app, $company);
         if (!$this->apks->isEnabled($app, $company)) {
             return ['status' => 403, 'body' => ['success' => false, 'code' => 'app_not_enabled', 'message' => __('mobile_activation_app_disabled')]];
         }
@@ -238,6 +239,7 @@ final class MobileAppActivationService
             'success' => true,
             'app' => $app,
             'company' => [
+                'id' => (int) ($company['id'] ?? 0),
                 'name' => (string) ($company['name'] ?? ''),
                 'name_ar' => $names['ar'],
                 'name_en' => $names['en'],
@@ -265,18 +267,25 @@ final class MobileAppActivationService
             if (!$this->apks->isEnabled($app, $company)) {
                 continue;
             }
-            $key = $this->apks->slotKey($app, (int) $company['id']);
-            $own = $this->apks->meta($key);
             $url = $this->apks->activationDownloadUrl($app, $company);
             $package = $this->apks->packageForActivationLink($app, $company);
             $published = $this->apks->publishedBuild($app);
             $fallback = $url;
-            if ($code !== '' && !$this->apks->isBranded($own)) {
+            if ($code !== '' && !$this->apks->servesBrandedApk($app, $company)) {
                 $fallback = $app === 'hr' && is_array($published) && ($published['url'] ?? '') !== ''
                     ? (string) $published['url']
                     : $this->qrActivationPayload($code);
             }
-            $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($package, $code, $fallback) : ''];
+            $open = '';
+            if ($code !== '') {
+                if ($app === 'hr' && !$this->apks->servesBrandedApk($app, $company)) {
+                    // HTTPS /m/activate — only the unified HR app claims this path; not ratebapp:// (old branded APKs).
+                    $open = $this->publicActivationUrl($code) . '?setup=1';
+                } else {
+                    $open = $this->appLink($package, $code, $fallback);
+                }
+            }
+            $out[] = ['app' => $app, 'url' => $url, 'open' => $open];
         }
 
         return $out;
