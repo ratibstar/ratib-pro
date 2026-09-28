@@ -94,6 +94,10 @@ class AppLocalizations {
       'activationAppDisabled': 'تطبيق الموارد البشرية غير مفعّل لهذه الشركة',
       'activationRateLimited': 'محاولات كثيرة. حاول لاحقاً',
       'activationNetworkError': 'تعذر الاتصال بالخادم',
+      'wrongHrAppTitle': 'هذا ليس تطبيق رتب الموحد',
+      'wrongHrAppBody':
+          'التطبيق المثبت (%s) مخصص لشركة واحدة فقط (مثل العرفج). احذفه وثبّت تطبيق رتب HR الموحد (sa.rateb.hr.mobile) ثم امسح باركود شركتك.',
+      'wrongHrAppDownload': 'تحميل التطبيق الموحد',
       'updateAvailable': 'يتوفر تحديث جديد للتطبيق',
       'updateNow': 'تحديث',
       'updateLater': 'لاحقاً',
@@ -360,6 +364,10 @@ class AppLocalizations {
       'activationAppDisabled': 'The HR app is not enabled for this company',
       'activationRateLimited': 'Too many attempts. Try again later',
       'activationNetworkError': 'Could not reach the server',
+      'wrongHrAppTitle': 'This is not the unified RATEB HR app',
+      'wrongHrAppBody':
+          'The installed app (%s) belongs to one company only (e.g. Al-Arfaj). Uninstall it, install the unified RATEB HR app (sa.rateb.hr.mobile), then scan your company QR again.',
+      'wrongHrAppDownload': 'Download unified app',
       'updateAvailable': 'A new version of the app is available',
       'updateNow': 'Update',
       'updateLater': 'Later',
@@ -634,6 +642,10 @@ class AppLocalizations {
   String get activationAppDisabled => _t('activationAppDisabled');
   String get activationRateLimited => _t('activationRateLimited');
   String get activationNetworkError => _t('activationNetworkError');
+  String get wrongHrAppTitle => _t('wrongHrAppTitle');
+  String wrongHrAppBody(String package) =>
+      _t('wrongHrAppBody').replaceFirst('%s', package);
+  String get wrongHrAppDownload => _t('wrongHrAppDownload');
   String get updateAvailable => _t('updateAvailable');
   String get updateNow => _t('updateNow');
   String get updateLater => _t('updateLater');

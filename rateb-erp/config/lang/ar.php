@@ -3382,7 +3382,7 @@ return [
     'mobile_activation_download_unified_hr' => 'تحميل تطبيق HR الموحد',
     'mobile_activation_qr_scope' => 'باركود هذه الشركة فقط: :name (#:id) — الخادم :host',
     'mobile_activation_qr_payload' => 'محتوى الباركود',
-    'mobile_activation_qr_scan_hint' => 'امسح الباركود بكاميرا الجوال ثم اضغط الرابط — يفتح تطبيق HR ويربط الشركة تلقائياً (بدون كتابة الرمز).',
+    'mobile_activation_qr_scan_hint' => 'امسح الباركود بكاميرا الجوال — يفتح تطبيق رتب HR الموحد (sa.rateb.hr.mobile) ويظهر اسم شركتك في أعلى شاشة الدخول.',
     'mobile_activation_opening_app' => 'جاري فتح تطبيق الموارد البشرية وربط الشركة…',
     'mobile_activation_page_company_id' => 'شركة #:id',
     'mobile_activation_duplicate_alert' => 'تعارض: نفس رمز التفعيل مربوط بأكثر من شركة. أنشئ «رمز جديد» لكل شركة متأثرة حتى لا يختلط التفعيل.',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/config/app.php';
 require_once dirname(__DIR__) . '/app/services/MobileAppActivationService.php';
 require_once dirname(__DIR__) . '/app/services/MobileAppApkService.php';
+require_once dirname(__DIR__) . '/app/services/MobileAppBrandedService.php';
 
 use Rateb\App\Services\MobileAppActivationService;
 
@@ -38,12 +39,16 @@ $assert(
     MobileAppActivationService::normalize('VBAK-7P38?setup=1') === 'VBAK7P38',
     'normalize code with query string'
 );
-$handoff = (new MobileAppActivationService())->mobileAppHandoffUrl('VBAK7P38');
+$svc = new MobileAppActivationService();
+$handoff = $svc->mobileAppHandoffUrl('VBAK7P38');
 $assert(
     str_contains($handoff, '/rateb-erp/public/app-activate/VBAK-7P38')
     && str_contains($handoff, 'setup=1')
     && !str_contains($handoff, 'ratebapp://'),
     'mobile handoff uses canonical app-activate HTTPS'
 );
+$unifiedCompany = ['id' => 49, 'settings' => '{}'];
+$qr = $svc->qrActivationPayload('VBAK7P38', $unifiedCompany);
+$assert($qr === $handoff, 'unified company QR equals handoff URL');
 
 exit($fail > 0 ? 1 : 0);

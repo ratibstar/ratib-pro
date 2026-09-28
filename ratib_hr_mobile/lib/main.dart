@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/activation/activation_link_listener.dart';
 import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
+import 'package:ratib_hr_mobile/core/activation/unified_app_guard.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
 import 'package:ratib_hr_mobile/core/di/phase1_bootstrap.dart';
@@ -50,6 +51,33 @@ class _RatebHrMobileAppState extends State<RatebHrMobileApp> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    CompanyActivation.revision.addListener(_onActivationChanged);
+  }
+
+  @override
+  void dispose() {
+    CompanyActivation.revision.removeListener(_onActivationChanged);
+    super.dispose();
+  }
+
+  void _onActivationChanged() {
+    if (mounted) setState(() {});
+  }
+
+  String _windowTitle() {
+    if (CompanyActivation.isActive) {
+      final ar = _locale.languageCode == 'ar';
+      final linked = CompanyActivation.localizedName(arabic: ar);
+      if (linked.isNotEmpty) return linked;
+    }
+    final cfg = AppLocator.mobileConfiguration.current;
+    if (cfg != null && cfg.displayName.isNotEmpty) return cfg.displayName;
+    return AppConfig.appName;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([
@@ -58,9 +86,7 @@ class _RatebHrMobileAppState extends State<RatebHrMobileApp> {
       ]),
       builder: (context, _) {
         final cfg = AppLocator.mobileConfiguration.current;
-        final title = (cfg?.displayName.isNotEmpty == true)
-            ? cfg!.displayName
-            : AppConfig.appName;
+        final title = _windowTitle();
         return MaterialApp.router(
           title: title,
           debugShowCheckedModeBanner: false,
@@ -76,9 +102,11 @@ class _RatebHrMobileAppState extends State<RatebHrMobileApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           routerConfig: _router,
-          builder: (context, child) => ActivationLinkListener(
-            onCompanyChanged: widget.session.signOut,
-            child: AppUpdateBanner(child: child ?? const SizedBox.shrink()),
+          builder: (context, child) => UnifiedAppGuard(
+            child: ActivationLinkListener(
+              onCompanyChanged: widget.session.signOut,
+              child: AppUpdateBanner(child: child ?? const SizedBox.shrink()),
+            ),
           ),
         );
       },

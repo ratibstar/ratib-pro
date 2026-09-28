@@ -105,14 +105,34 @@ final class MobileAppActivationService
      * Admin QR payload: HTTPS activation page (camera-friendly). Page auto-opens the HR app via Android intent;
      * the installed app also handles this URL directly.
      */
-    public function qrActivationPayload(string $code): string
+    /**
+     * @param array<string, mixed>|null $company When set and on the unified model, QR opens the HR APK directly.
+     */
+    public function qrActivationPayload(string $code, ?array $company = null): string
     {
+        if ($company !== null && !$this->apks->companyHasBrandedBuild('hr', $company)) {
+            $handoff = $this->mobileAppHandoffUrl($code);
+            if ($handoff !== '') {
+                return $handoff;
+            }
+        }
         $url = $this->publicActivationUrl($code);
         if ($url === '') {
             return '';
         }
 
         return $url . (str_contains($url, '?') ? '&' : '?') . 'setup=1';
+    }
+
+    /** Link shown in Admin + encoded in QR for unified companies (opens sa.rateb.hr.mobile). */
+    public function activationUrlForCompany(string $code, array $company, string $app = 'hr'): string
+    {
+        $app = MobileAppApkService::normalizeApp($app);
+        if (!$this->apks->companyHasBrandedBuild($app, $company)) {
+            return $this->mobileAppHandoffUrl($code);
+        }
+
+        return $this->publicActivationUrl($code);
     }
 
     /**
@@ -290,7 +310,7 @@ final class MobileAppActivationService
             if ($code !== '' && !$this->apks->servesBrandedApk($app, $company)) {
                 $fallback = $app === 'hr' && is_array($published) && ($published['url'] ?? '') !== ''
                     ? (string) $published['url']
-                    : $this->qrActivationPayload($code);
+                    : $this->qrActivationPayload($code, $company);
             }
             $open = '';
             if ($code !== '') {

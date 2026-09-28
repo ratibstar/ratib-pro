@@ -3384,7 +3384,7 @@ return [
     'mobile_activation_download_unified_hr' => 'Download unified HR app',
     'mobile_activation_qr_scope' => 'QR for this company only: :name (#:id) — server :host',
     'mobile_activation_qr_payload' => 'QR payload',
-    'mobile_activation_qr_scan_hint' => 'Scan with the phone camera, tap the link — the HR app opens and links this company automatically.',
+    'mobile_activation_qr_scan_hint' => 'Scan with the phone camera — opens the unified RATEB HR app (sa.rateb.hr.mobile) and shows your company name on the login screen.',
     'mobile_activation_opening_app' => 'Opening the HR app and linking your company…',
     'mobile_activation_page_company_id' => 'Company #:id',
     'mobile_activation_duplicate_alert' => 'Conflict: the same activation code is assigned to more than one company. Regenerate a unique code for each affected company.',
