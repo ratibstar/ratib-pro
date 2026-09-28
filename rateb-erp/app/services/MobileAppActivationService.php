@@ -194,15 +194,6 @@ final class MobileAppActivationService
         } catch (\Throwable $e) {
             // Older MariaDB without JSON_EXTRACT on settings text — fall back below.
         }
-        $stmt = $db->prepare(
-            'SELECT * FROM rateb_companies WHERE settings LIKE :needle LIMIT 10'
-        );
-        $stmt->execute(['needle' => '%' . $code . '%']);
-        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
-            if (hash_equals($this->codeFor($row), $code)) {
-                return $row;
-            }
-        }
 
         return $this->findCompanyByCodeScan($code);
     }
@@ -275,9 +266,13 @@ final class MobileAppActivationService
                 continue;
             }
             $key = $this->apks->slotKey($app, (int) $company['id']);
+            $own = $this->apks->meta($key);
             $url = $this->apks->downloadUrlForToken($this->apks->ensureToken($key));
             $package = $this->apks->packageForActivationLink($app, $company);
-            $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($package, $code, $url) : ''];
+            $fallback = $code !== '' && !$this->apks->isBranded($own)
+                ? $this->qrActivationPayload($code)
+                : $url;
+            $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($package, $code, $fallback) : ''];
         }
 
         return $out;

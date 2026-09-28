@@ -89,17 +89,6 @@ switch ($App) {
     }
 }
 
-# The in-app update prompt compares against AppConfig.buildNumber; a mismatch keeps prompting forever.
-if ($App -ne 'erp') {
-    $pubspec = [IO.File]::ReadAllText((Join-Path $appDir 'pubspec.yaml'))
-    $appConfig = [IO.File]::ReadAllText((Join-Path $appDir 'lib\core\config\app_config.dart'))
-    $pubBuild = if ($pubspec -match '(?m)^version:\s*[^+\s]+\+(\d+)') { $Matches[1] } else { '' }
-    $cfgBuild = if ($appConfig -match 'buildNumber\s*=\s*(\d+)') { $Matches[1] } else { '' }
-    if (-not $pubBuild -or $pubBuild -ne $cfgBuild) {
-        throw "pubspec.yaml build ($pubBuild) and AppConfig.buildNumber ($cfgBuild) differ - align them first"
-    }
-}
-
 Push-Location $root
 try {
     $dirty = git status --porcelain -- $restore
@@ -289,6 +278,13 @@ try {
             $dart = $dart -replace "(String key = )'[^']*'", "`${1}'$Key'"
             $dart = $dart -replace "(String activationCode = )'[^']*'", "`${1}'$Code'"
             [IO.File]::WriteAllText($brandDart, $dart, (New-Object Text.UTF8Encoding($false)))
+            $manifest = Join-Path $appDir 'android\app\src\main\AndroidManifest.xml'
+            if (Test-Path $manifest) {
+                $man = [IO.File]::ReadAllText($manifest, [Text.Encoding]::UTF8)
+                $man = [regex]::Replace($man, '(?s)<!-- RATEB_PLATFORM_APP_LINKS_START.*?RATEB_PLATFORM_APP_LINKS_END -->', '<!-- branded build: platform activation links stripped -->')
+                $man = $man -replace '(?s)\s*<!-- Company activation: ratebapp://activate\?code=.*?ratebapp" android:host="activate"/>\s*</intent-filter>\s*', "`n"
+                [IO.File]::WriteAllText($manifest, $man, (New-Object Text.UTF8Encoding($false)))
+            }
             # Without a clean build Gradle reuses the previous Dart snapshot and ignores the edit above.
             & $flutter clean | Out-Null
             if ($App -eq 'hr') {

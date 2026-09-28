@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
+import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 
 class ActivationLinkListener extends StatefulWidget {
@@ -65,6 +66,15 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener> {
     if (_busy) return;
     final code = _codeFromUri(uri);
     if (code == null) return;
+    final embedded = CompanyActivation.normalize(BrandBuild.activationCode);
+    if (embedded != null && embedded != code) {
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(l10n.activationBrandedWrongCompany)),
+      );
+      return;
+    }
     final current = CompanyActivation.code;
     if (current != null && code == current) return;
 

@@ -36,7 +36,7 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="ratebapp" android:host="activate"/>
             </intent-filter>
-            <!-- QR / camera opens https://rateb.sa/.../app-activate/CODE — hand off to the HR app -->
+            <!-- RATEB_PLATFORM_APP_LINKS_START — removed from company-branded APKs (see build-branded-app.ps1) -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -49,6 +49,7 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https" android:host="www.rateb.sa" android:pathPrefix="/rateb-erp/public/app-activate"/>
             </intent-filter>
+            <!-- RATEB_PLATFORM_APP_LINKS_END -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
         </activity>
         <!-- Don't delete the meta-data below.

@@ -78,6 +78,9 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
                 <div class="small text-muted mt-1"><?php echo $e(__('mobile_activation_qr_scan_hint')); ?></div>
                 <div class="small text-muted mt-1 font-monospace text-break" dir="ltr"><?php echo $e(__('mobile_activation_qr_payload')); ?>: <?php echo $e($appCard['activationQrPayload'] ?? ''); ?></div>
                 <div class="small text-warning mt-2"><?php echo $e(__('mobile_activation_not_apk_update')); ?></div>
+                <?php if ($distribution === 'shared' || $distribution === 'missing') { ?>
+                <div class="small text-info mt-2"><?php echo $e(__('mobile_activation_unified_app_only')); ?></div>
+                <?php } ?>
             </div>
         </div>
         <?php } ?>

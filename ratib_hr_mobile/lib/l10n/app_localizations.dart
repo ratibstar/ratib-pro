@@ -89,6 +89,8 @@ class AppLocalizations {
       'activationRemove': 'إلغاء ربط الشركة',
       'activationDone': 'تم ربط التطبيق بـ',
       'activationInvalid': 'رمز الشركة غير صحيح',
+      'activationBrandedWrongCompany':
+          'هذا الباركود لشركة أخرى. استخدم تطبيق رتب الموحد (وليس تطبيق شركة مخصص).',
       'activationAppDisabled': 'تطبيق الموارد البشرية غير مفعّل لهذه الشركة',
       'activationRateLimited': 'محاولات كثيرة. حاول لاحقاً',
       'activationNetworkError': 'تعذر الاتصال بالخادم',
@@ -353,6 +355,8 @@ class AppLocalizations {
       'activationRemove': 'Unlink company',
       'activationDone': 'App linked to',
       'activationInvalid': 'Invalid company code',
+      'activationBrandedWrongCompany':
+          'This QR belongs to another company. Use the unified RATEB HR app, not a company-branded app.',
       'activationAppDisabled': 'The HR app is not enabled for this company',
       'activationRateLimited': 'Too many attempts. Try again later',
       'activationNetworkError': 'Could not reach the server',
@@ -626,6 +630,7 @@ class AppLocalizations {
   String get activationRemove => _t('activationRemove');
   String get activationDone => _t('activationDone');
   String get activationInvalid => _t('activationInvalid');
+  String get activationBrandedWrongCompany => _t('activationBrandedWrongCompany');
   String get activationAppDisabled => _t('activationAppDisabled');
   String get activationRateLimited => _t('activationRateLimited');
   String get activationNetworkError => _t('activationNetworkError');
