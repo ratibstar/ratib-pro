@@ -45,7 +45,9 @@ final class MobileAppActivationController extends Controller
         if ($raw !== '') {
             $code = MobileAppActivationService::normalize($raw);
             if ($code !== '') {
-                Response::redirect(rateb_url('m/activate/' . MobileAppActivationService::format($code)));
+                Response::redirect(
+                    rateb_url('m/activate/' . MobileAppActivationService::format($code) . '?setup=1')
+                );
                 return;
             }
         }
@@ -87,6 +89,18 @@ final class MobileAppActivationController extends Controller
         $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
         $hrPublished = $apks->publishedBuild('hr');
         $unifiedDl = $this->unifiedHrDownloadMeta($hrPublished);
+        $useUnifiedHr = !$apks->companyHasBrandedBuild('hr', $company);
+        $wantsQrHandoff = $useUnifiedHr
+            && isset($_GET['setup'])
+            && (string) $_GET['setup'] === '1'
+            && $this->isAndroidClient();
+        if ($wantsQrHandoff) {
+            $intent = $svc->mobileAppIntentUrl($code);
+            if ($intent !== '') {
+                Response::redirect($intent);
+                return;
+            }
+        }
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
                 'id' => (int) ($company['id'] ?? 0),
@@ -99,8 +113,13 @@ final class MobileAppActivationController extends Controller
             'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',
             'unifiedHrApk' => (string) ($unifiedDl['url'] ?? ''),
             'unifiedHrDl' => $unifiedDl,
-            'useUnifiedHr' => !$apks->companyHasBrandedBuild('hr', $company),
+            'useUnifiedHr' => $useUnifiedHr,
         ]), 'auth');
+    }
+
+    private function isAndroidClient(): bool
+    {
+        return (bool) preg_match('/Android/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
     }
 
     /** GET /downloads/unified-hr.apk — canonical unified HR only (never a company branded slot). */

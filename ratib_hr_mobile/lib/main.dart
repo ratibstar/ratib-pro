@@ -1,6 +1,7 @@
 /// RATEB HR Mobile — Phase C entry (enterprise ESS modules).
 library;
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -16,9 +17,25 @@ import 'package:ratib_hr_mobile/core/update/app_update_banner.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 
+/// QR / HTTPS activation link before first frame (same as entering the code manually).
+Future<void> _activateFromInitialAppLink() async {
+  try {
+    final uri = await AppLinks().getInitialLink();
+    if (uri == null) {
+      return;
+    }
+    final code = CompanyActivation.normalize(uri.toString());
+    if (code == null) {
+      return;
+    }
+    await CompanyActivation.activate(code);
+  } catch (_) {}
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CompanyActivation.load();
+  await _activateFromInitialAppLink();
   bootstrapPhase1();
   await AppLocator.appearance.load();
   final session = AuthSession();

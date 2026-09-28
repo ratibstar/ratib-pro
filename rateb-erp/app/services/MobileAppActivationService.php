@@ -95,10 +95,12 @@ final class MobileAppActivationService
         if (function_exists('rateb_is_platform_oversight_host')
             && rateb_is_platform_oversight_host()
             && function_exists('rateb_platform_oversight_public_url')) {
-            return rateb_platform_oversight_public_url($path);
+            $url = rateb_platform_oversight_public_url($path);
+        } else {
+            $url = rateb_public_url($path);
         }
 
-        return rateb_public_url($path);
+        return $url . (str_contains($url, '?') ? '&' : '?') . 'setup=1';
     }
 
     /**
