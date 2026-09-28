@@ -188,6 +188,26 @@ final class MobileAppApkService
         return rateb_public_url('hr-app/' . $token);
     }
 
+    /**
+     * Public activation page download: unified published APK for shared-model companies;
+     * only companies with a branded slot keep their own file link.
+     */
+    public function activationDownloadUrl(string $app, array $company): string
+    {
+        $app = self::normalizeApp($app);
+        $key = $this->slotKey($app, (int) ($company['id'] ?? 0));
+        $own = $this->meta($key);
+        if ($this->isBranded($own)) {
+            return $this->downloadUrlForToken($this->ensureToken($key));
+        }
+        $published = $this->publishedBuild($app);
+        if ($published !== null && ($published['url'] ?? '') !== '') {
+            return (string) $published['url'];
+        }
+
+        return $this->downloadUrlForToken($this->ensureToken($app));
+    }
+
     public function qrImageUrl(string $url, int $size = 220): string
     {
         $size = max(120, min(500, $size));

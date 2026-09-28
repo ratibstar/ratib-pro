@@ -35,15 +35,15 @@
             if (head) {
                 var actCode = head.getAttribute('data-rateb-act-code') || '';
                 var intent = head.getAttribute('data-rateb-hr-open') || '';
-                var autoSetup = /[?&]setup=1(?:&|$)/.test(location.search);
-                var sk = 'rateb_hr_act_open_' + actCode;
-                if (intent && actCode && (autoSetup || sessionStorage.getItem(sk) !== '1')) {
-                    sessionStorage.setItem(sk, '1');
-                    var splash = document.getElementById('rateb-act-opening');
-                    if (splash) {
-                        splash.classList.remove('d-none');
+                var unifiedHr = head.getAttribute('data-rateb-unified-hr') === '1';
+                // Do not auto-launch intent after QR scan: wrong APKs (e.g. old branded) may still claim ratebapp://.
+                if (intent && actCode && !unifiedHr) {
+                    var autoSetup = /[?&]setup=1(?:&|$)/.test(location.search);
+                    var sk = 'rateb_hr_act_open_' + actCode;
+                    if (autoSetup || sessionStorage.getItem(sk) !== '1') {
+                        sessionStorage.setItem(sk, '1');
+                        window.location.replace(intent);
                     }
-                    window.location.replace(intent);
                 }
             }
         }

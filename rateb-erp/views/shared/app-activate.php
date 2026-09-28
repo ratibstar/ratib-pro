@@ -37,10 +37,17 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
         }
     }
     ?>
-    <div id="rateb-act-opening" class="alert alert-info py-2 small text-center d-none mb-3" role="status">
-        <i class="fas fa-spinner fa-spin"></i> <?php echo $e(__('mobile_activation_opening_app')); ?>
+    <?php if (!empty($useUnifiedHr) && ($unifiedHrApk ?? '') !== '') { ?>
+    <div class="alert alert-warning py-2 small mb-3" role="alert">
+        <?php echo $e(__('mobile_activation_install_unified_first')); ?>
+        <a class="btn btn-sm btn-primary w-100 mt-2" href="<?php echo $e($unifiedHrApk); ?>" download>
+            <i class="fas fa-download"></i> <?php echo $e(__('mobile_activation_download_unified_hr')); ?>
+        </a>
     </div>
-    <div class="rateb-act-head" data-rateb-act-code="<?php echo $e($code); ?>"<?php echo $hrOpenIntent !== '' ? ' data-rateb-hr-open="' . $e($hrOpenIntent) . '"' : ''; ?>>
+    <?php } ?>
+    <div class="rateb-act-head" data-rateb-act-code="<?php echo $e($code); ?>"
+         data-rateb-unified-hr="<?php echo !empty($useUnifiedHr) ? '1' : '0'; ?>"
+         <?php echo $hrOpenIntent !== '' ? ' data-rateb-hr-open="' . $e($hrOpenIntent) . '"' : ''; ?>>
         <?php if (($company['logo'] ?? '') !== '') { ?>
             <img class="rateb-act-logo" src="<?php echo $e($company['logo']); ?>" alt="">
         <?php } else { ?>

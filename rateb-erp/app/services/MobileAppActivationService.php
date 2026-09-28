@@ -267,11 +267,15 @@ final class MobileAppActivationService
             }
             $key = $this->apks->slotKey($app, (int) $company['id']);
             $own = $this->apks->meta($key);
-            $url = $this->apks->downloadUrlForToken($this->apks->ensureToken($key));
+            $url = $this->apks->activationDownloadUrl($app, $company);
             $package = $this->apks->packageForActivationLink($app, $company);
-            $fallback = $code !== '' && !$this->apks->isBranded($own)
-                ? $this->qrActivationPayload($code)
-                : $url;
+            $published = $this->apks->publishedBuild($app);
+            $fallback = $url;
+            if ($code !== '' && !$this->apks->isBranded($own)) {
+                $fallback = $app === 'hr' && is_array($published) && ($published['url'] ?? '') !== ''
+                    ? (string) $published['url']
+                    : $this->qrActivationPayload($code);
+            }
             $out[] = ['app' => $app, 'url' => $url, 'open' => $code !== '' ? $this->appLink($package, $code, $fallback) : ''];
         }
 

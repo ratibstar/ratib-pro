@@ -82,6 +82,8 @@ final class MobileAppActivationController extends Controller
         $names = $branded->names($company);
         $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
         $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
+        $hrSlot = $apks->meta($apks->slotKey('hr', (int) $company['id']));
+        $hrPublished = $apks->publishedBuild('hr');
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
                 'id' => (int) ($company['id'] ?? 0),
@@ -92,6 +94,8 @@ final class MobileAppActivationController extends Controller
             'erpHost' => $erpHost,
             'apps' => $svc->enabledApps($company),
             'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',
+            'unifiedHrApk' => is_array($hrPublished) ? (string) ($hrPublished['url'] ?? '') : '',
+            'useUnifiedHr' => !$apks->isBranded($hrSlot),
         ]), 'auth');
     }
 
