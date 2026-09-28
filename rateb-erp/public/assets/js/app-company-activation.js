@@ -25,36 +25,7 @@
         }
     }
 
-    function openUnifiedHr(btn) {
-        var intent = btn.getAttribute('data-rateb-intent') || '';
-        var handoff = btn.getAttribute('data-rateb-handoff') || '';
-        var apk = btn.getAttribute('data-rateb-apk') || '';
-        if (intent.indexOf('intent://') === 0) {
-            window.location.href = intent;
-        } else if (handoff) {
-            window.location.href = handoff;
-        }
-        window.setTimeout(function () {
-            if (document.visibilityState !== 'visible' || !apk) {
-                return;
-            }
-            if (window.confirm(
-                document.documentElement.lang === 'ar'
-                    ? 'لم يُفتح تطبيق رتب الموحد. حمّل APK الموحد (sa.rateb.hr.mobile) وليس تطبيق العرفج.'
-                    : 'Unified RATEB HR did not open. Download the unified APK (sa.rateb.hr.mobile), not Al-Arfaj.'
-            )) {
-                window.location.href = apk;
-            }
-        }, 2200);
-    }
-
     if (!inApp()) {
-        document.querySelectorAll('[data-rateb-open-unified-hr]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                openUnifiedHr(btn);
-            });
-        });
-
         if (/Android/i.test(navigator.userAgent || '')) {
             document.querySelectorAll('[data-rateb-app-intent]').forEach(function (el) {
                 if (el.getAttribute('data-rateb-apk-only') === '1') {

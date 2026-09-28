@@ -48,17 +48,16 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <?php if (!empty($useUnifiedHr) && ($unifiedHrApk ?? '') !== '') { ?>
     <div class="alert alert-warning py-2 small mb-3" role="alert">
         <?php echo $e(__('mobile_activation_install_unified_first')); ?>
-        <a class="btn btn-sm btn-primary w-100 mt-2" href="<?php echo $e($unifiedHrApk); ?>" download>
+        <a class="btn btn-sm btn-primary w-100 mt-2" id="rateb-unified-download" href="<?php echo $e($unifiedHrApk); ?>">
             <i class="fas fa-download"></i> <?php echo $e(__('mobile_activation_download_unified_hr')); ?>
         </a>
-        <?php if ($hrAndroidIntent !== '') { ?>
-        <button type="button" class="btn btn-sm btn-success w-100 mt-2"
-                data-rateb-open-unified-hr="1"
-                data-rateb-intent="<?php echo $e($hrAndroidIntent); ?>"
-                data-rateb-handoff="<?php echo $e($hrOpenIntent); ?>"
-                data-rateb-apk="<?php echo $e($unifiedHrApk); ?>">
+        <?php if ($hrOpenIntent !== '') { ?>
+        <a class="btn btn-sm btn-success w-100 mt-2" id="rateb-unified-open"
+           href="<?php echo $e($hrAndroidIntent !== '' ? $hrAndroidIntent : $hrOpenIntent); ?>">
             <i class="fas fa-mobile-screen"></i> <?php echo $e(__('mobile_activation_open_unified_hr')); ?>
-        </button>
+        </a>
+        <a class="btn btn-sm btn-outline-light w-100 mt-2 d-none" id="rateb-unified-open-https"
+           href="<?php echo $e($hrOpenIntent); ?>"><?php echo $e(__('mobile_activation_open_unified_https')); ?></a>
         <p class="small text-muted mt-2 mb-0"><?php echo $e(__('mobile_activation_open_unified_hint')); ?></p>
         <?php } ?>
     </div>
@@ -119,3 +118,13 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <?php } ?>
 <?php } ?>
 <script src="<?php echo $e(rateb_asset('js/app-company-activation.js')); ?>"></script>
+<?php if (!empty($useUnifiedHr) && ($hrOpenIntent ?? '') !== '') { ?>
+<script>
+(function () {
+    var https = document.getElementById('rateb-unified-open-https');
+    if (https && /Android/i.test(navigator.userAgent || '')) {
+        https.classList.remove('d-none');
+    }
+})();
+</script>
+<?php } ?>
