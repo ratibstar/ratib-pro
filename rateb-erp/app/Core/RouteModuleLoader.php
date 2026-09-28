@@ -234,6 +234,8 @@ final class RouteModuleLoader
             || str_starts_with($path, '/hr-app/')
             || $path === '/app-activate'
             || str_starts_with($path, '/app-activate/')
+            || $path === '/m/activate'
+            || str_starts_with($path, '/m/activate/')
         ) {
             return true;
         }

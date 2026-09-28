@@ -45,7 +45,7 @@ final class MobileAppActivationController extends Controller
         if ($raw !== '') {
             $code = MobileAppActivationService::normalize($raw);
             if ($code !== '') {
-                Response::redirect(rateb_url('app-activate/' . MobileAppActivationService::format($code)));
+                Response::redirect(rateb_url('m/activate/' . MobileAppActivationService::format($code)));
                 return;
             }
         }

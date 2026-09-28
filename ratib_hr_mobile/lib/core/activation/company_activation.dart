@@ -74,7 +74,7 @@ final class CompanyActivation {
   /// "ABCD-2345", "abcd2345" or an activation link → "ABCD2345", or null.
   static String? normalize(String input) {
     var raw = input.trim();
-    final path = RegExp(r'app-activate/([A-Za-z0-9\-]+)').firstMatch(raw);
+    final path = RegExp(r'(?:app-activate|m/activate)/([A-Za-z0-9\-]+)').firstMatch(raw);
     final query = RegExp(r'[?&]code=([A-Za-z0-9\-]+)').firstMatch(raw);
     if (path != null) {
       raw = path.group(1)!;

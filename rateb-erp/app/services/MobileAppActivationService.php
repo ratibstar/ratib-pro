@@ -34,7 +34,7 @@ final class MobileAppActivationService
         if (($q = strpos($input, '?')) !== false) {
             $input = substr($input, 0, $q);
         }
-        if (preg_match('#app-activate/([A-Za-z0-9\-]+)#', $input, $m)) {
+        if (preg_match('#(?:app-activate|m/activate)/([A-Za-z0-9\-]+)#', $input, $m)) {
             $input = $m[1];
         } elseif (preg_match('#[?&]code=([A-Za-z0-9\-]+)#', $input, $m)) {
             $input = $m[1];
@@ -91,7 +91,7 @@ final class MobileAppActivationService
         if ($code === '') {
             return '';
         }
-        $path = 'app-activate/' . self::format($code);
+        $path = 'm/activate/' . self::format($code);
         if (function_exists('rateb_is_platform_oversight_host')
             && rateb_is_platform_oversight_host()
             && function_exists('rateb_platform_oversight_public_url')) {

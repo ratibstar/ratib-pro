@@ -36,18 +36,18 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="ratebapp" android:host="activate"/>
             </intent-filter>
-            <!-- RATEB_PLATFORM_APP_LINKS_START — removed from company-branded APKs (see build-branded-app.ps1) -->
+            <!-- RATEB_PLATFORM_APP_LINKS_START — /m/activate only (branded APKs must not claim this path). -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="rateb.sa" android:pathPrefix="/rateb-erp/public/app-activate"/>
+                <data android:scheme="https" android:host="rateb.sa" android:pathPrefix="/rateb-erp/public/m/activate"/>
             </intent-filter>
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="www.rateb.sa" android:pathPrefix="/rateb-erp/public/app-activate"/>
+                <data android:scheme="https" android:host="www.rateb.sa" android:pathPrefix="/rateb-erp/public/m/activate"/>
             </intent-filter>
             <!-- RATEB_PLATFORM_APP_LINKS_END -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>

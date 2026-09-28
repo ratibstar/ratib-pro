@@ -24,6 +24,10 @@ $assert(
     'normalize activation URL'
 );
 $assert(
+    MobileAppActivationService::normalize('https://rateb.sa/rateb-erp/public/m/activate/7EPY-PQUJ?setup=1') === '7EPYPQUJ',
+    'normalize mobile QR activation URL'
+);
+$assert(
     MobileAppActivationService::format('7EPYPQUJ') === '7EPY-PQUJ',
     'format code'
 );
