@@ -136,9 +136,7 @@ final class MobileAppActivationService
     }
 
     /**
-     * HTTPS link the unified HR APK intercepts (Android intent-filter).
-     * Must use /rateb-erp/public/app-activate — not rateb.sa/m/activate (browser-only on production)
-     * and not ratebapp:// (legacy branded APKs may still claim that scheme).
+     * HTTPS link only the unified HR APK claims (/m/activate). Branded APKs must not register this path.
      */
     public function mobileAppHandoffUrl(string $code): string
     {
@@ -148,7 +146,25 @@ final class MobileAppActivationService
         }
         $origin = rtrim(rateb_site_origin(), '/');
 
-        return $origin . '/rateb-erp/public/app-activate/' . self::format($code) . '?setup=1';
+        return $origin . '/rateb-erp/public/m/activate/' . self::format($code) . '?setup=1';
+    }
+
+    /**
+     * Android Chrome: force package sa.rateb.hr.mobile so Al-Arfaj (ratebapp:// without package) never opens.
+     */
+    public function mobileAppIntentUrl(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+        $formatted = self::format($code);
+        $package = (new MobileAppApkService())->appInfo('hr')['package'];
+        $fallback = $this->mobileAppHandoffUrl($code);
+
+        return 'intent://activate?code=' . rawurlencode($formatted)
+            . '#Intent;scheme=ratebapp;package=' . $package
+            . ';S.browser_fallback_url=' . rawurlencode($fallback) . ';end';
     }
 
     /**
@@ -293,7 +309,7 @@ final class MobileAppActivationService
      * Apps enabled for the company, each with its download link and an Android link that opens
      * the installed app already activated (or falls back to the download).
      *
-     * @return list<array{app:string, url:string, open:string}>
+     * @return list<array{app:string, url:string, open:string, open_android:string}>
      */
     public function enabledApps(array $company): array
     {
@@ -313,14 +329,16 @@ final class MobileAppActivationService
                     : $this->qrActivationPayload($code, $company);
             }
             $open = '';
+            $openAndroid = '';
             if ($code !== '') {
                 if ($app === 'hr' && !$this->apks->servesBrandedApk($app, $company)) {
                     $open = $this->mobileAppHandoffUrl($code);
+                    $openAndroid = $this->mobileAppIntentUrl($code);
                 } else {
                     $open = $this->appLink($package, $code, $fallback);
                 }
             }
-            $out[] = ['app' => $app, 'url' => $url, 'open' => $open];
+            $out[] = ['app' => $app, 'url' => $url, 'open' => $open, 'open_android' => $openAndroid];
         }
 
         return $out;

@@ -42,7 +42,7 @@ $assert(
 $svc = new MobileAppActivationService();
 $handoff = $svc->mobileAppHandoffUrl('VBAK7P38');
 $assert(
-    str_contains($handoff, '/rateb-erp/public/app-activate/VBAK-7P38')
+    str_contains($handoff, '/rateb-erp/public/m/activate/VBAK-7P38')
     && str_contains($handoff, 'setup=1')
     && !str_contains($handoff, 'ratebapp://'),
     'mobile handoff uses canonical app-activate HTTPS'
@@ -50,5 +50,10 @@ $assert(
 $unifiedCompany = ['id' => 49, 'settings' => '{}'];
 $qr = $svc->qrActivationPayload('VBAK7P38', $unifiedCompany);
 $assert($qr === $handoff, 'unified company QR equals handoff URL');
+$intent = $svc->mobileAppIntentUrl('VBAK7P38');
+$assert(
+    str_contains($intent, 'package=sa.rateb.hr.mobile') && str_contains($intent, 'scheme=ratebapp'),
+    'android intent pins unified package'
+);
 
 exit($fail > 0 ? 1 : 0);

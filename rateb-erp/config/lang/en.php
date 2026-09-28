@@ -3382,6 +3382,7 @@ return [
     'mobile_activation_unified_app_only' => 'This QR is for the unified HR app (sa.rateb.hr.mobile) only. A company-branded app (e.g. Al-Arfaj) cannot activate other companies.',
     'mobile_activation_install_unified_first' => 'Uninstall any other HR app (e.g. Al-Arfaj) from the phone, then install only the unified RATEB HR app (package sa.rateb.hr.mobile). Do not open a branded app from the home screen after scanning.',
     'mobile_activation_download_unified_hr' => 'Download unified HR app',
+    'mobile_activation_open_unified_hr' => 'Open unified RATEB HR (not Al-Arfaj)',
     'mobile_activation_qr_scope' => 'QR for this company only: :name (#:id) — server :host',
     'mobile_activation_qr_payload' => 'QR payload',
     'mobile_activation_qr_scan_hint' => 'Scan with the phone camera — opens the unified RATEB HR app (sa.rateb.hr.mobile) and shows your company name on the login screen.',

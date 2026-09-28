@@ -34,19 +34,22 @@
             var head = document.querySelector('[data-rateb-hr-open][data-rateb-act-code]');
             if (head) {
                 var actCode = head.getAttribute('data-rateb-act-code') || '';
-                var intent = head.getAttribute('data-rateb-hr-open') || '';
+                var httpsOpen = head.getAttribute('data-rateb-hr-open') || '';
+                var androidIntent = head.getAttribute('data-rateb-hr-android-intent') || '';
                 var unifiedHr = head.getAttribute('data-rateb-unified-hr') === '1';
-                if (intent && actCode) {
+                if (actCode && (httpsOpen || androidIntent)) {
                     var autoSetup = /[?&]setup=1(?:&|$)/.test(location.search);
                     var sk = 'rateb_hr_act_open_' + actCode;
-                    if (unifiedHr && /^https:\/\//i.test(intent)) {
-                        if (autoSetup && sessionStorage.getItem(sk) !== '1') {
-                            sessionStorage.setItem(sk, '1');
-                            window.location.replace(intent);
+                    if (autoSetup && sessionStorage.getItem(sk) !== '1') {
+                        sessionStorage.setItem(sk, '1');
+                        if (unifiedHr && androidIntent.indexOf('intent://') === 0) {
+                            window.location.replace(androidIntent);
+                        } else if (httpsOpen) {
+                            window.location.replace(httpsOpen);
                         }
                     } else if (!unifiedHr && (autoSetup || sessionStorage.getItem(sk) !== '1')) {
                         sessionStorage.setItem(sk, '1');
-                        window.location.replace(intent);
+                        window.location.replace(httpsOpen || androidIntent);
                     }
                 }
             }

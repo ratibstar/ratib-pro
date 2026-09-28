@@ -30,10 +30,18 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     </p>
 <?php } else {
     $hrOpenIntent = '';
+    $hrAndroidIntent = '';
     foreach ($apps as $row) {
-        if (($row['app'] ?? '') === 'hr' && ($row['open'] ?? '') !== '') {
-            $hrOpenIntent = (string) $row['open'];
-            break;
+        if (($row['app'] ?? '') === 'hr') {
+            if (($row['open'] ?? '') !== '') {
+                $hrOpenIntent = (string) $row['open'];
+            }
+            if (($row['open_android'] ?? '') !== '') {
+                $hrAndroidIntent = (string) $row['open_android'];
+            }
+            if ($hrOpenIntent !== '') {
+                break;
+            }
         }
     }
     ?>
@@ -43,11 +51,17 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
         <a class="btn btn-sm btn-primary w-100 mt-2" href="<?php echo $e($unifiedHrApk); ?>" download>
             <i class="fas fa-download"></i> <?php echo $e(__('mobile_activation_download_unified_hr')); ?>
         </a>
+        <?php if ($hrAndroidIntent !== '') { ?>
+        <a class="btn btn-sm btn-success w-100 mt-2" href="<?php echo $e($hrAndroidIntent); ?>">
+            <i class="fas fa-mobile-screen"></i> <?php echo $e(__('mobile_activation_open_unified_hr')); ?>
+        </a>
+        <?php } ?>
     </div>
     <?php } ?>
     <div class="rateb-act-head" data-rateb-act-code="<?php echo $e($code); ?>"
          data-rateb-unified-hr="<?php echo !empty($useUnifiedHr) ? '1' : '0'; ?>"
-         <?php echo $hrOpenIntent !== '' ? ' data-rateb-hr-open="' . $e($hrOpenIntent) . '"' : ''; ?>>
+         <?php echo $hrOpenIntent !== '' ? ' data-rateb-hr-open="' . $e($hrOpenIntent) . '"' : ''; ?>
+         <?php echo $hrAndroidIntent !== '' ? ' data-rateb-hr-android-intent="' . $e($hrAndroidIntent) . '"' : ''; ?>>
         <?php if (($company['logo'] ?? '') !== '') { ?>
             <img class="rateb-act-logo" src="<?php echo $e($company['logo']); ?>" alt="">
         <?php } else { ?>
