@@ -11,6 +11,7 @@ import 'package:ratib_hr_mobile/core/routing/app_router.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/company_activation_dialog.dart';
+import 'package:ratib_hr_mobile/features/login/login_activation_status.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
@@ -316,7 +317,8 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 36),
+            const LoginActivationStatus(),
+            const SizedBox(height: 20),
             DsGlassTile(
               padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
               child: Column(

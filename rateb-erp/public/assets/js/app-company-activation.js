@@ -33,6 +33,14 @@
                 }
                 el.setAttribute('href', el.getAttribute('data-rateb-app-intent') || el.getAttribute('href'));
             });
+            var head = document.querySelector('[data-rateb-act-code]');
+            var openBtn = document.getElementById('rateb-unified-open');
+            if (head && openBtn && head.getAttribute('data-rateb-unified-hr') === '1') {
+                var androidIntent = head.getAttribute('data-rateb-hr-android-intent');
+                if (androidIntent && androidIntent.indexOf('scheme=https') !== -1) {
+                    openBtn.setAttribute('href', androidIntent);
+                }
+            }
         }
         return;
     }

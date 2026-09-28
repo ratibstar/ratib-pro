@@ -560,7 +560,7 @@ final class MobileAppsController extends Controller
             }
             $url = $agencyHost
                 ? rateb_platform_oversight_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES[$app])
-                : $apkSvc->downloadUrlForToken($apkSvc->ensureToken($apkSvc->slotKey($app, (int) $company['id'])));
+                : $apkSvc->activationDownloadUrl($app, $company);
             $apps[] = ['app' => $app, 'url' => $url, 'qr' => $apkSvc->qrImageUrl($url, 160)];
         }
 

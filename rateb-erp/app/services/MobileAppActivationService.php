@@ -296,6 +296,18 @@ final class MobileAppActivationService
         $names = $branded->names($company);
         $logo = $branded->iconUrl($company, (new MobileAppConfigService())->findByCompanyId((int) $company['id']), $erpBase);
 
+        $unifiedHr = !$this->apks->companyHasBrandedBuild($app, $company);
+        $pub = $unifiedHr && $app === 'hr' ? $this->apks->publishedBuild('hr') : null;
+        $sha = is_array($pub) ? (string) ($pub['sha256'] ?? '') : '';
+        $normCode = self::normalize($code);
+        $dupWarning = '';
+        foreach ($this->findDuplicateCodes() as $row) {
+            if ($normCode !== '' && hash_equals(self::normalize($row['code']), $normCode)) {
+                $dupWarning = 'duplicate_code';
+                break;
+            }
+        }
+
         return ['status' => 200, 'body' => [
             'success' => true,
             'app' => $app,
@@ -311,6 +323,12 @@ final class MobileAppActivationService
             'admin_url' => $erpBase . '/admin',
             'api_base_url' => $this->apks->serverForCompany('customer', $company),
             'agency_id' => $this->apks->agencyIdForCompany($company),
+            'unified_hr' => $unifiedHr,
+            'expected_android_package' => $this->apks->packageForActivationLink($app, $company),
+            'unified_apk_url' => is_array($pub) ? (string) ($pub['url'] ?? '') : '',
+            'unified_apk_sha256' => $sha,
+            'activation_authority' => rtrim(rateb_site_origin(), '/') . '/rateb-erp/public',
+            'code_conflict' => $dupWarning,
         ]];
     }
 

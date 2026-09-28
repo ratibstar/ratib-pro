@@ -57,6 +57,9 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
         <?php if ($dlSize > 0 || $dlVc > 0) { ?>
         <div class="small font-monospace mt-1 mb-2" dir="ltr">
             sa.rateb.hr.mobile<?php echo $dlVc > 0 ? ' · build ' . $dlVc : ''; ?><?php echo $dlSize > 0 ? ' · ~' . $e((string) $dlSize) . ' MB' : ''; ?>
+            <?php if (!empty($dlMeta['sha256_short'])) { ?>
+            · sha256 <?php echo $e((string) $dlMeta['sha256_short']); ?>…
+            <?php } ?>
         </div>
         <div class="small text-danger mb-2"><?php echo $e(__('mobile_activation_apk_size_warning')); ?></div>
         <?php } ?>

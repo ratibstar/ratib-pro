@@ -142,11 +142,15 @@ final class MobileAppActivationController extends Controller
         $size = is_array($pub) ? (int) ($pub['size'] ?? 0) : 0;
         $vc = is_array($pub) ? (int) ($pub['version_code'] ?? 0) : 0;
 
+        $sha = is_array($pub) ? (string) ($pub['sha256'] ?? '') : '';
+
         return [
             'url' => $url,
             'size_mb' => $size > 0 ? round($size / 1048576, 1) : 0.0,
             'version_code' => $vc,
             'package' => 'sa.rateb.hr.mobile',
+            'sha256' => $sha,
+            'sha256_short' => $sha !== '' ? substr($sha, 0, 12) : '',
         ];
     }
 
