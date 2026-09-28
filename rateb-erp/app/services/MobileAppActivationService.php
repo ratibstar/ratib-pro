@@ -158,12 +158,21 @@ final class MobileAppActivationService
         if ($code === '') {
             return '';
         }
-        $formatted = self::format($code);
         $package = (new MobileAppApkService())->appInfo('hr')['package'];
-        $fallback = $this->mobileAppHandoffUrl($code);
+        $handoff = $this->mobileAppHandoffUrl($code);
+        $pub = $this->apks->publishedBuild('hr');
+        $apkUrl = is_array($pub) ? (string) ($pub['url'] ?? '') : '';
+        $fallback = $apkUrl !== '' ? $apkUrl : $handoff;
+        $parsed = parse_url($handoff);
+        $host = (string) ($parsed['host'] ?? 'rateb.sa');
+        $path = (string) ($parsed['path'] ?? '');
+        if (isset($parsed['query']) && (string) $parsed['query'] !== '') {
+            $path .= '?' . (string) $parsed['query'];
+        }
+        // HTTPS app link pinned to sa.rateb.hr.mobile (Al-Arfaj has no /m/activate handler).
+        $intentTarget = $host . $path;
 
-        return 'intent://activate?code=' . rawurlencode($formatted)
-            . '#Intent;scheme=ratebapp;package=' . $package
+        return 'intent://' . $intentTarget . '#Intent;scheme=https;package=' . $package
             . ';S.browser_fallback_url=' . rawurlencode($fallback) . ';end';
     }
 

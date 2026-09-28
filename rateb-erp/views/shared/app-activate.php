@@ -52,9 +52,14 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
             <i class="fas fa-download"></i> <?php echo $e(__('mobile_activation_download_unified_hr')); ?>
         </a>
         <?php if ($hrAndroidIntent !== '') { ?>
-        <a class="btn btn-sm btn-success w-100 mt-2" href="<?php echo $e($hrAndroidIntent); ?>">
+        <button type="button" class="btn btn-sm btn-success w-100 mt-2"
+                data-rateb-open-unified-hr="1"
+                data-rateb-intent="<?php echo $e($hrAndroidIntent); ?>"
+                data-rateb-handoff="<?php echo $e($hrOpenIntent); ?>"
+                data-rateb-apk="<?php echo $e($unifiedHrApk); ?>">
             <i class="fas fa-mobile-screen"></i> <?php echo $e(__('mobile_activation_open_unified_hr')); ?>
-        </a>
+        </button>
+        <p class="small text-muted mt-2 mb-0"><?php echo $e(__('mobile_activation_open_unified_hint')); ?></p>
         <?php } ?>
     </div>
     <?php } ?>
@@ -95,7 +100,8 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
         <div class="rateb-act-apps" data-rateb-web-only>
             <?php foreach ($apps as $row) { ?>
             <a class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?>" href="<?php echo $e($row['url']); ?>"
-               <?php if (($row['open'] ?? '') !== '') { ?>data-rateb-app-intent="<?php echo $e($row['open']); ?>"<?php } ?>>
+               <?php if (($row['open'] ?? '') !== '' && empty($useUnifiedHr)) { ?>data-rateb-app-intent="<?php echo $e($row['open']); ?>"<?php } ?>
+               <?php if (($row['app'] ?? '') === 'hr' && !empty($useUnifiedHr)) { ?>data-rateb-apk-only="1"<?php } ?>>
                 <span class="rateb-act-app-icon"><i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?>"></i></span>
                 <span class="rateb-act-app-text">
                     <b><?php echo $e(__('mobile_app_short_' . $row['app'])); ?></b>

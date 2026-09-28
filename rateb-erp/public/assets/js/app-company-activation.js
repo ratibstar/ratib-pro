@@ -25,34 +25,43 @@
         }
     }
 
+    function openUnifiedHr(btn) {
+        var intent = btn.getAttribute('data-rateb-intent') || '';
+        var handoff = btn.getAttribute('data-rateb-handoff') || '';
+        var apk = btn.getAttribute('data-rateb-apk') || '';
+        if (intent.indexOf('intent://') === 0) {
+            window.location.href = intent;
+        } else if (handoff) {
+            window.location.href = handoff;
+        }
+        window.setTimeout(function () {
+            if (document.visibilityState !== 'visible' || !apk) {
+                return;
+            }
+            if (window.confirm(
+                document.documentElement.lang === 'ar'
+                    ? 'لم يُفتح تطبيق رتب الموحد. حمّل APK الموحد (sa.rateb.hr.mobile) وليس تطبيق العرفج.'
+                    : 'Unified RATEB HR did not open. Download the unified APK (sa.rateb.hr.mobile), not Al-Arfaj.'
+            )) {
+                window.location.href = apk;
+            }
+        }, 2200);
+    }
+
     if (!inApp()) {
-        // Android browser: intent links on tiles; QR (HTTPS ?setup=1) opens HR and activates immediately.
+        document.querySelectorAll('[data-rateb-open-unified-hr]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                openUnifiedHr(btn);
+            });
+        });
+
         if (/Android/i.test(navigator.userAgent || '')) {
             document.querySelectorAll('[data-rateb-app-intent]').forEach(function (el) {
+                if (el.getAttribute('data-rateb-apk-only') === '1') {
+                    return;
+                }
                 el.setAttribute('href', el.getAttribute('data-rateb-app-intent') || el.getAttribute('href'));
             });
-            var head = document.querySelector('[data-rateb-hr-open][data-rateb-act-code]');
-            if (head) {
-                var actCode = head.getAttribute('data-rateb-act-code') || '';
-                var httpsOpen = head.getAttribute('data-rateb-hr-open') || '';
-                var androidIntent = head.getAttribute('data-rateb-hr-android-intent') || '';
-                var unifiedHr = head.getAttribute('data-rateb-unified-hr') === '1';
-                if (actCode && (httpsOpen || androidIntent)) {
-                    var autoSetup = /[?&]setup=1(?:&|$)/.test(location.search);
-                    var sk = 'rateb_hr_act_open_' + actCode;
-                    if (autoSetup && sessionStorage.getItem(sk) !== '1') {
-                        sessionStorage.setItem(sk, '1');
-                        if (unifiedHr && androidIntent.indexOf('intent://') === 0) {
-                            window.location.replace(androidIntent);
-                        } else if (httpsOpen) {
-                            window.location.replace(httpsOpen);
-                        }
-                    } else if (!unifiedHr && (autoSetup || sessionStorage.getItem(sk) !== '1')) {
-                        sessionStorage.setItem(sk, '1');
-                        window.location.replace(httpsOpen || androidIntent);
-                    }
-                }
-            }
         }
         return;
     }
@@ -80,7 +89,6 @@
         });
     });
 
-    // Opened from an activation link (?auto=1): save the company panel and go there directly.
     var autoOpen = document.querySelector('[data-rateb-app-open]');
     if (autoOpen && /[?&]auto=1\b/.test(location.search)) {
         try {
@@ -93,7 +101,6 @@
         } catch (e) {}
     }
 
-    // Platform login page: go straight to the company panel saved on this device.
     var target = saved();
     if (target && document.querySelector('[data-rateb-app-login]') && !/[?&]stay=1\b/.test(location.search)) {
         try {
