@@ -28,5 +28,9 @@ $assert(
     'format code'
 );
 $assert(MobileAppActivationService::normalize('IIII-IIII') === '', 'reject invalid alphabet');
+$assert(
+    MobileAppActivationService::normalize('VBAK-7P38?setup=1') === 'VBAK7P38',
+    'normalize code with query string'
+);
 
 exit($fail > 0 ? 1 : 0);

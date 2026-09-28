@@ -45,6 +45,9 @@ final class MobileAppsController extends Controller
                 $row['uses_shared'] = $row['apk'] === null && $apkSvc->sharedFallback($app, $company) !== null;
                 $row['needs_app_update'] = $apkSvc->companyNeedsAppUpdate($app, $company);
                 $storedCode = $activationSvc->codeFor($company);
+                if ($storedCode === '' && !empty($row['mobile_active'])) {
+                    $storedCode = $activationSvc->ensureCode((int) $row['company_id']);
+                }
                 $row['activation_code'] = $storedCode !== ''
                     ? MobileAppActivationService::format($storedCode)
                     : '';
@@ -594,6 +597,9 @@ final class MobileAppsController extends Controller
         $url = $apkSvc->downloadUrlForToken($apkSvc->ensureToken($key));
         $activation = new MobileAppActivationService($apkSvc);
         $code = $activation->ensureCode($cid);
+        if ($code !== '' && $activation->findCompanyByCode($code) === null) {
+            $code = $activation->regenerate($cid);
+        }
         $activationUrl = $code !== '' ? $activation->activationUrl($code) : '';
         $brandedKey = $branded->keyFor($app, $company);
         $pub = $brandedKey !== '' ? $branded->published($brandedKey) : null;

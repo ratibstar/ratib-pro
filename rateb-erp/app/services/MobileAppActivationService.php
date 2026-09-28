@@ -31,6 +31,9 @@ final class MobileAppActivationService
     public static function normalize(string $input): string
     {
         $input = trim($input);
+        if (($q = strpos($input, '?')) !== false) {
+            $input = substr($input, 0, $q);
+        }
         if (preg_match('#app-activate/([A-Za-z0-9\-]+)#', $input, $m)) {
             $input = $m[1];
         } elseif (preg_match('#[?&]code=([A-Za-z0-9\-]+)#', $input, $m)) {
@@ -195,6 +198,22 @@ final class MobileAppActivationService
             'SELECT * FROM rateb_companies WHERE settings LIKE :needle LIMIT 10'
         );
         $stmt->execute(['needle' => '%' . $code . '%']);
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+            if (hash_equals($this->codeFor($row), $code)) {
+                return $row;
+            }
+        }
+
+        return $this->findCompanyByCodeScan($code);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function findCompanyByCodeScan(string $code): ?array
+    {
+        $stmt = Database::connection()->query('SELECT * FROM rateb_companies ORDER BY id ASC');
+        if ($stmt === false) {
+            return null;
+        }
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
             if (hash_equals($this->codeFor($row), $code)) {
                 return $row;
