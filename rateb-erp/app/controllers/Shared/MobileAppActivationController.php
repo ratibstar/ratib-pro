@@ -86,6 +86,7 @@ final class MobileAppActivationController extends Controller
         $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
         $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
         $hrPublished = $apks->publishedBuild('hr');
+        $unifiedDl = $this->unifiedHrDownloadMeta($hrPublished);
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
                 'id' => (int) ($company['id'] ?? 0),
@@ -96,9 +97,54 @@ final class MobileAppActivationController extends Controller
             'erpHost' => $erpHost,
             'apps' => $svc->enabledApps($company),
             'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',
-            'unifiedHrApk' => is_array($hrPublished) ? (string) ($hrPublished['url'] ?? '') : '',
+            'unifiedHrApk' => (string) ($unifiedDl['url'] ?? ''),
+            'unifiedHrDl' => $unifiedDl,
             'useUnifiedHr' => !$apks->companyHasBrandedBuild('hr', $company),
         ]), 'auth');
+    }
+
+    /** GET /downloads/unified-hr.apk — canonical unified HR only (never a company branded slot). */
+    public function downloadUnifiedHrApk(): void
+    {
+        $pub = (new MobileAppApkService())->publishedBuild('hr');
+        if ($pub === null || !is_file($pub['path'])) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo __('mobile_apps_apk_unavailable');
+            return;
+        }
+        $vc = (int) ($pub['version_code'] ?? 0);
+        $name = 'rateb-hr-unified-sa.rateb.hr.mobile'
+            . ($vc > 0 ? '-b' . $vc : '') . '.apk';
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        header('Content-Type: application/vnd.android.package-archive');
+        header('Content-Disposition: attachment; filename="' . $name . '"');
+        header('Content-Length: ' . (string) filesize($pub['path']));
+        header('X-Rateb-Apk-Package: sa.rateb.hr.mobile');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        readfile($pub['path']);
+    }
+
+    /**
+     * @param array<string, mixed>|null $pub
+     *
+     * @return array{url:string, size_mb:float, version_code:int, package:string}
+     */
+    private function unifiedHrDownloadMeta(?array $pub): array
+    {
+        $url = rateb_public_url('downloads/unified-hr.apk');
+        $size = is_array($pub) ? (int) ($pub['size'] ?? 0) : 0;
+        $vc = is_array($pub) ? (int) ($pub['version_code'] ?? 0) : 0;
+
+        return [
+            'url' => $url,
+            'size_mb' => $size > 0 ? round($size / 1048576, 1) : 0.0,
+            'version_code' => $vc,
+            'package' => 'sa.rateb.hr.mobile',
+        ];
     }
 
     private function ip(): string

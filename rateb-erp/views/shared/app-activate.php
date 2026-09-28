@@ -45,19 +45,26 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
         }
     }
     ?>
-    <?php if (!empty($useUnifiedHr) && ($unifiedHrApk ?? '') !== '') { ?>
-    <div class="alert alert-warning py-2 small mb-3" role="alert">
+    <?php if (!empty($useUnifiedHr) && ($unifiedHrApk ?? '') !== '') {
+        $dlMeta = is_array($unifiedHrDl ?? null) ? $unifiedHrDl : [];
+        $dlSize = (float) ($dlMeta['size_mb'] ?? 0);
+        $dlVc = (int) ($dlMeta['version_code'] ?? 0);
+        ?>
+    <div class="alert alert-warning py-2 small mb-3" role="alert" id="rateb-unified-download">
         <?php echo $e(__('mobile_activation_install_unified_first')); ?>
-        <a class="btn btn-sm btn-primary w-100 mt-2" id="rateb-unified-download" href="<?php echo $e($unifiedHrApk); ?>">
+        <?php if ($dlSize > 0 || $dlVc > 0) { ?>
+        <div class="small font-monospace mt-1 mb-2" dir="ltr">
+            sa.rateb.hr.mobile<?php echo $dlVc > 0 ? ' · build ' . $dlVc : ''; ?><?php echo $dlSize > 0 ? ' · ~' . $e((string) $dlSize) . ' MB' : ''; ?>
+        </div>
+        <div class="small text-danger mb-2"><?php echo $e(__('mobile_activation_apk_size_warning')); ?></div>
+        <?php } ?>
+        <a class="btn btn-sm btn-primary w-100 mt-1" href="<?php echo $e($unifiedHrApk); ?>">
             <i class="fas fa-download"></i> <?php echo $e(__('mobile_activation_download_unified_hr')); ?>
         </a>
         <?php if ($hrOpenIntent !== '') { ?>
-        <a class="btn btn-sm btn-success w-100 mt-2" id="rateb-unified-open"
-           href="<?php echo $e($hrAndroidIntent !== '' ? $hrAndroidIntent : $hrOpenIntent); ?>">
+        <a class="btn btn-sm btn-success w-100 mt-2" id="rateb-unified-open" href="<?php echo $e($hrOpenIntent); ?>">
             <i class="fas fa-mobile-screen"></i> <?php echo $e(__('mobile_activation_open_unified_hr')); ?>
         </a>
-        <a class="btn btn-sm btn-outline-light w-100 mt-2 d-none" id="rateb-unified-open-https"
-           href="<?php echo $e($hrOpenIntent); ?>"><?php echo $e(__('mobile_activation_open_unified_https')); ?></a>
         <p class="small text-muted mt-2 mb-0"><?php echo $e(__('mobile_activation_open_unified_hint')); ?></p>
         <?php } ?>
     </div>
@@ -118,13 +125,3 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <?php } ?>
 <?php } ?>
 <script src="<?php echo $e(rateb_asset('js/app-company-activation.js')); ?>"></script>
-<?php if (!empty($useUnifiedHr) && ($hrOpenIntent ?? '') !== '') { ?>
-<script>
-(function () {
-    var https = document.getElementById('rateb-unified-open-https');
-    if (https && /Android/i.test(navigator.userAgent || '')) {
-        https.classList.remove('d-none');
-    }
-})();
-</script>
-<?php } ?>

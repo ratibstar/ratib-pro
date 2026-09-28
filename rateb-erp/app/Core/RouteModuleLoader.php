@@ -232,6 +232,7 @@ final class RouteModuleLoader
             || str_starts_with($path, '/barcode')
             || str_starts_with($path, '/scan')
             || str_starts_with($path, '/hr-app/')
+            || $path === '/downloads/unified-hr.apk'
             || $path === '/app-activate'
             || str_starts_with($path, '/app-activate/')
             || $path === '/m/activate'
