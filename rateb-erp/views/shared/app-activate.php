@@ -50,8 +50,10 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
         $dlSize = (float) ($dlMeta['size_mb'] ?? 0);
         $dlVc = (int) ($dlMeta['version_code'] ?? 0);
         ?>
-    <div class="alert alert-warning py-2 small mb-3" role="alert" id="rateb-unified-download">
+    <div class="alert alert-warning py-2 small mb-3" role="alert" id="rateb-unified-download"
+         data-opening-msg="<?php echo $e(__('mobile_activation_opening_app')); ?>">
         <?php echo $e(__('mobile_activation_install_unified_first')); ?>
+        <p class="small text-danger mb-2 mt-2"><?php echo $e(__('mobile_activation_delete_branded_sibling')); ?></p>
         <?php if ($dlSize > 0 || $dlVc > 0) { ?>
         <div class="small font-monospace mt-1 mb-2" dir="ltr">
             sa.rateb.hr.mobile<?php echo $dlVc > 0 ? ' · build ' . $dlVc : ''; ?><?php echo $dlSize > 0 ? ' · ~' . $e((string) $dlSize) . ' MB' : ''; ?>
@@ -125,3 +127,6 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <?php } ?>
 <?php } ?>
 <script src="<?php echo $e(rateb_asset('js/app-company-activation.js')); ?>"></script>
+<?php if (is_array($company ?? null) && !empty($useUnifiedHr)) { ?>
+<script src="<?php echo $e(rateb_asset('js/app-activation-handoff.js')); ?>"></script>
+<?php } ?>

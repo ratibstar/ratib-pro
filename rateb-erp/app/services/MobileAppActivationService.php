@@ -150,11 +150,8 @@ final class MobileAppActivationService
     }
 
     /**
-     * Android Chrome: force package sa.rateb.hr.mobile so Al-Arfaj (ratebapp:// without package) never opens.
-     */
-    /**
-     * Android Chrome: &lt;a href="intent://…"&gt; opens only package sa.rateb.hr.mobile.
-     * Fallback is the unified APK file (not this HTML page).
+     * Android Chrome: HTTPS app-link intent pinned to sa.rateb.hr.mobile only.
+     * Never use ratebapp here — branded apps (e.g. Al-Arfaj .c51) still register ratebapp://.
      */
     public function mobileAppIntentUrl(string $code): string
     {
@@ -162,16 +159,20 @@ final class MobileAppActivationService
         if ($code === '') {
             return '';
         }
-        $formatted = self::format($code);
         $package = (new MobileAppApkService())->appInfo('hr')['package'];
+        $handoff = $this->mobileAppHandoffUrl($code);
+        if ($handoff === '') {
+            return '';
+        }
         $pub = $this->apks->publishedBuild('hr');
         $apkUrl = is_array($pub) ? (string) ($pub['url'] ?? '') : '';
         if ($apkUrl === '') {
             $apkUrl = rateb_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES['hr']);
         }
+        $rest = preg_replace('#^https?://#i', '', $handoff);
 
-        return 'intent://activate?code=' . rawurlencode($formatted)
-            . '#Intent;scheme=ratebapp;package=' . $package
+        return 'intent://' . $rest
+            . '#Intent;scheme=https;package=' . $package
             . ';S.browser_fallback_url=' . rawurlencode($apkUrl) . ';end';
     }
 

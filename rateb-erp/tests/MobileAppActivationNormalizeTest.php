@@ -52,8 +52,11 @@ $qr = $svc->qrActivationPayload('VBAK7P38', $unifiedCompany);
 $assert($qr === $handoff, 'unified company QR equals handoff URL');
 $intent = $svc->mobileAppIntentUrl('VBAK7P38');
 $assert(
-    str_contains($intent, 'package=sa.rateb.hr.mobile') && str_contains($intent, 'scheme=ratebapp'),
-    'android intent pins unified package (ratebapp + APK fallback)'
+    str_contains($intent, 'package=sa.rateb.hr.mobile')
+    && str_contains($intent, 'scheme=https')
+    && str_contains($intent, '/m/activate/VBAK-7P38')
+    && !str_contains($intent, 'ratebapp'),
+    'android intent uses HTTPS handoff + unified package (not ratebapp)'
 );
 
 exit($fail > 0 ? 1 : 0);

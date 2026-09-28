@@ -291,6 +291,20 @@ class _LoginPageState extends State<LoginPage> {
                           fontWeight: FontWeight.w900,
                         ),
                   ),
+                  if (CompanyActivation.isActive &&
+                      (CompanyActivation.companyId ?? 0) > 0) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '#${CompanyActivation.companyId}',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontFamily: 'monospace',
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Text(
                     l10n.loginSubtitle,
