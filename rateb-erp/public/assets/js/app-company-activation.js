@@ -26,7 +26,7 @@
     }
 
     if (!inApp()) {
-        // Android browser: HR tile uses intent; after QR scan auto-open unified HR once per code.
+        // Android browser: intent links on tiles; QR (HTTPS ?setup=1) opens HR and activates immediately.
         if (/Android/i.test(navigator.userAgent || '')) {
             document.querySelectorAll('[data-rateb-app-intent]').forEach(function (el) {
                 el.setAttribute('href', el.getAttribute('data-rateb-app-intent') || el.getAttribute('href'));
@@ -35,12 +35,15 @@
             if (head) {
                 var actCode = head.getAttribute('data-rateb-act-code') || '';
                 var intent = head.getAttribute('data-rateb-hr-open') || '';
+                var autoSetup = /[?&]setup=1(?:&|$)/.test(location.search);
                 var sk = 'rateb_hr_act_open_' + actCode;
-                if (intent && actCode && sessionStorage.getItem(sk) !== '1') {
+                if (intent && actCode && (autoSetup || sessionStorage.getItem(sk) !== '1')) {
                     sessionStorage.setItem(sk, '1');
-                    setTimeout(function () {
-                        window.location.href = intent;
-                    }, 600);
+                    var splash = document.getElementById('rateb-act-opening');
+                    if (splash) {
+                        splash.classList.remove('d-none');
+                    }
+                    window.location.replace(intent);
                 }
             }
         }

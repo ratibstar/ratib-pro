@@ -37,6 +37,9 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
         }
     }
     ?>
+    <div id="rateb-act-opening" class="alert alert-info py-2 small text-center d-none mb-3" role="status">
+        <i class="fas fa-spinner fa-spin"></i> <?php echo $e(__('mobile_activation_opening_app')); ?>
+    </div>
     <div class="rateb-act-head" data-rateb-act-code="<?php echo $e($code); ?>"<?php echo $hrOpenIntent !== '' ? ' data-rateb-hr-open="' . $e($hrOpenIntent) . '"' : ''; ?>>
         <?php if (($company['logo'] ?? '') !== '') { ?>
             <img class="rateb-act-logo" src="<?php echo $e($company['logo']); ?>" alt="">

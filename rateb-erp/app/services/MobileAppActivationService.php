@@ -98,15 +98,18 @@ final class MobileAppActivationService
         return rateb_public_url($path);
     }
 
-    /** What the admin QR encodes — opens the HR app directly when scanned (not the browser). */
+    /**
+     * Admin QR payload: HTTPS activation page (camera-friendly). Page auto-opens the HR app via Android intent;
+     * the installed app also handles this URL directly.
+     */
     public function qrActivationPayload(string $code): string
     {
-        $code = self::normalize($code);
-        if ($code === '') {
+        $url = $this->publicActivationUrl($code);
+        if ($url === '') {
             return '';
         }
 
-        return 'ratebapp://activate?code=' . rawurlencode(self::format($code));
+        return $url . (str_contains($url, '?') ? '&' : '?') . 'setup=1';
     }
 
     /**
@@ -264,7 +267,9 @@ final class MobileAppActivationService
     /** Android intent link: ratebapp://activate?code=… in the given package, download when not installed. */
     public function appLink(string $package, string $code, string $fallbackUrl): string
     {
-        return 'intent://activate?code=' . rawurlencode($code)
+        $formatted = self::format(self::normalize($code));
+
+        return 'intent://activate?code=' . rawurlencode($formatted)
             . '#Intent;scheme=ratebapp;package=' . $package
             . ';S.browser_fallback_url=' . rawurlencode($fallbackUrl) . ';end';
     }
