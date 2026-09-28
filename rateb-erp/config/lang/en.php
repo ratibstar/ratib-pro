@@ -3380,7 +3380,7 @@ return [
     'mobile_activation_qr_hint' => 'One code for everything: scan it with the phone camera to download the app or open it activated for the company.',
     'mobile_activation_not_apk_update' => 'Scanning the QR links the installed app to the company — it does not replace the APK. For new screens/features: tap Update on the in-app banner or download the APK from the activation page.',
     'mobile_activation_unified_app_only' => 'This QR is for the unified HR app (sa.rateb.hr.mobile) only. A company-branded app (e.g. Al-Arfaj) cannot activate other companies.',
-    'mobile_activation_install_unified_first' => 'Install the unified RATEB HR app (sa.rateb.hr.mobile) first. An old per-company download link may be another company’s branded APK — do not use it.',
+    'mobile_activation_install_unified_first' => 'Uninstall any other HR app (e.g. Al-Arfaj) from the phone, then install only the unified RATEB HR app (package sa.rateb.hr.mobile). Do not open a branded app from the home screen after scanning.',
     'mobile_activation_download_unified_hr' => 'Download unified HR app',
     'mobile_activation_qr_scope' => 'QR for this company only: :name (#:id) — server :host',
     'mobile_activation_qr_payload' => 'QR payload',

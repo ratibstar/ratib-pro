@@ -116,6 +116,22 @@ final class MobileAppActivationService
     }
 
     /**
+     * HTTPS link the unified HR APK intercepts (Android intent-filter).
+     * Must use /rateb-erp/public/app-activate — not rateb.sa/m/activate (browser-only on production)
+     * and not ratebapp:// (legacy branded APKs may still claim that scheme).
+     */
+    public function mobileAppHandoffUrl(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+        $origin = rtrim(rateb_site_origin(), '/');
+
+        return $origin . '/rateb-erp/public/app-activate/' . self::format($code) . '?setup=1';
+    }
+
+    /**
      * Every company with a stored code (for admin audit — no codes are minted here).
      *
      * @return list<array{company_id:int, company_name:string, code:string, activation_url:string, erp_host:string}>
@@ -279,8 +295,7 @@ final class MobileAppActivationService
             $open = '';
             if ($code !== '') {
                 if ($app === 'hr' && !$this->apks->servesBrandedApk($app, $company)) {
-                    // HTTPS /m/activate — only the unified HR app claims this path; not ratebapp:// (old branded APKs).
-                    $open = $this->publicActivationUrl($code) . '?setup=1';
+                    $open = $this->mobileAppHandoffUrl($code);
                 } else {
                     $open = $this->appLink($package, $code, $fallback);
                 }

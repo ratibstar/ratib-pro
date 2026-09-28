@@ -3378,7 +3378,7 @@ return [
     'mobile_activation_qr_hint' => 'رمز واحد لكل شيء: امسحه بكاميرا الجوال لتحميل التطبيق أو فتحه مفعّلًا للشركة.',
     'mobile_activation_not_apk_update' => 'مسح QR يربط الشركة بالتطبيق المثبّت — لا يستبدل نسخة التطبيق. لتحديث الشاشات والميزات: من الجوال اضغط «تحديث» في الشريط السفلي أو حمّل APK من رابط التفعيل.',
     'mobile_activation_unified_app_only' => 'هذا الباركود لتطبيق الموحد sa.rateb.hr.mobile فقط. تطبيق شركة العرفج (أو أي تطبيق مخصص) لا يقرأ باركود شركات أخرى.',
-    'mobile_activation_install_unified_first' => 'ثبّت أولاً تطبيق رتب HR الموحد (sa.rateb.hr.mobile). رابط التحميل القديم للشركة قد يكون تطبيق شركة أخرى (مثل العرفج) — لا تستخدمه.',
+    'mobile_activation_install_unified_first' => 'احذف أي تطبيق HR آخر (مثل شركة العرفج) من الجوال، ثم ثبّت تطبيق رتب HR الموحد فقط (الحزمة sa.rateb.hr.mobile). لا تفتح تطبيق العرفج من الشاشة الرئيسية بعد المسح.',
     'mobile_activation_download_unified_hr' => 'تحميل تطبيق HR الموحد',
     'mobile_activation_qr_scope' => 'باركود هذه الشركة فقط: :name (#:id) — الخادم :host',
     'mobile_activation_qr_payload' => 'محتوى الباركود',
