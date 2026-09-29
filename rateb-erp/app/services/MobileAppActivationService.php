@@ -91,7 +91,7 @@ final class MobileAppActivationService
         if ($code === '') {
             return '';
         }
-        $path = 'm/activate/' . self::format($code);
+        $path = 'app-activate/' . self::format($code);
         if (function_exists('rateb_is_platform_oversight_host')
             && rateb_is_platform_oversight_host()
             && function_exists('rateb_platform_oversight_public_url')) {
@@ -138,7 +138,7 @@ final class MobileAppActivationService
     }
 
     /**
-     * HTTPS link only the unified HR APK claims (/m/activate). Branded APKs must not register this path.
+     * HTTPS link the unified HR APK claims (app-activate). Branded APKs must not register this path.
      */
     public function mobileAppHandoffUrl(string $code): string
     {
@@ -146,9 +146,8 @@ final class MobileAppActivationService
         if ($code === '') {
             return '';
         }
-        $origin = rtrim(rateb_site_origin(), '/');
 
-        return $origin . '/rateb-erp/public/m/activate/' . self::format($code) . '?setup=1';
+        return $this->publicActivationUrl($code);
     }
 
     /**

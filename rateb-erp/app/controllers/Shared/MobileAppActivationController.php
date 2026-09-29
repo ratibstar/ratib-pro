@@ -82,6 +82,16 @@ final class MobileAppActivationController extends Controller
             $this->view('shared/app-activate', $data, 'auth');
             return;
         }
+        $formatted = MobileAppActivationService::format($code);
+        $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if (str_contains($requestUri, '/m/activate/')) {
+            $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
+            if ($query === '' || !preg_match('/(?:^|&)setup=1(?:&|$)/', $query)) {
+                $query = $query === '' ? 'setup=1' : $query . '&setup=1';
+            }
+            Response::redirect(rateb_url('app-activate/' . $formatted) . ($query !== '' ? '?' . $query : ''));
+            return;
+        }
         $erpBase = $apks->erpBaseUrlForCompany($company);
         $branded = new MobileAppBrandedService($apks);
         $names = $branded->names($company);
