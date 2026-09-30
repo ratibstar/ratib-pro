@@ -7,6 +7,7 @@ use Rateb\App\Core\Controller;
 use Rateb\App\Core\IpRateLimiter;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\View;
+use Rateb\App\Models\Company;
 use Rateb\App\Services\MobileAppActivationService;
 use Rateb\App\Services\MobileAppApkService;
 use Rateb\App\Services\MobileAppBrandedService;
@@ -75,6 +76,13 @@ final class MobileAppActivationController extends Controller
         $code = MobileAppActivationService::normalize((string) ($params['code'] ?? ''));
         $company = $code !== '' ? $svc->findCompanyByCode($code) : null;
         if (is_array($company)) {
+            if ($apks->hrIsPerCompanyDedicated()) {
+                (new MobileAppBrandedService($apks))->ensureDedicatedHrRequested((int) ($company['id'] ?? 0));
+                $refreshed = (new Company())->find((int) ($company['id'] ?? 0));
+                if (is_array($refreshed)) {
+                    $company = $refreshed;
+                }
+            }
             $apks->reconcileCompanySlotPolicy('hr', $company);
         }
         if ($company === null || (string) ($company['status'] ?? 'active') !== 'active') {
@@ -92,19 +100,25 @@ final class MobileAppActivationController extends Controller
         $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
         $hrPublished = $apks->publishedBuild('hr');
         $unifiedDl = $this->unifiedHrDownloadMeta($hrPublished);
-        $useUnifiedHr = !$apks->companyHasBrandedBuild('hr', $company);
-        $wantsQrHandoff = $useUnifiedHr
-            && isset($_GET['setup'])
+        $useUnifiedHr = !$apks->hrIsPerCompanyDedicated() && !$apks->companyHasBrandedBuild('hr', $company);
+        $wantsQrHandoff = isset($_GET['setup'])
             && (string) $_GET['setup'] === '1'
             && $this->isAndroidClient();
         if ($wantsQrHandoff) {
-            $intent = $svc->mobileAppHandoffIntentUrl($code);
-            $intentHttps = $svc->mobileAppIntentUrl($code);
+            if ($useUnifiedHr) {
+                $intent = $svc->mobileAppHandoffIntentUrl($code);
+                $intentHttps = $svc->mobileAppIntentUrl($code);
+                $handoffApk = (string) ($unifiedDl['url'] ?? '');
+            } else {
+                $intent = $svc->mobileAppHandoffIntentUrlForCompany($code, $company);
+                $intentHttps = $svc->mobileAppIntentUrlForCompany($code, $company);
+                $handoffApk = $apks->activationDownloadUrl('hr', $company);
+            }
             if ($intent !== '') {
                 $this->renderAndroidHandoff(
                     $intent,
                     $intentHttps,
-                    (string) ($unifiedDl['url'] ?? ''),
+                    $handoffApk,
                     $formatted,
                     $names[rateb_locale() === 'ar' ? 'ar' : 'en']
                 );

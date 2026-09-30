@@ -2,16 +2,24 @@
 declare(strict_types=1);
 
 /**
- * Optional per-company APK (separate package) — not the default unified platform model.
+ * Per-company HR APK (dedicated package) — default for HR; optional advanced block for ERP/Customer.
  *
  * @var array<string,mixed> $brand
  * @var array<string,mixed> $appCard
  * @var string $cardApp
  * @var int $cardCid
  * @var string $csrf
+ * @var bool $brandedSectionPrimary
  */
 $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
+$brandedSectionPrimary = !empty($brandedSectionPrimary);
+$hrDedicated = !empty($appCard['hrDedicated']);
 ?>
+<?php if ($brandedSectionPrimary) { ?>
+<div class="mb-3 pb-3 border-bottom" id="mobile-branded-advanced">
+    <div class="fw-semibold mb-2"><i class="fas fa-box-archive"></i> <?php echo $e(__('mobile_branded_dedicated_title')); ?></div>
+    <p class="small text-muted"><?php echo $e(__('mobile_branded_dedicated_intro')); ?></p>
+<?php } else { ?>
 <details class="mb-3 pb-3 border-bottom" id="mobile-branded-advanced">
     <summary class="fw-semibold text-muted" style="cursor:pointer">
         <i class="fas fa-box-archive"></i> <?php echo $e(__('mobile_branded_advanced_title')); ?>
@@ -21,9 +29,11 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
     </summary>
     <div class="mt-3">
         <p class="small text-muted"><?php echo $e(__('mobile_branded_advanced_intro')); ?></p>
-        <?php if (!empty($brand['requested'])) { ?>
+<?php } ?>
+        <?php if (!$brandedSectionPrimary && !empty($brand['requested'])) { ?>
             <div class="alert alert-warning py-2 small"><?php echo $e(__('mobile_branded_unified_conflict')); ?></div>
         <?php } ?>
+        <?php if (!$brandedSectionPrimary) { ?>
         <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
             <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/branded')); ?>" class="d-inline"
                   <?php if ($brand['requested']) { ?>onsubmit="return confirm(<?php echo $e((string) json_encode(__('mobile_branded_cancel_confirm'), JSON_UNESCAPED_UNICODE)); ?>);"<?php } ?>>
@@ -37,8 +47,11 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
                 <?php } ?>
             </form>
         </div>
+        <?php } ?>
         <?php if (!$brand['requested']) { ?>
+            <?php if (!$brandedSectionPrimary) { ?>
             <div class="small text-muted"><?php echo $e(__('mobile_branded_hint')); ?></div>
+            <?php } ?>
         <?php } else { ?>
             <div class="d-flex align-items-center gap-3 mb-2">
                 <?php if ($brand['icon'] !== '') { ?>
@@ -85,5 +98,9 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
                 <input class="form-control form-control-sm font-monospace mt-1" dir="ltr" readonly onclick="this.select()" value="<?php echo $e($brand['command']); ?>">
             </details>
         <?php } ?>
+<?php if ($brandedSectionPrimary) { ?>
+</div>
+<?php } else { ?>
     </div>
 </details>
+<?php } ?>

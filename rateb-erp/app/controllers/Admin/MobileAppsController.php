@@ -317,6 +317,11 @@ final class MobileAppsController extends Controller
         }
         if ($this->validateCsrf()) {
             $on = (string) $this->input('requested', '') === '1';
+            if (!$on && $app === 'hr' && (new MobileAppApkService())->hrIsPerCompanyDedicated()) {
+                SessionManager::flash('error', __('mobile_hr_dedicated_only'));
+                Response::redirect($back);
+                return;
+            }
             $brandedSvc = new MobileAppBrandedService();
             $ok = $brandedSvc->setRequested($app, $companyId, $on);
             $msgKey = $ok ? ($on ? 'mobile_branded_requested' : 'mobile_branded_cancelled') : 'mobile_apps_save_failed';
@@ -347,6 +352,11 @@ final class MobileAppsController extends Controller
         }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('csrf_invalid'));
+            Response::redirect($back);
+            return;
+        }
+        if ($app === 'hr' && (new MobileAppApkService())->hrIsPerCompanyDedicated()) {
+            SessionManager::flash('error', __('mobile_hr_dedicated_only'));
             Response::redirect($back);
             return;
         }
@@ -592,6 +602,14 @@ final class MobileAppsController extends Controller
         $apkSvc = new MobileAppApkService();
         $branded = new MobileAppBrandedService($apkSvc);
         $cid = (int) $company['id'];
+        $hrDedicated = $app === 'hr' && $apkSvc->hrIsPerCompanyDedicated();
+        if ($hrDedicated) {
+            $branded->ensureDedicatedHrRequested($cid);
+            $fresh = (new Company())->find($cid);
+            if (is_array($fresh)) {
+                $company = $fresh;
+            }
+        }
         $key = $apkSvc->slotKey($app, $cid);
         $server = $apkSvc->serverForCompany($app, $company);
         $apkSvc->reconcileCompanySlotPolicy($app, $company);
@@ -629,6 +647,7 @@ final class MobileAppsController extends Controller
         $companyUpdateState = $apkSvc->companyUpdateState($app, $company);
 
         return [
+            'hrDedicated' => $hrDedicated,
             'distribution' => $distribution,
             'companyUpdateState' => $companyUpdateState,
             'needsAppUpdate' => $apkSvc->companyNeedsAppUpdate($app, $company),
@@ -716,6 +735,9 @@ final class MobileAppsController extends Controller
                 ? $svc->decodeFeatures($existing['enabled_features'] ?? null)
                 : MobileAppConfigService::defaultFeatures(),
         ]);
+        if ($result['ok'] && $enable) {
+            (new MobileAppBrandedService())->ensureDedicatedHrRequested($companyId);
+        }
 
         return $result['ok'];
     }

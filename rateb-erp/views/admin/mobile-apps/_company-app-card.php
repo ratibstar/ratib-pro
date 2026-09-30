@@ -15,6 +15,7 @@ $distribution = (string) ($appCard['distribution'] ?? 'missing');
 $brand = is_array($appCard['branded'] ?? null) ? $appCard['branded'] : null;
 $identityLogo = (string) ($appCard['identityLogo'] ?? '');
 $showHrBranding = !empty($appCard['showHrBrandingLink']);
+$hrDedicated = !empty($appCard['hrDedicated']);
 ?>
 <div class="rateb-card mb-3" id="rateb-app-apk-card">
     <div class="rateb-card-header d-flex justify-content-between align-items-center gap-2 flex-wrap">
@@ -25,10 +26,10 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
             <?php } else { ?>
                 <span class="badge text-bg-secondary"><?php echo $e(__('mobile_apps_status_inactive')); ?></span>
             <?php } ?>
-            <?php if ($distribution === 'shared') { ?>
+            <?php if ($distribution === 'shared' && !$hrDedicated) { ?>
                 <span class="badge text-bg-primary ms-1"><?php echo $e(__('mobile_distribution_shared')); ?></span>
-            <?php } elseif ($distribution === 'branded') { ?>
-                <span class="badge text-bg-warning ms-1"><?php echo $e(__('mobile_distribution_branded')); ?></span>
+            <?php } elseif ($distribution === 'branded' || $hrDedicated) { ?>
+                <span class="badge text-bg-primary ms-1"><?php echo $e(__('mobile_distribution_company_app')); ?></span>
             <?php } elseif ($distribution === 'own_upload') { ?>
                 <span class="badge text-bg-info ms-1"><?php echo $e(__('mobile_distribution_own')); ?></span>
             <?php } ?>
@@ -78,8 +79,10 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
                 <div class="small text-muted mt-1"><?php echo $e(__('mobile_activation_qr_scan_hint')); ?></div>
                 <div class="small text-muted mt-1 font-monospace text-break" dir="ltr"><?php echo $e(__('mobile_activation_qr_payload')); ?>: <?php echo $e($appCard['activationQrPayload'] ?? ''); ?></div>
                 <div class="small text-warning mt-2"><?php echo $e(__('mobile_activation_not_apk_update')); ?></div>
-                <?php if ($distribution === 'shared' || $distribution === 'missing') { ?>
+                <?php if (!$hrDedicated && ($distribution === 'shared' || $distribution === 'missing')) { ?>
                 <div class="small text-info mt-2"><?php echo $e(__('mobile_activation_unified_app_only')); ?></div>
+                <?php } elseif ($hrDedicated && is_array($brand) && empty($brand['built'])) { ?>
+                <div class="small text-warning mt-2"><?php echo $e(__('mobile_activation_company_apk_pending')); ?></div>
                 <?php } ?>
             </div>
         </div>
@@ -127,16 +130,6 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
                     <?php } ?>
                 </div>
             </div>
-            <?php if ($distribution === 'branded' && is_array($brand) && !empty($brand['requested'])) { ?>
-                <div class="alert alert-warning py-2 small mb-0">
-                    <?php echo $e(__('mobile_branded_unified_conflict')); ?>
-                    <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/use-shared')); ?>" class="d-inline ms-1">
-                        <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
-                        <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
-                        <button type="submit" class="btn btn-sm btn-warning"><?php echo $e(__('mobile_use_shared_btn')); ?></button>
-                    </form>
-                </div>
-            <?php } ?>
         </div>
         <?php } ?>
 
@@ -147,7 +140,7 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
                     <i class="fas fa-cloud-arrow-up"></i> <?php echo $e(__('mobile_apps_updates_title')); ?>
                 </a>
             </div>
-            <p class="small text-muted"><?php echo $e(__('mobile_distribution_intro')); ?></p>
+            <p class="small text-muted"><?php echo $e($hrDedicated ? __('mobile_distribution_intro_dedicated') : __('mobile_distribution_intro')); ?></p>
             <div class="d-flex flex-wrap align-items-center gap-2 mb-3 p-2 rounded border">
                 <?php if (!empty($appCard['needsAppUpdate'])) { ?>
                     <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/app-update')); ?>" class="m-0">
@@ -168,13 +161,13 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
                     </span>
                 <?php } ?>
             </div>
-            <?php if ($distribution === 'missing' && $cardActive) { ?>
+            <?php if (!$hrDedicated && $distribution === 'missing' && $cardActive) { ?>
                 <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/use-shared')); ?>" class="mb-2">
                     <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
                     <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
                     <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-link"></i> <?php echo $e(__('mobile_use_shared_btn')); ?></button>
                 </form>
-            <?php } elseif ($distribution === 'own_upload' && is_array($brand) && empty($brand['requested'])) { ?>
+            <?php } elseif (!$hrDedicated && $distribution === 'own_upload' && is_array($brand) && empty($brand['requested'])) { ?>
                 <form method="post" action="<?php echo $e(rateb_url('admin/mobile-apps/' . $cardCid . '/use-shared')); ?>" class="mb-2">
                     <input type="hidden" name="_csrf" value="<?php echo $e($csrf ?? ''); ?>">
                     <input type="hidden" name="app" value="<?php echo $e($cardApp); ?>">
@@ -208,6 +201,7 @@ $showHrBranding = !empty($appCard['showHrBrandingLink']);
         </div>
 
         <?php if (is_array($brand)) {
+            $brandedSectionPrimary = $hrDedicated;
             require __DIR__ . '/_company-app-branded-advanced.php';
         } ?>
     </div>

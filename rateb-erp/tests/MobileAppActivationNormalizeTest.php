@@ -47,14 +47,25 @@ $assert(
     && !str_contains($handoff, 'ratebapp://'),
     'mobile handoff uses canonical app-activate HTTPS'
 );
-$unifiedCompany = ['id' => 49, 'settings' => '{}'];
-$qr = $svc->qrActivationPayload('VBAK7P38', $unifiedCompany);
+$noBrandedCompany = ['id' => 49, 'settings' => '{}'];
+$qr = $svc->qrActivationPayload('VBAK7P38', $noBrandedCompany);
 $assert(
     str_contains($qr, '/m/activate/VBAK-7P38')
     && str_contains($qr, 'setup=1')
     && !str_contains($qr, 'ratebhr://')
     && !str_contains($qr, '/rateb-erp/public/app-activate/'),
-    'unified company QR uses short /m/activate App Link path'
+    'company without branded key still uses /m/activate until dedicated slot exists'
+);
+$brandedCompany = [
+    'id' => 49,
+    'settings' => json_encode(['mobile_branded' => ['hr' => 'hr-49-abcdef0123']], JSON_THROW_ON_ERROR),
+];
+$qrBranded = $svc->qrActivationPayload('VBAK7P38', $brandedCompany);
+$assert(
+    str_contains($qrBranded, '/rateb-erp/public/app-activate/VBAK-7P38')
+    && str_contains($qrBranded, 'setup=1')
+    && !str_contains($qrBranded, '/m/activate/'),
+    'dedicated company QR uses app-activate HTTPS'
 );
 $intent = $svc->mobileAppIntentUrl('VBAK7P38');
 $assert(

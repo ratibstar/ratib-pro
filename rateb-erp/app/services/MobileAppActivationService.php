@@ -111,6 +111,13 @@ final class MobileAppActivationService
      */
     public function qrActivationPayload(string $code, ?array $company = null): string
     {
+        if (is_array($company)) {
+            $app = 'hr';
+            if ($this->apks->companyHasBrandedBuild($app, $company)) {
+                return $this->activationUrlForCompany($code, $company, $app);
+            }
+        }
+
         return $this->mobileAppDeepLinkUrl($code);
     }
 
@@ -207,6 +214,43 @@ final class MobileAppActivationService
         if ($apkUrl === '') {
             $apkUrl = rateb_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES['hr']);
         }
+
+        return 'intent://activate?code=' . rawurlencode($formatted)
+            . '#Intent;scheme=ratebhr;package=' . $package
+            . ';S.browser_fallback_url=' . rawurlencode($apkUrl) . ';end';
+    }
+
+    /** Android intent for a company's dedicated HR package (branded build). */
+    public function mobileAppIntentUrlForCompany(string $code, array $company, string $app = 'hr'): string
+    {
+        $code = self::normalize($code);
+        $app = MobileAppApkService::normalizeApp($app);
+        if ($code === '' || $app !== 'hr') {
+            return '';
+        }
+        $package = $this->apks->packageForActivationLink($app, $company);
+        $deepLink = $this->publicActivationUrl($code);
+        if ($deepLink === '') {
+            return '';
+        }
+        $apkUrl = $this->apks->activationDownloadUrl($app, $company);
+        $rest = preg_replace('#^https?://#i', '', $deepLink);
+
+        return 'intent://' . $rest
+            . '#Intent;scheme=https;package=' . $package
+            . ';S.browser_fallback_url=' . rawurlencode($apkUrl) . ';end';
+    }
+
+    public function mobileAppHandoffIntentUrlForCompany(string $code, array $company, string $app = 'hr'): string
+    {
+        $code = self::normalize($code);
+        $app = MobileAppApkService::normalizeApp($app);
+        if ($code === '' || $app !== 'hr') {
+            return '';
+        }
+        $package = $this->apks->packageForActivationLink($app, $company);
+        $formatted = self::format($code);
+        $apkUrl = $this->apks->activationDownloadUrl($app, $company);
 
         return 'intent://activate?code=' . rawurlencode($formatted)
             . '#Intent;scheme=ratebhr;package=' . $package
@@ -324,6 +368,13 @@ final class MobileAppActivationService
         if ($company === null || (string) ($company['status'] ?? 'active') !== 'active') {
             return ['status' => 404, 'body' => ['success' => false, 'code' => 'invalid_code', 'message' => __('mobile_activation_invalid')]];
         }
+        if ($app === 'hr' && $this->apks->hrIsPerCompanyDedicated()) {
+            (new MobileAppBrandedService($this->apks))->ensureDedicatedHrRequested((int) ($company['id'] ?? 0));
+            $refreshed = $this->findCompanyByCode($code);
+            if (is_array($refreshed)) {
+                $company = $refreshed;
+            }
+        }
         $this->apks->reconcileCompanySlotPolicy($app, $company);
         if (!$this->apks->isEnabled($app, $company)) {
             return ['status' => 403, 'body' => ['success' => false, 'code' => 'app_not_enabled', 'message' => __('mobile_activation_app_disabled')]];
@@ -333,7 +384,9 @@ final class MobileAppActivationService
         $names = $branded->names($company);
         $logo = $branded->iconUrl($company, (new MobileAppConfigService())->findByCompanyId((int) $company['id']), $erpBase);
 
-        $unifiedHr = !$this->apks->companyHasBrandedBuild($app, $company);
+        $unifiedHr = $app === 'hr' && $this->apks->hrIsPerCompanyDedicated()
+            ? false
+            : !$this->apks->companyHasBrandedBuild($app, $company);
         $expectedPackage = $this->apks->packageForActivationLink($app, $company);
         $androidPackage = trim((string) ($_GET['android_package'] ?? ''));
         if ($app === 'hr' && $androidPackage !== '' && $expectedPackage !== ''

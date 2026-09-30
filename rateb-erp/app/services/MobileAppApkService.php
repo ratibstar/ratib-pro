@@ -41,6 +41,12 @@ final class MobileAppApkService
         return in_array($app, self::APPS, true) ? $app : 'hr';
     }
 
+    /** HR ships as sa.rateb.hr.mobile.c{companyId} — not the multi-tenant unified APK. */
+    public function hrIsPerCompanyDedicated(): bool
+    {
+        return true;
+    }
+
     public function slotKey(string $app, int $companyId): string
     {
         $app = self::normalizeApp($app);
@@ -199,6 +205,18 @@ final class MobileAppApkService
         if ($this->servesBrandedApk($app, $company)) {
             return $this->downloadUrlForToken($this->ensureToken($key));
         }
+        if ($app === 'hr' && $this->hrIsPerCompanyDedicated()) {
+            $branded = new MobileAppBrandedService($this);
+            $brandedKey = $branded->keyFor($app, $company);
+            if ($brandedKey !== '') {
+                $pub = $branded->published($brandedKey);
+                if (is_array($pub) && ($pub['url'] ?? '') !== '') {
+                    return (string) $pub['url'];
+                }
+
+                return $this->downloadUrlForToken($this->ensureToken($key));
+            }
+        }
         $published = $this->publishedBuild($app);
         if ($published !== null && ($published['url'] ?? '') !== '') {
             return (string) $published['url'];
@@ -239,6 +257,12 @@ final class MobileAppApkService
         $app = self::normalizeApp($app);
         if ($this->servesBrandedApk($app, $company)) {
             return $this->packageForCompany($app, $company);
+        }
+        if ($app === 'hr' && $this->hrIsPerCompanyDedicated()) {
+            $brandedKey = (new MobileAppBrandedService($this))->keyFor($app, $company);
+            if ($brandedKey !== '') {
+                return (new MobileAppBrandedService($this))->packageFor($app, (int) ($company['id'] ?? 0));
+            }
         }
 
         return $this->appInfo($app)['package'];
@@ -804,6 +828,9 @@ final class MobileAppApkService
     public function linkCompanyToShared(string $app, array $company): string
     {
         $app = self::normalizeApp($app);
+        if ($app === 'hr' && $this->hrIsPerCompanyDedicated()) {
+            return 'branded';
+        }
         if ($this->meta($app) === null) {
             return 'no_shared';
         }

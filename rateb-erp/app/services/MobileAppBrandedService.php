@@ -37,6 +37,29 @@ final class MobileAppBrandedService
         return (bool) preg_match('/^(hr|erp|customer)-[1-9][0-9]{0,9}-[a-f0-9]{10}$/', $key);
     }
 
+    /**
+     * When HR is per-company dedicated, ensure settings.mobile_branded.hr exists for active HR companies.
+     */
+    public function ensureDedicatedHrRequested(int $companyId): bool
+    {
+        if (!$this->apks->hrIsPerCompanyDedicated()) {
+            return false;
+        }
+        $company = (new Company())->find($companyId);
+        if (!is_array($company)) {
+            return false;
+        }
+        $hrConfig = (new MobileAppConfigService())->findByCompanyId($companyId);
+        if (!$this->apks->isEnabled('hr', $company, is_array($hrConfig) ? $hrConfig : ['status' => ''])) {
+            return false;
+        }
+        if ($this->keyFor('hr', $company) !== '') {
+            return true;
+        }
+
+        return $this->setRequested('hr', $companyId, true);
+    }
+
     /** Build key requested for this company's app, or "" when it uses the shared build. */
     public function keyFor(string $app, array $company): string
     {
