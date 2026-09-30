@@ -75,10 +75,13 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener> {
       );
       return;
     }
-    final current = CompanyActivation.code;
-    if (current != null && code == current) return;
+    final current = CompanyActivation.normalize(CompanyActivation.code ?? '');
+    if (current != null && current == code) return;
 
     _busy = true;
+    if (current != null && current != code) {
+      await CompanyActivation.clear();
+    }
     final error = await CompanyActivation.activate(code);
     if (error == null) {
       await widget.onCompanyChanged();

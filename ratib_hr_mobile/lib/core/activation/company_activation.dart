@@ -103,6 +103,11 @@ final class CompanyActivation {
   static Future<CompanyActivationError?> activate(String input) async {
     final code = normalize(input);
     if (code == null) return CompanyActivationError.invalidCode;
+    final prefs = await SharedPreferences.getInstance();
+    final previous = normalize(prefs.getString(_kCode) ?? _code ?? '');
+    if (previous != null && previous != code) {
+      await clear();
+    }
     final dio = Dio(
       BaseOptions(
         baseUrl: DartDefineAppEnvironment.productionErpBaseUrl,
@@ -142,7 +147,6 @@ final class CompanyActivation {
         company is Map ? _validBase(company['logo_url']?.toString()) : null;
     final companyId = company is Map ? int.tryParse('${company['id']}') : null;
 
-    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kBaseUrl, base);
     await prefs.setString(_kName, name);
     await prefs.setString(_kNameAr, nameAr);
