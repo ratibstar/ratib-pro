@@ -49,7 +49,11 @@ $assert(
 );
 $unifiedCompany = ['id' => 49, 'settings' => '{}'];
 $qr = $svc->qrActivationPayload('VBAK7P38', $unifiedCompany);
-$assert($qr === $handoff, 'unified company QR equals handoff URL');
+$assert(
+    str_starts_with($qr, 'ratebhr://activate?code=') && str_contains($qr, 'VBAK-7P38'),
+    'unified company QR uses ratebhr deep link'
+);
+$assert($qr !== $handoff, 'QR is not the browser handoff URL');
 $intent = $svc->mobileAppIntentUrl('VBAK7P38');
 $assert(
     str_contains($intent, 'package=sa.rateb.hr.mobile')

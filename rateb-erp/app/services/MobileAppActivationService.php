@@ -113,9 +113,9 @@ final class MobileAppActivationService
     public function qrActivationPayload(string $code, ?array $company = null): string
     {
         if ($company !== null && !$this->apks->companyHasBrandedBuild('hr', $company)) {
-            $handoff = $this->mobileAppHandoffUrl($code);
-            if ($handoff !== '') {
-                return $handoff;
+            $deep = $this->mobileAppQrDeepLink($code);
+            if ($deep !== '') {
+                return $deep;
             }
         }
         $url = $this->publicActivationUrl($code);
@@ -151,7 +151,20 @@ final class MobileAppActivationService
     }
 
     /**
-     * HTTPS path shipped in published APK intent-filters (/m/activate). Browser QR uses app-activate.
+     * QR payload for unified HR: custom scheme only sa.rateb.hr.mobile registers (not Al-Arfaj ratebapp).
+     */
+    public function mobileAppQrDeepLink(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+
+        return 'ratebhr://activate?code=' . rawurlencode(self::format($code));
+    }
+
+    /**
+     * HTTPS path shipped in published APK intent-filters (/m/activate). Browser uses app-activate.
      */
     public function mobileAppDeepLinkUrl(string $code): string
     {

@@ -53,6 +53,9 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener> {
   }
 
   static String? _codeFromUri(Uri uri) {
+    if (uri.scheme == 'ratebhr' && uri.host == 'activate') {
+      return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
+    }
     if (uri.scheme == 'ratebapp' && uri.host == 'activate') {
       return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
     }

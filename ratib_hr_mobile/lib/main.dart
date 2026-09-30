@@ -24,7 +24,10 @@ Future<void> _activateFromInitialAppLink() async {
     if (uri == null) {
       return;
     }
-    final code = CompanyActivation.normalize(uri.toString());
+    var code = CompanyActivation.normalize(uri.toString());
+    if (code == null && uri.scheme == 'ratebhr' && uri.host == 'activate') {
+      code = CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
+    }
     if (code == null) {
       return;
     }
