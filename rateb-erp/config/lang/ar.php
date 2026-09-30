@@ -3388,7 +3388,7 @@ return [
     'mobile_activation_open_unified_https' => 'فتح عبر الرابط (بديل)',
     'mobile_activation_qr_scope' => 'باركود هذه الشركة فقط: :name (#:id) — الخادم :host',
     'mobile_activation_qr_payload' => 'محتوى الباركود',
-    'mobile_activation_qr_scan_hint' => 'امسح الباركود بكاميرا الجوال — يفتح «RATEB HR» مباشرة (ratebhr://) ويربط تجربة 2. حدّث التطبيق إلى build 220 من الأزرق ثم امسح من جديد.',
+    'mobile_activation_qr_scan_hint' => 'امسح الباركود بكاميرا الجوال — يفتح «RATEB HR» مباشرة (رابط rateb.sa). ثبّت build 221 أو أحدث من زر التحميل ثم امسح من جديد.',
     'mobile_activation_opening_app' => 'جاري فتح تطبيق الموارد البشرية وربط الشركة…',
     'mobile_activation_page_company_id' => 'شركة #:id',
     'mobile_activation_duplicate_alert' => 'تعارض: نفس رمز التفعيل مربوط بأكثر من شركة. أنشئ «رمز جديد» لكل شركة متأثرة حتى لا يختلط التفعيل.',

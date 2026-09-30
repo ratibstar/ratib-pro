@@ -50,10 +50,11 @@ $assert(
 $unifiedCompany = ['id' => 49, 'settings' => '{}'];
 $qr = $svc->qrActivationPayload('VBAK7P38', $unifiedCompany);
 $assert(
-    str_starts_with($qr, 'ratebhr://activate?code=') && str_contains($qr, 'VBAK-7P38'),
-    'unified company QR uses ratebhr deep link'
+    str_contains($qr, '/rateb-erp/public/app-activate/VBAK-7P38')
+    && str_contains($qr, 'setup=1')
+    && !str_contains($qr, 'ratebhr://'),
+    'unified company QR uses HTTPS app-activate for camera App Links'
 );
-$assert($qr !== $handoff, 'QR is not the browser handoff URL');
 $intent = $svc->mobileAppIntentUrl('VBAK7P38');
 $assert(
     str_contains($intent, 'package=sa.rateb.hr.mobile')

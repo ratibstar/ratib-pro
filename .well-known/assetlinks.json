@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sa.rateb.hr.mobile",
+      "sha256_cert_fingerprints": [
+        "8F:E3:0E:B9:EB:5D:97:3D:DE:15:B6:72:D9:D8:C8:B2:6F:02:C5:1B:F1:C0:57:C7:BD:BE:A3:47:D8:03:C9:EA"
+      ]
+    }
+  }
+]

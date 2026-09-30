@@ -76,6 +76,11 @@ RewriteRule ^pages/enterprise-pack/?$ /enterprise-pack/ [R=302,L]
 RewriteRule ^sitemap\.xml$ public/sitemap.xml [L]
 RewriteRule ^robots\.txt$ public/robots.txt [L]
 
+# Android App Links — must stay a plain JSON file at /.well-known/assetlinks.json
+RewriteCond %{REQUEST_URI} ^/\.well-known/ [NC]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
 # Legacy ERP marketing URLs → canonical /site/* on rateb.sa (not admin/login paths)
 RewriteCond %{HTTP_HOST} ^(www\.)?rateb\.sa$ [NC]
 RewriteCond %{THE_REQUEST} \s/+rateb-erp/public/site/([^\s?]+) [NC]

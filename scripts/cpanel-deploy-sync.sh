@@ -25,6 +25,7 @@ log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} rsync_delete
 
 CRITICAL_FILES=(
   ".htaccess"
+  ".well-known/assetlinks.json"
   "index.php"
   "public/index.php"
   "includes/designed_bootstrap.php"

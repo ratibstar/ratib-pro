@@ -104,20 +104,13 @@ final class MobileAppActivationService
     }
 
     /**
-     * Admin QR payload: HTTPS activation page (camera-friendly). Page auto-opens the HR app via Android intent;
-     * the installed app also handles this URL directly.
-     */
-    /**
-     * @param array<string, mixed>|null $company When set and on the unified model, QR opens the HR APK directly.
+     * Admin QR payload: HTTPS app-activate (camera + verified App Links). Custom schemes show a useless
+     * Samsung Camera sheet; HTTPS with assetlinks opens sa.rateb.hr.mobile directly when installed.
+     *
+     * @param array<string, mixed>|null $company Reserved for branded vs unified download policy elsewhere.
      */
     public function qrActivationPayload(string $code, ?array $company = null): string
     {
-        if ($company !== null && !$this->apks->companyHasBrandedBuild('hr', $company)) {
-            $deep = $this->mobileAppQrDeepLink($code);
-            if ($deep !== '') {
-                return $deep;
-            }
-        }
         $url = $this->publicActivationUrl($code);
         if ($url === '') {
             return '';

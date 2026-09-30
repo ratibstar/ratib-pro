@@ -46,6 +46,7 @@ DEPLOY_ALLOW_PREFIXES = (
 )
 DEPLOY_ALLOW_FILES = frozenset({
     ".htaccess",
+    ".well-known/assetlinks.json",
     "index.php",
     "erp-health.php",
     "config/env.php",
