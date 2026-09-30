@@ -111,7 +111,7 @@ final class MobileAppActivationService
      */
     public function qrActivationPayload(string $code, ?array $company = null): string
     {
-        return $this->publicActivationUrl($code);
+        return $this->mobileAppDeepLinkUrl($code);
     }
 
     /** Link shown in Admin + encoded in QR for unified companies (opens sa.rateb.hr.mobile). */
@@ -162,7 +162,7 @@ final class MobileAppActivationService
         }
         $origin = rtrim(rateb_site_origin(), '/');
 
-        return $origin . '/rateb-erp/public/m/activate/' . self::format($code) . '?setup=1';
+        return $origin . '/m/activate/' . self::format($code) . '?setup=1';
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Rateb\App\Controllers\Shared;
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\IpRateLimiter;
 use Rateb\App\Core\Response;
+use Rateb\App\Core\View;
 use Rateb\App\Services\MobileAppActivationService;
 use Rateb\App\Services\MobileAppApkService;
 use Rateb\App\Services\MobileAppBrandedService;
@@ -84,14 +85,6 @@ final class MobileAppActivationController extends Controller
         }
         $formatted = MobileAppActivationService::format($code);
         $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-        if (str_contains($requestUri, '/m/activate/')) {
-            $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
-            if ($query === '' || !preg_match('/(?:^|&)setup=1(?:&|$)/', $query)) {
-                $query = $query === '' ? 'setup=1' : $query . '&setup=1';
-            }
-            Response::redirect(rateb_url('app-activate/' . $formatted) . ($query !== '' ? '?' . $query : ''));
-            return;
-        }
         $erpBase = $apks->erpBaseUrlForCompany($company);
         $branded = new MobileAppBrandedService($apks);
         $names = $branded->names($company);
@@ -107,9 +100,22 @@ final class MobileAppActivationController extends Controller
         if ($wantsQrHandoff) {
             $intent = $svc->mobileAppIntentUrl($code);
             if ($intent !== '') {
-                Response::redirect($intent);
+                $this->renderAndroidHandoff(
+                    $intent,
+                    (string) ($unifiedDl['url'] ?? ''),
+                    $formatted,
+                    $names[rateb_locale() === 'ar' ? 'ar' : 'en']
+                );
                 return;
             }
+        }
+        if (str_contains($requestUri, '/m/activate/')) {
+            $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
+            if ($query === '' || !preg_match('/(?:^|&)setup=1(?:&|$)/', $query)) {
+                $query = $query === '' ? 'setup=1' : $query . '&setup=1';
+            }
+            Response::redirect(rateb_url('app-activate/' . $formatted) . ($query !== '' ? '?' . $query : ''));
+            return;
         }
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
@@ -129,7 +135,23 @@ final class MobileAppActivationController extends Controller
 
     private function isAndroidClient(): bool
     {
-        return (bool) preg_match('/Android/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+        if (preg_match('/Android|okhttp|wv\)/i', $ua)) {
+            return true;
+        }
+        $ch = strtolower((string) ($_SERVER['HTTP_SEC_CH_UA_MOBILE'] ?? ''));
+        return $ch === '?1';
+    }
+
+    private function renderAndroidHandoff(string $intent, string $apkUrl, string $code, string $companyName): void
+    {
+        header('Cache-Control: no-store');
+        View::render('shared/app-activate-android-handoff', [
+            'intent' => $intent,
+            'apkUrl' => $apkUrl,
+            'code' => $code,
+            'companyName' => $companyName,
+        ], null);
     }
 
     /** GET /downloads/unified-hr.apk — canonical unified HR only (never a company branded slot). */

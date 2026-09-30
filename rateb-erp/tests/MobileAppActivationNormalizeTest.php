@@ -50,10 +50,11 @@ $assert(
 $unifiedCompany = ['id' => 49, 'settings' => '{}'];
 $qr = $svc->qrActivationPayload('VBAK7P38', $unifiedCompany);
 $assert(
-    str_contains($qr, '/rateb-erp/public/app-activate/VBAK-7P38')
+    str_contains($qr, '/m/activate/VBAK-7P38')
     && str_contains($qr, 'setup=1')
-    && !str_contains($qr, 'ratebhr://'),
-    'unified company QR uses HTTPS app-activate for camera App Links'
+    && !str_contains($qr, 'ratebhr://')
+    && !str_contains($qr, '/rateb-erp/public/app-activate/'),
+    'unified company QR uses short /m/activate App Link path'
 );
 $intent = $svc->mobileAppIntentUrl('VBAK7P38');
 $assert(

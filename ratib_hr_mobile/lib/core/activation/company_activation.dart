@@ -155,6 +155,12 @@ final class CompanyActivation {
           ? CompanyActivationError.invalidCode
           : CompanyActivationError.network;
     }
+    final expectedPkg = body['expected_android_package']?.toString().trim() ?? '';
+    if (expectedPkg.isNotEmpty &&
+        androidPackage.isNotEmpty &&
+        expectedPkg != androidPackage) {
+      return CompanyActivationError.wrongAndroidPackage;
+    }
     final base = _validBase(body['erp_base_url']?.toString());
     if (base == null) return CompanyActivationError.network;
     final company = body['company'];

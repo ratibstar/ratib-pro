@@ -11,6 +11,7 @@ import 'package:ratib_hr_mobile/core/routing/app_router.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/company_activation_dialog.dart';
+import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/features/login/login_activation_status.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
@@ -206,6 +207,25 @@ class _LoginPageState extends State<LoginPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
           children: [
+            const LoginActivationStatus(),
+            if (BrandBuild.activationCode.isNotEmpty)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  l10n.activationBrandedWrongCompany,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             Align(
               alignment: AlignmentDirectional.topEnd,
               child: TextButton(
@@ -317,7 +337,6 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-            const LoginActivationStatus(),
             const SizedBox(height: 20),
             DsGlassTile(
               padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
