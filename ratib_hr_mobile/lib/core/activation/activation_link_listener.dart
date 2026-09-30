@@ -95,6 +95,7 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener> {
     final message = switch (error) {
       null => '${l10n.activationDone} ${CompanyActivation.companyName ?? ''}',
       CompanyActivationError.invalidCode => l10n.activationInvalid,
+      CompanyActivationError.wrongAndroidPackage => l10n.activationWrongAndroidPackage,
       CompanyActivationError.appNotEnabled => l10n.activationAppDisabled,
       CompanyActivationError.rateLimited => l10n.activationRateLimited,
       CompanyActivationError.network => l10n.activationNetworkError,

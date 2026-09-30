@@ -77,6 +77,7 @@ RewriteRule ^sitemap\.xml$ public/sitemap.xml [L]
 RewriteRule ^robots\.txt$ public/robots.txt [L]
 
 # Android App Links — must stay a plain JSON file at /.well-known/assetlinks.json
+RewriteRule ^\.well-known/assetlinks\.json$ public/.well-known/assetlinks.json [L]
 RewriteCond %{REQUEST_URI} ^/\.well-known/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]

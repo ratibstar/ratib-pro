@@ -37,6 +37,8 @@ class _CompanyActivationDialogState extends State<_CompanyActivationDialog> {
     switch (error) {
       case CompanyActivationError.invalidCode:
         return l10n.activationInvalid;
+      case CompanyActivationError.wrongAndroidPackage:
+        return l10n.activationWrongAndroidPackage;
       case CompanyActivationError.appNotEnabled:
         return l10n.activationAppDisabled;
       case CompanyActivationError.rateLimited:

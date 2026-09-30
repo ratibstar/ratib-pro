@@ -91,6 +91,8 @@ class AppLocalizations {
       'activationInvalid': 'رمز الشركة غير صحيح',
       'activationBrandedWrongCompany':
           'هذا الباركود لشركة أخرى. استخدم تطبيق رتب الموحد (وليس تطبيق شركة مخصص).',
+      'activationWrongAndroidPackage':
+          'هذا باركود لتطبيق موحد. احذف تطبيق شركة العرفج (أو أي تطبيق .c…) وثبّت RATEB HR (sa.rateb.hr.mobile) ثم امسح من جديد.',
       'activationAppDisabled': 'تطبيق الموارد البشرية غير مفعّل لهذه الشركة',
       'activationRateLimited': 'محاولات كثيرة. حاول لاحقاً',
       'activationNetworkError': 'تعذر الاتصال بالخادم',
@@ -361,6 +363,8 @@ class AppLocalizations {
       'activationInvalid': 'Invalid company code',
       'activationBrandedWrongCompany':
           'This QR belongs to another company. Use the unified RATEB HR app, not a company-branded app.',
+      'activationWrongAndroidPackage':
+          'This QR is for the unified app. Uninstall the branded HR app (.c… package), install RATEB HR (sa.rateb.hr.mobile), then scan again.',
       'activationAppDisabled': 'The HR app is not enabled for this company',
       'activationRateLimited': 'Too many attempts. Try again later',
       'activationNetworkError': 'Could not reach the server',
@@ -639,6 +643,7 @@ class AppLocalizations {
   String get activationDone => _t('activationDone');
   String get activationInvalid => _t('activationInvalid');
   String get activationBrandedWrongCompany => _t('activationBrandedWrongCompany');
+  String get activationWrongAndroidPackage => _t('activationWrongAndroidPackage');
   String get activationAppDisabled => _t('activationAppDisabled');
   String get activationRateLimited => _t('activationRateLimited');
   String get activationNetworkError => _t('activationNetworkError');

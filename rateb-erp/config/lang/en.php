@@ -3315,6 +3315,7 @@ return [
     'mobile_activation_code' => 'Company activation code',
     'mobile_activation_invalid' => 'Invalid activation code or inactive company.',
     'mobile_activation_app_disabled' => 'This app is not enabled for this company. Contact RATEB administration.',
+    'mobile_activation_wrong_android_package' => 'This company uses the unified HR app. Uninstall the branded app (e.g. Al-Arfaj) and install RATEB HR (sa.rateb.hr.mobile).',
     'mobile_activation_rate_limited' => 'Too many attempts. Please try again shortly.',
     'mobile_activation_continue' => 'Continue',
     'mobile_activation_form_hint' => 'Enter the code your company gave you (e.g. ABCD-2345).',

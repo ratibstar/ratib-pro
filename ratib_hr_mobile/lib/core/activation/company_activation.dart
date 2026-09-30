@@ -10,9 +10,16 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/core/env/dart_define_app_environment.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum CompanyActivationError { invalidCode, appNotEnabled, rateLimited, network }
+enum CompanyActivationError {
+  invalidCode,
+  appNotEnabled,
+  wrongAndroidPackage,
+  rateLimited,
+  network,
+}
 
 final class CompanyActivation {
   CompanyActivation._();
@@ -57,7 +64,9 @@ final class CompanyActivation {
   /// Bumped whenever the linked company changes, so open screens can refresh.
   static final ValueNotifier<int> revision = ValueNotifier<int>(0);
 
-  static Future<void> load() async {
+  /// When true, skips background refresh so a cold-start activation link is not overwritten
+  /// (e.g. branded embedded code racing platform QR).
+  static Future<void> load({bool deferBackgroundRefresh = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final base = prefs.getString(_kBaseUrl);
     _erpBaseUrl = _validBase(base);
@@ -68,10 +77,7 @@ final class CompanyActivation {
     _code = _erpBaseUrl == null ? null : prefs.getString(_kCode);
     final idRaw = prefs.getInt(_kCompanyId);
     _companyId = _erpBaseUrl == null ? null : (idRaw != null && idRaw > 0 ? idRaw : null);
-    if (!isActive && embeddedCode.isNotEmpty) {
-      unawaited(activate(embeddedCode));
-    } else if (isActive && (_code ?? '').isNotEmpty) {
-      // Picks up company name / server changes made by Super Admin; failures keep the saved link.
+    if (!deferBackgroundRefresh && isActive && (_code ?? '').isNotEmpty) {
       unawaited(activate(_code!));
     }
   }
@@ -108,6 +114,10 @@ final class CompanyActivation {
     if (previous != null && previous != code) {
       await clear();
     }
+    String androidPackage = '';
+    try {
+      androidPackage = (await PackageInfo.fromPlatform()).packageName;
+    } catch (_) {}
     final dio = Dio(
       BaseOptions(
         baseUrl: DartDefineAppEnvironment.productionErpBaseUrl,
@@ -121,7 +131,11 @@ final class CompanyActivation {
     try {
       response = await dio.get<dynamic>(
         '/api/v1/mobile/activation',
-        queryParameters: {'code': code, 'app': 'hr'},
+        queryParameters: {
+          'code': code,
+          'app': 'hr',
+          if (androidPackage.isNotEmpty) 'android_package': androidPackage,
+        },
       );
     } on DioException {
       return CompanyActivationError.network;
@@ -129,7 +143,13 @@ final class CompanyActivation {
     final data = response.data;
     final body = data is Map ? data : const {};
     if (response.statusCode == 429) return CompanyActivationError.rateLimited;
-    if (response.statusCode == 403) return CompanyActivationError.appNotEnabled;
+    if (response.statusCode == 403) {
+      final apiCode = body['code']?.toString() ?? '';
+      if (apiCode == 'wrong_android_package') {
+        return CompanyActivationError.wrongAndroidPackage;
+      }
+      return CompanyActivationError.appNotEnabled;
+    }
     if (response.statusCode != 200 || body['success'] != true) {
       return response.statusCode == 404
           ? CompanyActivationError.invalidCode

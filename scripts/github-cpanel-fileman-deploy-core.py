@@ -333,6 +333,8 @@ SECURITY_REMOTE_DELETE_FILES += [
 # that is what made every push upload ~130 unchanged files.
 FAST_FILES = [
     ".htaccess",
+    ".well-known/assetlinks.json",
+    "public/.well-known/assetlinks.json",
     "index.php",
     "erp-health.php",
     "includes/config.php",

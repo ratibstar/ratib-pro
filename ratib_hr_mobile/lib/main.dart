@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/activation/activation_link_listener.dart';
 import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
+import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/core/activation/unified_app_guard.dart';
 import 'package:ratib_hr_mobile/core/config/app_config.dart';
 import 'package:ratib_hr_mobile/core/di/app_locator.dart';
@@ -17,18 +18,30 @@ import 'package:ratib_hr_mobile/core/update/app_update_banner.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 
-/// QR / HTTPS activation link before first frame (same as entering the code manually).
-Future<void> _activateFromInitialAppLink() async {
+String? _codeFromActivationUri(Uri uri) {
+  if (uri.scheme == 'ratebhr' && uri.host == 'activate') {
+    return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
+  }
+  if (uri.scheme == 'ratebapp' && uri.host == 'activate') {
+    return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
+  }
+  if (uri.scheme == 'https' || uri.scheme == 'http') {
+    return CompanyActivation.normalize(uri.toString());
+  }
+  return CompanyActivation.normalize(uri.toString());
+}
+
+Future<void> _activateFromInitialAppLink(Uri? uri) async {
+  if (uri == null) {
+    return;
+  }
   try {
-    final uri = await AppLinks().getInitialLink();
-    if (uri == null) {
+    final code = _codeFromActivationUri(uri);
+    if (code == null) {
       return;
     }
-    var code = CompanyActivation.normalize(uri.toString());
-    if (code == null && uri.scheme == 'ratebhr' && uri.host == 'activate') {
-      code = CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
-    }
-    if (code == null) {
+    final embedded = CompanyActivation.normalize(BrandBuild.activationCode);
+    if (embedded != null && embedded != code) {
       return;
     }
     await CompanyActivation.activate(code);
@@ -37,8 +50,16 @@ Future<void> _activateFromInitialAppLink() async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await CompanyActivation.load();
-  await _activateFromInitialAppLink();
+  Uri? initialUri;
+  try {
+    initialUri = await AppLinks().getInitialLink();
+  } catch (_) {}
+  await CompanyActivation.load(deferBackgroundRefresh: initialUri != null);
+  if (initialUri != null) {
+    await _activateFromInitialAppLink(initialUri);
+  } else if (BrandBuild.activationCode.isNotEmpty) {
+    await CompanyActivation.activate(BrandBuild.activationCode);
+  }
   bootstrapPhase1();
   await AppLocator.appearance.load();
   final session = AuthSession();

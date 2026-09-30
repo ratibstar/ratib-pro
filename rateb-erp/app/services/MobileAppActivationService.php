@@ -111,12 +111,7 @@ final class MobileAppActivationService
      */
     public function qrActivationPayload(string $code, ?array $company = null): string
     {
-        $url = $this->publicActivationUrl($code);
-        if ($url === '') {
-            return '';
-        }
-
-        return $url . (str_contains($url, '?') ? '&' : '?') . 'setup=1';
+        return $this->publicActivationUrl($code);
     }
 
     /** Link shown in Admin + encoded in QR for unified companies (opens sa.rateb.hr.mobile). */
@@ -317,6 +312,19 @@ final class MobileAppActivationService
         $logo = $branded->iconUrl($company, (new MobileAppConfigService())->findByCompanyId((int) $company['id']), $erpBase);
 
         $unifiedHr = !$this->apks->companyHasBrandedBuild($app, $company);
+        $expectedPackage = $this->apks->packageForActivationLink($app, $company);
+        $androidPackage = trim((string) ($_GET['android_package'] ?? ''));
+        if ($unifiedHr && $app === 'hr' && $androidPackage !== ''
+            && $androidPackage !== $expectedPackage
+            && preg_match('/\.c\d+$/', $androidPackage) === 1) {
+            return ['status' => 403, 'body' => [
+                'success' => false,
+                'code' => 'wrong_android_package',
+                'message' => __('mobile_activation_wrong_android_package'),
+                'expected_android_package' => $expectedPackage,
+                'android_package' => $androidPackage,
+            ]];
+        }
         $pub = $unifiedHr && $app === 'hr' ? $this->apks->publishedBuild('hr') : null;
         $sha = is_array($pub) ? (string) ($pub['sha256'] ?? '') : '';
         $normCode = self::normalize($code);
@@ -344,7 +352,7 @@ final class MobileAppActivationService
             'api_base_url' => $this->apks->serverForCompany('customer', $company),
             'agency_id' => $this->apks->agencyIdForCompany($company),
             'unified_hr' => $unifiedHr,
-            'expected_android_package' => $this->apks->packageForActivationLink($app, $company),
+            'expected_android_package' => $expectedPackage,
             'unified_apk_url' => is_array($pub) ? (string) ($pub['url'] ?? '') : '',
             'unified_apk_sha256' => $sha,
             'activation_authority' => rtrim(rateb_site_origin(), '/') . '/rateb-erp/public',
