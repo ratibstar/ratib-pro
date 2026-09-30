@@ -3259,6 +3259,7 @@ return [
     'mobile_apps_apk_upload_failed' => 'تعذّر حفظ ملف التطبيق على الخادم.',
     'mobile_apps_apk_unavailable' => 'رابط تحميل التطبيق غير متاح حالياً.',
     'mobile_apps_intro_hub' => 'تطبيق واحد موحّد لرتب (HR / ERP / Customer): تفعّل الشركة، تضبط اسمها وشعارها، وتوزّع التحديثات من «تحديثات التطبيق» — بدون بناء منفصل لكل شركة.',
+    'mobile_apps_dual_apk_phone_warning' => 'مهم للجوال: «إيقاف التطبيق» هنا لا يحذف التطبيق من الهاتف. إن وُجدت أيقونتان HR (شركة العرفج ~22 MB و RATEB HR ~41 MB) احذف تطبيق العرفج من إعدادات Android ثم ثبّت الموحد فقط. شركة #51 تستخدم التطبيق الموحد مثل #49.',
     'mobile_apps_tab_hr' => 'تطبيق الموارد البشرية',
     'mobile_apps_tab_hr_hint' => 'RATEB HR — للموظفين',
     'mobile_apps_tab_erp' => 'تطبيق ERP',

@@ -3261,6 +3261,7 @@ return [
     'mobile_apps_apk_upload_failed' => 'Could not save the app file on the server.',
     'mobile_apps_apk_unavailable' => 'This app download link is not available right now.',
     'mobile_apps_intro_hub' => 'One unified RATEB app per product (HR / ERP / Customer): enable each company, set its name and logo, push updates from App updates — no per-company APK build by default.',
+    'mobile_apps_dual_apk_phone_warning' => 'Phones keep installed apps: disabling a company here does not uninstall HR from the device. If you see two HR icons (Al-Arfaj ~22 MB and RATEB HR ~41 MB), uninstall the Al-Arfaj app in Android settings, then install the unified build only. Company #51 uses the unified app like #49.',
     'mobile_apps_tab_hr' => 'HR app',
     'mobile_apps_tab_hr_hint' => 'RATEB HR — for employees',
     'mobile_apps_tab_erp' => 'ERP app',

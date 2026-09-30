@@ -31,9 +31,12 @@ final class MobileAppsController extends Controller
         $platform = $this->canToggleEnable();
         $app = $platform ? MobileAppApkService::normalizeApp((string) ($_GET['app'] ?? 'hr')) : 'hr';
         $apkSvc = new MobileAppApkService();
+        $branded = new MobileAppBrandedService($apkSvc);
+        if ($platform && $app === 'hr') {
+            $branded->enforceRetiredHrBrandedCompanies();
+        }
         $platformUpdate = $platform ? $apkSvc->platformUpdateStatus($app) : null;
         $rows = (new MobileAppConfigService())->listCompaniesWithConfig();
-        $branded = new MobileAppBrandedService($apkSvc);
         $activationSvc = new MobileAppActivationService($apkSvc);
         foreach ($rows as &$row) {
             $company = ['id' => (int) $row['company_id']] + $row;

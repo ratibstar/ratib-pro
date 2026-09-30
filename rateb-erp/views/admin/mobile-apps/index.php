@@ -103,6 +103,12 @@ $colCount = $canToggleEnable ? 7 : 4;
 </details>
 <?php } ?>
 
+<?php if ($canToggleEnable && $app === 'hr') { ?>
+<div class="alert alert-info py-2 small mb-3" role="alert">
+    <i class="fas fa-mobile-screen"></i> <?php echo $e(__('mobile_apps_dual_apk_phone_warning')); ?>
+</div>
+<?php } ?>
+
 <?php if (!empty($activationDuplicates)) { ?>
 <div class="alert alert-danger py-2 small" role="alert">
     <i class="fas fa-triangle-exclamation"></i>
