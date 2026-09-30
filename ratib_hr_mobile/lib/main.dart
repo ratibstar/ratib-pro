@@ -57,6 +57,7 @@ Future<void> main() async {
     initialUri = await AppLinks().getInitialLink();
   } catch (_) {}
   await CompanyActivation.load(deferBackgroundRefresh: initialUri != null);
+  await CompanyActivation.purgeWrongTenantForUnifiedPackage();
   if (initialUri != null) {
     await _activateFromInitialAppLink(initialUri);
   } else if (BrandBuild.activationCode.isNotEmpty) {

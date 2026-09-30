@@ -66,6 +66,25 @@ final class CompanyActivation {
 
   /// When true, skips background refresh so a cold-start activation link is not overwritten
   /// (e.g. branded embedded code racing platform QR).
+  /// Unified APK must not keep Al-Arfaj (#51) after platform QR / fresh install.
+  static Future<void> purgeWrongTenantForUnifiedPackage() async {
+    if (embeddedCode.isNotEmpty) {
+      return;
+    }
+    String package = '';
+    try {
+      package = (await PackageInfo.fromPlatform()).packageName;
+    } catch (_) {}
+    if (package != 'sa.rateb.hr.mobile') {
+      return;
+    }
+    final cid = _companyId;
+    final name = (_companyName ?? '') + _nameAr + _nameEn;
+    if (cid == 51 || name.contains('العرفج') || name.toLowerCase().contains('arfaj')) {
+      await clear();
+    }
+  }
+
   static Future<void> load({bool deferBackgroundRefresh = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final base = prefs.getString(_kBaseUrl);

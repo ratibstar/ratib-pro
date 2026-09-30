@@ -3392,6 +3392,7 @@ return [
     'mobile_activation_qr_scan_hint' => 'امسح الباركود → Open link → الزر الأخضر يفتح «RATEB HR» الموحد (build 223). احذف تطبيق العرفج (.c51) قبل التجربة.',
     'mobile_activation_opening_app' => 'جاري فتح تطبيق الموارد البشرية وربط الشركة…',
     'mobile_activation_handoff_body' => 'اضغط الزر الأخضر لفتح التطبيق الموحد فقط (sa.rateb.hr.mobile). إذا ظهر «شركة العرفج» فأنت على تطبيق مخصص — احذفه ثم حمّل الموحد.',
+    'mobile_activation_handoff_install_first' => '① حمّل وثبّت APK الموحد (~41 MB) أولاً. ② ثم فقط اضغط الزر الأخضر. لا تضغط الأخضر قبل التثبيت.',
     'mobile_activation_page_company_id' => 'شركة #:id',
     'mobile_activation_duplicate_alert' => 'تعارض: نفس رمز التفعيل مربوط بأكثر من شركة. أنشئ «رمز جديد» لكل شركة متأثرة حتى لا يختلط التفعيل.',
     'mobile_activation_duplicate_companies' => 'معرّفات الشركات',

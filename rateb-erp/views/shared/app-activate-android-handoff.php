@@ -34,12 +34,11 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
     <a class="btn secondary" href="<?php echo $e($apkUrl); ?>"><?php echo $e(__('mobile_activation_download_unified_hr')); ?> (sa.rateb.hr.mobile)</a>
     <?php } ?>
     <p style="font-size:0.8rem;margin-top:20px"><?php echo $e(__('mobile_activation_delete_branded_sibling')); ?></p>
+    <p style="font-size:0.85rem;color:#fbbf24;margin-top:12px"><?php echo $e(__('mobile_activation_handoff_install_first')); ?></p>
     <script>
     (function () {
         var intent = <?php echo json_encode($intent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
         function go() { try { window.location.href = intent; } catch (e) {} }
-        setTimeout(go, 120);
-        setTimeout(go, 600);
         document.getElementById('rateb-open-hr')?.addEventListener('click', function (ev) {
             ev.preventDefault();
             go();

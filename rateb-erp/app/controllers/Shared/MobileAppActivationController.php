@@ -196,6 +196,9 @@ final class MobileAppActivationController extends Controller
         $sha = is_array($pub) ? (string) ($pub['sha256'] ?? '') : '';
 
         $canonical = rateb_public_url('downloads/unified-hr.apk');
+        if ($canonical !== '' && $vc > 0) {
+            $canonical .= (str_contains($canonical, '?') ? '&' : '?') . 'v=' . $vc;
+        }
 
         return [
             'url' => $canonical !== '' ? $canonical : $url,
