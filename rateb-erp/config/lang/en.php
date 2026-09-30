@@ -3385,6 +3385,7 @@ return [
     'mobile_activation_delete_branded_sibling' => 'Important: Al-Arfaj is a separate app (package sa.rateb.hr.mobile.c51 — “Al-Arfaj” icon). It can stay installed next to “RATEB HR” even if you removed one. Remove every HR app, then install only the unified build (~41 MB).',
     'mobile_activation_clear_app_data' => 'If you see “Al-Arfaj” inside the unified RATEB HR app: Android Settings → RATEB HR → Storage → Clear data (uninstall alone is not enough), then scan your company QR or enter the code.',
     'mobile_activation_download_unified_hr' => 'Download unified HR app',
+    'mobile_activation_copy_code' => 'Copy activation code (paste in app)',
     'mobile_activation_open_unified_hr' => 'Open unified RATEB HR (not Al-Arfaj)',
     'mobile_activation_open_unified_hint' => '① Download (blue) and install RATEB HR (package sa.rateb.hr.mobile). ② Then tap green only — no ratebapp, not Al-Arfaj.',
     'mobile_activation_apk_size_warning' => 'If the download is ~22 MB or labeled Al-Arfaj, abort — that is not the unified app. Unified is ~41 MB; filename starts with rateb-hr-unified.',

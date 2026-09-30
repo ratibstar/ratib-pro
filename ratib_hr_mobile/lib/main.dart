@@ -25,7 +25,9 @@ Future<void> main() async {
   final launchUri = await ActivationBootstrap.resolveLaunchUri();
   await CompanyActivation.load(deferBackgroundRefresh: true);
   await CompanyActivation.purgeWrongTenantForUnifiedPackage();
-  await ActivationBootstrap.applyLaunchUri(launchUri);
+  if (launchUri != null) {
+    await ActivationBootstrap.applyLaunchUri(launchUri);
+  }
   if (launchUri == null && BrandBuild.activationCode.isNotEmpty) {
     await CompanyActivation.activate(BrandBuild.activationCode);
   }

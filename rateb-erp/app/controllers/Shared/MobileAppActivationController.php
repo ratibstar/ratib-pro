@@ -99,9 +99,11 @@ final class MobileAppActivationController extends Controller
             && $this->isAndroidClient();
         if ($wantsQrHandoff) {
             $intent = $svc->mobileAppHandoffIntentUrl($code);
+            $intentHttps = $svc->mobileAppIntentUrl($code);
             if ($intent !== '') {
                 $this->renderAndroidHandoff(
                     $intent,
+                    $intentHttps,
                     (string) ($unifiedDl['url'] ?? ''),
                     $formatted,
                     $names[rateb_locale() === 'ar' ? 'ar' : 'en']
@@ -143,11 +145,12 @@ final class MobileAppActivationController extends Controller
         return $ch === '?1';
     }
 
-    private function renderAndroidHandoff(string $intent, string $apkUrl, string $code, string $companyName): void
+    private function renderAndroidHandoff(string $intent, string $intentHttps, string $apkUrl, string $code, string $companyName): void
     {
         header('Cache-Control: no-store');
         View::render('shared/app-activate-android-handoff', [
             'intent' => $intent,
+            'intentHttps' => $intentHttps,
             'apkUrl' => $apkUrl,
             'code' => $code,
             'companyName' => $companyName,

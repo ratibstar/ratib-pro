@@ -3384,6 +3384,7 @@ return [
     'mobile_activation_clear_app_data' => 'إن ظهر «شركة العرفج» داخل تطبيق RATEB HR الموحد: إعدادات أندرويد → RATEB HR → التخزين → مسح البيانات (حذف التثبيت وحده لا يكفي)، ثم امسح باركود تجربة 2 أو أدخل الرمز يدوياً.',
     'mobile_activation_download_unified_hr' => 'تحميل تطبيق HR الموحد',
     'mobile_activation_open_unified_hr' => 'فتح تطبيق رتب الموحد (ليس العرفج)',
+    'mobile_activation_copy_code' => 'نسخ كود التفعيل (للصق في التطبيق)',
     'mobile_activation_open_unified_hint' => '① حمّل الأزرق وثبّت «رتب HR» (تحقق من الحزمة sa.rateb.hr.mobile). ② ثم الأخضر فقط — لا يستخدم ratebapp ولا يفتح العرفج.',
     'mobile_activation_apk_size_warning' => 'إن كان التحميل ~22 ميجا أو اسم الملف «العرفج» فهذا ليس التطبيق الموحد — لا تثبّته. الموحد ~41 ميجا واسم الملف يبدأ بـ rateb-hr-unified.',
     'mobile_activation_open_unified_https' => 'فتح عبر الرابط (بديل)',
