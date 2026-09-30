@@ -65,5 +65,13 @@ $assert(
     && !str_contains($intent, 'ratebapp'),
     'android intent uses /m/activate deep link for installed APK (not ratebapp)'
 );
+$handoffIntent = $svc->mobileAppHandoffIntentUrl('VBAK7P38');
+$assert(
+    str_contains($handoffIntent, 'package=sa.rateb.hr.mobile')
+    && str_contains($handoffIntent, 'scheme=ratebhr')
+    && str_contains($handoffIntent, 'code=VBAK-7P38')
+    && !str_contains($handoffIntent, 'ratebapp'),
+    'android handoff green button uses ratebhr://activate?code='
+);
 
 exit($fail > 0 ? 1 : 0);

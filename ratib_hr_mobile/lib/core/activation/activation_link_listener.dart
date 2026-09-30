@@ -5,6 +5,8 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:ratib_hr_mobile/core/activation/activation_bootstrap.dart';
+import 'package:ratib_hr_mobile/core/activation/activation_intent_bridge.dart';
 import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
 import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
@@ -25,7 +27,8 @@ class ActivationLinkListener extends StatefulWidget {
   State<ActivationLinkListener> createState() => _ActivationLinkListenerState();
 }
 
-class _ActivationLinkListenerState extends State<ActivationLinkListener> {
+class _ActivationLinkListenerState extends State<ActivationLinkListener>
+    with WidgetsBindingObserver {
   StreamSubscription<Uri>? _sub;
   bool _busy = false;
   final AppLinks _appLinks = AppLinks();
@@ -33,17 +36,37 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _sub = _appLinks.uriLinkStream.listen(_handle, onError: (_) {});
     unawaited(_handleInitial());
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_consumeNativePending());
+    }
+  }
+
+  Future<void> _consumeNativePending() async {
+    final pending = await ActivationIntentBridge.consumePendingUri();
+    if (pending != null) {
+      final uri = Uri.tryParse(pending);
+      if (uri != null) {
+        await _handle(uri);
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     super.dispose();
   }
 
   Future<void> _handleInitial() async {
+    await _consumeNativePending();
     try {
       final uri = await _appLinks.getInitialLink();
       if (uri != null) {
@@ -52,22 +75,9 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener> {
     } catch (_) {}
   }
 
-  static String? _codeFromUri(Uri uri) {
-    if (uri.scheme == 'ratebhr' && uri.host == 'activate') {
-      return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
-    }
-    if (uri.scheme == 'ratebapp' && uri.host == 'activate') {
-      return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
-    }
-    if (uri.scheme == 'https' || uri.scheme == 'http') {
-      return CompanyActivation.normalize(uri.toString());
-    }
-    return null;
-  }
-
   Future<void> _handle(Uri uri) async {
     if (_busy) return;
-    final code = _codeFromUri(uri);
+    final code = ActivationBootstrap.codeFromUri(uri);
     if (code == null) return;
     final embedded = CompanyActivation.normalize(BrandBuild.activationCode);
     if (embedded != null && embedded != code) {

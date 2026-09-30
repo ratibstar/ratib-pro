@@ -98,7 +98,7 @@ final class MobileAppActivationController extends Controller
             && (string) $_GET['setup'] === '1'
             && $this->isAndroidClient();
         if ($wantsQrHandoff) {
-            $intent = $svc->mobileAppIntentUrl($code);
+            $intent = $svc->mobileAppHandoffIntentUrl($code);
             if ($intent !== '') {
                 $this->renderAndroidHandoff(
                     $intent,

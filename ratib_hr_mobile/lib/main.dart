@@ -1,11 +1,11 @@
 /// RATEB HR Mobile — Phase C entry (enterprise ESS modules).
 library;
 
-import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/activation/activation_link_listener.dart';
+import 'package:ratib_hr_mobile/core/activation/activation_bootstrap.dart';
 import 'package:ratib_hr_mobile/core/activation/activation_install_guard.dart';
 import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
 import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
@@ -19,48 +19,14 @@ import 'package:ratib_hr_mobile/core/update/app_update_banner.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 
-String? _codeFromActivationUri(Uri uri) {
-  if (uri.scheme == 'ratebhr' && uri.host == 'activate') {
-    return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
-  }
-  if (uri.scheme == 'ratebapp' && uri.host == 'activate') {
-    return CompanyActivation.normalize(uri.queryParameters['code'] ?? '');
-  }
-  if (uri.scheme == 'https' || uri.scheme == 'http') {
-    return CompanyActivation.normalize(uri.toString());
-  }
-  return CompanyActivation.normalize(uri.toString());
-}
-
-Future<void> _activateFromInitialAppLink(Uri? uri) async {
-  if (uri == null) {
-    return;
-  }
-  try {
-    final code = _codeFromActivationUri(uri);
-    if (code == null) {
-      return;
-    }
-    final embedded = CompanyActivation.normalize(BrandBuild.activationCode);
-    if (embedded != null && embedded != code) {
-      return;
-    }
-    await CompanyActivation.activate(code);
-  } catch (_) {}
-}
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ActivationInstallGuard.runBeforeLoad();
-  Uri? initialUri;
-  try {
-    initialUri = await AppLinks().getInitialLink();
-  } catch (_) {}
-  await CompanyActivation.load(deferBackgroundRefresh: initialUri != null);
+  final launchUri = await ActivationBootstrap.resolveLaunchUri();
+  await CompanyActivation.load(deferBackgroundRefresh: true);
   await CompanyActivation.purgeWrongTenantForUnifiedPackage();
-  if (initialUri != null) {
-    await _activateFromInitialAppLink(initialUri);
-  } else if (BrandBuild.activationCode.isNotEmpty) {
+  await ActivationBootstrap.applyLaunchUri(launchUri);
+  if (launchUri == null && BrandBuild.activationCode.isNotEmpty) {
     await CompanyActivation.activate(BrandBuild.activationCode);
   }
   bootstrapPhase1();

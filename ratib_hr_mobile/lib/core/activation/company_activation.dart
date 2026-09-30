@@ -96,9 +96,7 @@ final class CompanyActivation {
     _code = _erpBaseUrl == null ? null : prefs.getString(_kCode);
     final idRaw = prefs.getInt(_kCompanyId);
     _companyId = _erpBaseUrl == null ? null : (idRaw != null && idRaw > 0 ? idRaw : null);
-    if (!deferBackgroundRefresh && isActive && (_code ?? '').isNotEmpty) {
-      unawaited(activate(_code!));
-    }
+    // Do not auto-refresh saved codes on startup — stale backup (e.g. Al-Arfaj #51) overwrote QR activation.
   }
 
   /// Code baked into a company-branded build: links the app to its company on first launch.

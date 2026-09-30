@@ -14,7 +14,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -76,7 +76,7 @@
                 <data android:scheme="https" android:host="www.rateb.sa" android:pathPrefix="/m/activate"/>
             </intent-filter>
             <!-- RATEB_PLATFORM_APP_LINKS_END -->
-            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

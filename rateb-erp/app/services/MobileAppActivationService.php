@@ -192,6 +192,28 @@ final class MobileAppActivationService
     }
 
     /**
+     * Android handoff page (green button): custom scheme delivers the code reliably when HTTPS App Links are not verified yet.
+     */
+    public function mobileAppHandoffIntentUrl(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+        $package = (new MobileAppApkService())->appInfo('hr')['package'];
+        $formatted = self::format($code);
+        $pub = $this->apks->publishedBuild('hr');
+        $apkUrl = is_array($pub) ? (string) ($pub['url'] ?? '') : '';
+        if ($apkUrl === '') {
+            $apkUrl = rateb_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES['hr']);
+        }
+
+        return 'intent://activate?code=' . rawurlencode($formatted)
+            . '#Intent;scheme=ratebhr;package=' . $package
+            . ';S.browser_fallback_url=' . rawurlencode($apkUrl) . ';end';
+    }
+
+    /**
      * Every company with a stored code (for admin audit — no codes are minted here).
      *
      * @return list<array{company_id:int, company_name:string, code:string, activation_url:string, erp_host:string}>

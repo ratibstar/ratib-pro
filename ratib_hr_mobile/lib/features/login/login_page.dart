@@ -11,6 +11,7 @@ import 'package:ratib_hr_mobile/core/routing/app_router.dart';
 import 'package:ratib_hr_mobile/core/theme/tokens/tokens.dart';
 import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/company_activation_dialog.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/features/login/login_activation_status.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
@@ -44,6 +45,31 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     _refreshBiometric();
     CompanyActivation.revision.addListener(_onCompanyChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureCompanyLinked());
+  }
+
+  Future<void> _ensureCompanyLinked() async {
+    if (!mounted || BrandBuild.activationCode.isNotEmpty) {
+      return;
+    }
+    try {
+      final pkg = (await PackageInfo.fromPlatform()).packageName;
+      if (pkg != 'sa.rateb.hr.mobile') {
+        return;
+      }
+    } catch (_) {
+      return;
+    }
+    if (!CompanyActivation.isActive) {
+      await showCompanyActivationDialog(context);
+      return;
+    }
+    final cid = CompanyActivation.companyId;
+    final name = CompanyActivation.localizedName(arabic: true);
+    if (cid == 51 || name.contains('العرفج')) {
+      await CompanyActivation.clear();
+      await showCompanyActivationDialog(context);
+    }
   }
 
   void _onCompanyChanged() {
