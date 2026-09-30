@@ -31,6 +31,7 @@ final class CompanyActivation {
   static const _kLogo = 'company_activation.logo_url';
   static const _kCode = 'company_activation.code';
   static const _kCompanyId = 'company_activation.company_id';
+  static const _kUnifiedHr = 'company_activation.unified_hr';
   static const _alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
   static String? _erpBaseUrl;
@@ -55,6 +56,7 @@ final class CompanyActivation {
 
   static String? get code => _code;
   static int? _companyId;
+  static bool? _unifiedHr;
 
   /// RATEB company id from the last successful activation API response.
   static int? get companyId => _companyId;
@@ -84,7 +86,8 @@ final class CompanyActivation {
     if (cid == 51 ||
         name.contains('العرفج') ||
         name.toLowerCase().contains('arfaj') ||
-        host.contains('alarfaj')) {
+        host.contains('alarfaj') ||
+        _unifiedHr == false) {
       await clear();
     }
   }
@@ -100,6 +103,7 @@ final class CompanyActivation {
     _code = _erpBaseUrl == null ? null : prefs.getString(_kCode);
     final idRaw = prefs.getInt(_kCompanyId);
     _companyId = _erpBaseUrl == null ? null : (idRaw != null && idRaw > 0 ? idRaw : null);
+    _unifiedHr = _erpBaseUrl == null ? null : prefs.getBool(_kUnifiedHr);
     // Do not auto-refresh saved codes on startup — stale backup (e.g. Al-Arfaj #51) overwrote QR activation.
   }
 
@@ -204,6 +208,8 @@ final class CompanyActivation {
     await prefs.setString(_kNameEn, nameEn);
     await prefs.setString(_kLogo, logo ?? '');
     await prefs.setString(_kCode, code);
+    await prefs.setBool(_kUnifiedHr, unifiedHr);
+    _unifiedHr = unifiedHr;
     if (companyId != null && companyId > 0) {
       await prefs.setInt(_kCompanyId, companyId);
       _companyId = companyId;
@@ -230,8 +236,10 @@ final class CompanyActivation {
     await prefs.remove(_kLogo);
     await prefs.remove(_kCode);
     await prefs.remove(_kCompanyId);
+    await prefs.remove(_kUnifiedHr);
     _erpBaseUrl = null;
     _companyId = null;
+    _unifiedHr = null;
     _companyName = null;
     _nameAr = '';
     _nameEn = '';

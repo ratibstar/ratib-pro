@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/activation/activation_link_listener.dart';
 import 'package:ratib_hr_mobile/core/activation/activation_bootstrap.dart';
+import 'package:ratib_hr_mobile/core/activation/activation_startup_gate.dart';
 import 'package:ratib_hr_mobile/core/activation/activation_install_guard.dart';
 import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
 import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
@@ -23,13 +24,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ActivationInstallGuard.runBeforeLoad();
   final launchUri = await ActivationBootstrap.resolveLaunchUri();
-  await CompanyActivation.load(deferBackgroundRefresh: true);
-  await CompanyActivation.purgeWrongTenantForUnifiedPackage();
   if (launchUri != null) {
     await ActivationBootstrap.applyLaunchUri(launchUri);
-  }
-  if (launchUri == null && BrandBuild.activationCode.isNotEmpty) {
-    await CompanyActivation.activate(BrandBuild.activationCode);
+    await CompanyActivation.purgeWrongTenantForUnifiedPackage();
+  } else {
+    await CompanyActivation.load(deferBackgroundRefresh: true);
+    await CompanyActivation.purgeWrongTenantForUnifiedPackage();
+    if (BrandBuild.activationCode.isNotEmpty) {
+      await CompanyActivation.activate(BrandBuild.activationCode);
+    }
   }
   bootstrapPhase1();
   await AppLocator.appearance.load();
@@ -114,10 +117,12 @@ class _RatebHrMobileAppState extends State<RatebHrMobileApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           routerConfig: _router,
-          builder: (context, child) => UnifiedAppGuard(
-            child: ActivationLinkListener(
-              onCompanyChanged: widget.session.signOut,
-              child: AppUpdateBanner(child: child ?? const SizedBox.shrink()),
+          builder: (context, child) => ActivationStartupGate(
+            child: UnifiedAppGuard(
+              child: ActivationLinkListener(
+                onCompanyChanged: widget.session.signOut,
+                child: AppUpdateBanner(child: child ?? const SizedBox.shrink()),
+              ),
             ),
           ),
         );
