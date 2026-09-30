@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ratib_hr_mobile/core/activation/activation_link_listener.dart';
+import 'package:ratib_hr_mobile/core/activation/activation_install_guard.dart';
 import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
 import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 import 'package:ratib_hr_mobile/core/activation/unified_app_guard.dart';
@@ -50,6 +51,7 @@ Future<void> _activateFromInitialAppLink(Uri? uri) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ActivationInstallGuard.runBeforeLoad();
   Uri? initialUri;
   try {
     initialUri = await AppLinks().getInitialLink();

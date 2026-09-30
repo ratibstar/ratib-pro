@@ -27,10 +27,11 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
     <h1 style="font-size:1.25rem"><?php echo $e(__('mobile_activation_opening_app')); ?></h1>
     <p><?php echo $e(__('mobile_activation_handoff_body')); ?></p>
     <p class="mono"><?php echo $e($companyName); ?> · <?php echo $e($code); ?></p>
-    <p class="mono">sa.rateb.hr.mobile</p>
+    <p class="mono">sa.rateb.hr.mobile · unified ~41 MB</p>
+    <p class="mono" style="color:#f87171">NOT sa.rateb.hr.mobile.c51 (~22 MB · Al-Arfaj)</p>
     <a class="btn primary" id="rateb-open-hr" href="<?php echo $e($intent); ?>"><?php echo $e(__('mobile_activation_open_unified_hr')); ?></a>
     <?php if ($apkUrl !== '') { ?>
-    <a class="btn secondary" href="<?php echo $e($apkUrl); ?>"><?php echo $e(__('mobile_activation_download_unified_hr')); ?></a>
+    <a class="btn secondary" href="<?php echo $e($apkUrl); ?>"><?php echo $e(__('mobile_activation_download_unified_hr')); ?> (sa.rateb.hr.mobile)</a>
     <?php } ?>
     <p style="font-size:0.8rem;margin-top:20px"><?php echo $e(__('mobile_activation_delete_branded_sibling')); ?></p>
     <script>
