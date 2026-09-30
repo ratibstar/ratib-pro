@@ -97,6 +97,7 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener>
     }
     final error = await CompanyActivation.activate(code);
     if (error == null) {
+      await ActivationBootstrap.clearPendingAfterSuccess();
       await widget.onCompanyChanged();
     }
     _busy = false;

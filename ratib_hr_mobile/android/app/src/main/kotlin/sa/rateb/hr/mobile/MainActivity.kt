@@ -12,6 +12,8 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val CHANNEL = "sa.rateb.hr.mobile/activation_intent"
+        private const val PREFS = "rateb_activation_bridge"
+        private const val KEY_URI = "pending_uri"
 
         @Volatile
         var pendingActivationUri: String? = null
@@ -36,22 +38,24 @@ class MainActivity : FlutterActivity() {
         val raw = uri.toString()
         if (raw.contains("activate", ignoreCase = true)) {
             pendingActivationUri = raw
-            persistPendingUri(raw)
+            bridgePrefs().edit().putString(KEY_URI, raw).apply()
         }
     }
 
-    private fun persistPendingUri(raw: String) {
-        getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            .edit()
-            .putString("flutter.rateb_pending_activation_uri", raw)
-            .apply()
+    private fun bridgePrefs() =
+        getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private fun peekBridgedUri(): String? {
+        val mem = pendingActivationUri
+        if (!mem.isNullOrBlank()) {
+            return mem
+        }
+        return bridgePrefs().getString(KEY_URI, null)
     }
 
-    private fun clearPersistedPendingUri() {
-        getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            .edit()
-            .remove("flutter.rateb_pending_activation_uri")
-            .apply()
+    private fun clearBridgedUri() {
+        pendingActivationUri = null
+        bridgePrefs().edit().remove(KEY_URI).apply()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -59,19 +63,15 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
+                    "peekPendingUri" -> result.success(peekBridgedUri())
+                    "clearPendingUri" -> {
+                        clearBridgedUri()
+                        result.success(null)
+                    }
                     "consumePendingUri" -> {
-                        val value = pendingActivationUri
-                        pendingActivationUri = null
-                        if (value == null) {
-                            val prefs = getSharedPreferences(
-                                "FlutterSharedPreferences",
-                                Context.MODE_PRIVATE,
-                            )
-                            result.success(prefs.getString("flutter.rateb_pending_activation_uri", null))
-                        } else {
-                            result.success(value)
-                        }
-                        clearPersistedPendingUri()
+                        val value = peekBridgedUri()
+                        clearBridgedUri()
+                        result.success(value)
                     }
                     else -> result.notImplemented()
                 }

@@ -7,8 +7,11 @@ import 'package:ratib_hr_mobile/core/activation/company_activation.dart';
 import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
 
 abstract final class ActivationBootstrap {
-  static Future<Uri?> resolveLaunchUri() async {
-    final pending = await ActivationIntentBridge.consumePendingUri();
+  /// Does not clear native pending storage — use [applyLaunchUri] then [clearPendingAfterSuccess].
+  static Future<Uri?> resolveLaunchUri({bool consumeNative = false}) async {
+    final pending = consumeNative
+        ? await ActivationIntentBridge.consumePendingUri()
+        : await ActivationIntentBridge.peekPendingUri();
     if (pending != null && pending.isNotEmpty) {
       return Uri.tryParse(pending);
     }
@@ -18,6 +21,10 @@ abstract final class ActivationBootstrap {
     } catch (_) {
       return null;
     }
+  }
+
+  static Future<void> clearPendingAfterSuccess() async {
+    await ActivationIntentBridge.clearPendingUri();
   }
 
   static String? codeFromUri(Uri? uri) {
@@ -36,15 +43,15 @@ abstract final class ActivationBootstrap {
     return CompanyActivation.normalize(uri.toString());
   }
 
-  static Future<void> applyLaunchUri(Uri? uri) async {
+  static Future<CompanyActivationError?> applyLaunchUri(Uri? uri) async {
     final code = codeFromUri(uri);
     if (code == null) {
-      return;
+      return CompanyActivationError.invalidCode;
     }
     final embedded = CompanyActivation.normalize(BrandBuild.activationCode);
     if (embedded != null && embedded != code) {
-      return;
+      return CompanyActivationError.wrongAndroidPackage;
     }
-    await CompanyActivation.activate(code);
+    return CompanyActivation.activate(code);
   }
 }
