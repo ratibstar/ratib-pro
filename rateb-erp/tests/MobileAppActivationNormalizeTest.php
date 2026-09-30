@@ -54,9 +54,10 @@ $intent = $svc->mobileAppIntentUrl('VBAK7P38');
 $assert(
     str_contains($intent, 'package=sa.rateb.hr.mobile')
     && str_contains($intent, 'scheme=https')
-    && str_contains($intent, '/app-activate/VBAK-7P38')
+    && str_contains($intent, '/m/activate/VBAK-7P38')
+    && !str_contains($intent, '/app-activate/')
     && !str_contains($intent, 'ratebapp'),
-    'android intent uses HTTPS handoff + unified package (not ratebapp)'
+    'android intent uses /m/activate deep link for installed APK (not ratebapp)'
 );
 
 exit($fail > 0 ? 1 : 0);

@@ -151,8 +151,21 @@ final class MobileAppActivationService
     }
 
     /**
-     * Android Chrome: HTTPS app-link intent pinned to sa.rateb.hr.mobile only.
-     * Never use ratebapp here — branded apps (e.g. Al-Arfaj .c51) still register ratebapp://.
+     * HTTPS path shipped in published APK intent-filters (/m/activate). Browser QR uses app-activate.
+     */
+    public function mobileAppDeepLinkUrl(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+        $origin = rtrim(rateb_site_origin(), '/');
+
+        return $origin . '/rateb-erp/public/m/activate/' . self::format($code) . '?setup=1';
+    }
+
+    /**
+     * Android Chrome: HTTPS deep link pinned to sa.rateb.hr.mobile (must match installed APK manifest).
      */
     public function mobileAppIntentUrl(string $code): string
     {
@@ -161,8 +174,8 @@ final class MobileAppActivationService
             return '';
         }
         $package = (new MobileAppApkService())->appInfo('hr')['package'];
-        $handoff = $this->mobileAppHandoffUrl($code);
-        if ($handoff === '') {
+        $deepLink = $this->mobileAppDeepLinkUrl($code);
+        if ($deepLink === '') {
             return '';
         }
         $pub = $this->apks->publishedBuild('hr');
@@ -170,7 +183,7 @@ final class MobileAppActivationService
         if ($apkUrl === '') {
             $apkUrl = rateb_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES['hr']);
         }
-        $rest = preg_replace('#^https?://#i', '', $handoff);
+        $rest = preg_replace('#^https?://#i', '', $deepLink);
 
         return 'intent://' . $rest
             . '#Intent;scheme=https;package=' . $package
