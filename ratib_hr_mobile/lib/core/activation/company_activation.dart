@@ -80,7 +80,11 @@ final class CompanyActivation {
     }
     final cid = _companyId;
     final name = (_companyName ?? '') + _nameAr + _nameEn;
-    if (cid == 51 || name.contains('العرفج') || name.toLowerCase().contains('arfaj')) {
+    final host = Uri.tryParse(_erpBaseUrl ?? '')?.host.toLowerCase() ?? '';
+    if (cid == 51 ||
+        name.contains('العرفج') ||
+        name.toLowerCase().contains('arfaj') ||
+        host.contains('alarfaj')) {
       await clear();
     }
   }
@@ -176,6 +180,10 @@ final class CompanyActivation {
     if (expectedPkg.isNotEmpty &&
         androidPackage.isNotEmpty &&
         expectedPkg != androidPackage) {
+      return CompanyActivationError.wrongAndroidPackage;
+    }
+    final unifiedHr = body['unified_hr'] == true;
+    if (androidPackage == 'sa.rateb.hr.mobile' && !unifiedHr) {
       return CompanyActivationError.wrongAndroidPackage;
     }
     final base = _validBase(body['erp_base_url']?.toString());

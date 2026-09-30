@@ -19,8 +19,19 @@ abstract final class ActivationInstallGuard {
     if (info.packageName != _unifiedPackage) {
       return;
     }
-    final tag = '${info.packageName}@${info.buildNumber}';
     final prefs = await SharedPreferences.getInstance();
+    final cid = prefs.getInt('company_activation.company_id');
+    final erp = prefs.getString('company_activation.erp_base_url') ?? '';
+    final host = Uri.tryParse(erp)?.host.toLowerCase() ?? '';
+    final name = (prefs.getString('company_activation.company_name') ?? '') +
+        (prefs.getString('company_activation.company_name_ar') ?? '');
+    final staleBrandedOnUnified = cid == 51 ||
+        name.contains('العرفج') ||
+        host.contains('alarfaj');
+    if (staleBrandedOnUnified) {
+      await CompanyActivation.clear();
+    }
+    final tag = '${info.packageName}@${info.buildNumber}';
     final previous = prefs.getString(_prefsKey);
     if (previous == tag) {
       return;

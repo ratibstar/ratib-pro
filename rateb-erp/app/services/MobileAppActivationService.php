@@ -336,15 +336,15 @@ final class MobileAppActivationService
         $unifiedHr = !$this->apks->companyHasBrandedBuild($app, $company);
         $expectedPackage = $this->apks->packageForActivationLink($app, $company);
         $androidPackage = trim((string) ($_GET['android_package'] ?? ''));
-        if ($unifiedHr && $app === 'hr' && $androidPackage !== ''
-            && $androidPackage !== $expectedPackage
-            && preg_match('/\.c\d+$/', $androidPackage) === 1) {
+        if ($app === 'hr' && $androidPackage !== '' && $expectedPackage !== ''
+            && $androidPackage !== $expectedPackage) {
             return ['status' => 403, 'body' => [
                 'success' => false,
                 'code' => 'wrong_android_package',
                 'message' => __('mobile_activation_wrong_android_package'),
                 'expected_android_package' => $expectedPackage,
                 'android_package' => $androidPackage,
+                'unified_hr' => $unifiedHr,
             ]];
         }
         $pub = $unifiedHr && $app === 'hr' ? $this->apks->publishedBuild('hr') : null;

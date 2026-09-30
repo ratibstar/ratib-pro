@@ -3391,7 +3391,7 @@ return [
     'mobile_activation_open_unified_https' => 'Open via link (fallback)',
     'mobile_activation_qr_scope' => 'QR for this company only: :name (#:id) — server :host',
     'mobile_activation_qr_payload' => 'QR payload',
-    'mobile_activation_qr_scan_hint' => 'Scan with the phone camera — opens the unified RATEB HR app (sa.rateb.hr.mobile) and shows your company name on the login screen.',
+    'mobile_activation_qr_scan_hint' => 'QR is for this company only — do not scan another company’s code. Unified flow: scan → Open link → install RATEB HR (~41 MB) → green button (not a branded ~22 MB app).',
     'mobile_activation_opening_app' => 'Opening the HR app and linking your company…',
     'mobile_activation_handoff_body' => 'Tap the green button to open the unified app only (sa.rateb.hr.mobile). If you see Al-Arfaj branding, you are in the branded app — uninstall it and install the unified build.',
     'mobile_activation_handoff_install_first' => '① Download and install the unified APK (~41 MB) first. ② Then tap the green button only. Do not tap green before install.',
