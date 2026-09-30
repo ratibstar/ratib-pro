@@ -32,9 +32,6 @@ final class MobileAppsController extends Controller
         $app = $platform ? MobileAppApkService::normalizeApp((string) ($_GET['app'] ?? 'hr')) : 'hr';
         $apkSvc = new MobileAppApkService();
         $branded = new MobileAppBrandedService($apkSvc);
-        if ($platform && $app === 'hr') {
-            $branded->enforceRetiredHrBrandedCompanies();
-        }
         $platformUpdate = $platform ? $apkSvc->platformUpdateStatus($app) : null;
         $rows = (new MobileAppConfigService())->listCompaniesWithConfig();
         $activationSvc = new MobileAppActivationService($apkSvc);
@@ -820,6 +817,10 @@ final class MobileAppsController extends Controller
             return;
         }
         if (is_array($company)) {
+            if ($found['app'] === 'hr') {
+                (new MobileAppBrandedService($apkSvc))->enforceRetiredHrBrandedCompanies();
+                $company = (new Company())->find($found['company_id']) ?? $company;
+            }
             $apkSvc->reconcileCompanySlotPolicy($found['app'], $company);
             $policyPath = $apkSvc->activationApkPath($found['app'], $company);
             if ($policyPath !== null && is_file($policyPath)) {
@@ -838,6 +839,9 @@ final class MobileAppsController extends Controller
         header('Content-Type: application/vnd.android.package-archive');
         header('Content-Disposition: attachment; filename="' . $name . '"');
         header('Content-Length: ' . (string) filesize($found['path']));
+        $pkg = is_array($company) ? $apkSvc->packageForCompany($found['app'], $company) : $apkSvc->appInfo($found['app'])['package'];
+        header('X-Rateb-Apk-Package: ' . $pkg);
+        header('X-Rateb-Apk-Company-Id: ' . (string) (int) ($found['company_id'] ?? 0));
         header('X-Content-Type-Options: nosniff');
         header('Cache-Control: no-store');
         readfile($found['path']);

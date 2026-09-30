@@ -1,0 +1,3 @@
+-- Policy: per-company branded HR (sa.rateb.hr.mobile.c<id>) is supported again.
+-- Migration 268 only removed JSON keys; re-enable from Admin → Mobile Apps → company → «طلب APK منفصل».
+-- No automatic SQL changes here.

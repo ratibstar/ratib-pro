@@ -19,12 +19,6 @@ use Rateb\App\Models\Company;
  */
 final class MobileAppBrandedService
 {
-    /** Platform policy: these companies use unified HR only (no sa.rateb.hr.mobile.c* APK). */
-    public const RETIRED_HR_BRANDED_COMPANY_IDS = [51];
-
-    /** Published branded artifacts that must not be re-synced into company slots. */
-    public const RETIRED_PUBLISHED_KEYS = ['hr-51-15f8c6a7ba'];
-
     public const SETTINGS_KEY = 'mobile_branded';
     public const PUBLIC_DIR = 'company';
     public const NAMES_KEY = 'mobile_names';
@@ -58,9 +52,6 @@ final class MobileAppBrandedService
     public function setRequested(string $app, int $companyId, bool $requested): bool
     {
         $app = MobileAppApkService::normalizeApp($app);
-        if ($requested && $app === 'hr' && in_array($companyId, self::RETIRED_HR_BRANDED_COMPANY_IDS, true)) {
-            return false;
-        }
 
         return $this->updateSettings($companyId, function (array $settings) use ($app, $companyId, $requested): array {
             $branded = is_array($settings[self::SETTINGS_KEY] ?? null) ? $settings[self::SETTINGS_KEY] : [];
@@ -416,9 +407,6 @@ final class MobileAppBrandedService
     public function sync(string $app, array $company, int $userId = 0): string
     {
         $key = $this->keyFor($app, $company);
-        if ($key !== '' && in_array($key, self::RETIRED_PUBLISHED_KEYS, true)) {
-            return 'none';
-        }
         $pub = $key !== '' ? $this->published($key) : null;
         if ($pub === null) {
             return 'none';
@@ -442,42 +430,5 @@ final class MobileAppBrandedService
         }
 
         return $ok ? 'updated' : 'failed';
-    }
-
-    /**
-     * Remove retired branded HR builds from DB settings, company slots, and public/downloads/company.
-     * Safe to call on every Mobile Apps admin page load.
-     */
-    public function enforceRetiredHrBrandedCompanies(): void
-    {
-        foreach (self::RETIRED_PUBLISHED_KEYS as $key) {
-            $this->purgePublishedKey($key);
-        }
-        foreach (self::RETIRED_HR_BRANDED_COMPANY_IDS as $companyId) {
-            $companyId = (int) $companyId;
-            if ($companyId <= 0) {
-                continue;
-            }
-            $company = (new Company())->find($companyId);
-            if (!is_array($company)) {
-                continue;
-            }
-            if ($this->keyFor('hr', $company) !== '') {
-                $this->setRequested('hr', $companyId, false);
-                $company = (new Company())->find($companyId) ?? $company;
-            }
-            $this->apks->reconcileCompanySlotPolicy('hr', $company);
-            $this->apks->linkCompanyToShared('hr', $company);
-        }
-    }
-
-    private function purgePublishedKey(string $key): void
-    {
-        if (!self::validKey($key)) {
-            return;
-        }
-        $dir = rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/public/downloads/' . self::PUBLIC_DIR;
-        @unlink($dir . '/' . $key . '.apk');
-        @unlink($dir . '/' . $key . '.json');
     }
 }
