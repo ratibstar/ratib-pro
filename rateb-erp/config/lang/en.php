@@ -3410,6 +3410,7 @@ return [
     'mobile_activation_download_company_hr' => 'Download this company’s HR app',
     'mobile_activation_open_company_hr' => 'Open company app and link code',
     'mobile_activation_open_company_hr_disabled' => 'Install the app first (after APK is built)',
+    'mobile_activation_hr_wrong_unified_installed' => 'If the generic “RATEB” app (sa.rateb.hr.mobile) opens, that is not this company’s app — uninstall it and install this company’s APK from the download link when ready, then tap HR again to link the code.',
     'mobile_activation_handoff_build_apk_first' => 'Do not tap Open app before installing the company APK — it is not on Google Play.',
     'mobile_activation_one_button_company' => 'Install or open app and link company',
     'mobile_activation_one_button_unified' => 'Install or open RATEB HR and link company',

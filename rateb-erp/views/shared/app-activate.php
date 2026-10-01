@@ -106,17 +106,30 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     </div>
     <?php } ?>
 
+    <?php if (!empty($hrApkPending)) { ?>
+        <div class="alert alert-warning py-2 small mb-3" role="alert" id="rateb-hr-apk-pending">
+            <p class="mb-2"><?php echo $e(__('mobile_activation_company_apk_pending')); ?></p>
+            <p class="mb-2"><?php echo $e(__('mobile_activation_handoff_body_dedicated')); ?></p>
+            <?php if (!empty($hrExpectedPackage)) { ?>
+            <p class="mb-0 font-monospace small" dir="ltr"><?php echo $e((string) $hrExpectedPackage); ?></p>
+            <?php } ?>
+            <p class="mb-0 mt-2 small"><?php echo $e(__('mobile_activation_hr_wrong_unified_installed')); ?></p>
+        </div>
+    <?php } ?>
     <?php if ($apps === []) { ?>
         <div class="alert alert-warning py-2 small"><?php echo $e(__('mobile_activation_no_apps')); ?></div>
     <?php } else { ?>
         <div class="rateb-act-apps" data-rateb-web-only>
-            <?php foreach ($apps as $row) { ?>
-            <a class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?>" role="button" tabindex="0"
-               href="<?php echo $e(($row['url'] ?? '') !== '' ? $row['url'] : '#'); ?>"
+            <?php foreach ($apps as $row) {
+                $cardHref = ($row['open'] ?? '') !== '' ? (string) $row['open'] : (($row['url'] ?? '') !== '' ? (string) $row['url'] : '#');
+                ?>
+            <a class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?><?php echo !empty($row['apk_pending']) ? ' rateb-act-app--pending' : ''; ?>" role="button" tabindex="0"
+               href="<?php echo $e($cardHref); ?>"
                data-rateb-download="<?php echo $e($row['url'] ?? ''); ?>"
                data-rateb-open="<?php echo $e($row['open'] ?? ''); ?>"
                data-rateb-open-android="<?php echo $e($row['open_android'] ?? ''); ?>"
-               <?php if (($row['app'] ?? '') === 'hr' && !empty($useUnifiedHr)) { ?>data-rateb-apk-only="1"<?php } ?>>
+               <?php if (($row['app'] ?? '') === 'hr' && !empty($useUnifiedHr)) { ?>data-rateb-apk-only="1"<?php } ?>
+               <?php if (!empty($row['apk_pending'])) { ?>data-rateb-apk-pending="1"<?php } ?>>
                 <span class="rateb-act-app-icon"><i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?>"></i></span>
                 <span class="rateb-act-app-text">
                     <b><?php echo $e(__('mobile_app_short_' . $row['app'])); ?></b>

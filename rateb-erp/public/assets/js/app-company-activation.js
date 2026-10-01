@@ -53,6 +53,11 @@
                     e.preventDefault();
                     if (dl) {
                         go(dl);
+                    } else if (el.getAttribute('data-rateb-apk-pending') === '1') {
+                        var pending = document.getElementById('rateb-hr-apk-pending');
+                        if (pending && typeof pending.scrollIntoView === 'function') {
+                            pending.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
                     }
                     return;
                 }
@@ -65,6 +70,14 @@
                 if (dl) {
                     e.preventDefault();
                     go(dl);
+                    return;
+                }
+                if (el.getAttribute('data-rateb-apk-pending') === '1') {
+                    e.preventDefault();
+                    var plain = (el.getAttribute('data-rateb-open') || '').trim();
+                    if (plain) {
+                        go(plain);
+                    }
                 }
             };
             el.addEventListener('click', handler);

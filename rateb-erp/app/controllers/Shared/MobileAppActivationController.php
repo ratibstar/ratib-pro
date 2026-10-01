@@ -108,6 +108,15 @@ final class MobileAppActivationController extends Controller
             Response::redirect(rateb_url('app-activate/' . $formatted));
             return;
         }
+        $apps = $svc->enabledApps($company);
+        $hrExpectedPackage = $apks->packageForActivationLink('hr', $company);
+        $hrApkPending = false;
+        foreach ($apps as $row) {
+            if (($row['app'] ?? '') === 'hr' && !empty($row['apk_pending'])) {
+                $hrApkPending = true;
+                break;
+            }
+        }
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
                 'id' => (int) ($company['id'] ?? 0),
@@ -116,11 +125,13 @@ final class MobileAppActivationController extends Controller
             ],
             'code' => MobileAppActivationService::format($code),
             'erpHost' => $erpHost,
-            'apps' => $svc->enabledApps($company),
+            'apps' => $apps,
             'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',
             'unifiedHrApk' => (string) ($unifiedDl['url'] ?? ''),
             'unifiedHrDl' => $unifiedDl,
             'useUnifiedHr' => $useUnifiedHr,
+            'hrApkPending' => $hrApkPending,
+            'hrExpectedPackage' => $hrExpectedPackage,
         ]), 'auth');
     }
 

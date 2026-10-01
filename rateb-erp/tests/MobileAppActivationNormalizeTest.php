@@ -84,5 +84,14 @@ $assert(
     && !str_contains($handoffIntent, 'ratebapp'),
     'android handoff green button uses ratebhr://activate?code='
 );
+$fallbackPage = 'https://rateb.sa/rateb-erp/public/app-activate/VBAK-7P38';
+$unpinnedIntent = $svc->mobileAppOpenIntent('hr', 'VBAK7P38', ['id' => 49], $fallbackPage, false);
+$assert(
+    str_contains($unpinnedIntent, 'scheme=ratebhr')
+    && !preg_match('/#Intent;scheme=ratebhr;package=/', $unpinnedIntent)
+    && str_contains($unpinnedIntent, 'browser_fallback_url')
+    && str_contains(urldecode($unpinnedIntent), 'app-activate/VBAK-7P38'),
+    'unpinned HR intent opens ratebhr handler with HTTPS fallback when APK URL missing'
+);
 
 exit($fail > 0 ? 1 : 0);
