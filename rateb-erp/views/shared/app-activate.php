@@ -115,6 +115,7 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
                href="<?php echo $e(($row['url'] ?? '') !== '' ? $row['url'] : '#'); ?>"
                data-rateb-download="<?php echo $e($row['url'] ?? ''); ?>"
                data-rateb-open="<?php echo $e($row['open'] ?? ''); ?>"
+               data-rateb-open-android="<?php echo $e($row['open_android'] ?? ''); ?>"
                <?php if (($row['app'] ?? '') === 'hr' && !empty($useUnifiedHr)) { ?>data-rateb-apk-only="1"<?php } ?>>
                 <span class="rateb-act-app-icon"><i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?>"></i></span>
                 <span class="rateb-act-app-text">

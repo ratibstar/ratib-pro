@@ -32,28 +32,40 @@
         } catch (e) {}
     }
 
+    function pickOpenUrl(el) {
+        var android = /Android/i.test(navigator.userAgent || '');
+        var intent = (el.getAttribute('data-rateb-open-android') || '').trim();
+        var plain = (el.getAttribute('data-rateb-open') || '').trim();
+        if (android && intent) {
+            return intent;
+        }
+        return plain || intent;
+    }
+
     function bindActivationAppCards() {
         document.querySelectorAll('.rateb-act-app').forEach(function (el) {
             if (el.getAttribute('data-rateb-apk-only') === '1') {
                 return;
             }
             var handler = function (e) {
-                var openUrl = (el.getAttribute('data-rateb-open') || '').trim();
                 var dl = (el.getAttribute('data-rateb-download') || '').trim();
+                if (e.target && e.target.closest && e.target.closest('.rateb-act-app-dl')) {
+                    e.preventDefault();
+                    if (dl) {
+                        go(dl);
+                    }
+                    return;
+                }
+                var openUrl = pickOpenUrl(el);
                 if (openUrl) {
                     e.preventDefault();
                     go(openUrl);
-                    if (dl) {
-                        window.setTimeout(function () { go(dl); }, 1400);
-                    }
                     return;
                 }
                 if (dl) {
                     e.preventDefault();
                     go(dl);
-                    return;
                 }
-                e.preventDefault();
             };
             el.addEventListener('click', handler);
             el.addEventListener('keydown', function (e) {

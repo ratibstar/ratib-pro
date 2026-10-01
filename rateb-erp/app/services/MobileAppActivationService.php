@@ -187,6 +187,30 @@ final class MobileAppActivationService
     }
 
     /**
+     * Chrome on Android: open the installed app by package (APK URL fallback only — never Play Store).
+     */
+    public function mobileAppOpenIntent(string $app, string $code, array $company, string $apkFallbackUrl = ''): string
+    {
+        $app = MobileAppApkService::normalizeApp($app);
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+        $scheme = $app === 'hr' ? 'ratebhr' : 'ratebapp';
+        $package = $app === 'hr'
+            ? $this->apks->packageForActivationLink($app, $company)
+            : $this->apks->appInfo($app)['package'];
+        $formatted = self::format($code);
+        $out = 'intent://activate?code=' . rawurlencode($formatted)
+            . '#Intent;scheme=' . $scheme . ';package=' . $package;
+        if (trim($apkFallbackUrl) !== '') {
+            $out .= ';S.browser_fallback_url=' . rawurlencode($apkFallbackUrl);
+        }
+
+        return $out . ';end';
+    }
+
+    /**
      * HTTPS path shipped in published APK intent-filters (/m/activate). Browser uses app-activate.
      */
     public function mobileAppDeepLinkUrl(string $code): string
@@ -506,13 +530,14 @@ final class MobileAppActivationService
             $open = '';
             $openAndroid = '';
             if ($code !== '') {
-                if ($app === 'hr' && !$this->apks->servesBrandedApk($app, $company)) {
+                if ($app === 'hr' && !$this->apks->servesBrandedApk($app, $company) && !$this->apks->companyHasBrandedBuild($app, $company)) {
                     $open = $this->mobileAppHandoffUrl($code);
                     $openAndroid = $this->mobileAppIntentUrl($code);
-                } elseif ($app === 'hr') {
-                    $open = $this->mobileAppQrDeepLink($code);
                 } else {
-                    $open = $this->mobileAppRatebappDeepLink($code);
+                    $open = $app === 'hr'
+                        ? $this->mobileAppQrDeepLink($code)
+                        : $this->mobileAppRatebappDeepLink($code);
+                    $openAndroid = $this->mobileAppOpenIntent($app, $code, $company, $url);
                 }
             }
             $out[] = ['app' => $app, 'url' => $url, 'open' => $open, 'open_android' => $openAndroid];
