@@ -24,20 +24,38 @@ class ActivationLinkListener extends StatefulWidget {
   State<ActivationLinkListener> createState() => _ActivationLinkListenerState();
 }
 
-class _ActivationLinkListenerState extends State<ActivationLinkListener> {
+class _ActivationLinkListenerState extends State<ActivationLinkListener>
+    with WidgetsBindingObserver {
   StreamSubscription<Uri>? _sub;
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _sub = AppLinks().uriLinkStream.listen(_handle, onError: (_) {});
+    unawaited(_linkFromPending());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_linkFromPending());
+  }
+
+  /// Fresh install / launcher start: link the company the open-app page remembered for this phone.
+  Future<void> _linkFromPending() async {
+    if (_busy || CompanyActivation.isActive || CompanyActivation.embeddedCode.isNotEmpty) return;
+    _busy = true;
+    final error = await CompanyActivation.activateFromPending();
+    _busy = false;
+    if (error == null) await widget.onCompanyChanged();
   }
 
   Future<void> _handle(Uri uri) async {
