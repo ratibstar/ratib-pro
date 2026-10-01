@@ -10,6 +10,7 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\Company;
 use Rateb\App\Services\MobileAppActivationService;
 use Rateb\App\Services\MobileAppApkService;
+use Rateb\App\Services\MobileAppAssetLinksService;
 use Rateb\App\Services\MobileAppBrandedService;
 use Rateb\App\Services\MobileAppConfigService;
 
@@ -614,6 +615,9 @@ final class MobileAppsController extends Controller
         $server = $apkSvc->serverForCompany($app, $company);
         $apkSvc->reconcileCompanySlotPolicy($app, $company);
         $branded->sync($app, $company, $this->currentUserId());
+        if ($branded->keyFor($app, $company) !== '') {
+            (new MobileAppAssetLinksService())->refresh();
+        }
         $apk = $apkSvc->meta($key);
         $url = $apkSvc->downloadUrlForToken($apkSvc->ensureToken($key));
         $activation = new MobileAppActivationService($apkSvc);

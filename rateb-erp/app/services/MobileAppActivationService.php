@@ -114,7 +114,7 @@ final class MobileAppActivationService
         if (is_array($company)) {
             $app = 'hr';
             if ($this->apks->companyHasBrandedBuild($app, $company)) {
-                return $this->mobileAppQrDeepLink($code);
+                return $this->publicActivationUrl($code);
             }
         }
 

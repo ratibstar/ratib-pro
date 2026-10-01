@@ -281,7 +281,9 @@ try {
             $manifest = Join-Path $appDir 'android\app\src\main\AndroidManifest.xml'
             if (Test-Path $manifest) {
                 $man = [IO.File]::ReadAllText($manifest, [Text.Encoding]::UTF8)
-                $man = [regex]::Replace($man, '(?s)<!-- RATEB_PLATFORM_APP_LINKS_START.*?RATEB_PLATFORM_APP_LINKS_END -->', '<!-- branded build: platform activation links stripped -->')
+                # Branded apps keep HTTPS app-activate (per-company package + assetlinks). Strip unified-only /m/activate filters.
+                $man = [regex]::Replace($man, '(?s)<intent-filter android:autoVerify="true">\s*<action android:name="android\.intent\.action\.VIEW"/>.*?pathPrefix="/rateb-erp/public/m/activate".*?</intent-filter>\s*', '')
+                $man = [regex]::Replace($man, '(?s)<intent-filter android:autoVerify="true">\s*<action android:name="android\.intent\.action\.VIEW"/>.*?pathPrefix="/m/activate".*?</intent-filter>\s*', '')
                 $man = $man -replace '(?s)\s*<!-- Company activation: ratebapp://activate\?code=.*?ratebapp" android:host="activate"/>\s*</intent-filter>\s*', "`n"
                 [IO.File]::WriteAllText($manifest, $man, (New-Object Text.UTF8Encoding($false)))
             }

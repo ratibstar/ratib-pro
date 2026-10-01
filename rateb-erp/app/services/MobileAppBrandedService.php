@@ -450,6 +450,7 @@ final class MobileAppBrandedService
         ]);
         if ($ok) {
             $this->clearQueue($app, (int) $company['id']);
+            (new MobileAppAssetLinksService())->refresh();
         }
 
         return $ok ? 'updated' : 'failed';
