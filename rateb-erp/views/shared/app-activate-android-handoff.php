@@ -6,7 +6,15 @@ declare(strict_types=1);
 /** @var string $apkUrl */
 /** @var string $code */
 /** @var string $companyName */
+/** @var bool $dedicatedCompanyApp */
+/** @var string $androidPackage */
+/** @var int $companyId */
 $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
+$dedicated = !empty($dedicatedCompanyApp);
+$pkg = trim((string) ($androidPackage ?? ''));
+if ($pkg === '') {
+    $pkg = 'sa.rateb.hr.mobile';
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $e(rateb_locale()); ?>" dir="<?php echo rateb_locale() === 'ar' ? 'rtl' : 'ltr'; ?>">
@@ -28,19 +36,29 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
 </head>
 <body>
     <h1 style="font-size:1.25rem"><?php echo $e(__('mobile_activation_opening_app')); ?></h1>
-    <p><?php echo $e(__('mobile_activation_handoff_body')); ?></p>
-    <p class="mono"><?php echo $e($companyName); ?> · <?php echo $e($code); ?></p>
-    <p class="mono">sa.rateb.hr.mobile · unified HR</p>
-    <p class="mono" style="color:#f87171">NOT sa.rateb.hr.mobile.c51 (~22 MB · Al-Arfaj logo on login)</p>
-    <?php if ($apkUrl !== '') { ?>
-    <a class="btn secondary" href="<?php echo $e($apkUrl); ?>"><?php echo $e(__('mobile_activation_download_unified_hr')); ?> (sa.rateb.hr.mobile)</a>
+    <?php if ($dedicated) { ?>
+        <p><?php echo $e(__('mobile_activation_handoff_body_dedicated')); ?></p>
+        <p class="mono"><?php echo $e($companyName); ?> · <?php echo $e($code); ?></p>
+        <p class="mono"><?php echo $e($pkg); ?><?php if ($companyId > 0) { ?> · #<?php echo $e((string) $companyId); ?><?php } ?></p>
+        <?php if ($apkUrl !== '') { ?>
+        <a class="btn secondary" href="<?php echo $e($apkUrl); ?>"><?php echo $e(__('mobile_activation_download_company_hr')); ?></a>
+        <?php } ?>
+        <p style="font-size:0.85rem;color:#fbbf24;margin-top:12px"><?php echo $e(__('mobile_activation_handoff_install_first_dedicated')); ?></p>
+        <button type="button" class="btn primary" id="rateb-open-hr"><?php echo $e(__('mobile_activation_open_company_hr')); ?></button>
+        <p style="font-size:0.8rem;margin-top:20px"><?php echo $e(__('mobile_activation_handoff_dedicated_hint')); ?></p>
+    <?php } else { ?>
+        <p><?php echo $e(__('mobile_activation_handoff_body')); ?></p>
+        <p class="mono"><?php echo $e($companyName); ?> · <?php echo $e($code); ?></p>
+        <p class="mono">sa.rateb.hr.mobile · unified HR</p>
+        <?php if ($apkUrl !== '') { ?>
+        <a class="btn secondary" href="<?php echo $e($apkUrl); ?>"><?php echo $e(__('mobile_activation_download_unified_hr')); ?> (sa.rateb.hr.mobile)</a>
+        <?php } ?>
+        <p style="font-size:0.85rem;color:#fbbf24;margin-top:12px"><?php echo $e(__('mobile_activation_handoff_install_first')); ?></p>
+        <button type="button" class="btn primary" id="rateb-open-hr"><?php echo $e(__('mobile_activation_open_unified_hr')); ?></button>
+        <p style="font-size:0.8rem;margin-top:20px"><?php echo $e(__('mobile_activation_delete_branded_sibling')); ?></p>
     <?php } ?>
-    <p style="font-size:0.85rem;color:#fbbf24;margin-top:12px"><?php echo $e(__('mobile_activation_handoff_install_first')); ?></p>
-    <button type="button" class="btn primary" id="rateb-open-hr"><?php echo $e(__('mobile_activation_open_unified_hr')); ?></button>
     <button type="button" class="btn ghost" id="rateb-copy-code"><?php echo $e(__('mobile_activation_copy_code')); ?></button>
     <p id="copy-status" class="mono" aria-live="polite"></p>
-    <p style="font-size:0.8rem;margin-top:20px"><?php echo $e(__('mobile_activation_delete_branded_sibling')); ?></p>
-    <p style="font-size:0.8rem;color:#f87171">إذا ظهر «شركة العرفج» بعد الزر الأخضر = فتحت تطبيق العرفج (.c51) وليس RATEB HR الموحد.</p>
     <script>
     (function () {
         var intentRatebhr = <?php echo json_encode($intent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
@@ -56,7 +74,7 @@ $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
         document.getElementById('rateb-copy-code')?.addEventListener('click', function () {
             var msg = document.getElementById('copy-status');
             var text = code;
-            function ok() { if (msg) msg.textContent = 'Copied ' + text + ' — open RATEB HR → Change company → paste'; }
+            function ok() { if (msg) msg.textContent = <?php echo json_encode(__('mobile_activation_copy_done'), JSON_UNESCAPED_UNICODE); ?> + ' ' + text; }
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(ok).catch(function () { if (msg) msg.textContent = text; });
             } else if (msg) { msg.textContent = text; }

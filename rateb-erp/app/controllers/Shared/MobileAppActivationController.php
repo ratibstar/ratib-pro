@@ -115,12 +115,16 @@ final class MobileAppActivationController extends Controller
                 $handoffApk = $apks->activationDownloadUrl('hr', $company);
             }
             if ($intent !== '') {
+                $cid = (int) ($company['id'] ?? 0);
                 $this->renderAndroidHandoff(
                     $intent,
                     $intentHttps,
                     $handoffApk,
                     $formatted,
-                    $names[rateb_locale() === 'ar' ? 'ar' : 'en']
+                    $names[rateb_locale() === 'ar' ? 'ar' : 'en'],
+                    !$useUnifiedHr,
+                    $apks->packageForActivationLink('hr', $company),
+                    $cid
                 );
                 return;
             }
@@ -159,8 +163,16 @@ final class MobileAppActivationController extends Controller
         return $ch === '?1';
     }
 
-    private function renderAndroidHandoff(string $intent, string $intentHttps, string $apkUrl, string $code, string $companyName): void
-    {
+    private function renderAndroidHandoff(
+        string $intent,
+        string $intentHttps,
+        string $apkUrl,
+        string $code,
+        string $companyName,
+        bool $dedicatedCompanyApp = false,
+        string $androidPackage = '',
+        int $companyId = 0
+    ): void {
         header('Cache-Control: no-store');
         View::render('shared/app-activate-android-handoff', [
             'intent' => $intent,
@@ -168,6 +180,9 @@ final class MobileAppActivationController extends Controller
             'apkUrl' => $apkUrl,
             'code' => $code,
             'companyName' => $companyName,
+            'dedicatedCompanyApp' => $dedicatedCompanyApp,
+            'androidPackage' => $androidPackage,
+            'companyId' => $companyId,
         ], null);
     }
 

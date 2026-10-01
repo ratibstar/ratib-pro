@@ -839,10 +839,6 @@ final class MobileAppsController extends Controller
             return;
         }
         if (is_array($company)) {
-            if ($found['app'] === 'hr') {
-                (new MobileAppBrandedService($apkSvc))->enforceRetiredHrBrandedCompanies();
-                $company = (new Company())->find($found['company_id']) ?? $company;
-            }
             $apkSvc->reconcileCompanySlotPolicy($found['app'], $company);
             $policyPath = $apkSvc->activationApkPath($found['app'], $company);
             if ($policyPath !== null && is_file($policyPath)) {

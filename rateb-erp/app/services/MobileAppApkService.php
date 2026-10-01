@@ -209,12 +209,13 @@ final class MobileAppApkService
             $branded = new MobileAppBrandedService($this);
             $brandedKey = $branded->keyFor($app, $company);
             if ($brandedKey !== '') {
-                $pub = $branded->published($brandedKey);
-                if (is_array($pub) && ($pub['url'] ?? '') !== '') {
-                    return (string) $pub['url'];
+                if ($this->servesBrandedApk($app, $company)) {
+                    return $this->downloadUrlForToken($this->ensureToken($key));
                 }
 
-                return $this->downloadUrlForToken($this->ensureToken($key));
+                return rateb_public_url(
+                    'downloads/' . MobileAppBrandedService::PUBLIC_DIR . '/' . $brandedKey . '.apk'
+                );
             }
         }
         $published = $this->publishedBuild($app);
