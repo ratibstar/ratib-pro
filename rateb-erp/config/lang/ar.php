@@ -3409,6 +3409,7 @@ return [
     'mobile_activation_open_company_hr' => 'فتح تطبيق الشركة وربط الكود',
     'mobile_activation_open_company_hr_disabled' => 'ثبّت التطبيق أولاً (بعد بناء APK)',
     'mobile_activation_hr_wrong_unified_installed' => 'إن فتح تطبيق «RATEB» العام (sa.rateb.hr.mobile) فهذا ليس تطبيق هذه الشركة — احذفه من الجوال وثبّت APK الشركة من رابط التحميل عندما يكون جاهزاً، أو اضغط الزر الأخضر بعد التثبيت لربط الكود.',
+    'mobile_activation_launch_hint' => 'إن لم يُفتح التطبيق تلقائياً، اضغط «تحميل» أعلاه ثم ثبّت APK وارجع لهذه الصفحة.',
     'mobile_activation_handoff_build_apk_first' => 'لا تضغط «فتح التطبيق» قبل تثبيت APK الشركة — التطبيق غير منشور على Google Play.',
     'mobile_activation_one_button_company' => 'تثبيت أو فتح التطبيق وربط الشركة',
     'mobile_activation_one_button_unified' => 'تثبيت أو فتح تطبيق رتب وربط الشركة',

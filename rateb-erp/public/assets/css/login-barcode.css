@@ -576,6 +576,8 @@
     text-decoration: none;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    z-index: 2;
 }
 
 .rateb-act-app-main:hover,
@@ -634,6 +636,8 @@
     text-decoration: none;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    z-index: 3;
 }
 
 .rateb-act-app-dl:hover,

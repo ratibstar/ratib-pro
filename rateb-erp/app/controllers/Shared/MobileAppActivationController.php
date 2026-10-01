@@ -110,8 +110,9 @@ final class MobileAppActivationController extends Controller
         }
         $apps = $svc->enabledApps($company);
         $activationAndroidClient = $this->isAndroidClient();
+        $formattedForTiles = MobileAppActivationService::format($code);
         foreach ($apps as $i => $row) {
-            $apps[$i]['tile_href'] = $this->activationTileHref($row, $activationAndroidClient);
+            $apps[$i]['tile_href'] = $this->activationLaunchUrl($formattedForTiles, (string) ($row['app'] ?? 'hr'));
         }
         $hrExpectedPackage = $apks->packageForActivationLink('hr', $company);
         $hrApkPending = false;
@@ -140,24 +141,83 @@ final class MobileAppActivationController extends Controller
         ]), 'auth');
     }
 
-    /**
-     * Primary tap target: Android intent when available, else custom scheme, else APK download.
-     *
-     * @param array{app?:string,url?:string,open?:string,open_android?:string,apk_pending?:bool} $row
-     */
-    private function activationTileHref(array $row, bool $isAndroid): string
+    /** HTTPS bridge: JS opens intent/scheme (hash in intent:// breaks inside static href on Chrome). */
+    public function launch(array $params = []): void
     {
-        $url = trim((string) ($row['url'] ?? ''));
-        $open = trim((string) ($row['open'] ?? ''));
-        $openAndroid = trim((string) ($row['open_android'] ?? ''));
-        if ($isAndroid && $openAndroid !== '') {
-            return $openAndroid;
+        header('Cache-Control: no-store');
+        $code = MobileAppActivationService::normalize((string) ($params['code'] ?? ''));
+        $app = MobileAppApkService::normalizeApp((string) ($params['app'] ?? ''));
+        if ($code === '' || !in_array($app, MobileAppApkService::APPS, true)) {
+            http_response_code(404);
+            $this->view('shared/app-activate', [
+                'title' => __('mobile_activation_title'),
+                'company' => null,
+                'error' => __('mobile_activation_invalid'),
+            ], 'auth');
+            return;
         }
-        if ($open !== '') {
-            return $open;
+        $svc = new MobileAppActivationService();
+        $apks = new MobileAppApkService();
+        $company = $svc->findCompanyByCode($code);
+        if (!is_array($company) || (string) ($company['status'] ?? 'active') !== 'active') {
+            http_response_code(404);
+            $this->view('shared/app-activate', [
+                'title' => __('mobile_activation_title'),
+                'company' => null,
+                'error' => __('mobile_activation_invalid'),
+            ], 'auth');
+            return;
         }
+        if ($apks->hrIsPerCompanyDedicated()) {
+            (new MobileAppBrandedService($apks))->ensureDedicatedHrRequested((int) ($company['id'] ?? 0));
+            $refreshed = $svc->findCompanyByCode($code);
+            if (is_array($refreshed)) {
+                $company = $refreshed;
+            }
+        }
+        $apks->reconcileCompanySlotPolicy('hr', $company);
+        if (!$apks->isEnabled($app, $company)) {
+            http_response_code(404);
+            $this->view('shared/app-activate', [
+                'title' => __('mobile_activation_title'),
+                'company' => null,
+                'error' => __('mobile_activation_app_disabled'),
+            ], 'auth');
+            return;
+        }
+        $row = null;
+        foreach ($svc->enabledApps($company) as $candidate) {
+            if (($candidate['app'] ?? '') === $app) {
+                $row = $candidate;
+                break;
+            }
+        }
+        if ($row === null) {
+            http_response_code(404);
+            $this->view('shared/app-activate', [
+                'title' => __('mobile_activation_title'),
+                'company' => null,
+                'error' => __('mobile_activation_no_apps'),
+            ], 'auth');
+            return;
+        }
+        $formatted = MobileAppActivationService::format($code);
+        $this->view('shared/app-activate-launch', [
+            'title' => __('mobile_activation_opening_app'),
+            'app' => $app,
+            'appLabel' => __('mobile_app_short_' . $app),
+            'apkUrl' => trim((string) ($row['url'] ?? '')),
+            'intentUrl' => trim((string) ($row['open_android'] ?? '')),
+            'schemeUrl' => trim((string) ($row['open'] ?? '')),
+            'backUrl' => rateb_url('app-activate/' . $formatted),
+        ], 'auth');
+    }
 
-        return $url !== '' ? $url : '#';
+    private function activationLaunchUrl(string $formattedCode, string $app): string
+    {
+        $app = MobileAppApkService::normalizeApp($app);
+
+        return rateb_url('app-activate/' . $formattedCode . '/go/' . $app);
     }
 
     /** When HR is on, show ERP + Customer on the public activation page (shared platform APKs). */
