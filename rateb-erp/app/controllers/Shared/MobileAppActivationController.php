@@ -102,7 +102,11 @@ final class MobileAppActivationController extends Controller
         $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
         $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
         if (str_contains($requestUri, '/m/activate/')) {
-            Response::redirect(rateb_url('app-activate/' . $formatted));
+            // QR scanned but App Links did not hand off: open the HR app directly; the tiles page is the fallback.
+            $isAndroid = (bool) preg_match('/Android/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+            Response::redirect($isAndroid && $apks->isEnabled('hr', $company)
+                ? $svc->mobileAppOpenIntent('hr', $code, $company, $svc->publicActivationPageUrl($code))
+                : rateb_url('app-activate/' . $formatted));
             return;
         }
         $apps = $svc->enabledApps($company);
