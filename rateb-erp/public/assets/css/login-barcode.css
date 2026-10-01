@@ -563,12 +563,25 @@
     border: 1px solid color-mix(in srgb, var(--tone) 35%, transparent);
     background: color-mix(in srgb, var(--tone) 10%, transparent);
     color: inherit;
-    text-decoration: none;
     transition: transform 0.15s ease, background 0.15s ease;
 }
 
-.rateb-act-app:hover,
-.rateb-act-app:focus-visible {
+.rateb-act-app-main {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.rateb-act-app-main:hover,
+.rateb-act-app-main:focus-visible,
+.rateb-act-app:has(.rateb-act-app-main:hover),
+.rateb-act-app:has(.rateb-act-app-main:focus-visible) {
     color: inherit;
     transform: translateY(-1px);
     background: color-mix(in srgb, var(--tone) 18%, transparent);
@@ -618,6 +631,15 @@
     justify-content: center;
     color: var(--tone);
     border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+    text-decoration: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.rateb-act-app-dl:hover,
+.rateb-act-app-dl:focus-visible {
+    color: var(--tone);
+    background: color-mix(in srgb, var(--tone) 14%, transparent);
 }
 
 .rateb-act-steps {

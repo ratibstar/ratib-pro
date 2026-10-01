@@ -4,7 +4,8 @@ declare(strict_types=1);
 /** @var array{name:string, logo:string}|null $company */
 /** @var string|null $error */
 /** @var string $code */
-/** @var list<array{app:string, url:string, open:string}> $apps */
+/** @var list<array{app:string, url:string, open:string, open_android?:string, apk_pending?:bool}> $apps */
+/** @var bool $activationAndroidClient */
 /** @var string $adminUrl */
 $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
 $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users'];
@@ -121,22 +122,39 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <?php } else { ?>
         <div class="rateb-act-apps" data-rateb-web-only>
             <?php foreach ($apps as $row) {
-                $cardHref = ($row['open'] ?? '') !== '' ? (string) $row['open'] : (($row['url'] ?? '') !== '' ? (string) $row['url'] : '#');
+                $apkOnly = ($row['app'] ?? '') === 'hr' && !empty($useUnifiedHr);
+                $dlUrl = trim((string) ($row['url'] ?? ''));
+                $mainHref = (string) ($row['tile_href'] ?? '#');
+                if ($apkOnly && $dlUrl !== '') {
+                    $mainHref = $dlUrl;
+                }
+                if ($mainHref === '#' && $dlUrl !== '') {
+                    $mainHref = $dlUrl;
+                }
+                $dlHref = $dlUrl !== '' ? $dlUrl : (!empty($row['apk_pending']) ? '#rateb-hr-apk-pending' : '');
                 ?>
-            <a class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?><?php echo !empty($row['apk_pending']) ? ' rateb-act-app--pending' : ''; ?>" role="button" tabindex="0"
-               href="<?php echo $e($cardHref); ?>"
-               data-rateb-download="<?php echo $e($row['url'] ?? ''); ?>"
-               data-rateb-open="<?php echo $e($row['open'] ?? ''); ?>"
-               data-rateb-open-android="<?php echo $e($row['open_android'] ?? ''); ?>"
-               <?php if (($row['app'] ?? '') === 'hr' && !empty($useUnifiedHr)) { ?>data-rateb-apk-only="1"<?php } ?>
-               <?php if (!empty($row['apk_pending'])) { ?>data-rateb-apk-pending="1"<?php } ?>>
-                <span class="rateb-act-app-icon"><i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?>"></i></span>
-                <span class="rateb-act-app-text">
-                    <b><?php echo $e(__('mobile_app_short_' . $row['app'])); ?></b>
-                    <small><bdi><?php echo $e($company['name']); ?></bdi></small>
-                </span>
-                <span class="rateb-act-app-dl"><i class="fas fa-download"></i></span>
-            </a>
+            <div class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?><?php echo !empty($row['apk_pending']) ? ' rateb-act-app--pending' : ''; ?>"
+                 data-rateb-download="<?php echo $e($dlUrl); ?>"
+                 data-rateb-open="<?php echo $e($row['open'] ?? ''); ?>"
+                 data-rateb-open-android="<?php echo $e($row['open_android'] ?? ''); ?>"
+                 <?php if ($apkOnly) { ?>data-rateb-apk-only="1"<?php } ?>
+                 <?php if (!empty($row['apk_pending'])) { ?>data-rateb-apk-pending="1"<?php } ?>>
+                <a class="rateb-act-app-main" href="<?php echo $e($mainHref); ?>" data-rateb-full-nav="1"
+                   <?php if ($apkOnly) { ?>data-rateb-apk-only="1"<?php } ?>>
+                    <span class="rateb-act-app-icon"><i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?>"></i></span>
+                    <span class="rateb-act-app-text">
+                        <b><?php echo $e(__('mobile_app_short_' . $row['app'])); ?></b>
+                        <small><bdi><?php echo $e($company['name']); ?></bdi></small>
+                    </span>
+                </a>
+                <?php if ($dlHref !== '') { ?>
+                <a class="rateb-act-app-dl" href="<?php echo $e($dlHref); ?>" data-rateb-full-nav="1"
+                   aria-label="<?php echo $e(__('download')); ?>"
+                   <?php if ($dlUrl === '') { ?>data-rateb-apk-pending-link="1"<?php } ?>>
+                    <i class="fas fa-download"></i>
+                </a>
+                <?php } ?>
+            </div>
             <?php } ?>
         </div>
         <ol class="rateb-act-steps" data-rateb-web-only>

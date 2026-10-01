@@ -1,6 +1,6 @@
 /**
  * RATEB ERP app (Capacitor shell): remember the company panel chosen by activation code.
- * Public activation page: open installed apps (ratebhr / ratebapp) or download APKs.
+ * Public activation page: native <a href> for intents/APK; JS only patches Android href when needed.
  */
 (function () {
     'use strict';
@@ -10,8 +10,10 @@
     function inApp() {
         try {
             var cap = window.Capacitor;
-            if (!cap) return false;
-            return typeof cap.isNativePlatform === 'function' ? cap.isNativePlatform() : true;
+            if (!cap || typeof cap.isNativePlatform !== 'function') {
+                return false;
+            }
+            return cap.isNativePlatform();
         } catch (e) {
             return false;
         }
@@ -25,67 +27,36 @@
         }
     }
 
-    function go(url) {
-        if (!url || url === '#') return;
-        try {
-            window.location.href = url;
-        } catch (e) {}
-    }
-
-    function pickOpenUrl(el) {
+    function pickOpenUrl(wrap) {
         var android = /Android/i.test(navigator.userAgent || '');
-        var intent = (el.getAttribute('data-rateb-open-android') || '').trim();
-        var plain = (el.getAttribute('data-rateb-open') || '').trim();
+        var intent = (wrap.getAttribute('data-rateb-open-android') || '').trim();
+        var plain = (wrap.getAttribute('data-rateb-open') || '').trim();
+        var dl = (wrap.getAttribute('data-rateb-download') || '').trim();
         if (android && intent) {
             return intent;
         }
-        return plain || intent;
+        if (plain) {
+            return plain;
+        }
+        if (intent) {
+            return intent;
+        }
+        return dl;
     }
 
-    function bindActivationAppCards() {
-        document.querySelectorAll('.rateb-act-app').forEach(function (el) {
-            if (el.getAttribute('data-rateb-apk-only') === '1') {
+    function initActivationTiles() {
+        document.querySelectorAll('.rateb-act-app').forEach(function (wrap) {
+            if (wrap.getAttribute('data-rateb-apk-only') === '1') {
                 return;
             }
-            var handler = function (e) {
-                var dl = (el.getAttribute('data-rateb-download') || '').trim();
-                if (e.target && e.target.closest && e.target.closest('.rateb-act-app-dl')) {
-                    e.preventDefault();
-                    if (dl) {
-                        go(dl);
-                    } else if (el.getAttribute('data-rateb-apk-pending') === '1') {
-                        var pending = document.getElementById('rateb-hr-apk-pending');
-                        if (pending && typeof pending.scrollIntoView === 'function') {
-                            pending.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                        }
-                    }
-                    return;
-                }
-                var openUrl = pickOpenUrl(el);
-                if (openUrl) {
-                    e.preventDefault();
-                    go(openUrl);
-                    return;
-                }
-                if (dl) {
-                    e.preventDefault();
-                    go(dl);
-                    return;
-                }
-                if (el.getAttribute('data-rateb-apk-pending') === '1') {
-                    e.preventDefault();
-                    var plain = (el.getAttribute('data-rateb-open') || '').trim();
-                    if (plain) {
-                        go(plain);
-                    }
-                }
-            };
-            el.addEventListener('click', handler);
-            el.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    handler(e);
-                }
-            });
+            var main = wrap.querySelector('.rateb-act-app-main');
+            if (!main) {
+                return;
+            }
+            var url = pickOpenUrl(wrap);
+            if (url && url !== '#') {
+                main.setAttribute('href', url);
+            }
         });
         var head = document.querySelector('[data-rateb-act-code]');
         var openBtn = document.getElementById('rateb-unified-open');
@@ -97,16 +68,23 @@
         }
     }
 
+    var activationApps = document.querySelector('.rateb-act-apps');
+    if (activationApps) {
+        initActivationTiles();
+    }
+
     if (!inApp()) {
-        bindActivationAppCards();
         return;
+    }
+
+    if (!activationApps) {
+        document.querySelectorAll('[data-rateb-web-only]').forEach(function (el) {
+            el.classList.add('d-none');
+        });
     }
 
     document.querySelectorAll('[data-rateb-app-only]').forEach(function (el) {
         el.classList.remove('d-none');
-    });
-    document.querySelectorAll('[data-rateb-web-only]').forEach(function (el) {
-        el.classList.add('d-none');
     });
 
     document.querySelectorAll('[data-rateb-app-open]').forEach(function (el) {

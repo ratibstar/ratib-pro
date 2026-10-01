@@ -109,6 +109,10 @@ final class MobileAppActivationController extends Controller
             return;
         }
         $apps = $svc->enabledApps($company);
+        $activationAndroidClient = $this->isAndroidClient();
+        foreach ($apps as $i => $row) {
+            $apps[$i]['tile_href'] = $this->activationTileHref($row, $activationAndroidClient);
+        }
         $hrExpectedPackage = $apks->packageForActivationLink('hr', $company);
         $hrApkPending = false;
         foreach ($apps as $row) {
@@ -132,7 +136,28 @@ final class MobileAppActivationController extends Controller
             'useUnifiedHr' => $useUnifiedHr,
             'hrApkPending' => $hrApkPending,
             'hrExpectedPackage' => $hrExpectedPackage,
+            'activationAndroidClient' => $this->isAndroidClient(),
         ]), 'auth');
+    }
+
+    /**
+     * Primary tap target: Android intent when available, else custom scheme, else APK download.
+     *
+     * @param array{app?:string,url?:string,open?:string,open_android?:string,apk_pending?:bool} $row
+     */
+    private function activationTileHref(array $row, bool $isAndroid): string
+    {
+        $url = trim((string) ($row['url'] ?? ''));
+        $open = trim((string) ($row['open'] ?? ''));
+        $openAndroid = trim((string) ($row['open_android'] ?? ''));
+        if ($isAndroid && $openAndroid !== '') {
+            return $openAndroid;
+        }
+        if ($open !== '') {
+            return $open;
+        }
+
+        return $url !== '' ? $url : '#';
     }
 
     /** When HR is on, show ERP + Customer on the public activation page (shared platform APKs). */
