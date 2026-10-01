@@ -131,28 +131,32 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
                 if ($mainHref === '#' && $dlUrl !== '') {
                     $mainHref = $dlUrl;
                 }
-                $dlHref = $dlUrl !== '' ? $dlUrl : (!empty($row['apk_pending']) ? '#rateb-hr-apk-pending' : '');
+                $pending = !empty($row['apk_pending']);
                 ?>
-            <div class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?><?php echo !empty($row['apk_pending']) ? ' rateb-act-app--pending' : ''; ?>"
-                 data-rateb-download="<?php echo $e($dlUrl); ?>"
-                 data-rateb-open="<?php echo $e($row['open'] ?? ''); ?>"
-                 data-rateb-open-android="<?php echo $e($row['open_android'] ?? ''); ?>"
-                 <?php if ($apkOnly) { ?>data-rateb-apk-only="1"<?php } ?>
-                 <?php if (!empty($row['apk_pending'])) { ?>data-rateb-apk-pending="1"<?php } ?>>
-                <a class="rateb-act-app-main" href="<?php echo $e($mainHref); ?>" data-rateb-full-nav="1"
-                   <?php if ($apkOnly) { ?>data-rateb-apk-only="1"<?php } ?>>
+            <div class="rateb-act-app-wrap">
+                <a class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?><?php echo $pending ? ' rateb-act-app--pending' : ''; ?>"
+                   href="<?php echo $e($mainHref); ?>"
+                   data-rateb-full-nav="1"
+                   data-rateb-download="<?php echo $e($dlUrl); ?>"
+                   data-rateb-open="<?php echo $e($row['open'] ?? ''); ?>"
+                   data-rateb-open-android="<?php echo $e($row['open_android'] ?? ''); ?>"
+                   <?php if ($apkOnly) { ?>data-rateb-apk-only="1"<?php } ?>
+                   <?php if ($pending) { ?>data-rateb-apk-pending="1"<?php } ?>>
                     <span class="rateb-act-app-icon"><i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?>"></i></span>
                     <span class="rateb-act-app-text">
                         <b><?php echo $e(__('mobile_app_short_' . $row['app'])); ?></b>
                         <small><bdi><?php echo $e($company['name']); ?></bdi></small>
                     </span>
+                    <?php if ($dlUrl !== '') { ?>
+                    <span class="rateb-act-app-dl" aria-hidden="true"><i class="fas fa-download"></i></span>
+                    <?php } ?>
                 </a>
-                <?php if ($dlHref !== '') { ?>
-                <a class="rateb-act-app-dl" href="<?php echo $e($dlHref); ?>" data-rateb-full-nav="1"
-                   aria-label="<?php echo $e(__('download')); ?>"
-                   <?php if ($dlUrl === '') { ?>data-rateb-apk-pending-link="1"<?php } ?>>
-                    <i class="fas fa-download"></i>
+                <?php if ($dlUrl !== '') { ?>
+                <a class="rateb-act-apk-link" href="<?php echo $e($dlUrl); ?>" data-rateb-full-nav="1">
+                    <i class="fas fa-download"></i> <?php echo $e(__('mobile_activation_download_apk_short')); ?>
                 </a>
+                <?php } elseif ($pending && ($row['app'] ?? '') === 'hr') { ?>
+                <p class="rateb-act-apk-pending small text-warning mb-0"><?php echo $e(__('mobile_activation_hr_apk_building')); ?></p>
                 <?php } ?>
             </div>
             <?php } ?>

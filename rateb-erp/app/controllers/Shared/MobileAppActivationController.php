@@ -122,6 +122,9 @@ final class MobileAppActivationController extends Controller
                 break;
             }
         }
+        if ($hrApkPending) {
+            (new MobileAppBrandedService($apks))->queueBuild('hr', (int) ($company['id'] ?? 0));
+        }
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
                 'id' => (int) ($company['id'] ?? 0),
@@ -210,6 +213,8 @@ final class MobileAppActivationController extends Controller
             'intentUrl' => trim((string) ($row['open_android'] ?? '')),
             'schemeUrl' => trim((string) ($row['open'] ?? '')),
             'backUrl' => rateb_url('app-activate/' . $formatted),
+            'activationCode' => $formatted,
+            'expectedPackage' => $app === 'hr' ? $apks->packageForActivationLink('hr', $company) : '',
         ], 'auth');
     }
 

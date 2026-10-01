@@ -1,6 +1,6 @@
 /**
  * RATEB ERP app (Capacitor shell): remember the company panel chosen by activation code.
- * Public activation page: native <a href> for intents/APK; JS only patches Android href when needed.
+ * Public activation page: native <a href> tiles; patch Android intent href when needed.
  */
 (function () {
     'use strict';
@@ -27,11 +27,11 @@
         }
     }
 
-    function pickOpenUrl(wrap) {
+    function pickOpenUrl(el) {
         var android = /Android/i.test(navigator.userAgent || '');
-        var intent = (wrap.getAttribute('data-rateb-open-android') || '').trim();
-        var plain = (wrap.getAttribute('data-rateb-open') || '').trim();
-        var dl = (wrap.getAttribute('data-rateb-download') || '').trim();
+        var intent = (el.getAttribute('data-rateb-open-android') || '').trim();
+        var plain = (el.getAttribute('data-rateb-open') || '').trim();
+        var dl = (el.getAttribute('data-rateb-download') || '').trim();
         if (android && intent) {
             return intent;
         }
@@ -45,17 +45,17 @@
     }
 
     function initActivationTiles() {
-        document.querySelectorAll('.rateb-act-app').forEach(function (wrap) {
-            if (wrap.getAttribute('data-rateb-apk-only') === '1') {
+        document.querySelectorAll('.rateb-act-app[href]').forEach(function (el) {
+            if (el.getAttribute('data-rateb-apk-only') === '1') {
                 return;
             }
-            var main = wrap.querySelector('.rateb-act-app-main');
-            if (!main) {
+            var tile = (el.getAttribute('href') || '').trim();
+            if (tile.indexOf('/go/') !== -1) {
                 return;
             }
-            var url = pickOpenUrl(wrap);
+            var url = pickOpenUrl(el);
             if (url && url !== '#') {
-                main.setAttribute('href', url);
+                el.setAttribute('href', url);
             }
         });
         var head = document.querySelector('[data-rateb-act-code]');
