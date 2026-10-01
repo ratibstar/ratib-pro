@@ -175,6 +175,17 @@ final class MobileAppActivationService
         return 'ratebhr://activate?code=' . rawurlencode(self::format($code));
     }
 
+    /** ERP / Customer apps register ratebapp://activate (no intent:// package pin). */
+    public function mobileAppRatebappDeepLink(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+
+        return 'ratebapp://activate?code=' . rawurlencode(self::format($code));
+    }
+
     /**
      * HTTPS path shipped in published APK intent-filters (/m/activate). Browser uses app-activate.
      */
@@ -498,10 +509,10 @@ final class MobileAppActivationService
                 if ($app === 'hr' && !$this->apks->servesBrandedApk($app, $company)) {
                     $open = $this->mobileAppHandoffUrl($code);
                     $openAndroid = $this->mobileAppIntentUrl($code);
+                } elseif ($app === 'hr') {
+                    $open = $this->mobileAppQrDeepLink($code);
                 } else {
-                    $open = $app === 'hr'
-                        ? $this->mobileAppQrDeepLink($code)
-                        : $this->appLink($package, $code, $fallback);
+                    $open = $this->mobileAppRatebappDeepLink($code);
                 }
             }
             $out[] = ['app' => $app, 'url' => $url, 'open' => $open, 'open_android' => $openAndroid];

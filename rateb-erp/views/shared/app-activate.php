@@ -111,8 +111,10 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
     <?php } else { ?>
         <div class="rateb-act-apps" data-rateb-web-only>
             <?php foreach ($apps as $row) { ?>
-            <a class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?>" href="<?php echo $e($row['url']); ?>"
-               <?php if (($row['open'] ?? '') !== '' && empty($useUnifiedHr)) { ?>data-rateb-app-intent="<?php echo $e($row['open']); ?>"<?php } ?>
+            <a class="rateb-act-app rateb-act-app--<?php echo $e($row['app']); ?>" role="button" tabindex="0"
+               href="<?php echo $e(($row['url'] ?? '') !== '' ? $row['url'] : '#'); ?>"
+               data-rateb-download="<?php echo $e($row['url'] ?? ''); ?>"
+               data-rateb-open="<?php echo $e($row['open'] ?? ''); ?>"
                <?php if (($row['app'] ?? '') === 'hr' && !empty($useUnifiedHr)) { ?>data-rateb-apk-only="1"<?php } ?>>
                 <span class="rateb-act-app-icon"><i class="fas <?php echo $e($icons[$row['app']] ?? 'fa-mobile'); ?>"></i></span>
                 <span class="rateb-act-app-text">
@@ -133,13 +135,4 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
 <script src="<?php echo $e(rateb_asset('js/app-company-activation.js')); ?>"></script>
 <?php if (is_array($company ?? null) && !empty($useUnifiedHr)) { ?>
 <script src="<?php echo $e(rateb_asset('js/app-activation-handoff.js')); ?>"></script>
-<?php } elseif (is_array($company ?? null) && empty($useUnifiedHr) && ($code ?? '') !== '') { ?>
-<script>
-(function () {
-    if (!/Android/i.test(navigator.userAgent || '')) return;
-    var code = <?php echo json_encode($code, JSON_UNESCAPED_UNICODE); ?>;
-    var deep = 'ratebhr://activate?code=' + encodeURIComponent(code);
-    window.setTimeout(function () { try { window.location.href = deep; } catch (e) {} }, 150);
-})();
-</script>
 <?php } ?>

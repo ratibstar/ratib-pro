@@ -47,9 +47,7 @@ final class MobileAppActivationController extends Controller
         if ($raw !== '') {
             $code = MobileAppActivationService::normalize($raw);
             if ($code !== '') {
-                Response::redirect(
-                    rateb_url('m/activate/' . MobileAppActivationService::format($code) . '?setup=1')
-                );
+                Response::redirect(rateb_url('app-activate/' . MobileAppActivationService::format($code)));
                 return;
             }
         }
@@ -84,6 +82,11 @@ final class MobileAppActivationController extends Controller
                 }
             }
             $apks->reconcileCompanySlotPolicy('hr', $company);
+            $this->ensureCompanionMobileApps($apks, (int) ($company['id'] ?? 0));
+            $refreshed = (new Company())->find((int) ($company['id'] ?? 0));
+            if (is_array($refreshed)) {
+                $company = $refreshed;
+            }
         }
         if ($company === null || (string) ($company['status'] ?? 'active') !== 'active') {
             http_response_code(404);
@@ -119,6 +122,23 @@ final class MobileAppActivationController extends Controller
             'unifiedHrDl' => $unifiedDl,
             'useUnifiedHr' => $useUnifiedHr,
         ]), 'auth');
+    }
+
+    /** When HR is on, show ERP + Customer on the public activation page (shared platform APKs). */
+    private function ensureCompanionMobileApps(MobileAppApkService $apks, int $companyId): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $company = (new Company())->find($companyId);
+        if (!is_array($company) || !$apks->isEnabled('hr', $company)) {
+            return;
+        }
+        foreach (['erp', 'customer'] as $app) {
+            if (!$apks->isEnabled($app, $company)) {
+                $apks->setEnabledInSettings($app, $companyId, true);
+            }
+        }
     }
 
     private function isAndroidClient(): bool
