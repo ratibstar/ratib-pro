@@ -556,12 +556,16 @@ final class MobileAppApkService
         clearstatcache(true, $path);
         $size = (int) filesize($path);
         $mtime = (int) filemtime($path);
+        $versionCode = (int) ($manifest['version_code'] ?? 0);
+        $urlFile = $versionCode > 0 && str_ends_with($file, '-latest.apk')
+            ? substr($file, 0, -strlen('-latest.apk')) . '-b' . $versionCode . '.apk'
+            : $file;
 
         return [
             'app' => $app,
             'file' => $file,
             'path' => $path,
-            'url' => rateb_public_url('downloads/' . $file),
+            'url' => rateb_public_url('downloads/' . $urlFile),
             'size' => $size,
             'published_at' => date('Y-m-d H:i:s', $mtime),
             'sha256' => $this->cachedSha256($app, $path, $size, $mtime),

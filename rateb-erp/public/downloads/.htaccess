@@ -6,4 +6,6 @@ Options -Indexes
   RewriteRule ^ratib-hr-mobile-latest\.apk$ rateb-hr-mobile-latest.apk [L]
   RewriteRule ^ratib-hr-mobile-(.+)\.apk$ rateb-hr-mobile-$1.apk [L]
   RewriteRule ^unified-hr\.apk$ rateb-hr-mobile-latest.apk [L]
+  # Per-build names (…-b230.apk) so phones never reopen an older download with the same name.
+  RewriteRule ^(rateb-hr-mobile|rateb-erp|rateb-customer)-b[0-9]+\.apk$ $1-latest.apk [L]
 </IfModule>
