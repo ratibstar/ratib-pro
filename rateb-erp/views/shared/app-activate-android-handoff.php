@@ -11,6 +11,7 @@ declare(strict_types=1);
 /** @var int $companyId */
 $e = static fn ($v): string => Rateb\App\Core\View::escape((string) $v);
 $dedicated = !empty($dedicatedCompanyApp);
+$apkReady = trim((string) ($apkUrl ?? '')) !== '';
 $pkg = trim((string) ($androidPackage ?? ''));
 if ($pkg === '') {
     $pkg = 'sa.rateb.hr.mobile';
@@ -29,6 +30,7 @@ if ($pkg === '') {
         a.primary, button.primary { background: #14b8a6; color: #042f2e; }
         a.secondary { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
         button.ghost { background: transparent; color: #94a3b8; border: 1px dashed #475569; }
+        button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
         p { line-height: 1.5; color: #cbd5e1; }
         .mono { font-family: ui-monospace, monospace; font-size: 0.85rem; direction: ltr; }
         #copy-status { color: #4ade80; font-size: 0.85rem; min-height: 1.2em; }
@@ -45,8 +47,8 @@ if ($pkg === '') {
         <?php } else { ?>
         <p class="mono" style="color:#fbbf24"><?php echo $e(__('mobile_apps_apk_not_built_body')); ?></p>
         <?php } ?>
-        <p style="font-size:0.85rem;color:#fbbf24;margin-top:12px"><?php echo $e(__('mobile_activation_handoff_install_first_dedicated')); ?></p>
-        <button type="button" class="btn primary" id="rateb-open-hr"><?php echo $e(__('mobile_activation_open_company_hr')); ?></button>
+        <p style="font-size:0.85rem;color:#fbbf24;margin-top:12px"><?php echo $e($apkReady ? __('mobile_activation_handoff_install_first_dedicated') : __('mobile_activation_handoff_build_apk_first')); ?></p>
+        <button type="button" class="btn primary" id="rateb-open-hr"<?php echo $apkReady ? '' : ' disabled'; ?>><?php echo $e($apkReady ? __('mobile_activation_open_company_hr') : __('mobile_activation_open_company_hr_disabled')); ?></button>
         <p style="font-size:0.8rem;margin-top:20px"><?php echo $e(__('mobile_activation_handoff_dedicated_hint')); ?></p>
     <?php } else { ?>
         <p><?php echo $e(__('mobile_activation_handoff_body')); ?></p>

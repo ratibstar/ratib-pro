@@ -3407,6 +3407,8 @@ return [
     'mobile_activation_handoff_install_first_dedicated' => '① حمّل وثبّت APK الشركة أولاً. ② ثم اضغط الزر الأخضر لربط الكود.',
     'mobile_activation_download_company_hr' => 'تحميل تطبيق HR لهذه الشركة',
     'mobile_activation_open_company_hr' => 'فتح تطبيق الشركة وربط الكود',
+    'mobile_activation_open_company_hr_disabled' => 'ثبّت التطبيق أولاً (بعد بناء APK)',
+    'mobile_activation_handoff_build_apk_first' => 'لا تضغط «فتح التطبيق» قبل تثبيت APK الشركة — التطبيق غير منشور على Google Play.',
     'mobile_activation_handoff_dedicated_hint' => 'إذا ظهرت شركة أخرى: احذف كل تطبيقات HR ثم ثبّت APK هذه الشركة فقط.',
     'mobile_activation_copy_done' => 'تم النسخ:',
     'mobile_activation_page_company_id' => 'شركة #:id',

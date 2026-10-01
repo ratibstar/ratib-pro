@@ -237,8 +237,7 @@ final class MobileAppActivationService
         $rest = preg_replace('#^https?://#i', '', $deepLink);
 
         return 'intent://' . $rest
-            . '#Intent;scheme=https;package=' . $package
-            . ';S.browser_fallback_url=' . rawurlencode($apkUrl) . ';end';
+            . $this->androidIntentFragment($package, $apkUrl, 'https');
     }
 
     public function mobileAppHandoffIntentUrlForCompany(string $code, array $company, string $app = 'hr'): string
@@ -253,8 +252,18 @@ final class MobileAppActivationService
         $apkUrl = $this->apks->activationDownloadUrl($app, $company);
 
         return 'intent://activate?code=' . rawurlencode($formatted)
-            . '#Intent;scheme=ratebhr;package=' . $package
-            . ';S.browser_fallback_url=' . rawurlencode($apkUrl) . ';end';
+            . $this->androidIntentFragment($package, $apkUrl, 'ratebhr');
+    }
+
+    /** Avoid empty fallback — Android may open Play Store for unknown package ids. */
+    private function androidIntentFragment(string $package, string $apkUrl, string $scheme): string
+    {
+        $out = '#Intent;scheme=' . $scheme . ';package=' . $package;
+        if (trim($apkUrl) !== '') {
+            $out .= ';S.browser_fallback_url=' . rawurlencode($apkUrl);
+        }
+
+        return $out . ';end';
     }
 
     /**

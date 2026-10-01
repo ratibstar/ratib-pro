@@ -3409,6 +3409,8 @@ return [
     'mobile_activation_handoff_install_first_dedicated' => '① Download and install the company APK first. ② Then press the green button to link the code.',
     'mobile_activation_download_company_hr' => 'Download this company’s HR app',
     'mobile_activation_open_company_hr' => 'Open company app and link code',
+    'mobile_activation_open_company_hr_disabled' => 'Install the app first (after APK is built)',
+    'mobile_activation_handoff_build_apk_first' => 'Do not tap Open app before installing the company APK — it is not on Google Play.',
     'mobile_activation_handoff_dedicated_hint' => 'If the wrong company appears: remove all HR apps, then install only this company’s APK.',
     'mobile_activation_copy_done' => 'Copied:',
     'mobile_activation_page_company_id' => 'Company #:id',
