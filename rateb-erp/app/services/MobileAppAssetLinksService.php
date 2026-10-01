@@ -11,7 +11,7 @@ final class MobileAppAssetLinksService
     /** @return list<string> */
     public function collectHrPackages(): array
     {
-        $packages = [MobileAppApkService::appInfo('hr')['package']];
+        $packages = [(new MobileAppApkService())->appInfo('hr')['package']];
         $dir = rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/public/downloads/' . MobileAppBrandedService::PUBLIC_DIR;
         if (is_dir($dir)) {
             foreach (glob($dir . '/*.json') ?: [] as $metaFile) {
