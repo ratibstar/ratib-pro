@@ -189,37 +189,23 @@ final class MobileAppActivationService
     /**
      * Chrome on Android: open the installed app by package (APK URL fallback only — never Play Store).
      */
-    public function mobileAppOpenIntent(
-        string $app,
-        string $code,
-        array $company,
-        string $apkFallbackUrl = '',
-        bool $pinPackage = true
-    ): string {
+    public function mobileAppOpenIntent(string $app, string $code, array $company, string $apkFallbackUrl = ''): string
+    {
         $app = MobileAppApkService::normalizeApp($app);
         $code = self::normalize($code);
         if ($code === '') {
             return '';
         }
         $scheme = $app === 'hr' ? 'ratebhr' : 'ratebapp';
-        $formatted = self::format($code);
-        $out = 'intent://activate?code=' . rawurlencode($formatted)
-            . '#Intent;scheme=' . $scheme;
-        if ($pinPackage) {
-            $package = $app === 'hr'
-                ? $this->apks->packageForActivationLink($app, $company)
-                : $this->apks->appInfo($app)['package'];
-            $out .= ';package=' . $package;
-        }
         $fallback = trim($apkFallbackUrl);
-        if ($fallback === '' && $code !== '') {
+        if ($fallback === '') {
             $fallback = $this->publicActivationPageUrl($code);
         }
-        if ($fallback !== '') {
-            $out .= ';S.browser_fallback_url=' . rawurlencode($fallback);
-        }
 
-        return $out . ';end';
+        return 'intent://activate?code=' . rawurlencode(self::format($code))
+            . '#Intent;scheme=' . $scheme
+            . ';package=' . $this->apks->packageForActivationLink($app, $company)
+            . ';S.browser_fallback_url=' . rawurlencode($fallback) . ';end';
     }
 
     /**
@@ -465,8 +451,8 @@ final class MobileAppActivationService
         $names = $branded->names($company);
         $logo = $branded->iconUrl($company, (new MobileAppConfigService())->findByCompanyId((int) $company['id']), $erpBase);
 
-        $unifiedHr = $app === 'hr' && $this->apks->hrIsPerCompanyDedicated()
-            ? false
+        $unifiedHr = $app === 'hr'
+            ? !$this->apks->hrUsesDedicatedApk($company) && !$this->apks->servesBrandedApk($app, $company)
             : !$this->apks->companyHasBrandedBuild($app, $company);
         $expectedPackage = $this->apks->packageForActivationLink($app, $company);
         $androidPackage = trim((string) ($_GET['android_package'] ?? ''));
@@ -531,44 +517,19 @@ final class MobileAppActivationService
                 continue;
             }
             $url = $this->apks->activationDownloadUrl($app, $company);
-            $package = $this->apks->packageForActivationLink($app, $company);
-            $published = $this->apks->publishedBuild($app);
-            $fallback = $url;
-            if ($code !== '' && !$this->apks->servesBrandedApk($app, $company)) {
-                $fallback = $app === 'hr' && is_array($published) && ($published['url'] ?? '') !== ''
-                    ? (string) $published['url']
-                    : $this->qrActivationPayload($code, $company);
-            }
             $open = '';
             $openAndroid = '';
-            $apkPending = false;
             if ($code !== '') {
-                if ($app === 'hr' && !$this->apks->servesBrandedApk($app, $company) && !$this->apks->companyHasBrandedBuild($app, $company)) {
-                    $open = $this->mobileAppHandoffUrl($code);
-                    $openAndroid = $this->mobileAppIntentUrl($code);
-                } else {
-                    $open = $app === 'hr'
-                        ? $this->mobileAppQrDeepLink($code)
-                        : $this->mobileAppRatebappDeepLink($code);
-                    $brandedKey = $app === 'hr'
-                        ? (new MobileAppBrandedService($this->apks))->keyFor($app, $company)
-                        : '';
-                    $apkPending = $app === 'hr'
-                        && $this->apks->hrIsPerCompanyDedicated()
-                        && $brandedKey !== ''
-                        && $url === '';
-                    $pageFallback = $this->publicActivationPageUrl($code);
-                    $intentFallback = $url !== '' ? $url : $pageFallback;
-                    $pinPackage = !$apkPending;
-                    $openAndroid = $this->mobileAppOpenIntent($app, $code, $company, $intentFallback, $pinPackage);
-                }
+                $open = $app === 'hr'
+                    ? $this->mobileAppQrDeepLink($code)
+                    : $this->mobileAppRatebappDeepLink($code);
+                $openAndroid = $this->mobileAppOpenIntent($app, $code, $company, $url);
             }
             $out[] = [
                 'app' => $app,
                 'url' => $url,
                 'open' => $open,
                 'open_android' => $openAndroid,
-                'apk_pending' => $apkPending,
             ];
         }
 

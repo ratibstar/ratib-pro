@@ -600,11 +600,6 @@
 .rateb-act-app--erp { --tone: #6366f1; }
 .rateb-act-app--customer { --tone: #f59e0b; }
 
-.rateb-act-app--pending {
-    cursor: pointer;
-    touch-action: manipulation;
-}
-
 .rateb-act-app-icon {
     flex: 0 0 44px;
     height: 44px;
@@ -632,7 +627,7 @@
     color: var(--bs-secondary-color);
 }
 
-.rateb-act-app-dl {
+.rateb-act-app-go {
     flex: 0 0 36px;
     height: 36px;
     border-radius: 50%;

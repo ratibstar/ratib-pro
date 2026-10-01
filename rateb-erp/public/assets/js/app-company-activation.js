@@ -1,6 +1,6 @@
 /**
  * RATEB ERP app (Capacitor shell): remember the company panel chosen by activation code.
- * Public activation page: native <a href> tiles; patch Android intent href when needed.
+ * In a browser the activation tiles are plain links to /app-activate/{code}/go/{app}; nothing to do here.
  */
 (function () {
     'use strict';
@@ -27,64 +27,15 @@
         }
     }
 
-    function pickOpenUrl(el) {
-        var android = /Android/i.test(navigator.userAgent || '');
-        var intent = (el.getAttribute('data-rateb-open-android') || '').trim();
-        var plain = (el.getAttribute('data-rateb-open') || '').trim();
-        var dl = (el.getAttribute('data-rateb-download') || '').trim();
-        if (android && intent) {
-            return intent;
-        }
-        if (plain) {
-            return plain;
-        }
-        if (intent) {
-            return intent;
-        }
-        return dl;
-    }
-
-    function initActivationTiles() {
-        document.querySelectorAll('.rateb-act-app[href]').forEach(function (el) {
-            if (el.getAttribute('data-rateb-apk-only') === '1') {
-                return;
-            }
-            var tile = (el.getAttribute('href') || '').trim();
-            if (tile.indexOf('/go/') !== -1) {
-                return;
-            }
-            var url = pickOpenUrl(el);
-            if (url && url !== '#') {
-                el.setAttribute('href', url);
-            }
-        });
-        var head = document.querySelector('[data-rateb-act-code]');
-        var openBtn = document.getElementById('rateb-unified-open');
-        if (head && openBtn && head.getAttribute('data-rateb-unified-hr') === '1') {
-            var androidIntent = head.getAttribute('data-rateb-hr-android-intent');
-            if (androidIntent && /Android/i.test(navigator.userAgent || '')) {
-                openBtn.setAttribute('href', androidIntent);
-            }
-        }
-    }
-
-    var activationApps = document.querySelector('.rateb-act-apps');
-    if (activationApps) {
-        initActivationTiles();
-    }
-
     if (!inApp()) {
         return;
     }
 
-    if (!activationApps) {
-        document.querySelectorAll('[data-rateb-web-only]').forEach(function (el) {
-            el.classList.add('d-none');
-        });
-    }
-
     document.querySelectorAll('[data-rateb-app-only]').forEach(function (el) {
         el.classList.remove('d-none');
+    });
+    document.querySelectorAll('[data-rateb-web-only]').forEach(function (el) {
+        el.classList.add('d-none');
     });
 
     document.querySelectorAll('[data-rateb-app-open]').forEach(function (el) {

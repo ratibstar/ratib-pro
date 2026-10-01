@@ -47,6 +47,21 @@ final class MobileAppApkService
         return true;
     }
 
+    /**
+     * The company's own HR package is used only once its APK is published; until then the unified
+     * sa.rateb.hr.mobile app serves the company through its activation code.
+     */
+    public function hrUsesDedicatedApk(array $company): bool
+    {
+        if (!$this->hrIsPerCompanyDedicated()) {
+            return false;
+        }
+        $branded = new MobileAppBrandedService($this);
+        $key = $branded->keyFor('hr', $company);
+
+        return $key !== '' && $branded->published($key) !== null;
+    }
+
     public function slotKey(string $app, int $companyId): string
     {
         $app = self::normalizeApp($app);
@@ -205,17 +220,12 @@ final class MobileAppApkService
         if ($this->servesBrandedApk($app, $company)) {
             return $this->downloadUrlForToken($this->ensureToken($key));
         }
-        if ($app === 'hr' && $this->hrIsPerCompanyDedicated()) {
-            $branded = new MobileAppBrandedService($this);
-            $brandedKey = $branded->keyFor($app, $company);
-            if ($brandedKey !== '' && $branded->published($brandedKey) !== null) {
-                return rateb_public_url(
-                    'downloads/' . MobileAppBrandedService::PUBLIC_DIR . '/' . $brandedKey . '.apk'
-                );
-            }
-            if ($brandedKey !== '') {
-                return '';
-            }
+        if ($app === 'hr' && $this->hrUsesDedicatedApk($company)) {
+            $brandedKey = (new MobileAppBrandedService($this))->keyFor($app, $company);
+
+            return rateb_public_url(
+                'downloads/' . MobileAppBrandedService::PUBLIC_DIR . '/' . $brandedKey . '.apk'
+            );
         }
         $published = $this->publishedBuild($app);
         if ($published !== null && ($published['url'] ?? '') !== '') {
@@ -258,11 +268,8 @@ final class MobileAppApkService
         if ($this->servesBrandedApk($app, $company)) {
             return $this->packageForCompany($app, $company);
         }
-        if ($app === 'hr' && $this->hrIsPerCompanyDedicated()) {
-            $brandedKey = (new MobileAppBrandedService($this))->keyFor($app, $company);
-            if ($brandedKey !== '') {
-                return (new MobileAppBrandedService($this))->packageFor($app, (int) ($company['id'] ?? 0));
-            }
+        if ($app === 'hr' && $this->hrUsesDedicatedApk($company)) {
+            return (new MobileAppBrandedService($this))->packageFor($app, (int) ($company['id'] ?? 0));
         }
 
         return $this->appInfo($app)['package'];

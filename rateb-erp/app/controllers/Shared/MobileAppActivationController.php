@@ -101,29 +101,13 @@ final class MobileAppActivationController extends Controller
         $names = $branded->names($company);
         $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
         $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
-        $hrPublished = $apks->publishedBuild('hr');
-        $unifiedDl = $this->unifiedHrDownloadMeta($hrPublished);
-        $useUnifiedHr = !$apks->hrIsPerCompanyDedicated() && !$apks->companyHasBrandedBuild('hr', $company);
         if (str_contains($requestUri, '/m/activate/')) {
             Response::redirect(rateb_url('app-activate/' . $formatted));
             return;
         }
         $apps = $svc->enabledApps($company);
-        $activationAndroidClient = $this->isAndroidClient();
-        $formattedForTiles = MobileAppActivationService::format($code);
         foreach ($apps as $i => $row) {
-            $apps[$i]['tile_href'] = $this->activationLaunchUrl($formattedForTiles, (string) ($row['app'] ?? 'hr'));
-        }
-        $hrExpectedPackage = $apks->packageForActivationLink('hr', $company);
-        $hrApkPending = false;
-        foreach ($apps as $row) {
-            if (($row['app'] ?? '') === 'hr' && !empty($row['apk_pending'])) {
-                $hrApkPending = true;
-                break;
-            }
-        }
-        if ($hrApkPending) {
-            (new MobileAppBrandedService($apks))->queueBuild('hr', (int) ($company['id'] ?? 0));
+            $apps[$i]['tile_href'] = $this->activationLaunchUrl($formatted, (string) ($row['app'] ?? 'hr'));
         }
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
@@ -135,12 +119,6 @@ final class MobileAppActivationController extends Controller
             'erpHost' => $erpHost,
             'apps' => $apps,
             'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',
-            'unifiedHrApk' => (string) ($unifiedDl['url'] ?? ''),
-            'unifiedHrDl' => $unifiedDl,
-            'useUnifiedHr' => $useUnifiedHr,
-            'hrApkPending' => $hrApkPending,
-            'hrExpectedPackage' => $hrExpectedPackage,
-            'activationAndroidClient' => $this->isAndroidClient(),
         ]), 'auth');
     }
 
@@ -149,50 +127,18 @@ final class MobileAppActivationController extends Controller
     {
         header('Cache-Control: no-store');
         $code = MobileAppActivationService::normalize((string) ($params['code'] ?? ''));
-        $app = MobileAppApkService::normalizeApp((string) ($params['app'] ?? ''));
-        if ($code === '' || !in_array($app, MobileAppApkService::APPS, true)) {
-            http_response_code(404);
-            $this->view('shared/app-activate', [
-                'title' => __('mobile_activation_title'),
-                'company' => null,
-                'error' => __('mobile_activation_invalid'),
-            ], 'auth');
-            return;
-        }
+        $app = (string) ($params['app'] ?? '');
         $svc = new MobileAppActivationService();
-        $apks = new MobileAppApkService();
-        $company = $svc->findCompanyByCode($code);
-        if (!is_array($company) || (string) ($company['status'] ?? 'active') !== 'active') {
-            http_response_code(404);
-            $this->view('shared/app-activate', [
-                'title' => __('mobile_activation_title'),
-                'company' => null,
-                'error' => __('mobile_activation_invalid'),
-            ], 'auth');
-            return;
-        }
-        if ($apks->hrIsPerCompanyDedicated()) {
-            (new MobileAppBrandedService($apks))->ensureDedicatedHrRequested((int) ($company['id'] ?? 0));
-            $refreshed = $svc->findCompanyByCode($code);
-            if (is_array($refreshed)) {
-                $company = $refreshed;
-            }
-        }
-        $apks->reconcileCompanySlotPolicy('hr', $company);
-        if (!$apks->isEnabled($app, $company)) {
-            http_response_code(404);
-            $this->view('shared/app-activate', [
-                'title' => __('mobile_activation_title'),
-                'company' => null,
-                'error' => __('mobile_activation_app_disabled'),
-            ], 'auth');
-            return;
-        }
+        $company = $code !== '' && in_array($app, MobileAppApkService::APPS, true)
+            ? $svc->findCompanyByCode($code)
+            : null;
         $row = null;
-        foreach ($svc->enabledApps($company) as $candidate) {
-            if (($candidate['app'] ?? '') === $app) {
-                $row = $candidate;
-                break;
+        if (is_array($company) && (string) ($company['status'] ?? 'active') === 'active') {
+            foreach ($svc->enabledApps($company) as $candidate) {
+                if (($candidate['app'] ?? '') === $app) {
+                    $row = $candidate;
+                    break;
+                }
             }
         }
         if ($row === null) {
@@ -200,21 +146,19 @@ final class MobileAppActivationController extends Controller
             $this->view('shared/app-activate', [
                 'title' => __('mobile_activation_title'),
                 'company' => null,
-                'error' => __('mobile_activation_no_apps'),
+                'error' => __('mobile_activation_invalid'),
             ], 'auth');
             return;
         }
         $formatted = MobileAppActivationService::format($code);
         $this->view('shared/app-activate-launch', [
             'title' => __('mobile_activation_opening_app'),
-            'app' => $app,
             'appLabel' => __('mobile_app_short_' . $app),
-            'apkUrl' => trim((string) ($row['url'] ?? '')),
-            'intentUrl' => trim((string) ($row['open_android'] ?? '')),
-            'schemeUrl' => trim((string) ($row['open'] ?? '')),
+            'apkUrl' => (string) ($row['url'] ?? ''),
+            'intentUrl' => (string) ($row['open_android'] ?? ''),
+            'schemeUrl' => (string) ($row['open'] ?? ''),
             'backUrl' => rateb_url('app-activate/' . $formatted),
             'activationCode' => $formatted,
-            'expectedPackage' => $app === 'hr' ? $apks->packageForActivationLink('hr', $company) : '',
         ], 'auth');
     }
 
@@ -240,16 +184,6 @@ final class MobileAppActivationController extends Controller
                 $apks->setEnabledInSettings($app, $companyId, true);
             }
         }
-    }
-
-    private function isAndroidClient(): bool
-    {
-        $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
-        if (preg_match('/Android|okhttp|wv\)/i', $ua)) {
-            return true;
-        }
-        $ch = strtolower((string) ($_SERVER['HTTP_SEC_CH_UA_MOBILE'] ?? ''));
-        return $ch === '?1';
     }
 
     /** GET /downloads/unified-hr.apk — canonical unified HR only (never a company branded slot). */
@@ -324,37 +258,6 @@ final class MobileAppActivationController extends Controller
             . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title></head><body style="font-family:system-ui,sans-serif;padding:1.5rem;line-height:1.6">'
             . '<h1 style="font-size:1.1rem">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>'
             . htmlspecialchars($body, ENT_QUOTES, 'UTF-8') . '</p></body></html>';
-    }
-
-    /**
-     * @param array<string, mixed>|null $pub
-     *
-     * @return array{url:string, size_mb:float, version_code:int, package:string}
-     */
-    private function unifiedHrDownloadMeta(?array $pub): array
-    {
-        // Static file (always deployed); unified-hr.apk is an Apache alias in downloads/.htaccess.
-        $url = is_array($pub) && ($pub['url'] ?? '') !== ''
-            ? (string) $pub['url']
-            : rateb_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES['hr']);
-        $size = is_array($pub) ? (int) ($pub['size'] ?? 0) : 0;
-        $vc = is_array($pub) ? (int) ($pub['version_code'] ?? 0) : 0;
-
-        $sha = is_array($pub) ? (string) ($pub['sha256'] ?? '') : '';
-
-        $canonical = rateb_public_url('downloads/unified-hr.apk');
-        if ($canonical !== '' && $vc > 0) {
-            $canonical .= (str_contains($canonical, '?') ? '&' : '?') . 'v=' . $vc;
-        }
-
-        return [
-            'url' => $canonical !== '' ? $canonical : $url,
-            'size_mb' => $size > 0 ? round($size / 1048576, 1) : 0.0,
-            'version_code' => $vc,
-            'package' => 'sa.rateb.hr.mobile',
-            'sha256' => $sha,
-            'sha256_short' => $sha !== '' ? substr($sha, 0, 12) : '',
-        ];
     }
 
     private function ip(): string
