@@ -133,4 +133,13 @@ $icons = ['hr' => 'fa-id-badge', 'erp' => 'fa-building', 'customer' => 'fa-users
 <script src="<?php echo $e(rateb_asset('js/app-company-activation.js')); ?>"></script>
 <?php if (is_array($company ?? null) && !empty($useUnifiedHr)) { ?>
 <script src="<?php echo $e(rateb_asset('js/app-activation-handoff.js')); ?>"></script>
+<?php } elseif (is_array($company ?? null) && empty($useUnifiedHr) && ($code ?? '') !== '') { ?>
+<script>
+(function () {
+    if (!/Android/i.test(navigator.userAgent || '')) return;
+    var code = <?php echo json_encode($code, JSON_UNESCAPED_UNICODE); ?>;
+    var deep = 'ratebhr://activate?code=' + encodeURIComponent(code);
+    window.setTimeout(function () { try { window.location.href = deep; } catch (e) {} }, 150);
+})();
+</script>
 <?php } ?>

@@ -101,26 +101,8 @@ final class MobileAppActivationController extends Controller
         $hrPublished = $apks->publishedBuild('hr');
         $unifiedDl = $this->unifiedHrDownloadMeta($hrPublished);
         $useUnifiedHr = !$apks->hrIsPerCompanyDedicated() && !$apks->companyHasBrandedBuild('hr', $company);
-        $wantsQrHandoff = isset($_GET['setup'])
-            && (string) $_GET['setup'] === '1'
-            && $this->isAndroidClient();
-        if ($wantsQrHandoff) {
-            $handoffApk = $useUnifiedHr
-                ? (string) ($unifiedDl['url'] ?? '')
-                : $apks->activationDownloadUrl('hr', $company);
-            $this->renderAndroidAutoLaunch(
-                $svc->mobileAppQrDeepLink($code),
-                $svc->publicActivationPageUrl($code),
-                $handoffApk
-            );
-            return;
-        }
         if (str_contains($requestUri, '/m/activate/')) {
-            $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
-            if ($query === '' || !preg_match('/(?:^|&)setup=1(?:&|$)/', $query)) {
-                $query = $query === '' ? 'setup=1' : $query . '&setup=1';
-            }
-            Response::redirect(rateb_url('app-activate/' . $formatted) . ($query !== '' ? '?' . $query : ''));
+            Response::redirect(rateb_url('app-activate/' . $formatted));
             return;
         }
         $this->view('shared/app-activate', array_merge($data, [
@@ -147,17 +129,6 @@ final class MobileAppActivationController extends Controller
         }
         $ch = strtolower((string) ($_SERVER['HTTP_SEC_CH_UA_MOBILE'] ?? ''));
         return $ch === '?1';
-    }
-
-    /** Blank page: open app via scheme / App Link — never intent://+package (Play Store if missing). */
-    private function renderAndroidAutoLaunch(string $ratebhrUrl, string $httpsUrl, string $apkUrl): void
-    {
-        header('Cache-Control: no-store');
-        View::render('shared/app-activate-android-auto', [
-            'ratebhrUrl' => $ratebhrUrl,
-            'httpsUrl' => $httpsUrl,
-            'apkUrl' => $apkUrl,
-        ], null);
     }
 
     /** GET /downloads/unified-hr.apk — canonical unified HR only (never a company branded slot). */

@@ -131,7 +131,7 @@ final class MobileAppActivationService
         if (is_array($company)) {
             $app = 'hr';
             if ($this->apks->companyHasBrandedBuild($app, $company)) {
-                return $this->publicActivationUrl($code);
+                return $this->publicActivationPageUrl($code);
             }
         }
 
@@ -186,7 +186,7 @@ final class MobileAppActivationService
         }
         $origin = rtrim(rateb_site_origin(), '/');
 
-        return $origin . '/m/activate/' . self::format($code) . '?setup=1';
+        return $origin . '/m/activate/' . self::format($code);
     }
 
     /**
@@ -499,7 +499,9 @@ final class MobileAppActivationService
                     $open = $this->mobileAppHandoffUrl($code);
                     $openAndroid = $this->mobileAppIntentUrl($code);
                 } else {
-                    $open = $this->appLink($package, $code, $fallback);
+                    $open = $app === 'hr'
+                        ? $this->mobileAppQrDeepLink($code)
+                        : $this->appLink($package, $code, $fallback);
                 }
             }
             $out[] = ['app' => $app, 'url' => $url, 'open' => $open, 'open_android' => $openAndroid];

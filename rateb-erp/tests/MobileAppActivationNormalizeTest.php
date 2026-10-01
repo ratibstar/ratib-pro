@@ -51,7 +51,7 @@ $noBrandedCompany = ['id' => 49, 'settings' => '{}'];
 $qr = $svc->qrActivationPayload('VBAK7P38', $noBrandedCompany);
 $assert(
     str_contains($qr, '/m/activate/VBAK-7P38')
-    && str_contains($qr, 'setup=1')
+    && !str_contains($qr, 'setup=1')
     && !str_contains($qr, 'ratebhr://')
     && !str_contains($qr, '/rateb-erp/public/app-activate/'),
     'company without branded key still uses /m/activate until dedicated slot exists'
@@ -63,9 +63,9 @@ $brandedCompany = [
 $qrBranded = $svc->qrActivationPayload('VBAK7P38', $brandedCompany);
 $assert(
     str_contains($qrBranded, '/app-activate/VBAK-7P38')
-    && str_contains($qrBranded, 'setup=1')
+    && !str_contains($qrBranded, 'setup=1')
     && !str_contains($qrBranded, 'ratebhr://'),
-    'dedicated company QR uses HTTPS app-activate (Samsung Camera cannot auto-open ratebhr)'
+    'dedicated company QR uses HTTPS app-activate for App Links (no blank setup page)'
 );
 $intent = $svc->mobileAppIntentUrl('VBAK7P38');
 $assert(
