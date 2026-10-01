@@ -71,6 +71,7 @@ $router->get('/api/v1/hr/manager/employees/{id}', [\Rateb\App\Controllers\Api\Hr
 
 $router->get('/api/mobile/config', [\Rateb\App\Controllers\Api\MobileConfigController::class, 'config'], $api);
 $router->get('/api/v1/mobile/activation', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'api']);
+$router->get('/api/v1/mobile/activation/pending', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'pendingApi']);
 $router->get('/api/v1/mobile/branded/specs', [\Rateb\App\Controllers\Api\MobileBrandedBuildController::class, 'specs']);
 $router->get('/api/mobile/app-content', [\Rateb\App\Controllers\Api\MobileAppContentController::class, 'show']);
 

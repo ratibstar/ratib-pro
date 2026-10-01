@@ -125,6 +125,14 @@ final class LoginController extends Controller
             }
         }
 
+        if (rateb_is_platform_oversight_host()
+            && preg_match('/Android.*; wv\)/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''))) {
+            $pending = (new \Rateb\App\Services\MobileAppPendingActivationService())->take('erp');
+            if ($pending !== '') {
+                Response::redirect(rateb_url('app-activate/' . \Rateb\App\Services\MobileAppActivationService::format($pending)) . '?auto=1');
+            }
+        }
+
         $this->view('shared/auth/login', [
             'title' => __('login'),
             'csrf' => Csrf::token(),

@@ -12,6 +12,7 @@ use Rateb\App\Services\MobileAppActivationService;
 use Rateb\App\Services\MobileAppApkService;
 use Rateb\App\Services\MobileAppBrandedService;
 use Rateb\App\Services\MobileAppConfigService;
+use Rateb\App\Services\MobileAppPendingActivationService;
 
 /**
  * Public company activation for the shared mobile apps (no login).
@@ -38,6 +39,25 @@ final class MobileAppActivationController extends Controller
         }
         $result = (new MobileAppActivationService())->resolve($code, (string) ($_GET['app'] ?? 'hr'));
         Response::json($result['body'], $result['status']);
+    }
+
+    /** GET /api/v1/mobile/activation/pending?app=hr|erp|customer — code remembered by the open-app page for this client. */
+    public function pendingApi(): void
+    {
+        header('Cache-Control: no-store');
+        if (!IpRateLimiter::attempt('mobile_activation_api:' . $this->ip(), self::API_LIMIT, self::WINDOW_SECONDS)) {
+            Response::json(['success' => false, 'code' => 'rate_limited'], 429);
+            return;
+        }
+        $app = (string) ($_GET['app'] ?? '');
+        $code = in_array($app, MobileAppApkService::APPS, true)
+            ? (new MobileAppPendingActivationService())->take($app)
+            : '';
+        if ($code === '') {
+            Response::json(['success' => false, 'code' => 'none'], 404);
+            return;
+        }
+        Response::json(['success' => true, 'activation_code' => MobileAppActivationService::format($code)]);
     }
 
     /** GET /app-activate (?code=… redirects to the company page) */
@@ -101,15 +121,15 @@ final class MobileAppActivationController extends Controller
         $names = $branded->names($company);
         $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
         $erpHost = (string) (parse_url($erpBase, PHP_URL_HOST) ?? '');
-        if (str_contains($requestUri, '/m/activate/')) {
-            // QR scanned but App Links did not hand off: open the HR app directly; the tiles page is the fallback.
-            $isAndroid = (bool) preg_match('/Android/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
-            Response::redirect($isAndroid && $apks->isEnabled('hr', $company)
-                ? $svc->mobileAppOpenIntent('hr', $code, $company, $svc->appOpenUrl($code, 'hr', true))
-                : $svc->appOpenUrl($code, 'hr', true));
+        $apps = $svc->enabledApps($company);
+        if (!isset($_GET['auto'])) {
+            // One app per page: the combined page only serves the ERP app's in-app hand-off (?auto=1).
+            $first = (string) ($apps[0]['app'] ?? 'hr');
+            Response::redirect(str_contains($requestUri, '/m/activate/')
+                ? $svc->appOpenUrl($code, 'hr')
+                : $svc->appOpenUrl($code, $first, true));
             return;
         }
-        $apps = $svc->enabledApps($company);
         foreach ($apps as $i => $row) {
             $apps[$i]['tile_href'] = $svc->appOpenUrl($code, (string) ($row['app'] ?? 'hr'));
         }
@@ -172,6 +192,7 @@ final class MobileAppActivationController extends Controller
             ], 'auth');
             return;
         }
+        (new MobileAppPendingActivationService())->remember($code, $app);
         $isAndroid = (bool) preg_match('/Android/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
         if ($isAndroid && !isset($_GET['page'])) {
             Response::redirect($svc->mobileAppOpenIntent($app, $code, $company, $svc->appOpenUrl($code, $app, true)));
