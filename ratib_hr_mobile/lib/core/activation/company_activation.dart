@@ -227,6 +227,35 @@ final class CompanyActivation {
     return null;
   }
 
+  /// Code the platform's open-app page remembered for this phone — links a fresh install or a
+  /// launcher start that never received the activation intent.
+  static Future<CompanyActivationError?> activateFromPending() async {
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: DartDefineAppEnvironment.productionErpBaseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {'Accept': 'application/json'},
+        validateStatus: (_) => true,
+      ),
+    );
+    final Response<dynamic> response;
+    try {
+      response = await dio.get<dynamic>(
+        '/api/v1/mobile/activation/pending',
+        queryParameters: {'app': 'hr'},
+      );
+    } on DioException {
+      return CompanyActivationError.network;
+    }
+    final data = response.data;
+    final code = data is Map ? (data['activation_code']?.toString() ?? '') : '';
+    if (response.statusCode != 200 || code.isEmpty) {
+      return CompanyActivationError.invalidCode;
+    }
+    return activate(code);
+  }
+
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kBaseUrl);

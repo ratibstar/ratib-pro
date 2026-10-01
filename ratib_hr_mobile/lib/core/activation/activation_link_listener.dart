@@ -44,7 +44,20 @@ class _ActivationLinkListenerState extends State<ActivationLinkListener>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_consumeNativePending());
+      unawaited(_onResumed());
+    }
+  }
+
+  Future<void> _onResumed() async {
+    await _consumeNativePending();
+    if (_busy || CompanyActivation.isActive || BrandBuild.activationCode.isNotEmpty) {
+      return;
+    }
+    _busy = true;
+    final error = await CompanyActivation.activateFromPending();
+    _busy = false;
+    if (error == null) {
+      await widget.onCompanyChanged();
     }
   }
 

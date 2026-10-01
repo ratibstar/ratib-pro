@@ -26,7 +26,23 @@ class _ActivationStartupGateState extends State<ActivationStartupGate> {
   @override
   void initState() {
     super.initState();
+    CompanyActivation.revision.addListener(_onCompanyChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _boot());
+  }
+
+  @override
+  void dispose() {
+    CompanyActivation.revision.removeListener(_onCompanyChanged);
+    super.dispose();
+  }
+
+  void _onCompanyChanged() {
+    if (!mounted || !_done) return;
+    setState(() {
+      _statusLine = CompanyActivation.isActive
+          ? 'ok #${CompanyActivation.companyId} ${CompanyActivation.companyName ?? ''}'
+          : 'no_link';
+    });
   }
 
   Future<void> _boot() async {
@@ -53,6 +69,11 @@ class _ActivationStartupGateState extends State<ActivationStartupGate> {
         await CompanyActivation.purgeWrongTenantForUnifiedPackage();
       } else if (BrandBuild.activationCode.isNotEmpty) {
         err = await CompanyActivation.activate(BrandBuild.activationCode);
+      }
+      if (!CompanyActivation.isActive && BrandBuild.activationCode.isEmpty) {
+        if (await CompanyActivation.activateFromPending() == null) {
+          err = null;
+        }
       }
 
       if (err == null && CompanyActivation.isActive) {

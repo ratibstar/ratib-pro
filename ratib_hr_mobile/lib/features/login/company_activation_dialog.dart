@@ -26,11 +26,26 @@ class _CompanyActivationDialogState extends State<_CompanyActivationDialog> {
   final _code = TextEditingController();
   bool _busy = false;
   String? _error;
+  final String? _openedWithCode = CompanyActivation.code;
+
+  @override
+  void initState() {
+    super.initState();
+    CompanyActivation.revision.addListener(_onCompanyChanged);
+  }
 
   @override
   void dispose() {
+    CompanyActivation.revision.removeListener(_onCompanyChanged);
     _code.dispose();
     super.dispose();
+  }
+
+  /// A QR / open-app link linked the company while this dialog was open.
+  void _onCompanyChanged() {
+    if (!mounted || _busy || !CompanyActivation.isActive) return;
+    if (CompanyActivation.code == _openedWithCode) return;
+    Navigator.of(context).pop(true);
   }
 
   String _messageFor(CompanyActivationError error, AppLocalizations l10n) {
