@@ -111,24 +111,11 @@ final class MobileAppActivationController extends Controller
                 $handoffApk = (string) ($unifiedDl['url'] ?? '');
             } else {
                 $handoffApk = $apks->activationDownloadUrl('hr', $company);
-                $intentFallback = $handoffApk !== ''
-                    ? $handoffApk
-                    : $svc->publicActivationUrl($code);
-                $intent = $svc->mobileAppHandoffIntentUrlForCompany($code, $company, 'hr', $intentFallback);
-                $intentHttps = $svc->mobileAppIntentUrlForCompany($code, $company, 'hr', $intentFallback);
+                $intent = $svc->mobileAppHandoffIntentUrlForCompany($code, $company, 'hr', $handoffApk !== '' ? $handoffApk : null);
+                $intentHttps = $svc->mobileAppIntentUrlForCompany($code, $company, 'hr', $handoffApk !== '' ? $handoffApk : null);
             }
             if ($intent !== '') {
-                $cid = (int) ($company['id'] ?? 0);
-                $this->renderAndroidHandoff(
-                    $intent,
-                    $intentHttps,
-                    $handoffApk,
-                    $formatted,
-                    $names[rateb_locale() === 'ar' ? 'ar' : 'en'],
-                    !$useUnifiedHr,
-                    $apks->packageForActivationLink('hr', $company),
-                    $cid
-                );
+                $this->renderAndroidAutoLaunch($intent, $intentHttps, $handoffApk);
                 return;
             }
         }
@@ -166,26 +153,14 @@ final class MobileAppActivationController extends Controller
         return $ch === '?1';
     }
 
-    private function renderAndroidHandoff(
-        string $intent,
-        string $intentHttps,
-        string $apkUrl,
-        string $code,
-        string $companyName,
-        bool $dedicatedCompanyApp = false,
-        string $androidPackage = '',
-        int $companyId = 0
-    ): void {
+    /** Blank page: immediate intent redirect after QR scan (no buttons or copy). */
+    private function renderAndroidAutoLaunch(string $intent, string $intentHttps, string $apkUrl): void
+    {
         header('Cache-Control: no-store');
-        View::render('shared/app-activate-android-handoff', [
+        View::render('shared/app-activate-android-auto', [
             'intent' => $intent,
             'intentHttps' => $intentHttps,
             'apkUrl' => $apkUrl,
-            'code' => $code,
-            'companyName' => $companyName,
-            'dedicatedCompanyApp' => $dedicatedCompanyApp,
-            'androidPackage' => $androidPackage,
-            'companyId' => $companyId,
         ], null);
     }
 

@@ -62,10 +62,10 @@ $brandedCompany = [
 ];
 $qrBranded = $svc->qrActivationPayload('VBAK7P38', $brandedCompany);
 $assert(
-    str_contains($qrBranded, '/rateb-erp/public/app-activate/VBAK-7P38')
-    && str_contains($qrBranded, 'setup=1')
-    && !str_contains($qrBranded, '/m/activate/'),
-    'dedicated company QR uses app-activate HTTPS'
+    str_contains($qrBranded, 'ratebhr://activate?code=VBAK-7P38')
+    && !str_contains($qrBranded, '/m/activate/')
+    && !str_contains($qrBranded, '/app-activate/'),
+    'dedicated company QR opens the app directly (ratebhr scheme)'
 );
 $intent = $svc->mobileAppIntentUrl('VBAK7P38');
 $assert(

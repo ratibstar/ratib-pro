@@ -114,7 +114,7 @@ final class MobileAppActivationService
         if (is_array($company)) {
             $app = 'hr';
             if ($this->apks->companyHasBrandedBuild($app, $company)) {
-                return $this->activationUrlForCompany($code, $company, $app);
+                return $this->mobileAppQrDeepLink($code);
             }
         }
 
@@ -238,9 +238,6 @@ final class MobileAppActivationService
             return '';
         }
         $apkUrl = $browserFallbackUrl ?? $this->apks->activationDownloadUrl($app, $company);
-        if ($apkUrl === '') {
-            $apkUrl = $deepLink;
-        }
         $rest = preg_replace('#^https?://#i', '', $deepLink);
 
         return 'intent://' . $rest
@@ -261,9 +258,6 @@ final class MobileAppActivationService
         $package = $this->apks->packageForActivationLink($app, $company);
         $formatted = self::format($code);
         $apkUrl = $browserFallbackUrl ?? $this->apks->activationDownloadUrl($app, $company);
-        if ($apkUrl === '') {
-            $apkUrl = $this->publicActivationUrl($code);
-        }
 
         return 'intent://activate?code=' . rawurlencode($formatted)
             . $this->androidIntentFragment($package, $apkUrl, 'ratebhr');
