@@ -211,6 +211,55 @@ final class MobileAppActivationController extends Controller
         readfile($pub['path']);
     }
 
+    /** GET /downloads/company/{key} or {key}.apk — serves published branded builds (when static file is missing). */
+    public function downloadCompanyBrandedApk(array $params = []): void
+    {
+        $raw = trim((string) ($params['key'] ?? ''));
+        if (str_ends_with(strtolower($raw), '.apk')) {
+            $raw = substr($raw, 0, -4);
+        }
+        if (!MobileAppBrandedService::validKey($raw)) {
+            $this->renderBrandedApkUnavailable(404);
+            return;
+        }
+        $branded = new MobileAppBrandedService();
+        $pub = $branded->published($raw);
+        if ($pub === null || !is_file($pub['path'])) {
+            $this->renderBrandedApkUnavailable(404);
+            return;
+        }
+        $pkg = (string) ($pub['package'] ?? '');
+        $vc = (int) ($pub['version_code'] ?? 0);
+        $name = 'rateb-hr-' . $raw . ($vc > 0 ? '-b' . $vc : '') . '.apk';
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        header('Content-Type: application/vnd.android.package-archive');
+        header('Content-Disposition: attachment; filename="' . $name . '"');
+        header('Content-Length: ' . (string) filesize($pub['path']));
+        if ($pkg !== '') {
+            header('X-Rateb-Apk-Package: ' . $pkg);
+        }
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        readfile($pub['path']);
+    }
+
+    private function renderBrandedApkUnavailable(int $status): void
+    {
+        http_response_code($status);
+        header('Content-Type: text/html; charset=UTF-8');
+        header('Cache-Control: no-store');
+        $title = function_exists('__') ? __('mobile_apps_apk_not_built_title') : 'APK not available';
+        $body = function_exists('__') ? __('mobile_apps_apk_not_built_body') : 'This company app has not been built yet.';
+        $dir = rateb_locale() === 'ar' ? 'rtl' : 'ltr';
+        $lang = rateb_locale() === 'ar' ? 'ar' : 'en';
+        echo '<!DOCTYPE html><html lang="' . htmlspecialchars($lang, ENT_QUOTES, 'UTF-8') . '" dir="' . $dir . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
+            . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title></head><body style="font-family:system-ui,sans-serif;padding:1.5rem;line-height:1.6">'
+            . '<h1 style="font-size:1.1rem">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>'
+            . htmlspecialchars($body, ENT_QUOTES, 'UTF-8') . '</p></body></html>';
+    }
+
     /**
      * @param array<string, mixed>|null $pub
      *

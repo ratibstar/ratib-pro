@@ -42,6 +42,7 @@ $router->get('/scan/doc/{code}', [\Rateb\App\Controllers\Shared\DocumentScanCont
 $router->get('/scan/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::class, 'image']);
 $router->get('/hr-app/{token}', [\Rateb\App\Controllers\Admin\MobileAppsController::class, 'downloadApk']);
 $router->get('/downloads/unified-hr.apk', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'downloadUnifiedHrApk']);
+$router->get('/downloads/company/{key:.+}', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'downloadCompanyBrandedApk']);
 $router->get('/app-activate', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'form']);
 $router->get('/app-activate/{code}', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'show']);
 // Unified HR only (QR): branded company APKs must not register this path (see ratib_hr_mobile AndroidManifest).

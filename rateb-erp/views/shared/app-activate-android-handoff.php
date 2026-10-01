@@ -42,6 +42,8 @@ if ($pkg === '') {
         <p class="mono"><?php echo $e($pkg); ?><?php if ($companyId > 0) { ?> · #<?php echo $e((string) $companyId); ?><?php } ?></p>
         <?php if ($apkUrl !== '') { ?>
         <a class="btn secondary" href="<?php echo $e($apkUrl); ?>"><?php echo $e(__('mobile_activation_download_company_hr')); ?></a>
+        <?php } else { ?>
+        <p class="mono" style="color:#fbbf24"><?php echo $e(__('mobile_apps_apk_not_built_body')); ?></p>
         <?php } ?>
         <p style="font-size:0.85rem;color:#fbbf24;margin-top:12px"><?php echo $e(__('mobile_activation_handoff_install_first_dedicated')); ?></p>
         <button type="button" class="btn primary" id="rateb-open-hr"><?php echo $e(__('mobile_activation_open_company_hr')); ?></button>

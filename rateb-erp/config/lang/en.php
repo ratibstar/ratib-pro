@@ -3260,6 +3260,8 @@ return [
     'mobile_apps_apk_upload_invalid' => 'The upload was interrupted or incomplete — try again.',
     'mobile_apps_apk_upload_failed' => 'Could not save the app file on the server.',
     'mobile_apps_apk_unavailable' => 'This app download link is not available right now.',
+    'mobile_apps_apk_not_built_title' => 'Company app not ready yet',
+    'mobile_apps_apk_not_built_body' => 'This company’s APK is not on the server yet. In platform admin: Mobile Apps → company → Build now, wait for deploy, then try again.',
     'mobile_apps_intro_hub' => 'One unified RATEB app per product (HR / ERP / Customer): enable each company, set its name and logo, push updates from App updates — no per-company APK build by default.',
     'mobile_apps_dual_apk_phone_warning' => 'Per-company app model: open the company card → request separate APK → build → scan and install only that package (sa.rateb.hr.mobile.c<company_id>). Company #49 QR does not activate company #51\'s app. The unified ~41 MB build is only for companies on «shared version».',
     'mobile_apps_tab_hr' => 'HR app',

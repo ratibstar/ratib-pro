@@ -208,14 +208,13 @@ final class MobileAppApkService
         if ($app === 'hr' && $this->hrIsPerCompanyDedicated()) {
             $branded = new MobileAppBrandedService($this);
             $brandedKey = $branded->keyFor($app, $company);
-            if ($brandedKey !== '') {
-                if ($this->servesBrandedApk($app, $company)) {
-                    return $this->downloadUrlForToken($this->ensureToken($key));
-                }
-
+            if ($brandedKey !== '' && $branded->published($brandedKey) !== null) {
                 return rateb_public_url(
                     'downloads/' . MobileAppBrandedService::PUBLIC_DIR . '/' . $brandedKey . '.apk'
                 );
+            }
+            if ($brandedKey !== '') {
+                return '';
             }
         }
         $published = $this->publishedBuild($app);
