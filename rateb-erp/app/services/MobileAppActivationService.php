@@ -221,8 +221,12 @@ final class MobileAppActivationService
     }
 
     /** Android intent for a company's dedicated HR package (branded build). */
-    public function mobileAppIntentUrlForCompany(string $code, array $company, string $app = 'hr'): string
-    {
+    public function mobileAppIntentUrlForCompany(
+        string $code,
+        array $company,
+        string $app = 'hr',
+        ?string $browserFallbackUrl = null
+    ): string {
         $code = self::normalize($code);
         $app = MobileAppApkService::normalizeApp($app);
         if ($code === '' || $app !== 'hr') {
@@ -233,15 +237,22 @@ final class MobileAppActivationService
         if ($deepLink === '') {
             return '';
         }
-        $apkUrl = $this->apks->activationDownloadUrl($app, $company);
+        $apkUrl = $browserFallbackUrl ?? $this->apks->activationDownloadUrl($app, $company);
+        if ($apkUrl === '') {
+            $apkUrl = $deepLink;
+        }
         $rest = preg_replace('#^https?://#i', '', $deepLink);
 
         return 'intent://' . $rest
             . $this->androidIntentFragment($package, $apkUrl, 'https');
     }
 
-    public function mobileAppHandoffIntentUrlForCompany(string $code, array $company, string $app = 'hr'): string
-    {
+    public function mobileAppHandoffIntentUrlForCompany(
+        string $code,
+        array $company,
+        string $app = 'hr',
+        ?string $browserFallbackUrl = null
+    ): string {
         $code = self::normalize($code);
         $app = MobileAppApkService::normalizeApp($app);
         if ($code === '' || $app !== 'hr') {
@@ -249,7 +260,10 @@ final class MobileAppActivationService
         }
         $package = $this->apks->packageForActivationLink($app, $company);
         $formatted = self::format($code);
-        $apkUrl = $this->apks->activationDownloadUrl($app, $company);
+        $apkUrl = $browserFallbackUrl ?? $this->apks->activationDownloadUrl($app, $company);
+        if ($apkUrl === '') {
+            $apkUrl = $this->publicActivationUrl($code);
+        }
 
         return 'intent://activate?code=' . rawurlencode($formatted)
             . $this->androidIntentFragment($package, $apkUrl, 'ratebhr');

@@ -110,9 +110,12 @@ final class MobileAppActivationController extends Controller
                 $intentHttps = $svc->mobileAppIntentUrl($code);
                 $handoffApk = (string) ($unifiedDl['url'] ?? '');
             } else {
-                $intent = $svc->mobileAppHandoffIntentUrlForCompany($code, $company);
-                $intentHttps = $svc->mobileAppIntentUrlForCompany($code, $company);
                 $handoffApk = $apks->activationDownloadUrl('hr', $company);
+                $intentFallback = $handoffApk !== ''
+                    ? $handoffApk
+                    : $svc->publicActivationUrl($code);
+                $intent = $svc->mobileAppHandoffIntentUrlForCompany($code, $company, 'hr', $intentFallback);
+                $intentHttps = $svc->mobileAppIntentUrlForCompany($code, $company, 'hr', $intentFallback);
             }
             if ($intent !== '') {
                 $cid = (int) ($company['id'] ?? 0);
