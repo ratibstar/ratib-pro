@@ -103,6 +103,23 @@ final class MobileAppActivationService
         return $url . (str_contains($url, '?') ? '&' : '?') . 'setup=1';
     }
 
+    /** HTTPS app-activate without setup=1 (App Links / browser fallback — avoids auto-launch loop). */
+    public function publicActivationPageUrl(string $code): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+        $path = 'app-activate/' . self::format($code);
+        if (function_exists('rateb_is_platform_oversight_host')
+            && rateb_is_platform_oversight_host()
+            && function_exists('rateb_platform_oversight_public_url')) {
+            return rateb_platform_oversight_public_url($path);
+        }
+
+        return rateb_public_url($path);
+    }
+
     /**
      * Admin QR payload: HTTPS app-activate (camera + verified App Links). Custom schemes show a useless
      * Samsung Camera sheet; HTTPS with assetlinks opens sa.rateb.hr.mobile directly when installed.

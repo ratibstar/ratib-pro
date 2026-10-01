@@ -105,19 +105,15 @@ final class MobileAppActivationController extends Controller
             && (string) $_GET['setup'] === '1'
             && $this->isAndroidClient();
         if ($wantsQrHandoff) {
-            if ($useUnifiedHr) {
-                $intent = $svc->mobileAppHandoffIntentUrl($code);
-                $intentHttps = $svc->mobileAppIntentUrl($code);
-                $handoffApk = (string) ($unifiedDl['url'] ?? '');
-            } else {
-                $handoffApk = $apks->activationDownloadUrl('hr', $company);
-                $intent = $svc->mobileAppHandoffIntentUrlForCompany($code, $company, 'hr', $handoffApk !== '' ? $handoffApk : null);
-                $intentHttps = $svc->mobileAppIntentUrlForCompany($code, $company, 'hr', $handoffApk !== '' ? $handoffApk : null);
-            }
-            if ($intent !== '') {
-                $this->renderAndroidAutoLaunch($intent, $intentHttps, $handoffApk);
-                return;
-            }
+            $handoffApk = $useUnifiedHr
+                ? (string) ($unifiedDl['url'] ?? '')
+                : $apks->activationDownloadUrl('hr', $company);
+            $this->renderAndroidAutoLaunch(
+                $svc->mobileAppQrDeepLink($code),
+                $svc->publicActivationPageUrl($code),
+                $handoffApk
+            );
+            return;
         }
         if (str_contains($requestUri, '/m/activate/')) {
             $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
@@ -153,13 +149,13 @@ final class MobileAppActivationController extends Controller
         return $ch === '?1';
     }
 
-    /** Blank page: immediate intent redirect after QR scan (no buttons or copy). */
-    private function renderAndroidAutoLaunch(string $intent, string $intentHttps, string $apkUrl): void
+    /** Blank page: open app via scheme / App Link — never intent://+package (Play Store if missing). */
+    private function renderAndroidAutoLaunch(string $ratebhrUrl, string $httpsUrl, string $apkUrl): void
     {
         header('Cache-Control: no-store');
         View::render('shared/app-activate-android-auto', [
-            'intent' => $intent,
-            'intentHttps' => $intentHttps,
+            'ratebhrUrl' => $ratebhrUrl,
+            'httpsUrl' => $httpsUrl,
             'apkUrl' => $apkUrl,
         ], null);
     }

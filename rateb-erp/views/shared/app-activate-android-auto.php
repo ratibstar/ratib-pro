@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-/** @var string $intent */
-/** @var string $intentHttps */
+/** @var string $ratebhrUrl */
+/** @var string $httpsUrl */
 /** @var string $apkUrl */
 ?><!DOCTYPE html>
 <html lang="en"><head>
@@ -13,8 +13,8 @@ declare(strict_types=1);
 <style>html,body{margin:0;padding:0;background:#fff;height:100%}</style>
 <script>
 (function () {
-    var intentRatebhr = <?php echo json_encode($intent, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-    var intentHttps = <?php echo json_encode($intentHttps ?? '', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    var ratebhr = <?php echo json_encode($ratebhrUrl ?? '', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    var httpsOpen = <?php echo json_encode($httpsUrl ?? '', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     var apkDirect = <?php echo json_encode($apkUrl ?? '', JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     function go(url) {
         if (!url) return;
@@ -22,9 +22,11 @@ declare(strict_types=1);
             try { window.location.href = url; } catch (e2) {}
         }
     }
-    go(intentRatebhr);
-    window.setTimeout(function () { go(intentHttps); }, 80);
-    window.setTimeout(function () { go(apkDirect); }, 700);
+    go(httpsOpen);
+    window.setTimeout(function () { go(ratebhr); }, 120);
+    window.setTimeout(function () {
+        if (apkDirect) go(apkDirect);
+    }, 2200);
 })();
 </script>
 </head><body></body></html>
