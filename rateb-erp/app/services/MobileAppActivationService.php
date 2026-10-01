@@ -126,16 +126,35 @@ final class MobileAppActivationService
      *
      * @param array<string, mixed>|null $company Reserved for branded vs unified download policy elsewhere.
      */
-    public function qrActivationPayload(string $code, ?array $company = null): string
+    public function qrActivationPayload(string $code, ?array $company = null, string $app = 'hr'): string
     {
-        if (is_array($company)) {
-            $app = 'hr';
-            if ($this->apks->companyHasBrandedBuild($app, $company)) {
-                return $this->publicActivationPageUrl($code);
-            }
+        $app = MobileAppApkService::normalizeApp($app);
+        if ($app !== 'hr') {
+            return $this->appOpenUrl($code, $app);
+        }
+        if (is_array($company) && $this->apks->companyHasBrandedBuild($app, $company)) {
+            return $this->publicActivationPageUrl($code);
         }
 
         return $this->mobileAppDeepLinkUrl($code);
+    }
+
+    /**
+     * One app only: Android is redirected straight into the app with the code; $page renders the
+     * install/open page instead. Kept outside /app-activate, which the unified HR APK claims.
+     */
+    public function appOpenUrl(string $code, string $app, bool $page = false): string
+    {
+        $code = self::normalize($code);
+        if ($code === '') {
+            return '';
+        }
+        $path = 'open-app/' . self::format($code) . '/' . MobileAppApkService::normalizeApp($app);
+        $url = function_exists('rateb_platform_oversight_public_url')
+            ? rateb_platform_oversight_public_url($path)
+            : rateb_public_url($path);
+
+        return $page ? $url . '?page=1' : $url;
     }
 
     /** Link shown in Admin + encoded in QR for unified companies (opens sa.rateb.hr.mobile). */

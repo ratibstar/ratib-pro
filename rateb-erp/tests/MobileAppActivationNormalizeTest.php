@@ -94,5 +94,18 @@ $assert(
     && str_contains($hrIntent, 'code=VBAK-7P38'),
     'company whose own HR APK is not published opens the unified HR app'
 );
+foreach (['erp', 'customer'] as $qrApp) {
+    $appQr = $svc->qrActivationPayload('VBAK7P38', $noBrandedCompany, $qrApp);
+    $assert(
+        str_ends_with($appQr, '/open-app/VBAK-7P38/' . $qrApp)
+        && !str_contains($appQr, '/app-activate/')
+        && !str_contains($appQr, '/m/activate/'),
+        $qrApp . ' QR opens only that app, outside paths the HR APK claims'
+    );
+}
+$assert(
+    str_ends_with($svc->appOpenUrl('VBAK7P38', 'hr', true), '/open-app/VBAK-7P38/hr?page=1'),
+    'open-app install page variant'
+);
 
 exit($fail > 0 ? 1 : 0);

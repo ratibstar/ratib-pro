@@ -975,7 +975,7 @@ function isAuthPath(pathname) {
         || /\/login\/barcode/i.test(p)
         || /\/login\/scan/i.test(p)
         || /\/login\/badge/i.test(p)
-        || /\/app-activate(\/|$)/i.test(p);
+        || /\/(app-activate|open-app)(\/|$)/i.test(p);
 }
 
 function isLogoutPath(pathname) {

@@ -105,13 +105,13 @@ final class MobileAppActivationController extends Controller
             // QR scanned but App Links did not hand off: open the HR app directly; the tiles page is the fallback.
             $isAndroid = (bool) preg_match('/Android/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
             Response::redirect($isAndroid && $apks->isEnabled('hr', $company)
-                ? $svc->mobileAppOpenIntent('hr', $code, $company, $svc->publicActivationPageUrl($code))
-                : rateb_url('app-activate/' . $formatted));
+                ? $svc->mobileAppOpenIntent('hr', $code, $company, $svc->appOpenUrl($code, 'hr', true))
+                : $svc->appOpenUrl($code, 'hr', true));
             return;
         }
         $apps = $svc->enabledApps($company);
         foreach ($apps as $i => $row) {
-            $apps[$i]['tile_href'] = $this->activationLaunchUrl($formatted, (string) ($row['app'] ?? 'hr'));
+            $apps[$i]['tile_href'] = $svc->appOpenUrl($code, (string) ($row['app'] ?? 'hr'));
         }
         $this->view('shared/app-activate', array_merge($data, [
             'company' => [
@@ -128,8 +128,24 @@ final class MobileAppActivationController extends Controller
         ]), 'auth');
     }
 
-    /** HTTPS bridge: JS opens intent/scheme (hash in intent:// breaks inside static href on Chrome). */
+    /** Legacy tile links (/app-activate/{code}/go/{app}) → /open-app/{code}/{app}. */
     public function launch(array $params = []): void
+    {
+        $code = MobileAppActivationService::normalize((string) ($params['code'] ?? ''));
+        $app = (string) ($params['app'] ?? '');
+        if ($code === '' || !in_array($app, MobileAppApkService::APPS, true)) {
+            Response::redirect(rateb_url('app-activate'));
+            return;
+        }
+        Response::redirect((new MobileAppActivationService())->appOpenUrl($code, $app));
+    }
+
+    /**
+     * GET /open-app/{code}/{app}: one app per QR/link. Android gets a server redirect to the app's
+     * intent (a redirect keeps the tap's user gesture, unlike JS after load); the install/open page
+     * (?page=1) is the intent fallback when the app is not installed, and the page for other devices.
+     */
+    public function openApp(array $params = []): void
     {
         header('Cache-Control: no-store');
         $code = MobileAppActivationService::normalize((string) ($params['code'] ?? ''));
@@ -156,23 +172,25 @@ final class MobileAppActivationController extends Controller
             ], 'auth');
             return;
         }
-        $formatted = MobileAppActivationService::format($code);
-        $this->view('shared/app-activate-launch', [
-            'title' => __('mobile_activation_opening_app'),
+        $isAndroid = (bool) preg_match('/Android/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        if ($isAndroid && !isset($_GET['page'])) {
+            Response::redirect($svc->mobileAppOpenIntent($app, $code, $company, $svc->appOpenUrl($code, $app, true)));
+            return;
+        }
+        $apks = new MobileAppApkService();
+        $erpBase = $apks->erpBaseUrlForCompany($company);
+        $branded = new MobileAppBrandedService($apks);
+        $hrConfig = (new MobileAppConfigService())->findByCompanyId((int) $company['id']);
+        $this->view('shared/app-open', [
+            'title' => __('mobile_app_short_' . $app),
+            'app' => $app,
             'appLabel' => __('mobile_app_short_' . $app),
+            'companyName' => $branded->names($company)[rateb_locale() === 'ar' ? 'ar' : 'en'],
+            'companyLogo' => $branded->iconUrl($company, $hrConfig, $erpBase),
+            'openUrl' => $isAndroid ? $svc->appOpenUrl($code, $app) : '',
             'apkUrl' => (string) ($row['url'] ?? ''),
-            'intentUrl' => (string) ($row['open_android'] ?? ''),
-            'schemeUrl' => (string) ($row['open'] ?? ''),
-            'backUrl' => rateb_url('app-activate/' . $formatted),
-            'activationCode' => $formatted,
+            'activationCode' => MobileAppActivationService::format($code),
         ], 'auth');
-    }
-
-    private function activationLaunchUrl(string $formattedCode, string $app): string
-    {
-        $app = MobileAppApkService::normalizeApp($app);
-
-        return rateb_url('app-activate/' . $formattedCode . '/go/' . $app);
     }
 
     /** When HR is on, show ERP + Customer on the public activation page (shared platform APKs). */

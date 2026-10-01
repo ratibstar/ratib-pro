@@ -572,14 +572,18 @@ final class MobileAppsController extends Controller
             $url = $agencyHost
                 ? rateb_platform_oversight_public_url('downloads/' . MobileAppApkService::PUBLISHED_FILES[$app])
                 : $apkSvc->activationDownloadUrl($app, $company);
-            $apps[] = ['app' => $app, 'url' => $url, 'qr' => $apkSvc->qrImageUrl($url, 160)];
+            $payload = $code !== '' ? $activation->qrActivationPayload($code, $company, $app) : $url;
+            $apps[] = [
+                'app' => $app,
+                'url' => $url,
+                'open_url' => $code !== '' ? $activation->appOpenUrl($code, $app) : '',
+                'qr' => $code !== '' ? $apkSvc->qrDataUri($payload, 160) : $apkSvc->qrImageUrl($url, 160),
+            ];
         }
 
         return [
             'code' => MobileAppActivationService::format($code),
             'activationUrl' => $activationUrl,
-            'activationQr' => $code !== '' ? $apkSvc->qrDataUri($activation->qrActivationPayload($code, $company), 160) : '',
-            'activationQrPayload' => $code !== '' ? $activation->qrActivationPayload($code, $company) : '',
             'apps' => $apps,
         ];
     }
@@ -625,7 +629,8 @@ final class MobileAppsController extends Controller
         if ($code !== '' && $activation->findCompanyByCode($code) === null) {
             $code = $activation->regenerate($cid);
         }
-        $activationUrl = $code !== '' ? $activation->activationUrlForCompany($code, $company, $app) : '';
+        $activationUrl = $code !== '' ? $activation->appOpenUrl($code, $app) : '';
+        $qrPayload = $code !== '' ? $activation->qrActivationPayload($code, $company, $app) : '';
         $brandedKey = $branded->keyFor($app, $company);
         $pub = $brandedKey !== '' ? $branded->published($brandedKey) : null;
         $targetBuild = $branded->sharedVersionCodes()[$app] ?? 0;
@@ -674,8 +679,8 @@ final class MobileAppsController extends Controller
             'dispatchEnabled' => trim((string) (getenv('RATEB_GITHUB_DISPATCH_TOKEN') ?: '')) !== '',
             'activationCode' => MobileAppActivationService::format($code),
             'activationUrl' => $activationUrl,
-            'activationQr' => $code !== '' ? $apkSvc->qrDataUri($activation->qrActivationPayload($code, $company), 180) : '',
-            'activationQrPayload' => $code !== '' ? $activation->qrActivationPayload($code, $company) : '',
+            'activationQr' => $qrPayload !== '' ? $apkSvc->qrDataUri($qrPayload, 180) : '',
+            'activationQrPayload' => $qrPayload,
             'needsCode' => $apkSvc->needsActivationCode($app, $company),
             'app' => $app,
             'cid' => $cid,

@@ -46,6 +46,7 @@ $router->get('/downloads/company/{key:.+}', [\Rateb\App\Controllers\Shared\Mobil
 $router->get('/app-activate', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'form']);
 $router->get('/app-activate/{code}/go/{app}', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'launch']);
 $router->get('/app-activate/{code}', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'show']);
+$router->get('/open-app/{code}/{app}', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'openApp']);
 // Unified HR only (QR): branded company APKs must not register this path (see ratib_hr_mobile AndroidManifest).
 $router->get('/m/activate', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'form']);
 $router->get('/m/activate/{code}', [\Rateb\App\Controllers\Shared\MobileAppActivationController::class, 'show']);

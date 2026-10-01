@@ -53,12 +53,6 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
                     <div class="fs-4 fw-bold font-monospace" dir="ltr"><?php echo $e($share['code']); ?></div>
                     <a class="small" href="<?php echo $e($share['activationUrl']); ?>" target="_blank" rel="noopener" dir="ltr"><?php echo $e($share['activationUrl']); ?></a>
                 </div>
-                <?php if (($share['activationQr'] ?? '') !== '') { ?>
-                    <div class="text-center">
-                        <img src="<?php echo $e($share['activationQr']); ?>" alt="QR" width="160" height="160" class="bg-white p-1 rounded">
-                        <div class="small text-muted mt-1" style="max-width:220px"><?php echo $e(__('mobile_activation_qr_hint')); ?></div>
-                    </div>
-                <?php } ?>
             </div>
         <?php } else { ?>
             <div class="alert alert-info py-2 small"><?php echo $e(__('mobile_share_code_ask')); ?></div>
@@ -70,9 +64,10 @@ $statusActive = is_array($config) && (string) ($config['status'] ?? '') === 'act
                 <?php foreach ($share['apps'] as $shareApp) { ?>
                     <div class="col-sm-6 col-lg-4">
                         <div class="border rounded p-2 h-100 text-center">
-                            <div class="fw-semibold mb-2"><?php echo $e(__('mobile_apps_tab_' . $shareApp['app'])); ?></div>
-                            <?php if (($share['code'] ?? '') === '') { ?>
-                                <img src="<?php echo $e($shareApp['qr']); ?>" alt="QR" width="120" height="120" class="bg-white p-1 rounded mb-2">
+                            <div class="fw-semibold mb-2"><?php echo $e(__('mobile_open_app_qr_title', ['app' => __('mobile_apps_tab_' . $shareApp['app'])])); ?></div>
+                            <img src="<?php echo $e($shareApp['qr']); ?>" alt="QR" width="160" height="160" class="bg-white p-1 rounded mb-2">
+                            <?php if (($shareApp['open_url'] ?? '') !== '') { ?>
+                                <div class="small mb-2 text-break" dir="ltr"><a href="<?php echo $e($shareApp['open_url']); ?>" target="_blank" rel="noopener"><?php echo $e($shareApp['open_url']); ?></a></div>
                             <?php } ?>
                             <div><a class="btn btn-sm btn-outline-primary" href="<?php echo $e($shareApp['url']); ?>"><i class="fas fa-download"></i> <?php echo $e(__('mobile_share_download')); ?></a></div>
                         </div>
