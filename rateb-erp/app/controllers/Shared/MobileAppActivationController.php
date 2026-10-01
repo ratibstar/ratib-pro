@@ -118,7 +118,9 @@ final class MobileAppActivationController extends Controller
             'code' => MobileAppActivationService::format($code),
             'erpHost' => $erpHost,
             'apps' => $apps,
-            'adminUrl' => $apks->isEnabled('erp', $company) ? $erpBase . '/admin' : '',
+            'adminUrl' => $apks->isEnabled('erp', $company)
+                ? $erpBase . '/login?company_code=' . rawurlencode($formatted)
+                : '',
         ]), 'auth');
     }
 

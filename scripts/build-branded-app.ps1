@@ -327,6 +327,12 @@ if ($aapt2) {
 New-Item -ItemType Directory -Force -Path $publishDir, $specDir | Out-Null
 $dest = Join-Path $publishDir "$Key.apk"
 Copy-Item -Force $apk $dest
+if ($App -ne 'erp') {
+    # The branded Dart snapshot (embedded code + server) would otherwise leak into the next unified build.
+    Push-Location $appDir
+    & $flutter clean | Out-Null
+    Pop-Location
+}
 $sha = (Get-FileHash -Algorithm SHA256 $dest).Hash.ToLowerInvariant()
 $utf8 = New-Object Text.UTF8Encoding($false)
 [IO.File]::WriteAllText((Join-Path $publishDir "$Key.json"), ([ordered]@{

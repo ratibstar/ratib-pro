@@ -15,6 +15,7 @@ use Rateb\App\Models\User;
 use Rateb\App\Services\AccountLockoutService;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\LoginActivityService;
+use Rateb\App\Services\LoginCompanyHintService;
 use Rateb\App\Services\RememberMeService;
 use Rateb\App\Services\TwoFactorService;
 
@@ -131,6 +132,7 @@ final class LoginController extends Controller
             'branchPortal' => $branchPortal,
             'loginError' => $this->resolveLoginErrorFromRequest(),
             'agencyLoginHint' => $this->agencyLoginHint(),
+            'loginCompany' => (new LoginCompanyHintService())->fromRequest(),
         ], 'auth');
     }
 

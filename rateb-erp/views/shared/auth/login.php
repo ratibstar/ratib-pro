@@ -1,7 +1,18 @@
 <?php
 /** @var string $csrf */
 /** @var string $loginError */
+/** @var array{name:string, logo:string}|null $loginCompany */
 ?>
+<?php if (!empty($loginCompany)) { ?>
+<div class="rateb-login-company mb-3">
+    <?php if ($loginCompany['logo'] !== '') { ?>
+    <img class="rateb-login-company-logo" src="<?php echo Rateb\App\Core\View::escape($loginCompany['logo']); ?>" alt="" width="48" height="48">
+    <?php } else { ?>
+    <span class="rateb-login-company-logo rateb-login-company-initial" aria-hidden="true"><?php echo Rateb\App\Core\View::escape(mb_substr($loginCompany['name'], 0, 1)); ?></span>
+    <?php } ?>
+    <span class="rateb-login-company-name"><?php echo Rateb\App\Core\View::escape($loginCompany['name']); ?></span>
+</div>
+<?php } ?>
 <?php if (!empty($loginError)) { ?>
 <div class="alert alert-danger rateb-flash mb-3" role="alert"><?php echo Rateb\App\Core\View::escape($loginError); ?></div>
 <?php } ?>
