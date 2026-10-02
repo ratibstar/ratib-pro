@@ -170,15 +170,32 @@ jobs:
           echo "INDEX_HEAD_START"
           sed -n '1,12p' /home/admin/domains/ai.rateb.sa/index.php
           echo "INDEX_HEAD_END"
+          echo "DISK_HAS_LANG=$(grep -c 'id=\"lang\"' /home/admin/domains/ai.rateb.sa/index.php || true)"
           if [ -d /home/admin/domains/ai.rateb.sa/public_html ]; then echo "PUBLIC_HTML=yes"; else echo "PUBLIC_HTML=no"; fi
-          if [ -f /home/admin/domains/ai.rateb.sa/public_html/index.php ]; then echo "PUBLIC_HTML_INDEX=yes"; else echo "PUBLIC_HTML_INDEX=no"; fi
           CONF=/usr/local/directadmin/data/users/admin/domains/ai.rateb.sa.conf
           if [ -f "$CONF" ]; then
-            grep -E '^(documentroot|DocumentRoot)=' "$CONF" | head -5 || true
+            grep -E '^(documentroot|DocumentRoot|public_html)=' "$CONF" | head -5 || true
           else
             echo "DOMAIN_CONF=missing"
           fi
+          php -i 2>/dev/null | grep -E '^opcache\.(validate_timestamps|revalidate_freq) ' | head -5 || echo "OPCACHE_INI=unavailable"
+          HDR=$(mktemp)
+          BODY=$(mktemp)
+          curl -sk -D "$HDR" -o "$BODY" -H 'Cache-Control: no-cache' "https://ai.rateb.sa/?nocache=$(date +%s)" || echo "ORIGIN_CURL=fail"
+          awk 'BEGIN{IGNORECASE=1} /^HTTP\/|^server:|^cache-control:|^cf-cache-status:|^x-cache:|^age:|^content-type:|^x-powered-by:/ {print}' "$HDR" | head -20
+          echo "ORIGIN_HAS_LANG=$(grep -c 'id=\"lang\"' "$BODY" || true)"
+          echo "ORIGIN_TITLE=$(grep -o '<title>[^<]*</title>' "$BODY" | head -1)"
+          rm -f "$HDR" "$BODY"
           BASH
+          python3 - << 'PY' >> ai-rateb-deploy-report.txt
+          import os, socket
+          host = os.environ.get("DEPLOY_SSH_HOST") or ""
+          try:
+              ips = {item[4][0] for item in socket.getaddrinfo("ai.rateb.sa", 443)}
+          except OSError:
+              ips = set()
+          print("DNS_MATCH=" + ("yes" if host in ips else "no"))
+          PY
           rm -f "${KEY_PATH}"
 
       - name: Verify public pages
@@ -211,6 +228,8 @@ jobs:
               say('URL=' + page.url());
               say('STATUS=' + status);
               say('FATAL=' + (fatal ? 'yes' : 'no'));
+              say('TITLE=' + await page.title());
+              say('HAS_LANG_MARKUP=' + (body.includes('id="lang"') ? 'yes' : 'no'));
               say('LANG_BTN=' + (await page.$('#lang') ? 'yes' : 'no'));
               say('THEME_BTN=' + (await page.$('#theme') ? 'yes' : 'no'));
               say('CONSOLE_ERRORS=' + errors.length);
