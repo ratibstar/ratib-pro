@@ -113,10 +113,21 @@ class _PromoBackdropState extends State<PromoBackdrop>
       final speed = 16 + _rnd.nextDouble() * 26;
       it.vx = math.cos(angle) * speed;
       it.vy = math.sin(angle) * speed;
-      it.x = _rnd.nextDouble() * math.max(1, area.width - it.size.width);
-      it.y = _rnd.nextDouble() * math.max(1, area.height - it.size.height * 2);
     }
+    _scatter(area);
     _builtArabic = widget.arabic;
+  }
+
+  /// Spreads the phrases in vertical bands so they never start stacked together.
+  void _scatter(Size area) {
+    final bands = _items.length;
+    for (var i = 0; i < bands; i++) {
+      final it = _items[i];
+      final maxX = math.max(1.0, area.width - it.size.width);
+      final maxY = math.max(1.0, area.height - it.size.height * 2);
+      it.x = _rnd.nextDouble() * maxX;
+      it.y = maxY * (i + _rnd.nextDouble()) / bands;
+    }
   }
 
   TextPainter _painter(String text, TextStyle style) {
@@ -219,6 +230,9 @@ class _PromoBackdropState extends State<PromoBackdrop>
           final area = constraints.biggest;
           if (_items.isEmpty || _builtArabic != widget.arabic) {
             _setup(area);
+          } else if (area.width > _area.width * 1.2 ||
+              area.height > _area.height * 1.2) {
+            _scatter(area);
           }
           _area = area;
           return RepaintBoundary(

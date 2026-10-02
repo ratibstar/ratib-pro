@@ -20,7 +20,8 @@ class AppLocalizations {
 
   static const Map<String, Map<String, String>> _text = {
     'ar': {
-      'appTagline': 'بوابة إدارة القوى العاملة',
+      'appTagline': 'تطبيق العملاء — رتب',
+      'customerApp': 'تطبيق العملاء',
       'otherLanguage': 'English',
       'otherLanguageShort': 'EN',
       'changeLanguage': 'تغيير اللغة',
@@ -45,14 +46,14 @@ class AppLocalizations {
       'roleCompany': 'شركة',
       'roleAgency': 'وكالة',
       'restoringSession': 'جارٍ استعادة الجلسة…',
-      'loginIntro': 'دخول آمن للقوى العاملة باستخدام بطاقة هوية راتب.',
+      'loginIntro': 'سجّل دخولك لمتابعة طلباتك وخدماتك مع الشركة.',
       'emailOrUsername': 'البريد الإلكتروني أو اسم المستخدم',
       'enterEmailOrUsername': 'أدخل البريد الإلكتروني أو اسم المستخدم',
       'password': 'كلمة المرور',
       'enterPassword': 'أدخل كلمة المرور',
       'signIn': 'تسجيل الدخول',
       'identityLogin': 'الدخول ببطاقة الهوية',
-      'scanBadgeHint': 'امسح رمز QR لبطاقتك من إعدادات نظام راتب',
+      'scanBadgeHint': 'امسح رمز QR لبطاقتك من إعدادات نظام رتب',
       'activationHaveCode': 'لديك رمز شركة؟',
       'activationChange': 'تغيير الشركة',
       'activationTitle': 'ربط التطبيق بشركتك',
@@ -111,7 +112,7 @@ class AppLocalizations {
       'previewBadge': 'معاينة بطاقة الهوية',
       'verifyingIdentity': 'جارٍ التحقق من الهوية…',
       'pastePayloadTitle': 'الصق بيانات بطاقة الهوية',
-      'pastePayloadHint': 'استخدم بيانات رمز QR المُنشأة من إعدادات نظام راتب.',
+      'pastePayloadHint': 'استخدم بيانات رمز QR المُنشأة من إعدادات نظام رتب.',
       'identityPayload': 'بيانات الهوية',
       'verifyAndSignIn': 'تحقق وسجّل الدخول',
       'scanAgain': 'امسح مرة أخرى',
@@ -122,12 +123,13 @@ class AppLocalizations {
       'badgeTitle': 'بطاقة الهوية',
       'badgePreviewTitle': 'معاينة بطاقة الهوية',
       'badgePreviewHint':
-          'تُصدر البطاقات الفعلية من إعدادات نظام راتب على rateb.sa.',
+          'تُصدر البطاقات الفعلية من إعدادات نظام رتب على rateb.sa.',
       'badgeCredential': 'بطاقة هوية القوى العاملة',
-      'badgeScanHint': 'امسح لتسجيل الدخول إلى تطبيق راتب',
+      'badgeScanHint': 'امسح لتسجيل الدخول إلى تطبيق رتب',
     },
     'en': {
-      'appTagline': 'Workforce Management Portal',
+      'appTagline': 'RATEB Customer App',
+      'customerApp': 'Customer App',
       'otherLanguage': 'العربية',
       'otherLanguageShort': 'عربي',
       'changeLanguage': 'Change language',
@@ -152,7 +154,7 @@ class AppLocalizations {
       'roleCompany': 'Company',
       'roleAgency': 'Agency',
       'restoringSession': 'Restoring session…',
-      'loginIntro': 'Secure workforce access using your RATEB identity badge.',
+      'loginIntro': 'Sign in to follow your requests and services with the company.',
       'emailOrUsername': 'Email or username',
       'enterEmailOrUsername': 'Enter your email or username',
       'password': 'Password',
@@ -243,6 +245,7 @@ class AppLocalizations {
   }
 
   String get appTagline => _t('appTagline');
+  String get customerApp => _t('customerApp');
   String get otherLanguage => _t('otherLanguage');
   String get otherLanguageShort => _t('otherLanguageShort');
   String get changeLanguage => _t('changeLanguage');
@@ -568,7 +571,7 @@ class AppLocalizations {
     'This week': 'هذا الأسبوع',
     'Action needed': 'إجراء مطلوب',
     'Field Worker': 'عامل ميداني',
-    'RATEB Workforce': 'راتب للقوى العاملة',
+    'RATEB Workforce': 'رتب للقوى العاملة',
   };
 
   static final Map<String, String> _messagesArIndex = {
@@ -635,9 +638,9 @@ class AppLocalizations {
     'Unable to verify your workforce identity. Please try again.':
         'تعذّر التحقق من هويتك. حاول مرة أخرى.',
     'This workforce badge has expired. Request a new QR from RATEB System Settings.':
-        'انتهت صلاحية بطاقة الهوية. اطلب رمز QR جديدًا من إعدادات نظام راتب.',
+        'انتهت صلاحية بطاقة الهوية. اطلب رمز QR جديدًا من إعدادات نظام رتب.',
     'This badge could not be authenticated. Use a current QR from RATEB System Settings.':
-        'تعذّر التحقق من هذه البطاقة. استخدم رمز QR حديثًا من إعدادات نظام راتب.',
+        'تعذّر التحقق من هذه البطاقة. استخدم رمز QR حديثًا من إعدادات نظام رتب.',
     'Unrecognized workforce badge. Check the QR or use password sign-in.':
         'بطاقة هوية غير معروفة. تحقق من رمز QR أو سجّل الدخول بكلمة المرور.',
     'This identity badge has already been used. Request a new QR from your administrator.':
@@ -664,7 +667,7 @@ class AppLocalizations {
         'تعذّر تحميل بيانات ملفك الشخصي حاليًا.',
     'No workers available': 'لا يوجد عمال',
     'Your workforce roster is empty. Workers will appear once added to RATEB.':
-        'قائمة العمال فارغة. سيظهر العمال بعد إضافتهم إلى راتب.',
+        'قائمة العمال فارغة. سيظهر العمال بعد إضافتهم إلى رتب.',
     'No requests yet': 'لا توجد طلبات بعد',
     'Recruitment and case requests will show here when created.':
         'ستظهر طلبات التوظيف والحالات هنا عند إنشائها.',

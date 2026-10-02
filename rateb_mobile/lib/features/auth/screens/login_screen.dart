@@ -90,6 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.watch<AuthProvider>();
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
+    final companyName = CompanyActivation.isActive
+        ? (CompanyActivation.companyName ?? '').trim()
+        : '';
 
     if (auth.status == AuthStatus.unknown) {
       return Scaffold(
@@ -142,9 +145,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              AppConfig.appName,
+                              companyName.isNotEmpty
+                                  ? companyName
+                                  : AppConfig.appName,
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              l10n.customerApp,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -285,16 +299,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
-                            if (CompanyActivation.isActive &&
-                                (CompanyActivation.companyName ?? '')
-                                    .isNotEmpty)
-                              Text(
-                                CompanyActivation.companyName!,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
                             TextButton.icon(
                               onPressed: auth.isLoading ? null : _changeCompany,
                               icon:
