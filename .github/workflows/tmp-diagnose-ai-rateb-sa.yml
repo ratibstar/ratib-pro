@@ -1,0 +1,152 @@
+name: Temporary read-only diagnose ai.rateb.sa
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: External reachability
+        run: |
+          set +e
+          python3 - << 'PY' > ai-rateb-diagnose.txt
+          import socket
+          host = "ai.rateb.sa"
+          expected = "167.233.71.107"
+          try:
+              ips = sorted({item[4][0] for item in socket.getaddrinfo(host, 443)})
+          except OSError as exc:
+              ips = []
+              print("DNS_ERROR=" + exc.__class__.__name__)
+          print("DNS_A=" + ",".join(ips))
+          print("DNS_EXPECTED=" + expected)
+          print("DNS_MATCH=" + ("yes" if expected in ips else "no"))
+          PY
+          for port in 22 80 443 2222; do
+            if timeout 10 bash -c "echo >/dev/tcp/167.233.71.107/${port}" 2>/dev/null; then
+              echo "TCP_${port}=open" >> ai-rateb-diagnose.txt
+            else
+              echo "TCP_${port}=timeout_or_closed" >> ai-rateb-diagnose.txt
+            fi
+          done
+          curl -sS -o /dev/null --max-time 15 -w "HTTP80_CODE=%{http_code} CONNECT=%{time_connect} ERR=%{errormsg}\n" http://ai.rateb.sa/ >> ai-rateb-diagnose.txt || echo "HTTP80_FAIL=$?" >> ai-rateb-diagnose.txt
+          curl -sk -o /dev/null --max-time 15 -w "HTTPS_CODE=%{http_code} CONNECT=%{time_connect} ERR=%{errormsg}\n" https://ai.rateb.sa/ >> ai-rateb-diagnose.txt || echo "HTTPS_FAIL=$?" >> ai-rateb-diagnose.txt
+          echo "EXTERNAL_DONE" >> ai-rateb-diagnose.txt
+
+      - name: Server read-only checks
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set +e
+          if [ -z "${DEPLOY_SSH_HOST}" ] || [ -z "${DEPLOY_SSH_USER}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY}" ]; then
+            echo "SSH_SECRET=missing" >> ai-rateb-diagnose.txt
+            exit 0
+          fi
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" bash -s >> ai-rateb-diagnose.txt << 'BASH'
+          set +e
+          echo "SSH=ok"
+          echo "UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          uptime
+          echo "LISTEN_START"
+          ss -lnt 2>/dev/null | awk 'NR==1 || $4 ~ /:80$/ || $4 ~ /:443$/ || $4 ~ /:80 / || $4 ~ /:443 /'
+          echo "LISTEN_END"
+          for svc in httpd apache2 nginx lsws lshttpd directadmin php-fpm; do
+            state=$(systemctl is-active "$svc" 2>/dev/null)
+            if [ -n "$state" ]; then echo "SERVICE_$svc=$state"; fi
+          done
+          echo "PROCS_START"
+          ps -eo comm= 2>/dev/null | grep -Ei '^(httpd|apache2|nginx|lshttpd|litespeed|openlitespeed)$' | sort | uniq -c
+          echo "PROCS_END"
+          echo "LOCAL_HTTP=$(curl -s -o /dev/null --max-time 8 -w '%{http_code}' -H 'Host: ai.rateb.sa' http://127.0.0.1/)"
+          echo "LOCAL_HTTPS=$(curl -sk -o /dev/null --max-time 8 -w '%{http_code}' --resolve ai.rateb.sa:443:127.0.0.1 https://ai.rateb.sa/)"
+          echo "DA_CONF_ADMIN=$([ -f /usr/local/directadmin/data/users/admin/domains/ai.rateb.sa.conf ] && echo present || echo missing)"
+          echo "DA_USERDIR=$([ -d /usr/local/directadmin/data/users/admin ] && echo present || echo missing)"
+          if [ -d /usr/local/directadmin/data/users/admin/domains ]; then
+            echo "DA_DOMAIN_FILES_START"
+            ls -1 /usr/local/directadmin/data/users/admin/domains 2>/dev/null | grep -i 'ai.rateb' || echo none
+            echo "DA_DOMAIN_FILES_END"
+          fi
+          echo "DOCROOT_KIND=$([ -d /home/admin/domains/ai.rateb.sa ] && echo directory || echo missing)"
+          echo "DOCROOT_LINK=$([ -L /home/admin/domains/ai.rateb.sa ] && echo symlink || echo not_symlink)"
+          if [ -f /home/admin/domains/ai.rateb.sa/index.php ]; then
+            echo "INDEX=present"
+            stat -c 'INDEX_MODE=%a INDEX_OWNER=%U INDEX_GROUP=%G INDEX_SIZE=%s' /home/admin/domains/ai.rateb.sa/index.php
+            echo "INDEX_HAS_LANG=$(grep -c 'id=\"lang\"' /home/admin/domains/ai.rateb.sa/index.php)"
+          else
+            echo "INDEX=missing"
+          fi
+          echo "VHOST_START"
+          grep -R -l --include='*.conf' 'ai.rateb.sa' /usr/local/directadmin/data/users/admin /etc/httpd /etc/apache2 /etc/nginx /usr/local/lsws/conf 2>/dev/null | head -20
+          echo "VHOST_END"
+          echo "DOCROOT_LINES_START"
+          grep -R -h -E 'DocumentRoot|documentroot|server_name|ServerName|ServerAlias' /usr/local/directadmin/data/users/admin/httpd.conf /usr/local/directadmin/data/users/admin/nginx.conf /etc/httpd/conf/extra /etc/httpd/conf/httpd.conf 2>/dev/null | grep -i 'ai.rateb.sa\|/home/admin/domains/ai.rateb.sa' | head -20
+          echo "DOCROOT_LINES_END"
+          echo "SSL_FILES_START"
+          find /usr/local/directadmin/data/users/admin /etc/httpd /etc/letsencrypt /usr/local/directadmin/data/users/admin/domains -iname '*ai.rateb.sa*' -type f 2>/dev/null | grep -Ei 'cert|key|pem|ssl|cacert' | sed 's#/key\.#/key.#;s#privkey#privkey#' | head -30
+          echo "SSL_FILES_END"
+          CERT=$(find /usr/local/directadmin/data/users/admin /etc/letsencrypt /etc/httpd -iname '*ai.rateb.sa*.cert' -o -iname '*ai.rateb.sa*.crt' -o -iname '*ai.rateb.sa*fullchain*' 2>/dev/null | head -1)
+          if [ -n "$CERT" ] && [ -f "$CERT" ]; then
+            echo "SSL_CERT_FILE=present"
+            openssl x509 -in "$CERT" -noout -subject -issuer -dates 2>/dev/null | sed 's/emailAddress=[^/ ]*/emailAddress=redacted/g'
+          else
+            echo "SSL_CERT_FILE=not_found_by_name"
+          fi
+          echo "FIREWALL_START"
+          if command -v firewall-cmd >/dev/null 2>&1; then firewall-cmd --state 2>/dev/null; firewall-cmd --list-ports 2>/dev/null | head -5; else echo "FIREWALLD=absent"; fi
+          if [ -x /usr/sbin/csf ]; then echo "CSF=present"; /usr/sbin/csf -l 2>/dev/null | awk 'NR<=40 {print}'; else echo "CSF=absent"; fi
+          iptables -L INPUT -n 2>/dev/null | awk 'NR<=25 {print}'
+          echo "FIREWALL_END"
+          echo "LOGS_START"
+          for log in \
+            /var/log/httpd/domains/ai.rateb.sa.error.log \
+            /var/log/httpd/domains/ai.rateb.sa.log \
+            /home/admin/domains/ai.rateb.sa/logs/error.log \
+            /var/log/httpd/error_log \
+            /var/log/apache2/error.log
+          do
+            if [ -f "$log" ]; then
+              echo "LOG_FILE=$log"
+              tail -n 30 "$log" | grep -Ei 'error|emerg|crit|timeout|ssl|ai.rateb' | grep -Eiv 'password|api_key|secret|token=' | tail -n 15
+            fi
+          done
+          echo "LOGS_END"
+          BASH
+          echo "SSH_EXIT=$?" >> ai-rateb-diagnose.txt
+          rm -f "${KEY_PATH}"
+
+      - name: Upload diagnosis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-rateb-diagnose
+          path: ai-rateb-diagnose.txt
+          retention-days: 1
+          if-no-files-found: warn
