@@ -13,7 +13,6 @@ import 'package:ratib_hr_mobile/features/login/auth_session.dart';
 import 'package:ratib_hr_mobile/features/login/company_activation_dialog.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ratib_hr_mobile/core/brand/brand_build.dart';
-import 'package:ratib_hr_mobile/features/login/login_activation_status.dart';
 import 'package:ratib_hr_mobile/l10n/app_localizations.dart';
 import 'package:ratib_hr_mobile/shared/design_system/design_system.dart';
 
@@ -226,7 +225,6 @@ class _LoginPageState extends State<LoginPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
           children: [
-            const LoginActivationStatus(),
             if (BrandBuild.activationCode.isNotEmpty)
               Container(
                 width: double.infinity,
@@ -331,28 +329,6 @@ class _LoginPageState extends State<LoginPage> {
                           fontWeight: FontWeight.w900,
                         ),
                   ),
-                  if (CompanyActivation.isActive &&
-                      (CompanyActivation.companyId ?? 0) > 0) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      '#${CompanyActivation.companyId}',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontFamily: 'monospace',
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.loginSubtitle,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
                 ],
               ),
             ),
@@ -416,16 +392,6 @@ class _LoginPageState extends State<LoginPage> {
                     ? l10n.activationChange
                     : l10n.activationHaveCode,
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              l10n.loginErpOnlyHint,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondary,
-                  ),
             ),
           ],
         ),

@@ -161,15 +161,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.loginIntro,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.55),
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
                           ],
                         ),
                       ),
@@ -289,15 +280,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               icon: const Icon(Icons.qr_code_scanner_rounded),
                               label: Text(l10n.identityLogin),
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              l10n.scanBadgeHint,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
                             const SizedBox(height: 16),
                             TextButton.icon(
                               onPressed: auth.isLoading ? null : _changeCompany,
@@ -326,15 +308,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        l10n.appTagline,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.45),
-                        ),
-                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),

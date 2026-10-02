@@ -19,30 +19,13 @@ class ActivationStartupGate extends StatefulWidget {
 
 class _ActivationStartupGateState extends State<ActivationStartupGate> {
   bool _done = false;
-  String _statusLine = '';
   String _packageLine = '';
   bool _wrongBrandedApp = false;
 
   @override
   void initState() {
     super.initState();
-    CompanyActivation.revision.addListener(_onCompanyChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _boot());
-  }
-
-  @override
-  void dispose() {
-    CompanyActivation.revision.removeListener(_onCompanyChanged);
-    super.dispose();
-  }
-
-  void _onCompanyChanged() {
-    if (!mounted || !_done) return;
-    setState(() {
-      _statusLine = CompanyActivation.isActive
-          ? 'ok #${CompanyActivation.companyId} ${CompanyActivation.companyName ?? ''}'
-          : 'no_link';
-    });
   }
 
   Future<void> _boot() async {
@@ -51,7 +34,6 @@ class _ActivationStartupGateState extends State<ActivationStartupGate> {
       _packageLine = '${info.packageName} · ${info.version}+${info.buildNumber}';
       _wrongBrandedApp = info.packageName.contains('.c');
       if (_wrongBrandedApp) {
-        _statusLine = 'branded_apk';
         if (mounted) setState(() => _done = true);
         return;
       }
@@ -60,35 +42,19 @@ class _ActivationStartupGateState extends State<ActivationStartupGate> {
       await CompanyActivation.purgeWrongTenantForUnifiedPackage();
 
       final uri = await ActivationBootstrap.resolveLaunchUri();
-      CompanyActivationError? err;
       if (uri != null) {
-        err = await ActivationBootstrap.applyLaunchUri(uri);
+        final err = await ActivationBootstrap.applyLaunchUri(uri);
         if (err == null) {
           await ActivationBootstrap.clearPendingAfterSuccess();
         }
         await CompanyActivation.purgeWrongTenantForUnifiedPackage();
       } else if (BrandBuild.activationCode.isNotEmpty) {
-        err = await CompanyActivation.activate(BrandBuild.activationCode);
+        await CompanyActivation.activate(BrandBuild.activationCode);
       }
       if (!CompanyActivation.isActive && BrandBuild.activationCode.isEmpty) {
-        if (await CompanyActivation.activateFromPending() == null) {
-          err = null;
-        }
+        await CompanyActivation.activateFromPending();
       }
-
-      if (err == null && CompanyActivation.isActive) {
-        _statusLine =
-            'ok #${CompanyActivation.companyId} ${CompanyActivation.companyName ?? ''}';
-      } else if (err != null) {
-        _statusLine = 'err $err';
-      } else if (!CompanyActivation.isActive) {
-        _statusLine = 'no_link';
-      } else {
-        _statusLine = 'ok #${CompanyActivation.companyId}';
-      }
-    } catch (e) {
-      _statusLine = 'boot $e';
-    }
+    } catch (_) {}
     if (mounted) setState(() => _done = true);
   }
 
@@ -123,12 +89,6 @@ class _ActivationStartupGateState extends State<ActivationStartupGate> {
                   l10n.wrongHrAppBody(_packageLine),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _packageLine,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontFamily: 'monospace'),
-                ),
                 const Spacer(),
               ],
             ),
@@ -137,37 +97,6 @@ class _ActivationStartupGateState extends State<ActivationStartupGate> {
       );
     }
 
-    final showBanner = _statusLine.startsWith('ok #49') ||
-        _statusLine.contains('تجربة');
-    final isAr = Localizations.localeOf(context).languageCode == 'ar';
-
-    return Column(
-      children: [
-        if (_packageLine.isNotEmpty || _statusLine.isNotEmpty)
-          Material(
-            color: showBanner
-                ? Colors.green.shade900
-                : (_statusLine.startsWith('ok')
-                    ? Colors.orange.shade900
-                    : Colors.red.shade900),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(
-                isAr
-                    ? '$_packageLine\nربط: $_statusLine'
-                    : '$_packageLine\nlink: $_statusLine',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontFamily: 'monospace',
-                  height: 1.35,
-                ),
-              ),
-            ),
-          ),
-        Expanded(child: widget.child),
-      ],
-    );
+    return widget.child;
   }
 }
