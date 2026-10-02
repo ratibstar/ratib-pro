@@ -23,6 +23,7 @@ require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/ensure-global-partnerships-schema.php';
 require_once __DIR__ . '/agency.inc.php';
 
+$stage = 'input';
 try {
     if (strtoupper($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
         rateb_mobile_json(['success' => false, 'message' => 'POST required'], 405);
@@ -45,9 +46,11 @@ try {
         $_SESSION['agency_id'] = $agencyId;
     }
 
+    $stage = 'main_db';
     $pdo = Database::getInstance()->getConnection();
     ratebEnsureGlobalPartnershipsSchema($pdo);
 
+    $stage = 'partner_lookup';
     $isNumericId = ctype_digit($login);
     if ($isNumericId) {
         $partnerStmt = $pdo->prepare(
@@ -103,6 +106,7 @@ try {
 
     $agencyContext = null;
     if ($agencyId > 0) {
+        $stage = 'agency_connect';
         $agencyContext = rateb_mobile_connect_agency($agencyId);
         $tenantCountryId = $agencyContext['country_id'] ?? 0;
         if ($agencyContext === null
@@ -118,10 +122,12 @@ try {
         if (!defined('TENANT_ID')) {
             define('TENANT_ID', $tenantCountryId);
         }
+        $stage = 'agency_db';
         $pdo = Database::getInstance()->getConnection();
         ratebEnsureGlobalPartnershipsSchema($pdo);
     }
 
+    $stage = 'auth';
     $authResult = Auth::login($login, $password);
     if (!$authResult['success']) {
         rateb_mobile_json([
@@ -131,6 +137,7 @@ try {
         ], 401);
     }
 
+    $stage = 'role';
     $user = $authResult['user'] ?? [];
     $userId = (int) ($user['user_id'] ?? 0);
     $roleName = null;
@@ -166,5 +173,6 @@ try {
         'display_name' => (string) ($user['username'] ?? $login),
     ]);
 } catch (Throwable $e) {
-    rateb_mobile_json(['success' => false, 'message' => 'Login failed'], 500);
+    error_log('rateb_mobile login failed at ' . $stage . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    rateb_mobile_json(['success' => false, 'message' => 'Login failed', 'code' => 'login_error', 'stage' => $stage], 500);
 }
