@@ -198,6 +198,95 @@ jobs:
           PY
           rm -f "${KEY_PATH}"
 
+      - name: Refresh PHP cache for deployed files
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or os.environ.get("SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          TOKEN=$(openssl rand -hex 24)
+          NAME="opcache-refresh-${TOKEN}.php"
+          PHP_FILE="${RUNNER_TEMP}/${NAME}"
+          export TOKEN NAME PHP_FILE
+          python3 - << 'PY'
+          import os
+          token = os.environ["TOKEN"]
+          files = [
+              "config/session.php", "config/guard.php", "config/bootstrap.php", "app/bootstrap.php",
+              "index.php", "dashboard.php", "campaign-new.php", "campaign.php", "app/ai/generate.php",
+              "app/auth/login.php", "app/auth/register.php", "app/auth/logout.php",
+              "public/assets/css/theme.css", "public/assets/css/app.css", "public/assets/js/app.js",
+              "assets/app.css",
+          ]
+          script = """<?php
+          if (($_GET['t'] ?? '') !== %s) { http_response_code(404); exit; }
+          header('Content-Type: text/plain; charset=UTF-8');
+          header('Cache-Control: no-store');
+          $root = '/home/admin/domains/ai.rateb.sa';
+          $files = %s;
+          $can = function_exists('opcache_invalidate');
+          $ok = 0;
+          $fail = 0;
+          if ($can) {
+              foreach ($files as $rel) {
+                  if (@opcache_invalidate($root . '/' . $rel, true)) { $ok++; } else { $fail++; }
+              }
+          }
+          echo $can ? "INVALIDATED=$ok FAIL=$fail\\n" : "NO_FUNCTION\\n";
+          echo 'WEB_VALIDATE=' . ini_get('opcache.validate_timestamps') . "\\n";
+          if (($_GET['reset'] ?? '') === '1' && function_exists('opcache_reset')) {
+              echo opcache_reset() ? "RESET=yes\\n" : "RESET=no\\n";
+          }
+          """ % (repr(token), repr(files))
+          with open(os.environ["PHP_FILE"], "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(script)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          scp -i "${KEY_PATH}" -P "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${PHP_FILE}" "${REMOTE}:/home/admin/domains/ai.rateb.sa/${NAME}"
+          rm -f "${PHP_FILE}"
+          BODY=$(mktemp)
+          CODE=$(curl -sk -o "$BODY" -w '%{http_code}' -H 'Cache-Control: no-cache' "https://ai.rateb.sa/${NAME}?t=${TOKEN}")
+          echo "REFRESH_HTTP=$CODE" >> ai-rateb-deploy-report.txt
+          grep -E '^(INVALIDATED=|NO_FUNCTION$|WEB_VALIDATE=|RESET=)' "$BODY" >> ai-rateb-deploy-report.txt || true
+          rm -f "$BODY"
+          AFTER=$(mktemp)
+          curl -sk -o "$AFTER" -H 'Cache-Control: no-cache' "https://ai.rateb.sa/?nocache=$(date +%s)" || true
+          LANG_COUNT=$(grep -c 'id="lang"' "$AFTER" || true)
+          echo "ORIGIN_HAS_LANG_AFTER=$LANG_COUNT" >> ai-rateb-deploy-report.txt
+          rm -f "$AFTER"
+          if [ "${LANG_COUNT:-0}" = "0" ]; then
+            RESET_BODY=$(mktemp)
+            curl -sk -o "$RESET_BODY" -H 'Cache-Control: no-cache' "https://ai.rateb.sa/${NAME}?t=${TOKEN}&reset=1" || true
+            grep -E '^(RESET=|NO_FUNCTION$)' "$RESET_BODY" >> ai-rateb-deploy-report.txt || true
+            rm -f "$RESET_BODY"
+            AFTER=$(mktemp)
+            curl -sk -o "$AFTER" -H 'Cache-Control: no-cache' "https://ai.rateb.sa/?nocache=$(date +%s)" || true
+            echo "ORIGIN_HAS_LANG_AFTER_RESET=$(grep -c 'id=\"lang\"' "$AFTER" || true)" >> ai-rateb-deploy-report.txt
+            rm -f "$AFTER"
+          fi
+          ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${REMOTE}" "rm -f /home/admin/domains/ai.rateb.sa/${NAME}; if [ -f /home/admin/domains/ai.rateb.sa/${NAME} ]; then echo REFRESH_FILE=still_present; exit 1; fi; echo REFRESH_FILE=removed" >> ai-rateb-deploy-report.txt
+          rm -f "${KEY_PATH}"
+          unset TOKEN NAME
+
       - name: Verify public pages
         run: |
           set -euo pipefail
