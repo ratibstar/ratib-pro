@@ -10,7 +10,7 @@ abstract final class ActivationInstallGuard {
   static const _prefsKey = 'company_activation.install_tag';
   static const _unifiedPackage = 'sa.rateb.hr.mobile';
 
-  /// Branded builds keep embedded activation; unified builds must not restore Al-Arfaj via backup.
+  /// Branded builds keep embedded activation.
   static Future<void> runBeforeLoad() async {
     if (BrandBuild.activationCode.isNotEmpty) {
       return;
@@ -20,17 +20,6 @@ abstract final class ActivationInstallGuard {
       return;
     }
     final prefs = await SharedPreferences.getInstance();
-    final cid = prefs.getInt('company_activation.company_id');
-    final erp = prefs.getString('company_activation.erp_base_url') ?? '';
-    final host = Uri.tryParse(erp)?.host.toLowerCase() ?? '';
-    final name = (prefs.getString('company_activation.company_name') ?? '') +
-        (prefs.getString('company_activation.company_name_ar') ?? '');
-    final staleBrandedOnUnified = cid == 51 ||
-        name.contains('العرفج') ||
-        host.contains('alarfaj');
-    if (staleBrandedOnUnified) {
-      await CompanyActivation.clear();
-    }
     final tag = '${info.packageName}@${info.buildNumber}';
     final previous = prefs.getString(_prefsKey);
     if (previous == tag) {

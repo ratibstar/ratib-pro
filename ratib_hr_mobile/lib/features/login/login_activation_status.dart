@@ -52,13 +52,9 @@ class _LoginActivationStatusState extends State<LoginActivationStatus> {
     final host = Uri.tryParse(erp)?.host ?? erp;
     final isUnifiedPkg = _package == 'sa.rateb.hr.mobile';
     final isBrandedSibling = _package.contains('.c');
-    final wrongTenantOnUnified = isUnifiedPkg &&
-        linked &&
-        (CompanyActivation.companyId == 51 ||
-            (CompanyActivation.companyName ?? '').contains('العرفج'));
 
     Color? bg;
-    if (isBrandedSibling || wrongTenantOnUnified) {
+    if (isBrandedSibling) {
       bg = Theme.of(context).colorScheme.errorContainer;
     } else if (!linked) {
       bg = Theme.of(context).colorScheme.tertiaryContainer;
@@ -101,14 +97,6 @@ class _LoginActivationStatusState extends State<LoginActivationStatus> {
             if (isBrandedSibling)
               Text(
                 'wrong app: uninstall Al-Arfaj / branded HR (.c…) and install sa.rateb.hr.mobile',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontFamily: null,
-                ),
-              ),
-            if (wrongTenantOnUnified)
-              Text(
-                'stale Al-Arfaj link in unified app — tap Change company, clear link, scan QR again (build 224+)',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.error,
                   fontFamily: null,

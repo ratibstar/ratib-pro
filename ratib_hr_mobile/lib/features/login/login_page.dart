@@ -62,13 +62,6 @@ class _LoginPageState extends State<LoginPage> {
     }
     if (!CompanyActivation.isActive) {
       await showCompanyActivationDialog(context);
-      return;
-    }
-    final cid = CompanyActivation.companyId;
-    final name = CompanyActivation.localizedName(arabic: true);
-    if (cid == 51 || name.contains('العرفج')) {
-      await CompanyActivation.clear();
-      await showCompanyActivationDialog(context);
     }
   }
 
@@ -208,57 +201,6 @@ class _LoginPageState extends State<LoginPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final companyName = CompanyActivation.localizedName(arabic: isAr);
     final logoUrl = CompanyActivation.logoUrl;
-    final wrongTenant = companyName.contains('العرفج') ||
-        CompanyActivation.companyId == 51 ||
-        (CompanyActivation.erpBaseUrl ?? '').contains('alarfaj');
-
-    if (wrongTenant && BrandBuild.activationCode.isEmpty) {
-      return Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(),
-                Icon(Icons.error_outline,
-                    size: 72, color: Theme.of(context).colorScheme.error),
-                const SizedBox(height: 16),
-                Text(
-                  isAr
-                      ? 'هذا تطبيق شركة العرفج أو ربط خاطئ — ليس تجربة 2'
-                      : 'Al-Arfaj app or wrong link — not company #49',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                const LoginActivationStatus(),
-                const SizedBox(height: 16),
-                Text(
-                  isAr
-                      ? 'احذف تطبيق «شركة العرفج» (~22 MB، الحزمة .c51). ثبّت فقط RATEB HR الموحد (~41 MB). ثم تغيير الشركة → VBAK-7P38'
-                      : 'Uninstall Al-Arfaj HR (~22 MB, .c51). Install unified RATEB HR (~41 MB). Change company → VBAK-7P38',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () async {
-                    await CompanyActivation.clear();
-                    if (!context.mounted) return;
-                    await showCompanyActivationDialog(context);
-                    if (context.mounted) setState(() {});
-                  },
-                  child: Text(isAr ? 'مسح الربط وإدخال الكود' : 'Clear link and enter code'),
-                ),
-                const Spacer(),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
 
     return DsPageBackdrop(
       child: Stack(
