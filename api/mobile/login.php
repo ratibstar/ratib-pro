@@ -174,5 +174,5 @@ try {
     ]);
 } catch (Throwable $e) {
     error_log('rateb_mobile login failed at ' . $stage . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-    rateb_mobile_json(['success' => false, 'message' => 'Login failed', 'code' => 'login_error', 'stage' => $stage, 'type' => get_class($e), 'at' => basename($e->getFile()) . ':' . $e->getLine()], 500);
+    rateb_mobile_json(['success' => false, 'message' => 'Login failed', 'code' => 'login_error', 'stage' => $stage], 500);
 }

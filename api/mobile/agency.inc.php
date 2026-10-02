@@ -75,7 +75,8 @@ function rateb_mobile_connect_agency(int $agencyId): ?array
         $acct = null;
     }
     if (!is_array($acct) || !(($acct['conn'] ?? null) instanceof mysqli)) {
-        error_log('rateb_mobile agency: DB connect failed for agency ' . $agencyId . ': ' . getAgencyDbConnectionLastError());
+        $connectError = function_exists('getAgencyDbConnectionLastError') ? getAgencyDbConnectionLastError() : '';
+        error_log('rateb_mobile agency: DB connect failed for agency ' . $agencyId . ': ' . $connectError);
 
         return null;
     }
