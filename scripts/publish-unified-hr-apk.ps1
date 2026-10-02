@@ -17,6 +17,16 @@ if ($Apk -eq '') {
 }
 if (-not (Test-Path $Apk)) { throw "APK missing: $Apk" }
 
+# Gradle can skip re-merging native libs and package the previous Dart snapshot.
+$intermediates = Join-Path $root 'ratib_hr_mobile\build\app\intermediates'
+$fresh = Get-ChildItem (Join-Path $intermediates 'flutter') -Recurse -Filter libapp.so -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$packed = Get-ChildItem (Join-Path $intermediates 'stripped_native_libs') -Recurse -Filter libapp.so -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if ($fresh -and (-not $packed -or $packed.LastWriteTime -lt $fresh.LastWriteTime)) {
+    throw "Stale Dart snapshot packaged (compiled $($fresh.LastWriteTime), packaged $($packed.LastWriteTime)). Run flutter clean and rebuild."
+}
+
 $needles = New-Object System.Collections.Generic.List[string]
 Get-ChildItem (Join-Path $root 'mobile-branding') -Filter '*.json' -ErrorAction SilentlyContinue | ForEach-Object {
     $spec = [IO.File]::ReadAllText($_.FullName, [Text.Encoding]::UTF8) | ConvertFrom-Json
