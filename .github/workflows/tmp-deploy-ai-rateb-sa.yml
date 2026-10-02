@@ -141,6 +141,46 @@ jobs:
           PY
           echo "deploy_report_ready"
 
+      - name: Locate document root
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or os.environ.get("SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" bash -s >> ai-rateb-deploy-report.txt << 'BASH'
+          set -euo pipefail
+          echo "INDEX_HEAD_START"
+          sed -n '1,12p' /home/admin/domains/ai.rateb.sa/index.php
+          echo "INDEX_HEAD_END"
+          if [ -d /home/admin/domains/ai.rateb.sa/public_html ]; then echo "PUBLIC_HTML=yes"; else echo "PUBLIC_HTML=no"; fi
+          if [ -f /home/admin/domains/ai.rateb.sa/public_html/index.php ]; then echo "PUBLIC_HTML_INDEX=yes"; else echo "PUBLIC_HTML_INDEX=no"; fi
+          CONF=/usr/local/directadmin/data/users/admin/domains/ai.rateb.sa.conf
+          if [ -f "$CONF" ]; then
+            grep -E '^(documentroot|DocumentRoot)=' "$CONF" | head -5 || true
+          else
+            echo "DOMAIN_CONF=missing"
+          fi
+          BASH
+          rm -f "${KEY_PATH}"
+
       - name: Verify public pages
         run: |
           set -euo pipefail
