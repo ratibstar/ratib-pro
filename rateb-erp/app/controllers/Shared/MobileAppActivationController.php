@@ -195,7 +195,10 @@ final class MobileAppActivationController extends Controller
         (new MobileAppPendingActivationService())->remember($code, $app);
         $isAndroid = (bool) preg_match('/Android/i', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
         if ($isAndroid && !isset($_GET['page'])) {
-            Response::redirect($svc->mobileAppOpenIntent($app, $code, $company, $svc->appOpenUrl($code, $app, true)));
+            // Not installed: download the APK straight away; the app links itself on first launch (pending code).
+            $apkUrl = (string) ($row['url'] ?? '');
+            $fallback = preg_match('#^https://#i', $apkUrl) ? $apkUrl : $svc->appOpenUrl($code, $app, true);
+            Response::redirect($svc->mobileAppOpenIntent($app, $code, $company, $fallback));
             return;
         }
         $apks = new MobileAppApkService();

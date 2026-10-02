@@ -46,21 +46,13 @@
     <?php if (!empty($next)) { ?>
     <input type="hidden" name="next" value="<?php echo Rateb\App\Core\View::escape((string) $next); ?>">
     <?php } ?>
-    <?php /* Both hints are reference material — collapsed so the form stays above the fold. */ ?>
-    <details class="login-hints mb-3">
-        <summary><i class="fas fa-circle-info" aria-hidden="true"></i> <?php echo __('login_hints_toggle'); ?></summary>
-        <?php if (!empty($agencyLoginHint)) { ?>
-        <p class="mb-2"><?php echo Rateb\App\Core\View::escape((string) $agencyLoginHint); ?></p>
-        <?php } ?>
-        <p class="mb-0"><?php echo __('unified_login_hint'); ?></p>
-    </details>
     <div class="mb-3">
         <label class="form-label" for="email"><?php echo __('login_email'); ?></label>
-        <input type="text" class="form-control" id="email" name="email" required autocomplete="username" placeholder="admin">
+        <input type="text" class="form-control" id="email" name="email" required autocomplete="username">
     </div>
     <div class="mb-3">
         <label class="form-label" for="password"><?php echo __('password'); ?></label>
-        <input type="password" class="form-control" id="password" name="password" required autocomplete="<?php echo !empty($agencyLoginHint) ? 'off' : 'current-password'; ?>"<?php echo !empty($agencyLoginHint) ? ' placeholder="123456"' : ''; ?>>
+        <input type="password" class="form-control" id="password" name="password" required autocomplete="<?php echo !empty($agencyLoginHint) ? 'off' : 'current-password'; ?>">
     </div>
     <?php require __DIR__ . '/_remember.php'; ?>
     <button type="submit" class="btn btn-primary w-100"><?php echo __('login'); ?></button>
@@ -74,10 +66,6 @@
 <div id="barcode-form" class="login-panel text-center d-none">
     <div class="barcode-this-device barcode-login-panel mb-2">
         <h3 class="h6 mb-2"><i class="fas fa-laptop" aria-hidden="true"></i> <?php echo __('barcode_this_device_title'); ?></h3>
-        <details class="login-hints mb-2">
-            <summary><i class="fas fa-circle-info" aria-hidden="true"></i> <?php echo __('login_hints_toggle'); ?></summary>
-            <p class="mb-0"><?php echo __('barcode_this_device_hint'); ?></p>
-        </details>
         <form method="post" action="<?php echo rateb_url('login/barcode'); ?>" id="barcode-login-form">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <label class="form-label visually-hidden" for="barcode-input"><?php echo __('login_barcode'); ?></label>

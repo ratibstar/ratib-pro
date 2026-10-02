@@ -48,7 +48,24 @@ final class LoginCompanyHintService
             return null;
         }
 
-        return ['name' => (string) ($row['name'] ?? ''), 'logo' => (string) ($row['logo'] ?? '')];
+        return ['name' => (string) ($row['name'] ?? ''), 'logo' => $this->sameOriginLogo((string) ($row['logo'] ?? ''))];
+    }
+
+    /** The login page CSP only allows same-origin images, so serve the platform logo from this host. */
+    private function sameOriginLogo(string $logo): string
+    {
+        $path = (string) (parse_url($logo, PHP_URL_PATH) ?? '');
+        $at = strpos($path, '/public/');
+        if ($at === false) {
+            return '';
+        }
+        $relative = ltrim(substr($path, $at + strlen('/public/')), '/');
+        if ($relative === '' || str_contains($relative, '..')
+            || !is_file(rtrim(str_replace('\\', '/', (string) RATEB_ROOT), '/') . '/public/' . $relative)) {
+            return '';
+        }
+
+        return rateb_url($relative);
     }
 
     /** @return array{name:string, logo:string}|null */
@@ -79,7 +96,7 @@ final class LoginCompanyHintService
         }
         SessionManager::set(self::SESSION_KEY, ['code' => $code, 'name' => $name, 'logo' => $logo, 'at' => time()]);
 
-        return ['name' => $name, 'logo' => $logo];
+        return ['name' => $name, 'logo' => $this->sameOriginLogo($logo)];
     }
 
     /** @return array<string, mixed>|null */
