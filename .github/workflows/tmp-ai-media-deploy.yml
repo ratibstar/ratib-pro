@@ -314,6 +314,7 @@ jobs:
               echo 'SQL_MEDIA=' . $row['kind'] . ' source=' . $row['source'] . ' mime=' . $row['mime'] . ' bytes=' . $row['bytes'] . ' OUTSIDE=' . ($outside && is_file($path) ? 'yes' : 'no') . "\n";
           }
           PHP
+          test -s "$WORK/after.html.ids"
           while read -r MEDIA_ID; do
             extract_csrf "$WORK/after.html" csrf
             curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/delete.hdr" -o /dev/null \
