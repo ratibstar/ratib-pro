@@ -195,7 +195,29 @@
       show_video_title: 'Video ideas',
       show_video_body: 'Shot ideas and scripts. Video rendering stays unavailable.',
       show_planner_title: 'Content planner',
-      show_planner_body: 'Dates, drafts, and approvals for what goes live next.'
+      show_planner_body: 'Dates, drafts, and approvals for what goes live next.',
+      home_how: 'See how it works',
+      gallery_title: 'See what RATEB AI can make',
+      gallery_note: 'Visual examples only. Video generation is not available yet.',
+      play_example: 'Play example',
+      demo_example: 'Example',
+      flow_strategy: 'Strategy',
+      workspace_title: 'The real campaign workspace',
+      formats_title: 'Formats your campaign can speak in',
+      home_create_title: 'What can RATEB AI create?',
+      sample_ad: 'A quiet evening fragrance, with a soft oud note.',
+      sample_social: 'Hosting is easier now. Order today, delivery in Riyadh.',
+      sample_wa: 'Hello. This weekend’s hosting bundle is on offer. Shall I send the details?',
+      sample_story: 'Today’s offer',
+      sample_product: 'Hospitality set',
+      sample_card: 'Campaign brief',
+      format_instagram: 'Instagram',
+      format_tiktok: 'TikTok',
+      format_whatsapp: 'WhatsApp',
+      format_stories: 'Stories',
+      format_feed: 'Feed ad',
+      format_product: 'Product ad',
+      format_short: 'Short video'
     },
     ar: {
       dashboard: 'لوحة التحكم',
@@ -374,7 +396,29 @@
       show_video_title: 'أفكار الفيديو',
       show_video_body: 'أفكار لقطات ونصوص. توليد الفيديو غير متاح حالياً.',
       show_planner_title: 'مخطط المحتوى',
-      show_planner_body: 'تواريخ ومسودات واعتماد لما يُنشر لاحقاً.'
+      show_planner_body: 'تواريخ ومسودات واعتماد لما يُنشر لاحقاً.',
+      home_how: 'شاهد كيف يعمل',
+      gallery_title: 'شاهد ماذا يمكن لـ RATEB AI أن يصنع',
+      gallery_note: 'أمثلة بصرية فقط. توليد الفيديو غير متاح حالياً.',
+      play_example: 'تشغيل المثال',
+      demo_example: 'مثال',
+      flow_strategy: 'استراتيجية',
+      workspace_title: 'مساحة الحملة كما تعمل فعلاً',
+      formats_title: 'قوالب تتحدث بها الحملة',
+      home_create_title: 'ماذا يستطيع RATEB AI أن يصنع؟',
+      sample_ad: 'عطر سهرة بلمسة عود هادئة.',
+      sample_social: 'تجهيزات الضيافة صارت أسهل. اطلب اليوم والتوصيل داخل الرياض.',
+      sample_wa: 'السلام عليكم، عرض نهاية الأسبوع على بكج الضيافة جاهز. أرسل لك التفاصيل؟',
+      sample_story: 'عرض اليوم',
+      sample_product: 'طقم ضيافة',
+      sample_card: 'ملخص الحملة',
+      format_instagram: 'إنستغرام',
+      format_tiktok: 'تيك توك',
+      format_whatsapp: 'واتساب',
+      format_stories: 'ستوري',
+      format_feed: 'إعلان الخلاصة',
+      format_product: 'إعلان منتج',
+      format_short: 'فيديو قصير'
     }
   };
 
@@ -557,6 +601,15 @@
         button.disabled = false;
         button.classList.remove('is-busy');
       }
+    };
+  }
+
+  var playExample = document.getElementById('play-demo');
+  var videoStage = document.getElementById('video-stage');
+  if (playExample && videoStage) {
+    playExample.onclick = function () {
+      var playing = videoStage.classList.toggle('is-playing');
+      playExample.setAttribute('aria-pressed', playing ? 'true' : 'false');
     };
   }
 })();

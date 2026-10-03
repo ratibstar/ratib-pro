@@ -1,0 +1,137 @@
+name: Temporary homepage check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy homepage and check public pages
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          SSH=(ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i "${KEY_PATH}" -P "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          ROOT=/home/admin/domains/ai.rateb.sa
+          BASE=https://ai.rateb.sa
+          "${SCP[@]}" ai-rateb-sa-source/index.php "${REMOTE}:${ROOT}/index.php"
+          "${SCP[@]}" ai-rateb-sa-source/app/auth/login.php "${REMOTE}:${ROOT}/app/auth/login.php"
+          "${SCP[@]}" ai-rateb-sa-source/app/auth/register.php "${REMOTE}:${ROOT}/app/auth/register.php"
+          "${SCP[@]}" ai-rateb-sa-source/campaign-new.php "${REMOTE}:${ROOT}/campaign-new.php"
+          "${SCP[@]}" ai-rateb-sa-source/brand.php "${REMOTE}:${ROOT}/brand.php"
+          "${SCP[@]}" ai-rateb-sa-source/public/assets/css/app.css "${REMOTE}:${ROOT}/public/assets/css/app.css"
+          "${SCP[@]}" ai-rateb-sa-source/public/assets/js/app.js "${REMOTE}:${ROOT}/public/assets/js/app.js"
+          "${SSH[@]}" "${REMOTE}" "php -l ${ROOT}/index.php && php -l ${ROOT}/app/auth/login.php && php -l ${ROOT}/app/auth/register.php && php -l ${ROOT}/campaign-new.php && php -l ${ROOT}/brand.php"
+          WORK="${RUNNER_TEMP}/home"
+          mkdir -p "$WORK"
+          printf '%s\n' '<?php foreach (["index.php","app/auth/login.php","app/auth/register.php","campaign-new.php","brand.php"] as $file) { $path="/home/admin/domains/ai.rateb.sa/".$file; echo basename($file)."=".(function_exists("opcache_invalidate") && opcache_invalidate($path, true) ? "yes" : "no").PHP_EOL; }' > "$WORK/refresh.php"
+          "${SCP[@]}" "$WORK/refresh.php" "${REMOTE}:${ROOT}/home-refresh.php"
+          curl -sS "$BASE/home-refresh.php" || true
+          echo
+          "${SSH[@]}" "${REMOTE}" "rm -f ${ROOT}/home-refresh.php"
+          code=$(curl -sS -o "$WORK/home.html" -w '%{http_code}' "$BASE/")
+          echo "HOME_HTTP=${code}"
+          test "$code" = "200"
+          python3 - "$WORK/home.html" << 'PY'
+          import sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          needed = ['landing-hero','studio_headline','href="/register.php"','href="/login.php"','href="#workflow"','id="theme"','id="lang"','id="video-stage"','id="play-demo"','gallery_note','flow-board','mock-grid','format-grid','data-i18n="studio_cta"']
+          missing = [token for token in needed if token not in html]
+          print("HOME_MISSING=" + (",".join(missing) if missing else "none"))
+          if missing or "<img " in html:
+              raise SystemExit(1)
+          PY
+          echo "HOME_LINKS=yes"
+          curl -sS -o "$WORK/app.js" "$BASE/public/assets/js/app.js"
+          grep -q 'حوّل فكرتك إلى حملة تسويقية كاملة بالذكاء الاصطناعي' "$WORK/app.js"
+          grep -q 'ابدأ حملة جديدة' "$WORK/app.js"
+          grep -q 'شاهد كيف يعمل' "$WORK/app.js"
+          grep -q 'rateb-theme' "$WORK/app.js"
+          grep -q 'rateb-lang' "$WORK/app.js"
+          grep -q 'play-demo' "$WORK/app.js"
+          echo "I18N_THEME=yes"
+          curl -sS -o "$WORK/app.css" "$BASE/public/assets/css/app.css"
+          grep -q 'landing-hero' "$WORK/app.css"
+          grep -q 'data-theme=light' "$WORK/app.css"
+          grep -q 'data-theme=dark' "$WORK/app.css"
+          grep -q 'prefers-reduced-motion' "$WORK/app.css"
+          grep -q 'max-width:700px' "$WORK/app.css"
+          echo "CSS=yes"
+          code=$(curl -sS -o "$WORK/login.html" -w '%{http_code}' "$BASE/login.php")
+          echo "LOGIN_HTTP=${code}"
+          test "$code" = "200"
+          grep -q 'name="email"' "$WORK/login.html"
+          grep -q 'name="password"' "$WORK/login.html"
+          grep -q 'name="csrf_token"' "$WORK/login.html"
+          grep -q 'id="theme"' "$WORK/login.html"
+          grep -q 'href="/register.php"' "$WORK/login.html"
+          echo "LOGIN=yes"
+          code=$(curl -sS -o "$WORK/register.html" -w '%{http_code}' "$BASE/register.php")
+          echo "REGISTER_HTTP=${code}"
+          test "$code" = "200"
+          grep -q 'name="name"' "$WORK/register.html"
+          grep -q 'name="email"' "$WORK/register.html"
+          grep -q 'href="/login.php"' "$WORK/register.html"
+          echo "REGISTER=yes"
+          code=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE/dashboard.php")
+          echo "DASH_HTTP=${code}"
+          test "$code" = "302"
+          python3 - << 'PY'
+          import os, pathlib, secrets
+          work = pathlib.Path(os.environ["RUNNER_TEMP"]) / "home"
+          (work / "email").write_text("ai-home-" + secrets.token_hex(4) + "@rateb.sa", encoding="utf-8")
+          (work / "password").write_text(secrets.token_urlsafe(18), encoding="utf-8")
+          os.chmod(work / "password", 0o600)
+          PY
+          COOKIE="$WORK/cookies"
+          CSRF="$WORK/csrf"
+          python3 - "$WORK/register.html" csrf_token "$CSRF" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          match = re.search(r'name="' + re.escape(sys.argv[2]) + r'" value="([^"]+)"', html)
+          if not match:
+              raise SystemExit("csrf missing")
+          open(sys.argv[3], "w", encoding="utf-8").write(match.group(1))
+          PY
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/reg.hdr" -o /dev/null \
+            --data-urlencode "csrf_token@${CSRF}" --data-urlencode "name=Home Check" \
+            --data-urlencode "email@${WORK}/email" --data-urlencode "password@${WORK}/password" \
+            "$BASE/register.php"
+          grep -qi 'dashboard.php' "$WORK/reg.hdr"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/dash.html" "$BASE/dashboard.php"
+          grep -q 'studio-hero' "$WORK/dash.html"
+          grep -q 'href="/campaign-new.php"' "$WORK/dash.html"
+          echo "DASHBOARD=yes"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/new.html" "$BASE/campaign-new.php"
+          grep -q 'action="/campaign-save.php"' "$WORK/new.html"
+          grep -q 'name="title"' "$WORK/new.html"
+          echo "NEW_CAMPAIGN=yes"
+          echo "HOME=pass"
+          rm -f "${KEY_PATH}" "$WORK/password" "$CSRF" "$COOKIE"

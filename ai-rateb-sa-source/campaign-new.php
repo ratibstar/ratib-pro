@@ -8,10 +8,11 @@ require_login();
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RATEB AI — New Campaign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
 <link rel="stylesheet" href="/public/assets/css/app.css">
 </head>
-<body>
+<body class="studio">
 <header class="top">
   <a class="brand" href="/dashboard.php">RATEB AI</a>
   <nav>
