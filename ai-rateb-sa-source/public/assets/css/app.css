@@ -104,7 +104,25 @@ tr:hover td{background:var(--surface2)}
 @media(max-width:700px){
   .kpi-grid,.dash-kpis,.summary-grid{grid-template-columns:1fr}
 }
-body.studio{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif;background:radial-gradient(900px 420px at 100% -8%,rgba(109,40,217,.16),transparent 52%),radial-gradient(720px 380px at -8% 12%,rgba(15,118,110,.12),transparent 48%),var(--bg)}
+body.studio{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif;background:var(--bg);isolation:isolate}
+body.studio::before,body.studio::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
+body.studio::before{background:
+  radial-gradient(42% 36% at 12% 18%,rgba(124,58,237,.34),transparent 70%),
+  radial-gradient(38% 32% at 88% 12%,rgba(14,165,233,.28),transparent 72%),
+  radial-gradient(46% 40% at 78% 82%,rgba(15,118,110,.26),transparent 70%),
+  radial-gradient(34% 30% at 18% 86%,rgba(249,115,22,.24),transparent 72%),
+  radial-gradient(28% 24% at 52% 46%,rgba(219,39,119,.16),transparent 70%);
+background-size:140% 140%;animation:color-drift 18s ease-in-out infinite}
+[data-theme=dark] body.studio::before{background:
+  radial-gradient(44% 38% at 10% 16%,rgba(139,92,246,.42),transparent 70%),
+  radial-gradient(40% 34% at 90% 10%,rgba(34,211,238,.28),transparent 72%),
+  radial-gradient(48% 42% at 80% 84%,rgba(45,212,191,.24),transparent 70%),
+  radial-gradient(36% 32% at 16% 88%,rgba(251,146,60,.26),transparent 72%),
+  radial-gradient(30% 26% at 48% 48%,rgba(244,114,182,.22),transparent 70%)}
+body.studio::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 220' preserveAspectRatio='none'%3E%3Cpath fill='%237c3aed' fill-opacity='.20' d='M0 110c90 48 170-48 260 0s170 48 260 0 170-48 260 0 170 48 260 0 90-36 160 0v110H0z'/%3E%3Cpath fill='%230d9488' fill-opacity='.18' d='M0 146c110-46 190 42 300 0s190-42 300 0 190 46 300 0 90-28 200 0v74H0z'/%3E%3Cpath fill='%23f97316' fill-opacity='.16' d='M0 172c130 28 210-32 340 0s210 32 340 0 180-22 280 0 120 18 240 0v48H0z'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 180' preserveAspectRatio='none'%3E%3Cpath fill='%2338bdf8' fill-opacity='.16' d='M0 0h1200v64C1080 20 980 90 860 48S700-8 560 40 360 96 220 42 40 8 0 48z'/%3E%3Cpath fill='%23db2777' fill-opacity='.10' d='M0 0h1200v36C1040 70 900 8 760 40S520 88 360 36 80 0 0 28z'/%3E%3C/svg%3E");background-repeat:repeat-x,repeat-x;background-size:180% 240px,160% 150px;background-position:0% 100%,0% 0%;animation:wave-slide 26s linear infinite}
+[data-theme=dark] body.studio::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 220' preserveAspectRatio='none'%3E%3Cpath fill='%23a78bfa' fill-opacity='.28' d='M0 110c90 48 170-48 260 0s170 48 260 0 170-48 260 0 170 48 260 0 90-36 160 0v110H0z'/%3E%3Cpath fill='%232dd4bf' fill-opacity='.22' d='M0 146c110-46 190 42 300 0s190-42 300 0 190 46 300 0 90-28 200 0v74H0z'/%3E%3Cpath fill='%23fb923c' fill-opacity='.20' d='M0 172c130 28 210-32 340 0s210 32 340 0 180-22 280 0 120 18 240 0v48H0z'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 180' preserveAspectRatio='none'%3E%3Cpath fill='%2322d3ee' fill-opacity='.20' d='M0 0h1200v64C1080 20 980 90 860 48S700-8 560 40 360 96 220 42 40 8 0 48z'/%3E%3Cpath fill='%23f472b6' fill-opacity='.16' d='M0 0h1200v36C1040 70 900 8 760 40S520 88 360 36 80 0 0 28z'/%3E%3C/svg%3E")}
+@keyframes color-drift{0%{background-position:0% 12%,100% 0%,82% 100%,8% 100%,50% 42%}50%{background-position:28% 74%,36% 86%,18% 28%,92% 18%,12% 88%}100%{background-position:86% 18%,4% 62%,100% 8%,22% 36%,90% 78%}}
+@keyframes wave-slide{from{background-position:0% 100%,0% 0%}to{background-position:100% 100%,-100% 0%}}
 body.studio .top,body.studio .topbar{background:color-mix(in srgb,var(--surface) 84%,transparent);backdrop-filter:blur(16px)}
 body.studio .brand span{background:linear-gradient(90deg,#6d28d9,#0f766e);-webkit-background-clip:text;background-clip:text;color:transparent}
 body.studio .container,body.studio .wrap{width:min(1180px,92%)}
@@ -355,7 +373,7 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .play-demo{pointer-events:none}
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  body,.demo-viewer[open]{animation:none}
+  body,.demo-viewer[open],body.studio::before,body.studio::after{animation:none}
   ::view-transition-old(root),::view-transition-new(root){animation:none}
   a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creative,.mock-screen,.flow-board li{transition:none}
 }

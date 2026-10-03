@@ -66,7 +66,7 @@ $tone = ($id % 4) + 1;
 <title>RATEB AI — Campaign</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=waves">
 </head>
 <body class="studio">
 <header class="top">
