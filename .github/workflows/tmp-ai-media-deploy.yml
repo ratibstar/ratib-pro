@@ -1,0 +1,338 @@
+name: Temporary campaign media deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install media files and verify the production flow
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          SSH=(ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i "${KEY_PATH}" -P "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          ROOT=/home/admin/domains/ai.rateb.sa
+          STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          "${SSH[@]}" "${REMOTE}" "mkdir -p ${ROOT}/app/media /home/admin/.campaign-media /home/admin/domains/ai.rateb.sa-file-backup-${STAMP}-media && chmod 700 /home/admin/.campaign-media && cp -a ${ROOT}/campaign.php ${ROOT}/public/assets/js/app.js ${ROOT}/public/assets/css/app.css /home/admin/domains/ai.rateb.sa-file-backup-${STAMP}-media/ && sha256sum ${ROOT}/config/ai.php ${ROOT}/config/database.php ${ROOT}/app/ai/generate.php > /tmp/ai-media-before.txt"
+          "${SSH[@]}" "${REMOTE}" "mkdir -p /tmp/ai-media-upload"
+          "${SCP[@]}" \
+            ai-rateb-sa-source/campaign.php \
+            ai-rateb-sa-source/public/assets/js/app.js \
+            ai-rateb-sa-source/public/assets/css/app.css \
+            ai-rateb-sa-source/app/media/library.php \
+            ai-rateb-sa-source/app/media/upload.php \
+            ai-rateb-sa-source/app/media/file.php \
+            ai-rateb-sa-source/app/media/delete.php \
+            ai-rateb-sa-source/app/ai/voice.php \
+            "${REMOTE}:/tmp/ai-media-upload/"
+          "${SSH[@]}" "${REMOTE}" "mv /tmp/ai-media-upload/campaign.php ${ROOT}/campaign.php && mv /tmp/ai-media-upload/app.js ${ROOT}/public/assets/js/app.js && mv /tmp/ai-media-upload/app.css ${ROOT}/public/assets/css/app.css && mv /tmp/ai-media-upload/library.php ${ROOT}/app/media/library.php && mv /tmp/ai-media-upload/upload.php ${ROOT}/app/media/upload.php && mv /tmp/ai-media-upload/file.php ${ROOT}/app/media/file.php && mv /tmp/ai-media-upload/delete.php ${ROOT}/app/media/delete.php && mv /tmp/ai-media-upload/voice.php ${ROOT}/app/ai/voice.php"
+          "${SSH[@]}" "${REMOTE}" "php -l ${ROOT}/campaign.php && php -l ${ROOT}/app/media/library.php && php -l ${ROOT}/app/media/upload.php && php -l ${ROOT}/app/media/file.php && php -l ${ROOT}/app/media/delete.php && php -l ${ROOT}/app/ai/voice.php && sha256sum ${ROOT}/config/ai.php ${ROOT}/config/database.php ${ROOT}/app/ai/generate.php > /tmp/ai-media-after.txt && cmp /tmp/ai-media-before.txt /tmp/ai-media-after.txt && echo PROTECTED_UNCHANGED=yes"
+          "${SSH[@]}" "${REMOTE}" php << 'PHP'
+          <?php
+          require '/home/admin/domains/ai.rateb.sa/app/bootstrap.php';
+          db()->exec("CREATE TABLE IF NOT EXISTS campaign_media (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            campaign_id BIGINT UNSIGNED NOT NULL,
+            user_id BIGINT UNSIGNED NOT NULL,
+            kind VARCHAR(16) NOT NULL,
+            source VARCHAR(16) NOT NULL,
+            original_name VARCHAR(255) NOT NULL,
+            stored_name VARCHAR(64) NOT NULL,
+            mime VARCHAR(127) NOT NULL,
+            bytes INT UNSIGNED NOT NULL,
+            created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_campaign_media_campaign (campaign_id),
+            KEY idx_campaign_media_user (user_id)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+          $cols = db()->query('SHOW COLUMNS FROM campaign_media')->fetchAll();
+          foreach ($cols as $col) {
+              echo 'MEDIA_COLUMN=' . $col['Field'] . ' ' . $col['Type'] . "\n";
+          }
+          PHP
+          TOKEN=$(openssl rand -hex 16)
+          "${SSH[@]}" "${REMOTE}" "cat > ${ROOT}/.ai-refresh-${TOKEN}.php" << EOF
+          <?php
+          if ((\$_GET['t'] ?? '') !== '${TOKEN}') { http_response_code(404); exit; }
+          header('Content-Type: text/plain; charset=UTF-8');
+          foreach ([
+            '${ROOT}/campaign.php',
+            '${ROOT}/app/media/library.php',
+            '${ROOT}/app/media/upload.php',
+            '${ROOT}/app/media/file.php',
+            '${ROOT}/app/media/delete.php',
+            '${ROOT}/app/ai/voice.php',
+          ] as \$path) {
+            echo 'INVALIDATED=' . (function_exists('opcache_invalidate') && opcache_invalidate(\$path, true) ? 'yes' : 'no') . "\\n";
+          }
+          EOF
+          curl -fsS "https://ai.rateb.sa/.ai-refresh-${TOKEN}.php?t=${TOKEN}"
+          echo
+          "${SSH[@]}" "${REMOTE}" "rm -f ${ROOT}/.ai-refresh-${TOKEN}.php"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          WORK="${RUNNER_TEMP}/media"
+          mkdir -p "$WORK"
+          python3 - "$WORK" << 'PY'
+          import struct, sys, wave, zlib
+          work = sys.argv[1]
+          def chunk(tag, data):
+              return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+          raw = b"\x00\xff\x00\x00"
+          png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
+          open(work + "/tiny.png", "wb").write(png)
+          with wave.open(work + "/tiny.wav", "w") as handle:
+              handle.setnchannels(1)
+              handle.setsampwidth(2)
+              handle.setframerate(8000)
+              handle.writeframes(b"\x00\x00" * 800)
+          open(work + "/bad.php", "wb").write(b"<?php echo 1;\n")
+          PY
+          ffmpeg -y -f lavfi -i color=c=black:s=64x64:d=1 -c:v libx264 -pix_fmt yuv420p -t 1 "$WORK/tiny.mp4" >/dev/null 2>&1
+          python3 - << 'PY'
+          import os, pathlib, secrets
+          work = pathlib.Path(os.environ["RUNNER_TEMP"]) / "media"
+          (work / "email").write_text("ai-media-" + secrets.token_hex(4) + "@rateb.sa", encoding="utf-8")
+          (work / "email2").write_text("ai-media-" + secrets.token_hex(4) + "@rateb.sa", encoding="utf-8")
+          (work / "password").write_text(secrets.token_urlsafe(18), encoding="utf-8")
+          os.chmod(work / "password", 0o600)
+          PY
+          BASE=https://ai.rateb.sa
+          COOKIE="$WORK/cookies"
+          CSRF="$WORK/csrf"
+          extract_csrf() {
+            python3 - "$1" "$2" "$CSRF" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          match = re.search(r'name="' + re.escape(sys.argv[2]) + r'" value="([^"]+)"', html)
+          if not match:
+              raise SystemExit("csrf missing")
+          open(sys.argv[3], "w", encoding="utf-8").write(match.group(1))
+          PY
+          }
+          register() {
+            local email="$1" jar="$2"
+            curl -sS -c "$jar" -b "$jar" -o "$WORK/register.html" "$BASE/register.php"
+            extract_csrf "$WORK/register.html" csrf_token
+            curl -sS -c "$jar" -b "$jar" -D "$WORK/register.hdr" -o "$WORK/register-post.html" \
+              --data-urlencode "csrf_token@${CSRF}" \
+              --data-urlencode "name=Media Check" \
+              --data-urlencode "email@${email}" \
+              --data-urlencode "password@${WORK}/password" \
+              "$BASE/register.php"
+            grep -qi 'dashboard.php' "$WORK/register.hdr"
+          }
+          register "$WORK/email" "$COOKIE"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/new.html" "$BASE/campaign-new.php"
+          extract_csrf "$WORK/new.html" csrf
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/save.hdr" -o "$WORK/save.html" \
+            --data-urlencode "csrf@${CSRF}" \
+            --data-urlencode "title=Media production check" \
+            --data-urlencode "product_name=RATEB AI Campaign" \
+            --data-urlencode "description=A short production check for campaign media." \
+            --data-urlencode "price=100 SAR" \
+            --data-urlencode "target_customer=Small business owners" \
+            "$BASE/campaign-save.php"
+          CAMPAIGN_ID=$(python3 - "$WORK/save.hdr" << 'PY'
+          import re, sys
+          text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          match = re.search(r'campaign\.php\?id=(\d+)', text)
+          print(match.group(1) if match else "")
+          PY
+          )
+          echo "CAMPAIGN_ID=${CAMPAIGN_ID}"
+          test -n "$CAMPAIGN_ID"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          grep -q 'id="lang"' "$WORK/campaign.html"
+          grep -q 'id="theme"' "$WORK/campaign.html"
+          grep -q 'data-i18n="media_gallery"' "$WORK/campaign.html"
+          grep -q 'id="generateForm"' "$WORK/campaign.html"
+          echo "PAGE_HAS_MEDIA=yes"
+          upload() {
+            local kind="$1" file="$2" mime="$3" label="$4"
+            extract_csrf "$WORK/campaign.html" csrf
+            curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/upload.hdr" -o "$WORK/upload.html" \
+              -F "csrf=<${CSRF}" \
+              -F "campaign_id=${CAMPAIGN_ID}" \
+              -F "kind=${kind}" \
+              -F "file=@${file};type=${mime};filename=${label}" \
+              "$BASE/app/media/upload.php"
+            python3 - "$WORK/upload.hdr" "$label" << 'PY'
+          import sys
+          text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          print("UPLOAD_" + sys.argv[2] + "=" + ("302" if " 302" in text or text.startswith("HTTP/") and "302" in text else "FAIL"))
+          if "media_error=" in text:
+              print("UPLOAD_ERROR_" + sys.argv[2] + "=yes")
+              raise SystemExit(1)
+          PY
+            curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          }
+          upload image "$WORK/tiny.png" image/png tiny.png
+          upload video "$WORK/tiny.mp4" video/mp4 tiny.mp4
+          upload audio "$WORK/tiny.wav" audio/wav tiny.wav
+          extract_csrf "$WORK/campaign.html" csrf
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/bad.hdr" -o "$WORK/bad.html" \
+            -F "csrf=<${CSRF}" \
+            -F "campaign_id=${CAMPAIGN_ID}" \
+            -F "kind=image" \
+            -F "file=@${WORK}/bad.php;type=image/png;filename=bad.php" \
+            "$BASE/app/media/upload.php"
+          grep -q 'media_error=type' "$WORK/bad.hdr"
+          echo "PHP_UPLOAD_REJECTED=yes"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          python3 - "$WORK/campaign.html" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          ids = re.findall(r'/app/media/file.php\?id=(\d+)', html)
+          unique = []
+          for item in ids:
+              if item not in unique:
+                  unique.append(item)
+          open(sys.argv[1] + ".ids", "w", encoding="utf-8").write("\n".join(unique))
+          print("GALLERY_IDS=" + str(len(unique)))
+          PY
+          test "$(wc -l < "$WORK/campaign.html.ids")" -ge 3
+          while read -r MEDIA_ID; do
+            code=$(curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/file.hdr" -o "$WORK/file.bin" -w '%{http_code}' "$BASE/app/media/file.php?id=${MEDIA_ID}")
+            down=$(curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/down.hdr" -o "$WORK/down.bin" -w '%{http_code}' "$BASE/app/media/file.php?id=${MEDIA_ID}&download=1")
+            python3 - "$WORK/file.hdr" "$WORK/file.bin" "$WORK/down.hdr" "$code" "$down" "$MEDIA_ID" << 'PY'
+          import sys
+          header, body, down, code, down_code, media_id = sys.argv[1:]
+          text = open(header, encoding="utf-8", errors="replace").read().lower()
+          down_text = open(down, encoding="utf-8", errors="replace").read().lower()
+          data = open(body, "rb").read()
+          ctype = ""
+          for line in text.splitlines():
+              if line.startswith("content-type:"):
+                  ctype = line.split(":", 1)[1].strip()
+          magic = data[:12]
+          ok_magic = magic.startswith(b"\x89PNG") or magic.startswith(b"RIFF") or b"ftyp" in magic
+          attachment = "content-disposition: attachment" in down_text
+          print(f"FILE id={media_id} HTTP={code} TYPE={ctype} MAGIC={'yes' if ok_magic else 'no'} DOWNLOAD={down_code} ATTACHMENT={'yes' if attachment else 'no'}")
+          if code != "200" or not ok_magic or down_code != "200" or not attachment:
+              raise SystemExit(1)
+          PY
+          done < "$WORK/campaign.html.ids"
+          anon=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$BASE/app/media/file.php?id=1")
+          echo "ANON_FILE=$anon"
+          COOKIE2="$WORK/cookies2"
+          register "$WORK/email2" "$COOKIE2"
+          FIRST_ID=$(head -n 1 "$WORK/campaign.html.ids")
+          other=$(curl -sS -c "$COOKIE2" -b "$COOKIE2" -o "$WORK/other.txt" -w '%{http_code}' "$BASE/app/media/file.php?id=${FIRST_ID}")
+          echo "OTHER_USER_HTTP=$other"
+          test "$other" = "404"
+          extract_csrf "$WORK/campaign.html" csrf
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/voice.json" -w 'VOICE_HTTP=%{http_code}\n' \
+            --data-urlencode "csrf@${CSRF}" \
+            --data-urlencode "campaign_id=${CAMPAIGN_ID}" \
+            --data-urlencode "lang=en" \
+            "$BASE/app/ai/voice.php" > "$WORK/voice.code"
+          cat "$WORK/voice.code"
+          python3 - "$WORK/voice.json" << 'PY'
+          import json, re, sys
+          raw = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError:
+              data = {}
+          error = re.sub(r"(?:sk-|gsk_)[A-Za-z0-9_\-]+", "[redacted]", str(data.get("error") or ""))[:180]
+          print("VOICE_OK=" + ("yes" if data.get("ok") else "no"))
+          if error:
+              print("VOICE_ERROR=" + error)
+          PY
+          extract_csrf "$WORK/campaign.html" csrf
+          code=$(curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/generate.json" -w '%{http_code}' --max-time 180 \
+            --data-urlencode "csrf@${CSRF}" \
+            --data-urlencode "campaign_id=${CAMPAIGN_ID}" \
+            --data-urlencode "lang=en" \
+            "$BASE/app/ai/generate.php" || true)
+          python3 - "$WORK/generate.json" "$code" << 'PY'
+          import json, sys
+          raw = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError:
+              data = {}
+          print("TEXT_HTTP=" + sys.argv[2])
+          print("TEXT_OK=" + ("yes" if data.get("ok") else "no"))
+          PY
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/after.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          python3 - "$WORK/after.html" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          wanted = ["strategy","ad_copy","social_posts","whatsapp","product_description","video_ideas","voiceover","content_plan_7_days"]
+          found = re.findall(r'data-i18n="type_([a-z0-9_]+)"', html)
+          present = [name for name in wanted if name in found]
+          print("TEXT_OUTPUTS=" + str(len(present)))
+          ids = []
+          for item in re.findall(r'/app/media/file.php\?id=(\d+)', html):
+              if item not in ids:
+                  ids.append(item)
+          open(sys.argv[1] + ".ids", "w", encoding="utf-8").write("\n".join(ids))
+          PY
+          echo "$CAMPAIGN_ID" > "$WORK/campaign-id"
+          "${SSH[@]}" "${REMOTE}" "export CAMPAIGN_ID=${CAMPAIGN_ID}; php" << 'PHP'
+          <?php
+          require '/home/admin/domains/ai.rateb.sa/app/bootstrap.php';
+          $id = (int) getenv('CAMPAIGN_ID');
+          $stmt = db()->prepare('SELECT id, kind, source, mime, bytes, stored_name FROM campaign_media WHERE campaign_id = ? ORDER BY id');
+          $stmt->execute([$id]);
+          $rows = $stmt->fetchAll();
+          echo 'SQL_MEDIA_COUNT=' . count($rows) . "\n";
+          foreach ($rows as $row) {
+              $path = '/home/admin/.campaign-media/' . $id . '/' . $row['stored_name'];
+              $outside = str_starts_with($path, '/home/admin/.campaign-media/') && !str_contains($path, '/domains/ai.rateb.sa/');
+              echo 'SQL_MEDIA=' . $row['kind'] . ' source=' . $row['source'] . ' mime=' . $row['mime'] . ' bytes=' . $row['bytes'] . ' OUTSIDE=' . ($outside && is_file($path) ? 'yes' : 'no') . "\n";
+          }
+          PHP
+          while read -r MEDIA_ID; do
+            extract_csrf "$WORK/after.html" csrf
+            curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/delete.hdr" -o /dev/null \
+              --data-urlencode "csrf@${CSRF}" \
+              --data-urlencode "id=${MEDIA_ID}" \
+              "$BASE/app/media/delete.php"
+            grep -q ' 302' "$WORK/delete.hdr"
+            gone=$(curl -sS -c "$COOKIE" -b "$COOKIE" -o /dev/null -w '%{http_code}' "$BASE/app/media/file.php?id=${MEDIA_ID}")
+            echo "DELETE id=${MEDIA_ID} AFTER=${gone}"
+            test "$gone" = "404"
+            curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/after.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          done < "$WORK/after.html.ids"
+          "${SSH[@]}" "${REMOTE}" "export CAMPAIGN_ID=${CAMPAIGN_ID}; php" << 'PHP'
+          <?php
+          require '/home/admin/domains/ai.rateb.sa/app/bootstrap.php';
+          $id = (int) getenv('CAMPAIGN_ID');
+          $stmt = db()->prepare('SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ?');
+          $stmt->execute([$id]);
+          echo 'SQL_MEDIA_AFTER_DELETE=' . $stmt->fetchColumn() . "\n";
+          PHP
+          rm -f "${KEY_PATH}" "$WORK/password" "$CSRF" "$COOKIE" "$COOKIE2"
+          echo "BACKUP=/home/admin/domains/ai.rateb.sa-file-backup-${STAMP}-media"
