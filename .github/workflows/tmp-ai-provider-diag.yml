@@ -1,0 +1,99 @@
+name: Temporary AI provider diagnosis
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 10
+    steps:
+      - name: Call the configured provider and print status only
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "php -d display_errors=1" > "${RUNNER_TEMP}/diag.txt" << 'PHP'
+          <?php
+          require '/home/admin/.secrets/rateb-ai-env.php';
+          $cfg = require '/home/admin/domains/ai.rateb.sa/config/ai.php';
+          $key = (string) ($cfg['api_key'] ?? '');
+          $redact = static function ($value): string {
+              $text = (string) $value;
+              $text = preg_replace('/sk-[A-Za-z0-9_\-]{6,}/', 'sk-REDACTED', $text) ?? $text;
+              $text = preg_replace('/Bearer\s+\S+/i', 'Bearer REDACTED', $text) ?? $text;
+              return substr($text, 0, 240);
+          };
+          echo 'KEY_LEN=' . strlen($key) . "\n";
+          echo 'KEY_HAS_SPACE=' . (preg_match('/\s/', $key) ? 'yes' : 'no') . "\n";
+          echo 'KEY_HAS_QUOTE=' . (strpbrk($key, "\"'") !== false ? 'yes' : 'no') . "\n";
+          if (strncmp($key, 'sk-ant-', 7) === 0) {
+              $shape = 'sk-ant';
+          } elseif (strncmp($key, 'sk-proj-', 8) === 0) {
+              $shape = 'sk-proj';
+          } elseif (strncmp($key, 'sk-', 3) === 0) {
+              $shape = 'sk';
+          } elseif (strncmp($key, 'AIza', 4) === 0) {
+              $shape = 'AIza';
+          } else {
+              $shape = 'other';
+          }
+          echo 'KEY_SHAPE=' . $shape . "\n";
+          echo 'PROVIDER=' . ($cfg['provider'] ?? '') . "\n";
+          echo 'MODEL=' . ($cfg['model'] ?? '') . "\n";
+          echo 'BASE=' . ($cfg['base_url'] ?? '') . "\n";
+          $payload = json_encode([
+              'model' => $cfg['model'],
+              'messages' => [['role' => 'user', 'content' => 'Reply with the single word ok']],
+              'temperature' => 0.7,
+              'max_tokens' => 5,
+          ], JSON_UNESCAPED_UNICODE);
+          $ch = curl_init(rtrim((string) $cfg['base_url'], '/') . '/chat/completions');
+          curl_setopt_array($ch, [
+              CURLOPT_POST => true,
+              CURLOPT_RETURNTRANSFER => true,
+              CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $key],
+              CURLOPT_POSTFIELDS => $payload,
+              CURLOPT_TIMEOUT => 60,
+          ]);
+          $raw = curl_exec($ch);
+          echo 'CURL_ERRNO=' . curl_errno($ch) . "\n";
+          echo 'CURL_ERR=' . $redact(curl_error($ch)) . "\n";
+          echo 'HTTP=' . curl_getinfo($ch, CURLINFO_HTTP_CODE) . "\n";
+          curl_close($ch);
+          $data = json_decode((string) $raw, true);
+          if (is_array($data) && isset($data['error'])) {
+              $error = $data['error'];
+              echo 'ERROR_TYPE=' . $redact(is_array($error) ? ($error['type'] ?? '') : '') . "\n";
+              echo 'ERROR_CODE=' . $redact(is_array($error) ? ($error['code'] ?? '') : '') . "\n";
+              echo 'ERROR_MSG=' . $redact(is_array($error) ? ($error['message'] ?? '') : $error) . "\n";
+          } else {
+              echo 'TOP_KEYS=' . (is_array($data) ? implode(',', array_keys($data)) : 'not_json') . "\n";
+              echo 'BODY_LEN=' . strlen((string) $raw) . "\n";
+          }
+          PHP
+          rm -f "${KEY_PATH}"
+          grep -E '^(KEY_|PROVIDER=|MODEL=|BASE=|CURL_|HTTP=|ERROR_|TOP_KEYS=|BODY_LEN=)' "${RUNNER_TEMP}/diag.txt"
