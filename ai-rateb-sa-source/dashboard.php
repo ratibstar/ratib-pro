@@ -79,6 +79,32 @@ foreach ($campaigns as $row) {
     </div>
   </section>
 
+  <section class="home-section" id="samples">
+    <div class="section-head"><h2 data-i18n="sample_title">Examples you can view and hear</h2></div>
+    <h3 data-i18n="sample_photos">Pictures</h3>
+    <div class="sample-grid">
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-perfume.jpg"><img src="/public/assets/demo/demo-perfume.jpg" alt=""><span data-i18n="video_product">Product film</span></article>
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg"><img src="/public/assets/demo/demo-hospitality.jpg" alt=""><span data-i18n="video_social">Hospitality film</span></article>
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-social.jpg"><img src="/public/assets/demo/demo-social.jpg" alt=""><span data-i18n="format_instagram">Instagram</span></article>
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-evening.jpg"><img src="/public/assets/demo/demo-evening.jpg" alt=""><span data-i18n="sample_product">Hospitality set</span></article>
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-story.jpg"><img src="/public/assets/demo/demo-story.jpg" alt=""><span data-i18n="format_stories">Stories</span></article>
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-campaign.jpg"><img src="/public/assets/demo/demo-campaign.jpg" alt=""><span data-i18n="show_strategy_title">AI campaign strategy</span></article>
+    </div>
+    <h3 data-i18n="sample_videos">Videos</h3>
+    <div class="sample-grid sample-videos">
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-product.mp4"><img src="/public/assets/demo/demo-perfume.jpg" alt=""><span class="mini-play"></span><span data-i18n="video_product">Product film</span></article>
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-social.mp4"><img src="/public/assets/demo/demo-hospitality.jpg" alt=""><span class="mini-play"></span><span data-i18n="video_social">Hospitality film</span></article>
+      <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-story.mp4"><img src="/public/assets/demo/demo-story.jpg" alt=""><span class="mini-play"></span><span data-i18n="video_story">Vertical story</span></article>
+    </div>
+    <h3 data-i18n="sample_voices">Voices</h3>
+    <div class="voice-row">
+      <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-calm.mp3"><span class="mini-play"></span><b data-i18n="voice_calm">Calm voice</b></article>
+      <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-warm.mp3"><span class="mini-play"></span><b data-i18n="voice_warm">Warm voice</b></article>
+      <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-clear.mp3"><span class="mini-play"></span><b data-i18n="voice_clear">Clear voice</b></article>
+      <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-deep.mp3"><span class="mini-play"></span><b data-i18n="voice_deep">Deep voice</b></article>
+    </div>
+  </section>
+
   <div class="dash-kpis studio-stats">
     <?php foreach ($summary as $key => $count): ?>
       <article class="studio-stat">
@@ -169,6 +195,13 @@ foreach ($campaigns as $row) {
     <?php endif; ?>
   </section>
 </main>
+<dialog class="demo-viewer" id="demo-viewer">
+  <form method="dialog" class="demo-bar">
+    <p data-i18n="demo_example">Example</p>
+    <button type="submit" class="icon" data-i18n="demo_close">Close</button>
+  </form>
+  <div id="demo-stage"></div>
+</dialog>
 <script src="/public/assets/js/app.js"></script>
 </body>
 </html>

@@ -38,77 +38,103 @@ if (isset($_SESSION['user_id'])) {
             </div>
         </div>
         <div class="collage">
-            <article class="piece piece-ad float-a demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/product.svg">
+            <article class="piece piece-ad float-a demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-perfume.jpg">
                 <span class="demo-tag" data-i18n="demo_example">Example</span>
-                <div class="product-art"></div>
+                <img class="demo-thumb" src="/public/assets/demo/demo-perfume.jpg" alt="">
                 <strong data-i18n="sample_ad">A quiet evening fragrance, with a soft oud note.</strong>
             </article>
-            <article class="piece piece-social float-b demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/social.svg">
+            <article class="piece piece-social float-b demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-social.jpg">
                 <span class="demo-tag" data-i18n="demo_example">Example</span>
                 <div class="social-top"><i></i><i></i><i></i></div>
-                <div class="social-photo"></div>
+                <img class="demo-thumb" src="/public/assets/demo/demo-social.jpg" alt="">
                 <p data-i18n="sample_social">Hosting is easier now. Order today, delivery in Riyadh.</p>
             </article>
-            <article class="piece piece-phone float-c demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/story.svg">
+            <article class="piece piece-phone float-c demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-story.jpg">
                 <span class="demo-tag" data-i18n="demo_example">Example</span>
                 <div class="phone-screen">
                     <b data-i18n="sample_story">Today’s offer</b>
                     <span data-i18n="sample_product">Hospitality set</span>
                 </div>
             </article>
-            <article class="piece piece-card float-d demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/strategy.svg">
+            <article class="piece piece-card float-d demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-campaign.jpg">
                 <span class="demo-tag" data-i18n="demo_example">Example</span>
                 <b data-i18n="sample_card">Campaign brief</b>
                 <span class="line"></span>
                 <span class="line short"></span>
             </article>
-            <article class="piece piece-video float-e demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/demo-video.mp4">
+            <article class="piece piece-video float-e demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-story.mp4">
                 <span class="demo-tag" data-i18n="demo_example">Example</span>
                 <span class="mini-play"></span>
             </article>
         </div>
     </section>
 
+    <section class="home-section" id="samples">
+        <div class="section-head"><h2 data-i18n="sample_title">Examples you can view and hear</h2></div>
+        <h3 data-i18n="sample_photos">Pictures</h3>
+        <div class="sample-grid">
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-perfume.jpg"><img src="/public/assets/demo/demo-perfume.jpg" alt=""><span data-i18n="video_product">Product film</span></article>
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg"><img src="/public/assets/demo/demo-hospitality.jpg" alt=""><span data-i18n="video_social">Hospitality film</span></article>
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-social.jpg"><img src="/public/assets/demo/demo-social.jpg" alt=""><span data-i18n="format_instagram">Instagram</span></article>
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-evening.jpg"><img src="/public/assets/demo/demo-evening.jpg" alt=""><span data-i18n="sample_product">Hospitality set</span></article>
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-story.jpg"><img src="/public/assets/demo/demo-story.jpg" alt=""><span data-i18n="format_stories">Stories</span></article>
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-campaign.jpg"><img src="/public/assets/demo/demo-campaign.jpg" alt=""><span data-i18n="show_strategy_title">AI campaign strategy</span></article>
+        </div>
+        <h3 data-i18n="sample_videos">Videos</h3>
+        <div class="sample-grid sample-videos">
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-product.mp4"><img src="/public/assets/demo/demo-perfume.jpg" alt=""><span class="mini-play"></span><span data-i18n="video_product">Product film</span></article>
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-social.mp4"><img src="/public/assets/demo/demo-hospitality.jpg" alt=""><span class="mini-play"></span><span data-i18n="video_social">Hospitality film</span></article>
+            <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-story.mp4"><img src="/public/assets/demo/demo-story.jpg" alt=""><span class="mini-play"></span><span data-i18n="video_story">Vertical story</span></article>
+        </div>
+        <h3 data-i18n="sample_voices">Voices</h3>
+        <div class="voice-row">
+            <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-calm.mp3"><span class="mini-play"></span><b data-i18n="voice_calm">Calm voice</b></article>
+            <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-warm.mp3"><span class="mini-play"></span><b data-i18n="voice_warm">Warm voice</b></article>
+            <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-clear.mp3"><span class="mini-play"></span><b data-i18n="voice_clear">Clear voice</b></article>
+            <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-deep.mp3"><span class="mini-play"></span><b data-i18n="voice_deep">Deep voice</b></article>
+        </div>
+    </section>
+
     <section class="home-section" id="create">
         <div class="section-head"><h2 data-i18n="home_create_title">What can RATEB AI create?</h2></div>
         <div class="showcase home-showcase">
-            <article class="showcase-card show-strategy demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/strategy.svg">
+            <article class="showcase-card show-strategy demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-campaign.jpg">
                 <div class="preview preview-strategy"><span></span><span></span><span></span></div>
                 <span class="show-mark">01</span>
                 <h3 data-i18n="show_strategy_title">AI campaign strategy</h3>
                 <p data-i18n="show_strategy_body">A clear plan for the offer, audience, and message.</p>
             </article>
-            <article class="showcase-card show-copy demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/product.svg">
+            <article class="showcase-card show-copy demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-perfume.jpg">
                 <div class="preview preview-copy"><b data-i18n="sample_ad">A quiet evening fragrance, with a soft oud note.</b><i></i></div>
                 <span class="show-mark">02</span>
                 <h3 data-i18n="show_copy_title">Ad copy</h3>
                 <p data-i18n="show_copy_body">Ready lines for ads, landing pages, and offers.</p>
             </article>
-            <article class="showcase-card show-social demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/social.svg">
+            <article class="showcase-card show-social demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-social.jpg">
                 <div class="preview preview-post"><span></span><em data-i18n="sample_social">Hosting is easier now. Order today, delivery in Riyadh.</em></div>
                 <span class="show-mark">03</span>
                 <h3 data-i18n="show_social_title">Social posts</h3>
                 <p data-i18n="show_social_body">Posts shaped for the platforms your customers use.</p>
             </article>
-            <article class="showcase-card show-images demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/poster.svg">
+            <article class="showcase-card show-images demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg">
                 <div class="preview preview-image"><span class="orb"></span><span class="orb small"></span></div>
                 <span class="show-mark">04</span>
                 <h3 data-i18n="show_images_title">AI images</h3>
                 <p data-i18n="show_images_body">Campaign visuals generated for this brand.</p>
             </article>
-            <article class="showcase-card show-voice demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/demo-voice.mp3">
+            <article class="showcase-card show-voice demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-calm.mp3">
                 <div class="preview preview-wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
                 <span class="show-mark">05</span>
                 <h3 data-i18n="show_voice_title">Saudi Arabic voice</h3>
                 <p data-i18n="show_voice_body">A natural Saudi Arabic voice-over from your script.</p>
             </article>
-            <article class="showcase-card show-video demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/demo-video.mp4">
+            <article class="showcase-card show-video demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-product.mp4">
                 <div class="preview preview-reel"><span class="mini-play"></span></div>
                 <span class="show-mark">06</span>
                 <h3 data-i18n="show_video_title">Video ideas</h3>
                 <p data-i18n="show_video_body">Shot ideas and scripts. Video rendering stays unavailable.</p>
             </article>
-            <article class="showcase-card show-planner demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/planner.svg">
+            <article class="showcase-card show-planner demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-evening.jpg">
                 <div class="preview preview-cal"><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
                 <span class="show-mark">07</span>
                 <h3 data-i18n="show_planner_title">Content planner</h3>
@@ -125,7 +151,7 @@ if (isset($_SESSION['user_id'])) {
             </div>
         </div>
         <div class="gallery-layout">
-            <div class="video-stage demo-hit" id="video-stage" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/demo-video.mp4">
+            <div class="video-stage demo-hit" id="video-stage" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-social.mp4">
                 <div class="reel-frame"></div>
                 <span class="play-demo">
                     <span class="mini-play"></span>
@@ -134,10 +160,10 @@ if (isset($_SESSION['user_id'])) {
                 <p class="demo-tag" data-i18n="demo_example">Example</p>
             </div>
             <div class="creative-grid">
-                <article class="creative tile-poster demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/poster.svg"><span class="demo-tag" data-i18n="demo_example">Example</span><b data-i18n="sample_product">Hospitality set</b></article>
-                <article class="creative tile-social demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/social.svg"><span class="demo-tag" data-i18n="demo_example">Example</span><b data-i18n="format_instagram">Instagram</b></article>
-                <article class="creative tile-arabic demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/story.svg"><span class="demo-tag" data-i18n="demo_example">Example</span><b data-i18n="sample_story">Today’s offer</b></article>
-                <article class="creative tile-pack demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/product.svg"><span class="demo-tag" data-i18n="demo_example">Example</span><b data-i18n="format_product">Product ad</b></article>
+                <article class="creative tile-poster demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg"><span class="demo-tag" data-i18n="demo_example">Example</span><b data-i18n="sample_product">Hospitality set</b></article>
+                <article class="creative tile-social demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-social.jpg"><span class="demo-tag" data-i18n="demo_example">Example</span><b data-i18n="format_instagram">Instagram</b></article>
+                <article class="creative tile-arabic demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-story.jpg"><span class="demo-tag" data-i18n="demo_example">Example</span><b data-i18n="sample_story">Today’s offer</b></article>
+                <article class="creative tile-pack demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-perfume.jpg"><span class="demo-tag" data-i18n="demo_example">Example</span><b data-i18n="format_product">Product ad</b></article>
             </div>
         </div>
     </section>
@@ -145,13 +171,13 @@ if (isset($_SESSION['user_id'])) {
     <section class="home-section" id="workflow">
         <div class="section-head"><h2 data-i18n="home_how">See how it works</h2></div>
         <ol class="flow-board">
-            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/strategy.svg"><span class="node">1</span><b data-i18n="flow_idea">Idea</b></li>
-            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/strategy.svg"><span class="node">2</span><b data-i18n="flow_strategy">Strategy</b></li>
-            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/product.svg"><span class="node">3</span><b data-i18n="flow_copy">Copy</b></li>
-            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/poster.svg"><span class="node">4</span><b data-i18n="flow_images">Images</b></li>
-            <li class="demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/demo-voice.mp3"><span class="node">5</span><b data-i18n="flow_voice">Voice</b></li>
-            <li class="demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/demo-video.mp4"><span class="node">6</span><b data-i18n="flow_video">Video</b></li>
-            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/planner.svg"><span class="node">7</span><b data-i18n="flow_ready">Ready campaign</b></li>
+            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-campaign.jpg"><span class="node">1</span><b data-i18n="flow_idea">Idea</b></li>
+            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-campaign.jpg"><span class="node">2</span><b data-i18n="flow_strategy">Strategy</b></li>
+            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-perfume.jpg"><span class="node">3</span><b data-i18n="flow_copy">Copy</b></li>
+            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg"><span class="node">4</span><b data-i18n="flow_images">Images</b></li>
+            <li class="demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-calm.mp3"><span class="node">5</span><b data-i18n="flow_voice">Voice</b></li>
+            <li class="demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-product.mp4"><span class="node">6</span><b data-i18n="flow_video">Video</b></li>
+            <li class="demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-evening.jpg"><span class="node">7</span><b data-i18n="flow_ready">Ready campaign</b></li>
         </ol>
     </section>
 
@@ -170,13 +196,13 @@ if (isset($_SESSION['user_id'])) {
     <section class="home-section" id="formats">
         <div class="section-head"><h2 data-i18n="formats_title">Formats your campaign can speak in</h2></div>
         <div class="format-grid">
-            <article class="format format-ig demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/social.svg"><span data-i18n="format_instagram">Instagram</span><p data-i18n="sample_social">Hosting is easier now. Order today, delivery in Riyadh.</p></article>
-            <article class="format format-tt demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/demo-video.mp4"><span data-i18n="format_tiktok">TikTok</span><span class="mini-play"></span><small data-i18n="demo_example">Example</small></article>
-            <article class="format format-wa demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/whatsapp.svg"><span data-i18n="format_whatsapp">WhatsApp</span><p data-i18n="sample_wa">Hello. This weekend’s hosting bundle is on offer. Shall I send the details?</p></article>
-            <article class="format format-story demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/story.svg"><span data-i18n="format_stories">Stories</span><b data-i18n="sample_story">Today’s offer</b></article>
-            <article class="format format-feed demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/product.svg"><span data-i18n="format_feed">Feed ad</span><p data-i18n="sample_ad">A quiet evening fragrance, with a soft oud note.</p></article>
-            <article class="format format-product demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/poster.svg"><span data-i18n="format_product">Product ad</span><div class="product-art"></div></article>
-            <article class="format format-short demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/demo-video.mp4"><span data-i18n="format_short">Short video</span><small data-i18n="gallery_note">Visual examples only. Video generation is not available yet.</small></article>
+            <article class="format format-ig demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-social.jpg"><span data-i18n="format_instagram">Instagram</span><p data-i18n="sample_social">Hosting is easier now. Order today, delivery in Riyadh.</p></article>
+            <article class="format format-tt demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-story.mp4"><span data-i18n="format_tiktok">TikTok</span><span class="mini-play"></span><small data-i18n="demo_example">Example</small></article>
+            <article class="format format-wa demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg"><span data-i18n="format_whatsapp">WhatsApp</span><p data-i18n="sample_wa">Hello. This weekend’s hosting bundle is on offer. Shall I send the details?</p></article>
+            <article class="format format-story demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-story.jpg"><span data-i18n="format_stories">Stories</span><b data-i18n="sample_story">Today’s offer</b></article>
+            <article class="format format-feed demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-perfume.jpg"><span data-i18n="format_feed">Feed ad</span><p data-i18n="sample_ad">A quiet evening fragrance, with a soft oud note.</p></article>
+            <article class="format format-product demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg"><span data-i18n="format_product">Product ad</span><div class="product-art"></div></article>
+            <article class="format format-short demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-social.mp4"><span data-i18n="format_short">Short video</span><small data-i18n="gallery_note">Visual examples only. Video generation is not available yet.</small></article>
         </div>
     </section>
 
