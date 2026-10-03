@@ -200,6 +200,7 @@
       gallery_title: 'See what RATEB AI can make',
       gallery_note: 'Visual examples only. Video generation is not available yet.',
       play_example: 'Play example',
+      demo_close: 'Close',
       demo_example: 'Example',
       flow_strategy: 'Strategy',
       workspace_title: 'The real campaign workspace',
@@ -401,6 +402,7 @@
       gallery_title: 'شاهد ماذا يمكن لـ RATEB AI أن يصنع',
       gallery_note: 'أمثلة بصرية فقط. توليد الفيديو غير متاح حالياً.',
       play_example: 'تشغيل المثال',
+      demo_close: 'إغلاق',
       demo_example: 'مثال',
       flow_strategy: 'استراتيجية',
       workspace_title: 'مساحة الحملة كما تعمل فعلاً',
@@ -604,12 +606,52 @@
     };
   }
 
-  var playExample = document.getElementById('play-demo');
-  var videoStage = document.getElementById('video-stage');
-  if (playExample && videoStage) {
-    playExample.onclick = function () {
-      var playing = videoStage.classList.toggle('is-playing');
-      playExample.setAttribute('aria-pressed', playing ? 'true' : 'false');
-    };
+  var demoDialog = document.getElementById('demo-viewer');
+  var demoStage = document.getElementById('demo-stage');
+
+  function openDemo(node) {
+    if (!demoDialog || !demoStage) return;
+    var kind = node.getAttribute('data-kind');
+    var src = node.getAttribute('data-src');
+    if (!kind || !src) return;
+    demoStage.replaceChildren();
+    var media;
+    if (kind === 'video') {
+      media = document.createElement('video');
+      media.controls = true;
+      media.autoplay = true;
+      media.playsInline = true;
+    } else if (kind === 'audio') {
+      media = document.createElement('audio');
+      media.controls = true;
+      media.autoplay = true;
+    } else {
+      media = document.createElement('img');
+      media.alt = '';
+    }
+    media.src = src;
+    demoStage.appendChild(media);
+    if (kind !== 'image' && media.play) {
+      var pending = media.play();
+      if (pending && pending.catch) pending.catch(function () {});
+    }
+    if (typeof demoDialog.showModal === 'function') demoDialog.showModal();
+    else demoDialog.setAttribute('open', '');
+  }
+
+  document.querySelectorAll('[data-kind]').forEach(function (node) {
+    node.addEventListener('click', function () { openDemo(node); });
+    node.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openDemo(node);
+      }
+    });
+  });
+  if (demoDialog && demoStage) {
+    demoDialog.addEventListener('close', function () { demoStage.replaceChildren(); });
+    demoDialog.addEventListener('click', function (event) {
+      if (event.target === demoDialog) demoDialog.close();
+    });
   }
 })();

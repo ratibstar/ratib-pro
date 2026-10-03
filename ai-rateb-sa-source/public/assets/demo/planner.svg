@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640">
+<rect width="1000" height="640" rx="32" fill="#f8fafc"/>
+<g fill="#ddd6fe">
+<rect x="80" y="160" width="90" height="70" rx="12"/><rect x="190" y="160" width="90" height="70" rx="12"/>
+<rect x="300" y="160" width="90" height="70" rx="12" fill="#6d28d9"/><rect x="410" y="160" width="90" height="70" rx="12"/>
+<rect x="520" y="160" width="90" height="70" rx="12"/><rect x="630" y="160" width="90" height="70" rx="12"/>
+<rect x="740" y="160" width="90" height="70" rx="12"/>
+</g>
+<text x="920" y="420" text-anchor="end" font-family="Tahoma, Arial" font-size="46" fill="#1c1433" direction="rtl">مخطط المحتوى</text>
+<text x="920" y="490" text-anchor="end" font-family="Tahoma, Arial" font-size="28" fill="#5c5672" direction="rtl">مثال للجدول، وليس نشراً حقيقياً</text>
+</svg>

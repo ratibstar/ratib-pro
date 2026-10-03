@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1280">
+<defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1e1b4b"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs>
+<rect width="720" height="1280" fill="url(#t)"/>
+<rect x="70" y="180" width="580" height="760" rx="36" fill="#ffffff" opacity=".12"/>
+<text x="360" y="980" text-anchor="middle" font-family="Tahoma, Arial" font-size="54" fill="#fff" direction="rtl">عرض اليوم</text>
+<text x="360" y="1060" text-anchor="middle" font-family="Tahoma, Arial" font-size="36" fill="#ddd6fe" direction="rtl">طقم ضيافة</text>
+</svg>

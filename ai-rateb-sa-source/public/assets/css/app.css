@@ -313,3 +313,35 @@ body.home main{width:min(1180px,92%);margin:0 auto 48px}
 @media(prefers-reduced-motion:reduce){
   .float-a,.float-b,.float-c,.float-d,.float-e,.preview-wave span,.node,.video-stage.is-playing .reel-frame{animation:none}
 }
+html{scroll-behavior:smooth}
+body{animation:page-in .45s cubic-bezier(.22,.61,.36,1)}
+@keyframes page-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@view-transition{navigation:auto}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.4s;animation-timing-function:cubic-bezier(.22,.61,.36,1)}
+a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creative,.mock-screen,.flow-board li{transition:transform .35s cubic-bezier(.22,.61,.36,1),box-shadow .35s ease,background-color .3s ease,color .25s ease,border-color .25s ease,opacity .3s ease}
+.home-section,.studio-hero,.landing-hero{scroll-margin-top:84px}
+.demo-hit{cursor:pointer}
+.demo-hit:focus-visible{outline:3px solid #c4b5fd;outline-offset:3px}
+.demo-hit:active{transform:scale(.985)}
+.piece-ad .product-art,.format-product .product-art,.preview-image{background:url('/public/assets/demo/product.svg') center/cover no-repeat}
+.preview-post,.tile-social{background:url('/public/assets/demo/social.svg') center/cover no-repeat}
+.preview-reel,.piece-video{background:url('/public/assets/demo/poster.svg') center/cover no-repeat}
+.preview-strategy{background:url('/public/assets/demo/strategy.svg') center/cover no-repeat}
+.preview-cal{background:url('/public/assets/demo/planner.svg') center/cover no-repeat}
+.tile-poster{background:url('/public/assets/demo/poster.svg') center/cover no-repeat}
+.tile-arabic,.format-story{background:url('/public/assets/demo/story.svg') center/cover no-repeat}
+.tile-pack{background:url('/public/assets/demo/product.svg') center/cover no-repeat}
+.demo-viewer{width:min(880px,94vw);max-height:92vh;padding:0;border:0;border-radius:24px;background:var(--surface);color:var(--text);box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.demo-viewer::backdrop{background:rgba(8,10,20,.66)}
+.demo-viewer[open]{animation:studio-rise .28s ease}
+.demo-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:12px 16px}
+.demo-bar p{margin:0;font-weight:800}
+.demo-viewer img,.demo-viewer video{display:block;width:100%;max-height:74vh;object-fit:contain;background:#0b1020}
+.demo-viewer audio{display:block;width:calc(100% - 32px);margin:8px 16px 20px}
+.play-demo{pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  body,.demo-viewer[open]{animation:none}
+  ::view-transition-old(root),::view-transition-new(root){animation:none}
+  a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creative,.mock-screen,.flow-board li{transition:none}
+}

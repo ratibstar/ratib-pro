@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640">
+<rect width="1000" height="640" rx="32" fill="#f5f3ff"/>
+<rect x="60" y="80" width="880" height="16" rx="8" fill="#6d28d9"/>
+<rect x="60" y="140" width="640" height="16" rx="8" fill="#c4b5fd"/>
+<rect x="60" y="200" width="480" height="16" rx="8" fill="#ddd6fe"/>
+<text x="940" y="420" text-anchor="end" font-family="Tahoma, Arial" font-size="46" fill="#4c1d95" direction="rtl">استراتيجية الحملة</text>
+<text x="940" y="490" text-anchor="end" font-family="Tahoma, Arial" font-size="28" fill="#5c5672" direction="rtl">عرض واضح للجمهور والرسالة</text>
+</svg>
