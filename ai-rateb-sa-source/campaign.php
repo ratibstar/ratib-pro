@@ -64,6 +64,7 @@ $knownTypes = [
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="lang" id="gen-lang" value="en">
+      <p class="muted" data-i18n="text_available">Text: available</p>
       <button class="primary" id="generate" type="submit" data-i18n="generate">Generate AI Campaign</button>
     </form>
     <p id="status" class="muted"></p>
@@ -72,17 +73,27 @@ $knownTypes = [
     <h2 data-i18n="media_gallery">Media gallery</h2>
     <div class="media-states">
       <div>
-        <button type="button" class="icon" disabled data-i18n="provider_required">Provider required</button>
-        <p class="muted" data-i18n="image_provider_required">AI image generation requires an image provider.</p>
+        <p class="muted" data-i18n="image_available">Image: available</p>
+        <form id="imageForm">
+          <input type="hidden" name="campaign_id" value="<?= $id ?>">
+          <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+          <button class="primary" id="generate-image" type="submit" data-i18n="generate_image">Generate image</button>
+        </form>
+        <p id="image-status" class="muted"></p>
       </div>
       <div>
         <button type="button" class="icon" disabled data-i18n="provider_required">Provider required</button>
-        <p class="muted" data-i18n="video_provider_required">AI video generation requires a video provider. The current Groq credential has no video model.</p>
+        <p class="muted" data-i18n="video_provider_required">AI video generation requires a video provider. No free video API is available, and the current Groq credential has no video model.</p>
       </div>
       <div>
-        <button type="button" class="icon" disabled data-i18n="accept_model_terms">Accept model terms</button>
-        <p class="muted" data-i18n="voice_terms_required">The Groq organization admin must accept the speech model terms in the Groq console before an Arabic voice file can be generated.</p>
-        <a href="https://console.groq.com/playground?model=canopylabs%2Forpheus-arabic-saudi" data-i18n="open_groq_terms">Open Groq terms</a>
+        <p class="muted" data-i18n="voice_available">Voice: available</p>
+        <form id="voiceForm">
+          <input type="hidden" name="campaign_id" value="<?= $id ?>">
+          <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+          <input type="hidden" name="lang" id="voice-lang" value="en">
+          <button class="primary" id="voice" type="submit" data-i18n="generate_voice">Generate voice</button>
+        </form>
+        <p id="voice-status" class="muted"></p>
       </div>
     </div>
     <?php if ($mediaError !== ''): ?>
