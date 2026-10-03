@@ -1,0 +1,123 @@
+name: Temporary studio layout check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy studio layout and check links
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          SSH=(ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i "${KEY_PATH}" -P "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          ROOT=/home/admin/domains/ai.rateb.sa
+          "${SCP[@]}" ai-rateb-sa-source/dashboard.php "${REMOTE}:${ROOT}/dashboard.php"
+          "${SCP[@]}" ai-rateb-sa-source/campaign.php "${REMOTE}:${ROOT}/campaign.php"
+          "${SCP[@]}" ai-rateb-sa-source/public/assets/css/app.css "${REMOTE}:${ROOT}/public/assets/css/app.css"
+          "${SCP[@]}" ai-rateb-sa-source/public/assets/js/app.js "${REMOTE}:${ROOT}/public/assets/js/app.js"
+          "${SSH[@]}" "${REMOTE}" "php -l ${ROOT}/dashboard.php && php -l ${ROOT}/campaign.php && php" << 'PHP'
+          <?php
+          foreach (['/home/admin/domains/ai.rateb.sa/dashboard.php', '/home/admin/domains/ai.rateb.sa/campaign.php'] as $file) {
+              if (function_exists('opcache_invalidate')) opcache_invalidate($file, true);
+          }
+          echo "INVALIDATED=yes\n";
+          PHP
+          WORK="${RUNNER_TEMP}/studio"
+          mkdir -p "$WORK"
+          python3 - << 'PY'
+          import os, pathlib, secrets
+          work = pathlib.Path(os.environ["RUNNER_TEMP"]) / "studio"
+          (work / "email").write_text("ai-studio-" + secrets.token_hex(4) + "@rateb.sa", encoding="utf-8")
+          (work / "password").write_text(secrets.token_urlsafe(18), encoding="utf-8")
+          os.chmod(work / "password", 0o600)
+          PY
+          BASE=https://ai.rateb.sa
+          COOKIE="$WORK/cookies"
+          CSRF="$WORK/csrf"
+          extract_csrf() {
+            python3 - "$1" "$2" "$CSRF" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          match = re.search(r'name="' + re.escape(sys.argv[2]) + r'" value="([^"]+)"', html)
+          if not match:
+              raise SystemExit("csrf missing")
+          open(sys.argv[3], "w", encoding="utf-8").write(match.group(1))
+          PY
+          }
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/register.html" "$BASE/register.php"
+          extract_csrf "$WORK/register.html" csrf_token
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/register.hdr" -o /dev/null \
+            --data-urlencode "csrf_token@${CSRF}" --data-urlencode "name=Studio Check" \
+            --data-urlencode "email@${WORK}/email" --data-urlencode "password@${WORK}/password" \
+            "$BASE/register.php"
+          grep -qi 'dashboard.php' "$WORK/register.hdr"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/dash.html" "$BASE/dashboard.php"
+          for token in 'studio-hero' 'studio-cta' 'studio-flow' 'showcase' 'dash-kpis' 'href="/campaign-new.php"' 'href="/brand.php"' 'href="/logout.php"' 'id="lang"' 'id="theme"' 'data-i18n="studio_headline"'; do
+            grep -q "$token" "$WORK/dash.html"
+          done
+          echo "DASHBOARD_LINKS=yes"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/new.html" "$BASE/campaign-new.php"
+          extract_csrf "$WORK/new.html" csrf
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/save.hdr" -o /dev/null \
+            --data-urlencode "csrf@${CSRF}" --data-urlencode "title=Studio layout" \
+            --data-urlencode "product_name=RATEB AI Campaign" --data-urlencode "description=A short layout check." \
+            --data-urlencode "price=100" --data-urlencode "target_customer=Small business owners" \
+            --data-urlencode "status=draft" "$BASE/campaign-save.php"
+          grep -Eq ' 30[127]' "$WORK/save.hdr"
+          CAMPAIGN_ID=$(python3 - "$WORK/save.hdr" << 'PY'
+          import re, sys
+          match = re.search(r'campaign\.php\?id=(\d+)', open(sys.argv[1], encoding="utf-8", errors="replace").read())
+          print(match.group(1) if match else "")
+          PY
+          )
+          test -n "$CAMPAIGN_ID"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/dash.html" "$BASE/dashboard.php"
+          grep -q "campaign.php?id=${CAMPAIGN_ID}" "$WORK/dash.html"
+          grep -q 'campaign-tile' "$WORK/dash.html"
+          echo "CAMPAIGN_CARD=yes"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          for token in 'studio-hero' 'data-open="ai"' 'data-open="media"' 'data-open="planner"' 'id="generateForm"' 'id="generate"' 'id="imageForm"' 'id="generate-image"' 'id="voiceForm"' 'id="voice"' 'id="variationForm"' 'id="generate-variation"' 'id="details"' 'action="/campaign-update.php"' 'action="/app/media/upload.php"' 'action="/app/content/save.php"' 'action="/app/content/variation-save.php"' 'data-tab="overview"' 'data-tab="brand"' 'href="/brand.php"'; do
+            grep -q "$token" "$WORK/campaign.html"
+          done
+          echo "CAMPAIGN_ACTIONS=yes"
+          curl -sS -o "$WORK/app.js" "$BASE/public/assets/js/app.js"
+          grep -q 'حوّل فكرتك إلى حملة تسويقية كاملة بالذكاء الاصطناعي' "$WORK/app.js"
+          grep -q 'ابدأ حملة جديدة' "$WORK/app.js"
+          grep -q 'rateb-theme' "$WORK/app.js"
+          grep -q 'rateb-lang' "$WORK/app.js"
+          echo "I18N_THEME=yes"
+          curl -sS -o "$WORK/app.css" "$BASE/public/assets/css/app.css"
+          grep -q 'studio-hero' "$WORK/app.css"
+          grep -q 'progress-25' "$WORK/app.css"
+          echo "CSS=yes"
+          echo "STUDIO=pass"
+          rm -f "${KEY_PATH}" "$WORK/password" "$CSRF" "$COOKIE"

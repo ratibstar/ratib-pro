@@ -10,6 +10,22 @@ if (!$user) {
 $stmt = $pdo->prepare('SELECT id, title, product_name, status, created_at FROM campaigns WHERE user_id = ? ORDER BY id DESC LIMIT 20');
 $stmt->execute([$user['id']]);
 $campaigns = $stmt->fetchAll();
+$covers = [];
+if ($campaigns) {
+    $ids = [];
+    foreach ($campaigns as $row) {
+        $ids[] = (int) $row['id'];
+    }
+    $marks = implode(',', array_fill(0, count($ids), '?'));
+    $coverStmt = $pdo->prepare('SELECT id, campaign_id FROM campaign_media WHERE user_id = ? AND kind = ? AND campaign_id IN (' . $marks . ') ORDER BY id DESC');
+    $coverStmt->execute(array_merge([(int) $user['id'], 'image'], $ids));
+    foreach ($coverStmt->fetchAll() as $row) {
+        $campaignId = (int) $row['campaign_id'];
+        if (!isset($covers[$campaignId])) {
+            $covers[$campaignId] = (int) $row['id'];
+        }
+    }
+}
 $summary = ['draft' => 0, 'in_progress' => 0, 'ready' => 0, 'completed' => 0];
 foreach ($campaigns as $row) {
     $key = (string) $row['status'];
@@ -25,10 +41,11 @@ foreach ($campaigns as $row) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RATEB AI — Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
 <link rel="stylesheet" href="/public/assets/css/app.css">
 </head>
-<body>
+<body class="studio">
 <header class="topbar">
   <div class="brand">RATEB <span>AI</span></div>
   <nav>
@@ -40,51 +57,115 @@ foreach ($campaigns as $row) {
     <button type="button" id="theme" class="icon">☾</button>
   </nav>
 </header>
-<main class="container">
-  <div class="hero">
-    <div>
+<main class="container studio-page">
+  <section class="studio-hero">
+    <div class="studio-hero-copy">
       <p class="eyebrow" data-i18n="workspace">AI CAMPAIGN WORKSPACE</p>
-      <h1><span data-i18n="welcome">Welcome</span>, <?= e($user['name']) ?></h1>
-      <p class="muted" data-i18n="manage_lead">Create and manage your marketing campaigns.</p>
+      <h1 data-i18n="studio_headline">Turn your idea into a complete marketing campaign with AI</h1>
+      <p class="studio-lead" data-i18n="studio_lead">Strategy, ad copy, social posts, images, Saudi Arabic voice, and a content plan — in one creative studio.</p>
+      <p class="studio-hello"><span data-i18n="welcome">Welcome</span>, <?= e($user['name']) ?></p>
+      <a class="button studio-cta" href="/campaign-new.php" data-i18n="studio_cta">Start a new campaign</a>
     </div>
-    <a class="button" href="/campaign-new.php" data-i18n="new_campaign_button">+ New Campaign</a>
-  </div>
-  <div class="dash-kpis">
+    <div>
+      <p class="flow-label" data-i18n="studio_flow_label">How a campaign comes together</p>
+      <ol class="studio-flow">
+        <li class="flow-step" data-i18n="flow_idea">Idea</li>
+        <li class="flow-step" data-i18n="flow_copy">Copy</li>
+        <li class="flow-step" data-i18n="flow_images">Images</li>
+        <li class="flow-step" data-i18n="flow_voice">Voice</li>
+        <li class="flow-step" data-i18n="flow_video">Video</li>
+        <li class="flow-step" data-i18n="flow_ready">Ready campaign</li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="dash-kpis studio-stats">
     <?php foreach ($summary as $key => $count): ?>
-      <article class="kpi">
+      <article class="studio-stat">
         <span class="badge status-<?= e($key) ?>" data-i18n="status_<?= e($key) ?>"><?= e($key) ?></span>
         <strong><?= (int) $count ?></strong>
       </article>
     <?php endforeach; ?>
   </div>
 
-  <section class="card">
-    <div class="section-head"><h2 data-i18n="your_campaigns">Your campaigns</h2></div>
+  <section class="studio-block">
+    <div class="section-head"><h2 data-i18n="showcase_label">What you can create</h2></div>
+    <div class="showcase">
+      <a class="showcase-card show-strategy" href="/campaign-new.php">
+        <span class="show-mark">01</span>
+        <h3 data-i18n="show_strategy_title">AI campaign strategy</h3>
+        <p data-i18n="show_strategy_body">A clear plan for the offer, audience, and message.</p>
+      </a>
+      <a class="showcase-card show-copy" href="/campaign-new.php">
+        <span class="show-mark">02</span>
+        <h3 data-i18n="show_copy_title">Ad copy</h3>
+        <p data-i18n="show_copy_body">Ready lines for ads, landing pages, and offers.</p>
+      </a>
+      <a class="showcase-card show-social" href="/campaign-new.php">
+        <span class="show-mark">03</span>
+        <h3 data-i18n="show_social_title">Social posts</h3>
+        <p data-i18n="show_social_body">Posts shaped for the platforms your customers use.</p>
+      </a>
+      <a class="showcase-card show-images" href="/campaign-new.php">
+        <span class="show-mark">04</span>
+        <h3 data-i18n="show_images_title">AI images</h3>
+        <p data-i18n="show_images_body">Campaign visuals generated for this brand.</p>
+      </a>
+      <a class="showcase-card show-voice" href="/campaign-new.php">
+        <span class="show-mark">05</span>
+        <h3 data-i18n="show_voice_title">Saudi Arabic voice</h3>
+        <p data-i18n="show_voice_body">A natural Saudi Arabic voice-over from your script.</p>
+      </a>
+      <a class="showcase-card show-video" href="/campaign-new.php">
+        <span class="show-mark">06</span>
+        <h3 data-i18n="show_video_title">Video ideas</h3>
+        <p data-i18n="show_video_body">Shot ideas and scripts. Video rendering stays unavailable.</p>
+      </a>
+      <a class="showcase-card show-planner" href="/campaign-new.php">
+        <span class="show-mark">07</span>
+        <h3 data-i18n="show_planner_title">Content planner</h3>
+        <p data-i18n="show_planner_body">Dates, drafts, and approvals for what goes live next.</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="studio-block">
+    <div class="section-head">
+      <h2 data-i18n="your_campaigns">Your campaigns</h2>
+      <a class="button quiet" href="/campaign-new.php" data-i18n="new_campaign_button">+ New Campaign</a>
+    </div>
     <?php if (!$campaigns): ?>
-      <div class="empty">
+      <div class="empty studio-empty">
         <h3 data-i18n="no_campaigns">No campaigns yet</h3>
         <p class="muted" data-i18n="no_campaigns_lead">Create your first campaign to get started.</p>
-        <a class="button" href="/campaign-new.php" data-i18n="create_campaign">Create Campaign</a>
+        <a class="button studio-cta" href="/campaign-new.php" data-i18n="create_campaign">Create Campaign</a>
       </div>
     <?php else: ?>
-      <div class="table-wrap"><table>
-        <thead><tr>
-          <th data-i18n="col_title">Title</th>
-          <th data-i18n="col_product">Product</th>
-          <th data-i18n="col_status">Status</th>
-          <th data-i18n="col_created">Created</th>
-        </tr></thead>
-        <tbody>
+      <div class="campaign-board">
         <?php foreach ($campaigns as $campaign): ?>
-          <tr>
-            <td><a href="/campaign.php?id=<?= (int) $campaign['id'] ?>"><?= e($campaign['title']) ?></a></td>
-            <td><?= e($campaign['product_name']) ?></td>
-            <td><span class="badge status-<?= e(in_array((string) $campaign['status'], campaign_status_values(), true) ? (string) $campaign['status'] : 'draft') ?>" data-i18n="status_<?= e(in_array((string) $campaign['status'], campaign_status_values(), true) ? (string) $campaign['status'] : 'draft') ?>"><?= e($campaign['status']) ?></span></td>
-            <td><?= e($campaign['created_at']) ?></td>
-          </tr>
+          <?php
+          $campaignId = (int) $campaign['id'];
+          $statusKey = in_array((string) $campaign['status'], campaign_status_values(), true) ? (string) $campaign['status'] : 'draft';
+          $tone = ($campaignId % 4) + 1;
+          $initial = function_exists('mb_substr') ? mb_substr((string) $campaign['title'], 0, 1, 'UTF-8') : substr((string) $campaign['title'], 0, 1);
+          ?>
+          <a class="campaign-tile" href="/campaign.php?id=<?= $campaignId ?>">
+            <div class="campaign-cover tone-<?= $tone ?>">
+              <?php if (isset($covers[$campaignId])): ?>
+                <img src="/app/media/file.php?id=<?= (int) $covers[$campaignId] ?>" alt="">
+              <?php else: ?>
+                <span class="cover-initial"><?= e($initial) ?></span>
+              <?php endif; ?>
+            </div>
+            <div class="campaign-tile-body">
+              <span class="badge status-<?= e($statusKey) ?>" data-i18n="status_<?= e($statusKey) ?>"><?= e($campaign['status']) ?></span>
+              <h3><?= e($campaign['title']) ?></h3>
+              <p><?= e($campaign['product_name']) ?></p>
+              <time><?= e($campaign['created_at']) ?></time>
+            </div>
+          </a>
         <?php endforeach; ?>
-        </tbody>
-      </table></div>
+      </div>
     <?php endif; ?>
   </section>
 </main>

@@ -49,6 +49,14 @@ foreach ($outputs as $row) {
         $textOutputs[] = $row;
     }
 }
+$coverUrl = '';
+foreach ($media as $mediaItem) {
+    if ((string) $mediaItem['kind'] === 'image') {
+        $coverUrl = '/app/media/file.php?id=' . (int) $mediaItem['id'];
+        break;
+    }
+}
+$tone = ($id % 4) + 1;
 ?>
 <!doctype html>
 <html lang="en" data-theme="light">
@@ -56,10 +64,11 @@ foreach ($outputs as $row) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RATEB AI — Campaign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
 <link rel="stylesheet" href="/public/assets/css/app.css">
 </head>
-<body>
+<body class="studio">
 <header class="top">
   <a class="brand" href="/dashboard.php">RATEB AI</a>
   <nav>
@@ -81,19 +90,44 @@ foreach ($outputs as $row) {
     <button type="button" class="tab" data-tab="brand" role="tab" aria-selected="false" data-i18n="tab_brand">Brand</button>
   </nav>
   <section class="panel is-active" id="overview" data-panel="overview">
-    <div class="workspace-head">
-      <div>
-        <span class="eyebrow" data-i18n="campaign_details">CAMPAIGN DETAILS</span>
-        <h1><?= e($campaign['title']) ?></h1>
-        <span class="badge status-<?= e($status) ?>" data-i18n="status_<?= e($status) ?>"><?= e($status) ?></span>
+    <div class="studio-hero campaign-hero">
+      <div class="campaign-cover tone-<?= (int) $tone ?>">
+        <?php if ($coverUrl !== ''): ?><img src="<?= e($coverUrl) ?>" alt=""><?php endif; ?>
       </div>
-      <div class="action-row">
-        <button type="button" class="primary" data-open="ai" data-i18n="open_ai">Open AI content</button>
-        <button type="button" class="quiet" data-open="media" data-i18n="tab_media">Media</button>
-        <a class="button quiet" href="/brand.php" data-i18n="open_brand">Open brand kit</a>
+      <div class="studio-hero-copy">
+        <div class="workspace-head">
+          <div>
+            <span class="eyebrow" data-i18n="campaign_details">CAMPAIGN DETAILS</span>
+            <h1><?= e($campaign['title']) ?></h1>
+            <span class="badge status-<?= e($status) ?>" data-i18n="status_<?= e($status) ?>"><?= e($status) ?></span>
+          </div>
+          <div class="action-row">
+            <button type="button" class="primary" data-open="ai" data-i18n="open_ai">Open AI content</button>
+            <button type="button" class="quiet" data-open="media" data-i18n="tab_media">Media</button>
+            <a class="button quiet" href="/brand.php" data-i18n="open_brand">Open brand kit</a>
+          </div>
+        </div>
+        <p class="flow-label" data-i18n="studio_flow_label">How a campaign comes together</p>
+        <ol class="studio-flow">
+          <li class="flow-step" data-i18n="flow_idea">Idea</li>
+          <li class="flow-step" data-i18n="flow_copy">Copy</li>
+          <li class="flow-step" data-i18n="flow_images">Images</li>
+          <li class="flow-step" data-i18n="flow_voice">Voice</li>
+          <li class="flow-step" data-i18n="flow_video">Video</li>
+          <li class="flow-step" data-i18n="flow_ready">Ready campaign</li>
+        </ol>
       </div>
     </div>
-    <div class="progress" role="progressbar" aria-valuenow="<?= (int) $progress ?>" aria-valuemin="0" aria-valuemax="100"><span style="width:<?= (int) $progress ?>%"></span></div>
+    <div class="showcase">
+      <button type="button" class="showcase-card show-strategy" data-open="ai"><span class="show-mark">01</span><h3 data-i18n="show_strategy_title">AI campaign strategy</h3><p data-i18n="show_strategy_body">A clear plan for the offer, audience, and message.</p></button>
+      <button type="button" class="showcase-card show-copy" data-open="ai"><span class="show-mark">02</span><h3 data-i18n="show_copy_title">Ad copy</h3><p data-i18n="show_copy_body">Ready lines for ads, landing pages, and offers.</p></button>
+      <button type="button" class="showcase-card show-social" data-open="ai"><span class="show-mark">03</span><h3 data-i18n="show_social_title">Social posts</h3><p data-i18n="show_social_body">Posts shaped for the platforms your customers use.</p></button>
+      <button type="button" class="showcase-card show-images" data-open="media"><span class="show-mark">04</span><h3 data-i18n="show_images_title">AI images</h3><p data-i18n="show_images_body">Campaign visuals generated for this brand.</p></button>
+      <button type="button" class="showcase-card show-voice" data-open="media"><span class="show-mark">05</span><h3 data-i18n="show_voice_title">Saudi Arabic voice</h3><p data-i18n="show_voice_body">A natural Saudi Arabic voice-over from your script.</p></button>
+      <button type="button" class="showcase-card show-video" data-open="ai"><span class="show-mark">06</span><h3 data-i18n="show_video_title">Video ideas</h3><p data-i18n="show_video_body">Shot ideas and scripts. Video rendering stays unavailable.</p></button>
+      <button type="button" class="showcase-card show-planner" data-open="planner"><span class="show-mark">07</span><h3 data-i18n="show_planner_title">Content planner</h3><p data-i18n="show_planner_body">Dates, drafts, and approvals for what goes live next.</p></button>
+    </div>
+    <div class="progress progress-<?= (int) $progress ?>" role="progressbar" aria-valuenow="<?= (int) $progress ?>" aria-valuemin="0" aria-valuemax="100"><span></span></div>
     <p class="muted"><span data-i18n="progress">Progress</span> <?= (int) $progress ?>%</p>
     <div class="kpi-grid">
       <article class="kpi"><span data-i18n="product">Product / Service</span><strong><?= e($campaign['product_name']) ?></strong></article>
