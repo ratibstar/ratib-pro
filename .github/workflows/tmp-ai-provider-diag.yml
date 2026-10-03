@@ -44,6 +44,7 @@ jobs:
           $redact = static function ($value): string {
               $text = (string) $value;
               $text = preg_replace('/sk-[A-Za-z0-9_\-]{6,}/', 'sk-REDACTED', $text) ?? $text;
+              $text = preg_replace('/gsk_[A-Za-z0-9_\-]{6,}/', 'gsk_REDACTED', $text) ?? $text;
               $text = preg_replace('/Bearer\s+\S+/i', 'Bearer REDACTED', $text) ?? $text;
               return substr($text, 0, 240);
           };
@@ -56,6 +57,8 @@ jobs:
               $shape = 'sk-proj';
           } elseif (strncmp($key, 'sk-', 3) === 0) {
               $shape = 'sk';
+          } elseif (strncmp($key, 'gsk_', 4) === 0) {
+              $shape = 'gsk';
           } elseif (strncmp($key, 'AIza', 4) === 0) {
               $shape = 'AIza';
           } else {
@@ -65,35 +68,43 @@ jobs:
           echo 'PROVIDER=' . ($cfg['provider'] ?? '') . "\n";
           echo 'MODEL=' . ($cfg['model'] ?? '') . "\n";
           echo 'BASE=' . ($cfg['base_url'] ?? '') . "\n";
-          $payload = json_encode([
-              'model' => $cfg['model'],
-              'messages' => [['role' => 'user', 'content' => 'Reply with the single word ok']],
-              'temperature' => 0.7,
-              'max_tokens' => 5,
-          ], JSON_UNESCAPED_UNICODE);
-          $ch = curl_init(rtrim((string) $cfg['base_url'], '/') . '/chat/completions');
-          curl_setopt_array($ch, [
-              CURLOPT_POST => true,
-              CURLOPT_RETURNTRANSFER => true,
-              CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $key],
-              CURLOPT_POSTFIELDS => $payload,
-              CURLOPT_TIMEOUT => 60,
-          ]);
-          $raw = curl_exec($ch);
-          echo 'CURL_ERRNO=' . curl_errno($ch) . "\n";
-          echo 'CURL_ERR=' . $redact(curl_error($ch)) . "\n";
-          echo 'HTTP=' . curl_getinfo($ch, CURLINFO_HTTP_CODE) . "\n";
-          curl_close($ch);
-          $data = json_decode((string) $raw, true);
-          if (is_array($data) && isset($data['error'])) {
-              $error = $data['error'];
-              echo 'ERROR_TYPE=' . $redact(is_array($error) ? ($error['type'] ?? '') : '') . "\n";
-              echo 'ERROR_CODE=' . $redact(is_array($error) ? ($error['code'] ?? '') : '') . "\n";
-              echo 'ERROR_MSG=' . $redact(is_array($error) ? ($error['message'] ?? '') : $error) . "\n";
-          } else {
-              echo 'TOP_KEYS=' . (is_array($data) ? implode(',', array_keys($data)) : 'not_json') . "\n";
-              echo 'BODY_LEN=' . strlen((string) $raw) . "\n";
-          }
+          $call = static function (string $url, ?string $payload) use ($key, $redact): void {
+              $ch = curl_init($url);
+              $opts = [
+                  CURLOPT_RETURNTRANSFER => true,
+                  CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $key],
+                  CURLOPT_TIMEOUT => 60,
+              ];
+              if ($payload !== null) {
+                  $opts[CURLOPT_POST] = true;
+                  $opts[CURLOPT_POSTFIELDS] = $payload;
+              }
+              curl_setopt_array($ch, $opts);
+              $raw = curl_exec($ch);
+              echo 'CURL_ERRNO=' . curl_errno($ch) . "\n";
+              echo 'CURL_ERR=' . $redact(curl_error($ch)) . "\n";
+              echo 'HTTP=' . curl_getinfo($ch, CURLINFO_HTTP_CODE) . "\n";
+              curl_close($ch);
+              $data = json_decode((string) $raw, true);
+              if (is_array($data) && isset($data['error'])) {
+                  $error = $data['error'];
+                  echo 'ERROR_TYPE=' . $redact(is_array($error) ? ($error['type'] ?? '') : '') . "\n";
+                  echo 'ERROR_CODE=' . $redact(is_array($error) ? ($error['code'] ?? '') : '') . "\n";
+                  echo 'ERROR_MSG=' . $redact(is_array($error) ? ($error['message'] ?? '') : $error) . "\n";
+              } elseif (is_array($data) && isset($data['data']) && is_array($data['data'])) {
+                  echo 'MODEL_COUNT=' . count($data['data']) . "\n";
+                  foreach ($data['data'] as $row) {
+                      if (is_array($row) && isset($row['id'])) {
+                          echo 'MODEL_ID=' . $redact((string) $row['id']) . "\n";
+                      }
+                  }
+              } else {
+                  echo 'TOP_KEYS=' . (is_array($data) ? implode(',', array_keys($data)) : 'not_json') . "\n";
+                  echo 'BODY_LEN=' . strlen((string) $raw) . "\n";
+              }
+          };
+          echo "STEP=groq_models\n";
+          $call('https://api.groq.com/openai/v1/models', null);
           PHP
           rm -f "${KEY_PATH}"
-          grep -E '^(KEY_|PROVIDER=|MODEL=|BASE=|CURL_|HTTP=|ERROR_|TOP_KEYS=|BODY_LEN=)' "${RUNNER_TEMP}/diag.txt"
+          grep -E '^(KEY_|PROVIDER=|MODEL=|BASE=|STEP=|CURL_|HTTP=|ERROR_|TOP_KEYS=|BODY_LEN=|MODEL_)' "${RUNNER_TEMP}/diag.txt"
