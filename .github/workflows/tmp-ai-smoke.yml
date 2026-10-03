@@ -340,8 +340,8 @@ jobs:
           code=$(curl -sS -c "$COOKIE_B" -b "$COOKIE_B" -o /dev/null -w '%{http_code}' "$BASE/campaign.php?id=${CAMPAIGN_ID}")
           echo "FOREIGN_CAMPAIGN_HTTP=${code}"
           test "$code" = "404"
-          curl -sS -c "$COOKIE_B" -b "$COOKIE_B" -o "$WORK/dash-b.html" "$BASE/dashboard.php"
-          extract_csrf "$WORK/dash-b.html" csrf
+          curl -sS -c "$COOKIE_B" -b "$COOKIE_B" -o "$WORK/new-b.html" "$BASE/campaign-new.php"
+          extract_csrf "$WORK/new-b.html" csrf
           code=$(curl -sS -c "$COOKIE_B" -b "$COOKIE_B" -o /dev/null -w '%{http_code}' \
             --data-urlencode "csrf@${CSRF}" --data-urlencode "campaign_id=${CAMPAIGN_ID}" \
             --data-urlencode "title=Stolen" --data-urlencode "product_name=Stolen" \
