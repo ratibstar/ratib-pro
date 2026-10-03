@@ -133,6 +133,22 @@ jobs:
           say "CAMPAIGN_HTTP=$code"
           say "CAMPAIGN_ID=${CAMPAIGN_ID:-none}"
           if [ -z "${CAMPAIGN_ID}" ]; then
+            python3 - "$WORK/save.html" << 'PY'
+          import re, sys
+          raw = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          text = re.sub(r"<[^>]+>", " ", raw)
+          text = re.sub(r"\s+", " ", text)
+          found = ""
+          for pattern in (r"Fatal error:.{0,180}", r"Uncaught [^ ]{0,40}.{0,160}", r"SQLSTATE\[[^\]]+\].{0,140}"):
+              match = re.search(pattern, text)
+              if match:
+                  found = match.group(0)
+                  break
+          if not found:
+              found = "HTTP 500 without a visible PHP message"
+          found = re.sub(r"(password|api_key|secret)=[^\s]+", r"\1=[redacted]", found, flags=re.I)
+          print("SAVE_ERROR=" + found[:220])
+          PY
             say "GENERATE_HTTP=0"
             say "GENERATE_ERROR=campaign was not created"
             say "OUTPUT_COUNT=0"
