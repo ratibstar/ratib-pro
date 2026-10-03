@@ -44,15 +44,15 @@ jobs:
           "${SCP[@]}" ai-rateb-sa-source/campaign.php "${REMOTE}:${ROOT}/campaign.php"
           "${SCP[@]}" ai-rateb-sa-source/public/assets/css/app.css "${REMOTE}:${ROOT}/public/assets/css/app.css"
           "${SCP[@]}" ai-rateb-sa-source/public/assets/js/app.js "${REMOTE}:${ROOT}/public/assets/js/app.js"
-          "${SSH[@]}" "${REMOTE}" "php -l ${ROOT}/dashboard.php && php -l ${ROOT}/campaign.php && php" << 'PHP'
-          <?php
-          foreach (['/home/admin/domains/ai.rateb.sa/dashboard.php', '/home/admin/domains/ai.rateb.sa/campaign.php'] as $file) {
-              if (function_exists('opcache_invalidate')) opcache_invalidate($file, true);
-          }
-          echo "INVALIDATED=yes\n";
-          PHP
+          "${SSH[@]}" "${REMOTE}" "php -l ${ROOT}/dashboard.php && php -l ${ROOT}/campaign.php"
           WORK="${RUNNER_TEMP}/studio"
+          BASE=https://ai.rateb.sa
           mkdir -p "$WORK"
+          printf '%s\n' '<?php foreach (["/home/admin/domains/ai.rateb.sa/dashboard.php","/home/admin/domains/ai.rateb.sa/campaign.php"] as $file) { echo basename($file) . "=" . (function_exists("opcache_invalidate") && opcache_invalidate($file, true) ? "yes" : "no") . PHP_EOL; }' > "$WORK/refresh.php"
+          "${SCP[@]}" "$WORK/refresh.php" "${REMOTE}:${ROOT}/studio-refresh.php"
+          curl -sS "$BASE/studio-refresh.php" || true
+          echo
+          "${SSH[@]}" "${REMOTE}" "rm -f ${ROOT}/studio-refresh.php"
           python3 - << 'PY'
           import os, pathlib, secrets
           work = pathlib.Path(os.environ["RUNNER_TEMP"]) / "studio"
@@ -60,7 +60,6 @@ jobs:
           (work / "password").write_text(secrets.token_urlsafe(18), encoding="utf-8")
           os.chmod(work / "password", 0o600)
           PY
-          BASE=https://ai.rateb.sa
           COOKIE="$WORK/cookies"
           CSRF="$WORK/csrf"
           extract_csrf() {
@@ -79,11 +78,19 @@ jobs:
             --data-urlencode "csrf_token@${CSRF}" --data-urlencode "name=Studio Check" \
             --data-urlencode "email@${WORK}/email" --data-urlencode "password@${WORK}/password" \
             "$BASE/register.php"
-          grep -qi 'dashboard.php' "$WORK/register.hdr"
-          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/dash.html" "$BASE/dashboard.php"
-          for token in 'studio-hero' 'studio-cta' 'studio-flow' 'showcase' 'dash-kpis' 'href="/campaign-new.php"' 'href="/brand.php"' 'href="/logout.php"' 'id="lang"' 'id="theme"' 'data-i18n="studio_headline"'; do
-            grep -q "$token" "$WORK/dash.html"
-          done
+          grep -qi 'dashboard.php' "$WORK/register.hdr" || { echo "REGISTER_REDIRECT=no"; exit 1; }
+          code=$(curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/dash.html" -w '%{http_code}' "$BASE/dashboard.php")
+          echo "DASH_HTTP=${code}"
+          python3 - "$WORK/dash.html" << 'PY'
+          import sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          needed = ['studio-hero', 'studio-cta', 'studio-flow', 'showcase', 'dash-kpis', 'href="/campaign-new.php"', 'href="/brand.php"', 'href="/logout.php"', 'id="lang"', 'id="theme"', 'data-i18n="studio_headline"']
+          missing = [token for token in needed if token not in html]
+          print("DASHBOARD_MISSING=" + (",".join(missing) if missing else "none"))
+          if missing:
+              print(html[:500].replace("\n", " "))
+              raise SystemExit(1)
+          PY
           echo "DASHBOARD_LINKS=yes"
           curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/new.html" "$BASE/campaign-new.php"
           extract_csrf "$WORK/new.html" csrf
