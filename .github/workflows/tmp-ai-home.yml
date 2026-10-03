@@ -112,6 +112,7 @@ jobs:
           PY
           COOKIE="$WORK/cookies"
           CSRF="$WORK/csrf"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/register.html" "$BASE/register.php"
           python3 - "$WORK/register.html" csrf_token "$CSRF" << 'PY'
           import re, sys
           html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
