@@ -1,0 +1,47 @@
+name: RATEB AI Campaign
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-rateb-sa
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify ai.rateb.sa wiring
+    runs-on: ubuntu-latest
+    environment: ai.rateb.sa
+    timeout-minutes: 5
+    env:
+      RATEB_AI_API_KEY: ${{ secrets.RATEB_AI_API_KEY }}
+      DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+      DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+    steps:
+      - name: Confirm this job uses only the ai.rateb.sa environment
+        run: |
+          set -euo pipefail
+          echo "ENVIRONMENT=ai.rateb.sa"
+          echo "TARGET=/home/admin/domains/ai.rateb.sa"
+          flag() {
+            if [ -n "${2:-}" ]; then
+              echo "$1=SET"
+            else
+              echo "$1=NOT_SET"
+            fi
+          }
+          flag RATEB_AI_API_KEY "${RATEB_AI_API_KEY:-}"
+          flag DEPLOY_SSH_HOST "${DEPLOY_SSH_HOST:-}"
+          flag DEPLOY_SSH_USER "${DEPLOY_SSH_USER:-}"
+          flag DEPLOY_SSH_PRIVATE_KEY "${DEPLOY_SSH_PRIVATE_KEY:-}"
+          flag DEPLOY_SSH_PORT "${DEPLOY_SSH_PORT:-}"
+          if [ -z "${RATEB_AI_API_KEY:-}" ]; then
+            echo "MISSING=RATEB_AI_API_KEY"
+            exit 1
+          fi
+          echo "RATEB_AI_API_KEY_REQUIRED=present"
