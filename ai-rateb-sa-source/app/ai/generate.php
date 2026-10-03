@@ -78,5 +78,5 @@ $ins = db()->prepare("INSERT INTO campaign_outputs (campaign_id, output_type, co
 foreach ($result as $type=>$value) {
     $ins->execute([$id, $type, is_string($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE)]);
 }
-db()->prepare("UPDATE campaigns SET status='completed', updated_at=NOW() WHERE id=?")->execute([$id]);
+db()->prepare("UPDATE campaigns SET status = IF(status = 'draft', 'in_progress', status), updated_at=NOW() WHERE id=?")->execute([$id]);
 echo json_encode(['ok'=>true,'redirect'=>'/campaign.php?id='.$id], JSON_UNESCAPED_UNICODE);
