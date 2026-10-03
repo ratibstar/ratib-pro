@@ -1,0 +1,287 @@
+name: Temporary AI endpoint compatibility fix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 20
+    steps:
+      - name: Point config at a model this key can call
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          SSH=(ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          TOKEN=$(openssl rand -hex 16)
+          "${SSH[@]}" "${REMOTE}" "export TOKEN=${TOKEN}; php" > "${RUNNER_TEMP}/compat.txt" << 'PHP' || true
+          <?php
+          require '/home/admin/.secrets/rateb-ai-env.php';
+          $cfg = require '/home/admin/domains/ai.rateb.sa/config/ai.php';
+          $key = (string) ($cfg['api_key'] ?? '');
+          $redact = static function ($value): string {
+              $text = (string) $value;
+              $text = preg_replace('/sk-[A-Za-z0-9_\-]{6,}/', 'sk-REDACTED', $text) ?? $text;
+              $text = preg_replace('/gsk_[A-Za-z0-9_\-]{6,}/', 'gsk_REDACTED', $text) ?? $text;
+              $text = preg_replace('/Bearer\s+\S+/i', 'Bearer REDACTED', $text) ?? $text;
+              return substr($text, 0, 180);
+          };
+          $candidates = [
+              'openai/gpt-oss-120b',
+              'openai/gpt-oss-20b',
+              'qwen/qwen3.8-27b',
+              'allam-2-7b',
+          ];
+          $try = static function (string $model, bool $withTemperature) use ($key, $redact): array {
+              $body = [
+                  'model' => $model,
+                  'messages' => [
+                      ['role' => 'system', 'content' => 'Return JSON only.'],
+                      ['role' => 'user', 'content' => 'Return JSON {"ok":"yes"}'],
+                  ],
+              ];
+              if ($withTemperature) {
+                  $body['temperature'] = 0.7;
+              }
+              $ch = curl_init('https://api.groq.com/openai/v1/chat/completions');
+              curl_setopt_array($ch, [
+                  CURLOPT_POST => true,
+                  CURLOPT_RETURNTRANSFER => true,
+                  CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $key],
+                  CURLOPT_POSTFIELDS => json_encode($body),
+                  CURLOPT_TIMEOUT => 60,
+              ]);
+              $raw = curl_exec($ch);
+              $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+              $errno = curl_errno($ch);
+              curl_close($ch);
+              $data = json_decode((string) $raw, true);
+              $content = '';
+              if (is_array($data)) {
+                  $content = (string) ($data['choices'][0]['message']['content'] ?? '');
+              }
+              $decoded = json_decode($content, true);
+              $errorCode = '';
+              if (is_array($data) && isset($data['error']) && is_array($data['error'])) {
+                  $errorCode = $redact((string) ($data['error']['code'] ?? $data['error']['type'] ?? ''));
+              }
+              return [$http, $errno, $errorCode, is_array($decoded), strlen($content)];
+          };
+          $chosen = '';
+          $keepTemperature = true;
+          foreach ($candidates as $model) {
+              [$http, $errno, $errorCode, $jsonOk, $contentLen] = $try($model, true);
+              echo "TEST_MODEL={$model} TEMP=yes HTTP={$http} CURL={$errno} ERROR={$errorCode} JSON=" . ($jsonOk ? 'yes' : 'no') . " CONTENT_LEN={$contentLen}\n";
+              if ($http === 200 && $jsonOk) {
+                  $chosen = $model;
+                  $keepTemperature = true;
+                  break;
+              }
+              [$http2, $errno2, $errorCode2, $jsonOk2, $contentLen2] = $try($model, false);
+              echo "TEST_MODEL={$model} TEMP=no HTTP={$http2} CURL={$errno2} ERROR={$errorCode2} JSON=" . ($jsonOk2 ? 'yes' : 'no') . " CONTENT_LEN={$contentLen2}\n";
+              if ($http2 === 200 && $jsonOk2) {
+                  $chosen = $model;
+                  $keepTemperature = false;
+                  break;
+              }
+          }
+          if ($chosen === '') {
+              echo "CHOSEN_MODEL=none\n";
+              exit(1);
+          }
+          $aiPath = '/home/admin/domains/ai.rateb.sa/config/ai.php';
+          $backup = '/home/admin/domains/ai.rateb.sa-file-backup-' . gmdate('Ymd\THis\Z') . '-ai';
+          mkdir($backup, 0700, true);
+          copy($aiPath, $backup . '/ai.php');
+          $php = "<?php\nreturn [\n    'provider' => 'openai_compatible',\n    'base_url' => 'https://api.groq.com/openai/v1',\n    'model' => " . var_export($chosen, true) . ",\n    'api_key' => getenv('RATEB_AI_API_KEY') ?: '',\n];\n";
+          file_put_contents($aiPath, $php);
+          if (!$keepTemperature) {
+              $gen = '/home/admin/domains/ai.rateb.sa/app/ai/generate.php';
+              copy($gen, $backup . '/generate.php');
+              $source = file_get_contents($gen);
+              $updated = str_replace("        'temperature'=>0.7\n", '', $source);
+              if ($updated === $source) {
+                  echo "TEMPERATURE_PATCH=missing\n";
+                  exit(1);
+              }
+              file_put_contents($gen, $updated);
+              echo "TEMPERATURE_PATCH=removed\n";
+          } else {
+              echo "TEMPERATURE_PATCH=kept\n";
+          }
+          $token = getenv('TOKEN') ?: '';
+          $probe = '/home/admin/domains/ai.rateb.sa/.ai-refresh-' . $token . '.php';
+          file_put_contents($probe, "<?php\nif ((\$_GET['t'] ?? '') !== " . var_export($token, true) . ") { http_response_code(404); exit; }\nheader('Content-Type: text/plain; charset=UTF-8');\nforeach (['/home/admin/domains/ai.rateb.sa/config/ai.php','/home/admin/domains/ai.rateb.sa/app/ai/generate.php'] as \$path) {\n    echo 'INVALIDATED=' . (function_exists('opcache_invalidate') && opcache_invalidate(\$path, true) ? 'yes' : 'no') . \"\\n\";\n}\n\$cfg = require '/home/admin/domains/ai.rateb.sa/config/ai.php';\necho 'PROVIDER=' . \$cfg['provider'] . \"\\n\";\necho 'MODEL=' . \$cfg['model'] . \"\\n\";\necho 'BASE=' . \$cfg['base_url'] . \"\\n\";\necho 'KEY=' . (\$cfg['api_key'] !== '' ? 'SET' : 'NOT_SET') . \"\\n\";\n");
+          echo "CHOSEN_MODEL={$chosen}\n";
+          echo "BACKUP={$backup}\n";
+          echo "PROBE_FILE=written\n";
+          PHP
+          grep -E '^(TEST_MODEL=|CHOSEN_MODEL=|TEMPERATURE_PATCH=|BACKUP=|PROBE_FILE=)' "${RUNNER_TEMP}/compat.txt"
+          grep -q '^CHOSEN_MODEL=.' "${RUNNER_TEMP}/compat.txt"
+          grep -q '^CHOSEN_MODEL=none$' "${RUNNER_TEMP}/compat.txt" && exit 1 || true
+          curl -fsS "https://ai.rateb.sa/.ai-refresh-${TOKEN}.php?t=${TOKEN}"
+          echo
+          "${SSH[@]}" "${REMOTE}" "rm -f /home/admin/domains/ai.rateb.sa/.ai-refresh-${TOKEN}.php"
+          rm -f "${KEY_PATH}"
+          echo "TOKEN=${TOKEN}" > "${RUNNER_TEMP}/compat-token.txt"
+
+      - name: Run Campaign Details generation
+        run: |
+          set -euo pipefail
+          BASE="https://ai.rateb.sa"
+          WORK="${RUNNER_TEMP}/ai-gen"
+          mkdir -p "$WORK"
+          chmod 700 "$WORK"
+          python3 - << 'PY'
+          import os, pathlib, secrets
+          work = pathlib.Path(os.environ["RUNNER_TEMP"]) / "ai-gen"
+          work.mkdir(parents=True, exist_ok=True)
+          (work / "email").write_text("ai-gen-" + secrets.token_hex(4) + "@rateb.sa", encoding="utf-8")
+          (work / "password").write_text(secrets.token_urlsafe(18), encoding="utf-8")
+          os.chmod(work / "password", 0o600)
+          PY
+          CSRF_FILE="$WORK/csrf"
+          COOKIE="$WORK/cookies"
+          extract_csrf() {
+            python3 - "$1" "$2" "$CSRF_FILE" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          match = re.search(r'name="' + re.escape(sys.argv[2]) + r'" value="([^"]+)"', html)
+          if not match:
+              raise SystemExit(1)
+          open(sys.argv[3], "w", encoding="utf-8").write(match.group(1))
+          PY
+          }
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/register.html" "$BASE/register.php"
+          extract_csrf "$WORK/register.html" csrf_token
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/register.hdr" -o "$WORK/register-post.html" \
+            --data-urlencode "csrf_token@${CSRF_FILE}" \
+            --data-urlencode "name=AI Generation Check" \
+            --data-urlencode "email@${WORK}/email" \
+            --data-urlencode "password@${WORK}/password" \
+            "$BASE/register.php"
+          grep -qi 'dashboard.php' "$WORK/register.hdr"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/new.html" "$BASE/campaign-new.php"
+          extract_csrf "$WORK/new.html" csrf
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/save.hdr" -o "$WORK/save.html" -w 'CAMPAIGN_HTTP=%{http_code}\n' \
+            --data-urlencode "csrf@${CSRF_FILE}" \
+            --data-urlencode "title=Production generation check" \
+            --data-urlencode "product_name=RATEB AI Campaign" \
+            --data-urlencode "description=A short production check for campaign generation." \
+            --data-urlencode "price=100 SAR" \
+            --data-urlencode "target_customer=Small business owners" \
+            "$BASE/campaign-save.php"
+          CAMPAIGN_ID=$(python3 - "$WORK/save.hdr" << 'PY'
+          import re, sys
+          text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          match = re.search(r'campaign\.php\?id=(\d+)', text)
+          print(match.group(1) if match else "")
+          PY
+          )
+          echo "CAMPAIGN_ID=${CAMPAIGN_ID}"
+          test -n "$CAMPAIGN_ID"
+          echo "$CAMPAIGN_ID" > "$WORK/campaign-id"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          extract_csrf "$WORK/campaign.html" csrf
+          code=$(curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/generate.json" -w '%{http_code}' --max-time 180 \
+            --data-urlencode "csrf@${CSRF_FILE}" \
+            --data-urlencode "campaign_id=${CAMPAIGN_ID}" \
+            --data-urlencode "lang=en" \
+            "$BASE/app/ai/generate.php" || true)
+          python3 - "$WORK/generate.json" "$code" << 'PY'
+          import json, re, sys
+          raw = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          http_code = sys.argv[2]
+          error = ""
+          ok = False
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError:
+              data = {}
+              error = "generation response was not JSON"
+          if isinstance(data, dict):
+              ok = bool(data.get("ok"))
+              if not ok and not error:
+                  error = str(data.get("error") or "")
+          error = re.sub(r"sk-[A-Za-z0-9_\-]+", "[redacted]", error)
+          error = re.sub(r"gsk_[A-Za-z0-9_\-]+", "[redacted]", error)[:180]
+          print("GENERATE_HTTP=" + http_code)
+          print("GENERATE_OK=" + ("yes" if ok else "no"))
+          if error:
+              print("GENERATE_ERROR=" + error)
+          PY
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign-after.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          python3 - "$WORK/campaign-after.html" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          found = re.findall(r'data-i18n="type_([a-z0-9_]+)"', html)
+          wanted = ["strategy","ad_copy","social_posts","whatsapp","product_description","video_ideas","voiceover","content_plan_7_days"]
+          present = [name for name in wanted if name in found]
+          print("OUTPUT_COUNT=" + str(len(present)))
+          print("OUTPUT_TYPES=" + (",".join(present) if present else "none"))
+          PY
+          rm -f "$WORK/password" "$CSRF_FILE" "$COOKIE"
+
+      - name: Count campaign_outputs rows
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          CAMPAIGN_ID=$(cat "${RUNNER_TEMP}/ai-gen/campaign-id")
+          ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "export CAMPAIGN_ID=${CAMPAIGN_ID}; php" << 'PHP'
+          <?php
+          require '/home/admin/domains/ai.rateb.sa/app/bootstrap.php';
+          $id = (int) getenv('CAMPAIGN_ID');
+          $stmt = db()->prepare('SELECT output_type, CHAR_LENGTH(content) AS n FROM campaign_outputs WHERE campaign_id = ? ORDER BY id');
+          $stmt->execute([$id]);
+          $rows = $stmt->fetchAll();
+          echo 'SQL_CAMPAIGN_ID=' . $id . "\n";
+          echo 'SQL_ROW_COUNT=' . count($rows) . "\n";
+          foreach ($rows as $row) {
+              echo 'SQL_ROW=' . $row['output_type'] . ' LEN=' . $row['n'] . "\n";
+          }
+          PHP
+          rm -f "${KEY_PATH}"
