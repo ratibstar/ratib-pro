@@ -152,7 +152,25 @@
       generate_variation: 'Generate another variation',
       generating_variation: 'Generating variation...',
       variations: 'Content variations',
-      no_variations: 'No saved variations yet.'
+      no_variations: 'No saved variations yet.',
+      tab_overview: 'Overview',
+      tab_ai: 'AI Content',
+      tab_media: 'Media',
+      tab_planner: 'Planner',
+      tab_variations: 'Variations',
+      tab_brand: 'Brand',
+      open_ai: 'Open AI content',
+      kpi_outputs: 'AI outputs',
+      kpi_media: 'Media files',
+      kpi_items: 'Planner items',
+      kpi_variations: 'Variations',
+      not_set: 'Not set',
+      section_basics: 'Basics',
+      section_offer: 'Audience and offer',
+      section_schedule: 'Schedule',
+      form_lead: 'Add the campaign details. You can generate content after saving.',
+      brand_panel_lead: 'Brand name, logo, colors, language, and tone are saved in the brand kit and used as optional context for later copy.',
+      open_brand: 'Open brand kit'
     },
     ar: {
       dashboard: 'لوحة التحكم',
@@ -288,7 +306,25 @@
       generate_variation: 'توليد تنويع آخر',
       generating_variation: 'جاري توليد التنويع...',
       variations: 'تنويعات المحتوى',
-      no_variations: 'لا توجد تنويعات محفوظة بعد.'
+      no_variations: 'لا توجد تنويعات محفوظة بعد.',
+      tab_overview: 'نظرة عامة',
+      tab_ai: 'محتوى الذكاء الاصطناعي',
+      tab_media: 'الوسائط',
+      tab_planner: 'المخطط',
+      tab_variations: 'التنويعات',
+      tab_brand: 'العلامة',
+      open_ai: 'فتح محتوى الذكاء الاصطناعي',
+      kpi_outputs: 'مخرجات الذكاء الاصطناعي',
+      kpi_media: 'ملفات الوسائط',
+      kpi_items: 'عناصر المخطط',
+      kpi_variations: 'التنويعات',
+      not_set: 'غير محدد',
+      section_basics: 'الأساسيات',
+      section_offer: 'الجمهور والعرض',
+      section_schedule: 'الجدول',
+      form_lead: 'أضف تفاصيل الحملة. يمكن توليد المحتوى بعد الحفظ.',
+      brand_panel_lead: 'اسم العلامة والشعار والألوان واللغة والنبرة محفوظة في هوية العلامة وتُستخدم كسياق اختياري للمحتوى لاحقاً.',
+      open_brand: 'فتح هوية العلامة'
     }
   };
 
@@ -317,6 +353,44 @@
     };
   }
   apply();
+  initTabs();
+
+  function initTabs() {
+    var tabs = document.querySelectorAll('[data-tab]');
+    if (!tabs.length) return;
+    var names = ['overview', 'ai', 'media', 'planner', 'variations', 'brand'];
+    function openTab(name) {
+      if (names.indexOf(name) < 0) name = 'overview';
+      document.body.classList.add('tabs-ready');
+      document.querySelectorAll('[data-panel]').forEach(function (panel) {
+        panel.classList.toggle('is-active', panel.getAttribute('data-panel') === name);
+      });
+      tabs.forEach(function (tab) {
+        var on = tab.getAttribute('data-tab') === name;
+        tab.classList.toggle('is-active', on);
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+    }
+    tabs.forEach(function (tab) {
+      tab.onclick = function () {
+        var name = tab.getAttribute('data-tab');
+        openTab(name);
+        history.replaceState(null, '', '#' + name);
+      };
+    });
+    document.querySelectorAll('[data-open]').forEach(function (node) {
+      node.onclick = function () {
+        var name = node.getAttribute('data-open');
+        openTab(name);
+        history.replaceState(null, '', '#' + name);
+      };
+    });
+    var hash = (location.hash || '').replace('#', '');
+    if (hash === 'details') hash = 'overview';
+    if (hash === 'strategy' || hash === 'copy') hash = 'ai';
+    if (new URLSearchParams(location.search).get('media_error')) hash = 'media';
+    openTab(names.indexOf(hash) >= 0 ? hash : 'overview');
+  }
 
   var form = document.getElementById('generateForm');
   if (form) {
@@ -327,6 +401,8 @@
       var langInput = document.getElementById('gen-lang');
       if (langInput) langInput.value = language;
       button.disabled = true;
+      button.classList.add('is-busy');
+      status.className = 'notice';
       status.textContent = dict[language].generating;
       try {
         var response = await fetch('/app/ai/generate.php', { method: 'POST', body: new FormData(form) });
@@ -334,8 +410,10 @@
         if (!response.ok) throw new Error(payload.error || 'Generation failed');
         location.href = payload.redirect;
       } catch (error) {
+        status.className = 'notice is-error';
         status.textContent = error.message;
         button.disabled = false;
+        button.classList.remove('is-busy');
       }
     };
   }
@@ -347,6 +425,8 @@
       var status = document.getElementById('image-status');
       var button = document.getElementById('generate-image');
       button.disabled = true;
+      button.classList.add('is-busy');
+      status.className = 'notice';
       status.textContent = dict[language].generating_image;
       try {
         var payload = await requestImage(imageForm, '');
@@ -360,8 +440,10 @@
         if (!payload.ok) throw new Error(payload.error || 'Image generation failed');
         location.href = payload.redirect;
       } catch (error) {
+        status.className = 'notice is-error';
         status.textContent = error.message;
         button.disabled = false;
+        button.classList.remove('is-busy');
       }
     };
   }
@@ -385,6 +467,8 @@
         node.value = language;
       });
       button.disabled = true;
+      button.classList.add('is-busy');
+      status.className = 'notice';
       status.textContent = dict[language].generating_voice;
       try {
         var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm) });
@@ -392,8 +476,10 @@
         if (!response.ok) throw new Error(payload.error || 'Voice generation failed');
         location.href = payload.redirect;
       } catch (error) {
+        status.className = 'notice is-error';
         status.textContent = error.message;
         button.disabled = false;
+        button.classList.remove('is-busy');
       }
     };
   }
@@ -407,6 +493,8 @@
         node.value = language;
       });
       button.disabled = true;
+      status.className = 'notice';
+      button.classList.add('is-busy');
       status.textContent = dict[language].generating_variation;
       try {
         var response = await fetch('/app/ai/variation.php', { method: 'POST', body: new FormData(variationForm) });
@@ -414,8 +502,10 @@
         if (!response.ok) throw new Error(payload.error || 'Variation failed');
         location.href = payload.redirect;
       } catch (error) {
+        status.className = 'notice is-error';
         status.textContent = error.message;
         button.disabled = false;
+        button.classList.remove('is-busy');
       }
     };
   }

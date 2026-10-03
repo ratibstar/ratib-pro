@@ -71,26 +71,47 @@ foreach ($outputs as $row) {
     <button type="button" id="theme" class="icon">☾</button>
   </nav>
 </header>
-<main class="wrap">
-  <section class="panel" id="overview">
-    <span class="eyebrow" data-i18n="campaign_details">CAMPAIGN DETAILS</span>
-    <h1><?= e($campaign['title']) ?></h1>
-    <p><span class="badge" data-i18n="status_<?= e($status) ?>"><?= e($status) ?></span></p>
-    <div class="progress" aria-hidden="true"><span style="width:<?= (int) $progress ?>%"></span></div>
-    <p class="muted"><span data-i18n="progress">Progress</span>: <?= (int) $progress ?>%</p>
-    <div class="grid two">
-      <div><b data-i18n="product">Product / Service</b><p><?= e($campaign['product_name']) ?></p></div>
-      <div><b data-i18n="price">Price</b><p><?= e($campaign['price']) ?></p></div>
-      <div><b data-i18n="target">Target customer</b><p><?= e($campaign['target_customer']) ?></p></div>
-      <div><b data-i18n="objective">Objective</b><p><?= e($campaign['objective'] ?? '') ?></p></div>
-      <div><b data-i18n="budget">Budget</b><p><?= e($campaign['budget'] ?? '') ?></p></div>
-      <div><b data-i18n="dates">Dates</b><p><?= e($campaign['start_date'] ?? '') ?> – <?= e($campaign['end_date'] ?? '') ?></p></div>
-      <div><b data-i18n="description">Description</b><p><?= nl2br(e($campaign['description'])) ?></p></div>
+<main class="wrap workspace">
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab is-active" data-tab="overview" role="tab" aria-selected="true" data-i18n="tab_overview">Overview</button>
+    <button type="button" class="tab" data-tab="ai" role="tab" aria-selected="false" data-i18n="tab_ai">AI Content</button>
+    <button type="button" class="tab" data-tab="media" role="tab" aria-selected="false" data-i18n="tab_media">Media</button>
+    <button type="button" class="tab" data-tab="planner" role="tab" aria-selected="false" data-i18n="tab_planner">Planner</button>
+    <button type="button" class="tab" data-tab="variations" role="tab" aria-selected="false" data-i18n="tab_variations">Variations</button>
+    <button type="button" class="tab" data-tab="brand" role="tab" aria-selected="false" data-i18n="tab_brand">Brand</button>
+  </nav>
+  <section class="panel is-active" id="overview" data-panel="overview">
+    <div class="workspace-head">
+      <div>
+        <span class="eyebrow" data-i18n="campaign_details">CAMPAIGN DETAILS</span>
+        <h1><?= e($campaign['title']) ?></h1>
+        <span class="badge status-<?= e($status) ?>" data-i18n="status_<?= e($status) ?>"><?= e($status) ?></span>
+      </div>
+      <div class="action-row">
+        <button type="button" class="primary" data-open="ai" data-i18n="open_ai">Open AI content</button>
+        <button type="button" class="quiet" data-open="media" data-i18n="tab_media">Media</button>
+        <a class="button quiet" href="/brand.php" data-i18n="open_brand">Open brand kit</a>
+      </div>
     </div>
-  </section>
-  <section class="panel" id="details">
+    <div class="progress" role="progressbar" aria-valuenow="<?= (int) $progress ?>" aria-valuemin="0" aria-valuemax="100"><span style="width:<?= (int) $progress ?>%"></span></div>
+    <p class="muted"><span data-i18n="progress">Progress</span> <?= (int) $progress ?>%</p>
+    <div class="kpi-grid">
+      <article class="kpi"><span data-i18n="product">Product / Service</span><strong><?= e($campaign['product_name']) ?></strong></article>
+      <article class="kpi"><span data-i18n="price">Price</span><strong><?= trim((string) $campaign['price']) !== '' ? e($campaign['price']) : '<span class="muted" data-i18n="not_set">Not set</span>' ?></strong></article>
+      <article class="kpi"><span data-i18n="budget">Budget</span><strong><?php if (trim((string) ($campaign['budget'] ?? '')) === ''): ?><span class="muted" data-i18n="not_set">Not set</span><?php else: ?><?= e($campaign['budget']) ?><?php endif; ?></strong></article>
+      <article class="kpi"><span data-i18n="dates">Dates</span><strong><?php if (empty($campaign['start_date']) && empty($campaign['end_date'])): ?><span class="muted" data-i18n="not_set">Not set</span><?php else: ?><?= e($campaign['start_date'] ?? '') ?> – <?= e($campaign['end_date'] ?? '') ?><?php endif; ?></strong></article>
+      <article class="kpi"><span data-i18n="kpi_outputs">AI outputs</span><strong><?= count($outputs) ?></strong></article>
+      <article class="kpi"><span data-i18n="kpi_media">Media files</span><strong><?= count($media) ?></strong></article>
+      <article class="kpi"><span data-i18n="kpi_items">Planner items</span><strong><?= count($items) ?></strong></article>
+      <article class="kpi"><span data-i18n="kpi_variations">Variations</span><strong><?= count($variationGroups) ?></strong></article>
+    </div>
+    <div class="summary-grid">
+      <div><b data-i18n="target">Target customer</b><p><?= e($campaign['target_customer']) ?></p></div>
+      <div><b data-i18n="objective">Objective</b><p><?php if (trim((string) ($campaign['objective'] ?? '')) === ''): ?><span class="muted" data-i18n="not_set">Not set</span><?php else: ?><?= e($campaign['objective']) ?><?php endif; ?></p></div>
+      <div class="wide"><b data-i18n="description">Description</b><p><?= nl2br(e($campaign['description'])) ?></p></div>
+    </div>
     <h2 data-i18n="campaign_workspace">Campaign workspace</h2>
-    <form method="post" action="/campaign-update.php">
+    <form method="post" action="/campaign-update.php" id="details">
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
       <div class="grid two">
@@ -114,10 +135,10 @@ foreach ($outputs as $row) {
       <button class="primary" type="submit" data-i18n="save_changes">Save changes</button>
     </form>
   </section>
-  <section class="panel" id="strategy">
+  <section class="panel" id="strategy" data-panel="ai">
     <h2 data-i18n="strategy_heading">AI-generated strategy</h2>
     <?php if ($strategy === ''): ?>
-      <p class="muted" data-i18n="no_strategy">No strategy yet. Generate the campaign below.</p>
+      <p class="empty" data-i18n="no_strategy">No strategy yet. Generate the campaign below.</p>
     <?php else: ?>
       <div><?= nl2br(e($strategy)) ?></div>
     <?php endif; ?>
@@ -130,7 +151,7 @@ foreach ($outputs as $row) {
     </form>
     <p id="status" class="muted"></p>
   </section>
-  <section class="panel" id="media">
+  <section class="panel" id="media" data-panel="media">
     <h2 data-i18n="media_gallery">Media gallery</h2>
     <div class="media-states">
       <div>
@@ -190,7 +211,7 @@ foreach ($outputs as $row) {
       </form>
     </div>
     <?php if (!$media): ?>
-      <p class="muted" data-i18n="no_media">No media yet.</p>
+      <p class="empty" data-i18n="no_media">No media yet.</p>
     <?php else: ?>
       <div class="media-grid">
         <?php foreach ($media as $item): ?>
@@ -213,7 +234,7 @@ foreach ($outputs as $row) {
               <form method="post" action="/app/media/delete.php">
                 <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="id" value="<?= $mediaId ?>">
-                <button type="submit" data-i18n="delete">Delete</button>
+              <button type="submit" class="danger" data-i18n="delete">Delete</button>
               </form>
             </div>
           </article>
@@ -221,10 +242,10 @@ foreach ($outputs as $row) {
       </div>
     <?php endif; ?>
   </section>
-  <section class="panel" id="copy">
+  <section class="panel" id="copy" data-panel="ai">
     <h2 data-i18n="results">AI Results</h2>
     <?php if (!$textOutputs): ?>
-      <p class="muted" data-i18n="no_results">No AI results yet. Generate the campaign above.</p>
+      <p class="empty" data-i18n="no_results">No AI results yet. Generate the campaign above.</p>
     <?php else: ?>
       <?php foreach ($textOutputs as $r): ?>
         <?php
@@ -242,25 +263,13 @@ foreach ($outputs as $row) {
             <input type="hidden" name="planner_status" value="draft">
             <input type="hidden" name="approval_status" value="draft">
             <label><span data-i18n="assign_date">Assign to date</span><input type="date" name="item_date"></label>
-            <button type="submit" data-i18n="add_to_calendar">Add to calendar</button>
+            <button type="submit" class="quiet" data-i18n="add_to_calendar">Add to calendar</button>
           </form>
         </article>
       <?php endforeach; ?>
     <?php endif; ?>
-    <form method="post" action="/app/content/variation-save.php">
-      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-      <input type="hidden" name="campaign_id" value="<?= $id ?>">
-      <button type="submit" data-i18n="save_variation">Save current copy as a variation</button>
-    </form>
-    <form id="variationForm">
-      <input type="hidden" name="campaign_id" value="<?= $id ?>">
-      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-      <input type="hidden" name="lang" value="en">
-      <button class="primary" id="generate-variation" type="submit" data-i18n="generate_variation">Generate another variation</button>
-    </form>
-    <p id="variation-status" class="muted"></p>
   </section>
-  <section class="panel" id="planner">
+  <section class="panel" id="planner" data-panel="planner">
     <h2 data-i18n="content_planner">Content planner</h2>
     <form method="post" action="/app/content/save.php">
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
@@ -287,7 +296,7 @@ foreach ($outputs as $row) {
       <button class="primary" type="submit" data-i18n="add_content">Add content</button>
     </form>
     <?php if (!$items): ?>
-      <p class="muted" data-i18n="no_items">No content items yet.</p>
+      <p class="empty" data-i18n="no_items">No content items yet.</p>
     <?php else: ?>
       <?php foreach ($items as $item): ?>
         <form method="post" action="/app/content/save.php" class="result">
@@ -314,15 +323,29 @@ foreach ($outputs as $row) {
             </label>
           </div>
           <button class="primary" type="submit" data-i18n="save_changes">Save changes</button>
-          <button type="submit" name="action" value="delete" data-i18n="delete">Delete</button>
+          <button type="submit" name="action" value="delete" class="danger" data-i18n="delete">Delete</button>
         </form>
       <?php endforeach; ?>
     <?php endif; ?>
   </section>
-  <section class="panel" id="variations">
+  <section class="panel" id="variations" data-panel="variations">
     <h2 data-i18n="variations">Content variations</h2>
+    <div class="action-row">
+      <form method="post" action="/app/content/variation-save.php">
+        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+        <input type="hidden" name="campaign_id" value="<?= $id ?>">
+        <button type="submit" class="quiet" data-i18n="save_variation">Save current copy as a variation</button>
+      </form>
+      <form id="variationForm">
+        <input type="hidden" name="campaign_id" value="<?= $id ?>">
+        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+        <input type="hidden" name="lang" value="en">
+        <button class="primary" id="generate-variation" type="submit" data-i18n="generate_variation">Generate another variation</button>
+      </form>
+    </div>
+    <p id="variation-status" class="muted"></p>
     <?php if (!$variationGroups): ?>
-      <p class="muted" data-i18n="no_variations">No saved variations yet.</p>
+      <p class="empty" data-i18n="no_variations">No saved variations yet.</p>
     <?php else: ?>
       <?php foreach ($variationGroups as $label => $group): ?>
         <article class="result">
@@ -335,6 +358,11 @@ foreach ($outputs as $row) {
         </article>
       <?php endforeach; ?>
     <?php endif; ?>
+  </section>
+  <section class="panel" id="brand" data-panel="brand">
+    <h2 data-i18n="brand_kit_title">Brand kit</h2>
+    <p class="muted" data-i18n="brand_panel_lead">Brand name, logo, colors, language, and tone are saved in the brand kit and used as optional context for later copy.</p>
+    <a class="button" href="/brand.php" data-i18n="open_brand">Open brand kit</a>
   </section>
 </main>
 <script src="/public/assets/js/app.js"></script>

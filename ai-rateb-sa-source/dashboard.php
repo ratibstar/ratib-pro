@@ -10,6 +10,14 @@ if (!$user) {
 $stmt = $pdo->prepare('SELECT id, title, product_name, status, created_at FROM campaigns WHERE user_id = ? ORDER BY id DESC LIMIT 20');
 $stmt->execute([$user['id']]);
 $campaigns = $stmt->fetchAll();
+$summary = ['draft' => 0, 'in_progress' => 0, 'ready' => 0, 'completed' => 0];
+foreach ($campaigns as $row) {
+    $key = (string) $row['status'];
+    if (!isset($summary[$key])) {
+        $key = 'draft';
+    }
+    $summary[$key]++;
+}
 ?>
 <!doctype html>
 <html lang="en" data-theme="light">
@@ -41,6 +49,14 @@ $campaigns = $stmt->fetchAll();
     </div>
     <a class="button" href="/campaign-new.php" data-i18n="new_campaign_button">+ New Campaign</a>
   </div>
+  <div class="dash-kpis">
+    <?php foreach ($summary as $key => $count): ?>
+      <article class="kpi">
+        <span class="badge status-<?= e($key) ?>" data-i18n="status_<?= e($key) ?>"><?= e($key) ?></span>
+        <strong><?= (int) $count ?></strong>
+      </article>
+    <?php endforeach; ?>
+  </div>
 
   <section class="card">
     <div class="section-head"><h2 data-i18n="your_campaigns">Your campaigns</h2></div>
@@ -63,7 +79,7 @@ $campaigns = $stmt->fetchAll();
           <tr>
             <td><a href="/campaign.php?id=<?= (int) $campaign['id'] ?>"><?= e($campaign['title']) ?></a></td>
             <td><?= e($campaign['product_name']) ?></td>
-            <td><span class="badge" data-i18n="status_<?= e(in_array((string) $campaign['status'], campaign_status_values(), true) ? (string) $campaign['status'] : 'draft') ?>"><?= e($campaign['status']) ?></span></td>
+            <td><span class="badge status-<?= e(in_array((string) $campaign['status'], campaign_status_values(), true) ? (string) $campaign['status'] : 'draft') ?>" data-i18n="status_<?= e(in_array((string) $campaign['status'], campaign_status_values(), true) ? (string) $campaign['status'] : 'draft') ?>"><?= e($campaign['status']) ?></span></td>
             <td><?= e($campaign['created_at']) ?></td>
           </tr>
         <?php endforeach; ?>
