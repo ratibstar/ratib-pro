@@ -1,0 +1,210 @@
+name: Temporary Arabic voice generation test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  voice:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    steps:
+      - name: Generate Saudi Arabic voice through production
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          SSH=(ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          ROOT=/home/admin/domains/ai.rateb.sa
+          TOKEN=$(openssl rand -hex 16)
+          cleanup() {
+            "${SSH[@]}" "${REMOTE}" "rm -f ${ROOT}/.voice-run-${TOKEN}.php" || true
+            rm -f "${KEY_PATH}" "${RUNNER_TEMP}/voice/cookies" || true
+          }
+          trap cleanup EXIT
+          "${SSH[@]}" "${REMOTE}" "cat > ${ROOT}/.voice-run-${TOKEN}.php" << EOF
+          <?php
+          if ((\$_GET['t'] ?? '') !== '${TOKEN}') { http_response_code(404); exit; }
+          require '${ROOT}/app/bootstrap.php';
+          \$stmt = db()->query("SELECT c.id AS campaign_id, c.user_id, CHAR_LENGTH(TRIM(o.content)) AS n FROM campaign_outputs o INNER JOIN campaigns c ON c.id = o.campaign_id WHERE o.output_type = 'voiceover' AND CHAR_LENGTH(TRIM(o.content)) > 0 ORDER BY o.id DESC LIMIT 1");
+          \$row = \$stmt->fetch();
+          if (!\$row) { http_response_code(404); header('Content-Type: application/json'); echo json_encode(['error' => 'No campaign voiceover text exists.']); exit; }
+          header('X-Campaign-Id: ' . (int) \$row['campaign_id']);
+          header('X-Voiceover-Len: ' . (int) \$row['n']);
+          \$_SESSION['user_id'] = (int) \$row['user_id'];
+          \$_SESSION['csrf_token'] = \$_SESSION['csrf'] = 'voice-check';
+          \$_SERVER['REQUEST_METHOD'] = 'POST';
+          \$_POST['csrf'] = 'voice-check';
+          \$_POST['campaign_id'] = (int) \$row['campaign_id'];
+          \$_POST['lang'] = 'ar';
+          require '${ROOT}/app/ai/voice.php';
+          EOF
+          WORK="${RUNNER_TEMP}/voice"
+          mkdir -p "$WORK"
+          curl -sS -D "$WORK/voice.hdr" -o "$WORK/voice.json" -c "$WORK/cookies" -b "$WORK/cookies" \
+            "https://ai.rateb.sa/.voice-run-${TOKEN}.php?t=${TOKEN}" || true
+          python3 - "$WORK/voice.hdr" "$WORK/voice.json" << 'PY'
+          import json, re, sys
+          header = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          raw = open(sys.argv[2], encoding="utf-8", errors="replace").read()
+          status = "0"
+          for line in header.splitlines():
+              if line.startswith("HTTP/"):
+                  parts = line.split()
+                  if len(parts) > 1:
+                      status = parts[1]
+              if line.lower().startswith("x-campaign-id:"):
+                  print("CAMPAIGN_ID=" + line.split(":", 1)[1].strip())
+              if line.lower().startswith("x-voiceover-len:"):
+                  print("VOICEOVER_LEN=" + line.split(":", 1)[1].strip())
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError:
+              data = {}
+          error = re.sub(r"(?:sk-|gsk_)[A-Za-z0-9_\-]+", "[redacted]", str(data.get("error") or ""))[:200]
+          print("VOICE_HTTP=" + status)
+          print("VOICE_OK=" + ("yes" if data.get("ok") else "no"))
+          if error:
+              print("VOICE_ERROR=" + error)
+          PY
+          VOICE_OK=$(python3 - "$WORK/voice.json" << 'PY'
+          import json, sys
+          try:
+              data = json.loads(open(sys.argv[1], encoding="utf-8").read())
+          except Exception:
+              data = {}
+          print("yes" if data.get("ok") else "no")
+          PY
+          )
+          if [ "$VOICE_OK" != "yes" ]; then
+            "${SSH[@]}" "${REMOTE}" php << 'PHP'
+          <?php
+          require '/home/admin/.secrets/rateb-ai-env.php';
+          require '/home/admin/domains/ai.rateb.sa/app/bootstrap.php';
+          $cfg = require '/home/admin/domains/ai.rateb.sa/config/ai.php';
+          $stmt = db()->query("SELECT TRIM(o.content) AS content FROM campaign_outputs o WHERE o.output_type = 'voiceover' AND CHAR_LENGTH(TRIM(o.content)) > 0 ORDER BY o.id DESC LIMIT 1");
+          $row = $stmt->fetch();
+          $script = (string) ($row['content'] ?? '');
+          if (function_exists('mb_substr')) {
+              $script = mb_substr($script, 0, 200);
+          } else {
+              $script = substr($script, 0, 200);
+          }
+          $payload = json_encode([
+              'model' => 'canopylabs/orpheus-arabic-saudi',
+              'input' => $script,
+              'voice' => 'fahad',
+              'response_format' => 'wav',
+          ], JSON_UNESCAPED_UNICODE);
+          $ch = curl_init(rtrim((string) $cfg['base_url'], '/') . '/audio/speech');
+          curl_setopt_array($ch, [
+              CURLOPT_POST => true,
+              CURLOPT_RETURNTRANSFER => true,
+              CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
+              CURLOPT_POSTFIELDS => $payload,
+              CURLOPT_TIMEOUT => 90,
+          ]);
+          $body = curl_exec($ch);
+          $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+          curl_close($ch);
+          $decoded = json_decode((string) $body, true);
+          $error = is_array($decoded) ? ($decoded['error'] ?? []) : [];
+          $message = is_array($error) ? (string) ($error['message'] ?? '') : '';
+          $message = preg_replace('/sk-[A-Za-z0-9_\-]{6,}/', 'sk-REDACTED', $message) ?? $message;
+          $message = preg_replace('/gsk_[A-Za-z0-9_\-]{6,}/', 'gsk_REDACTED', $message) ?? $message;
+          echo 'PROVIDER_HTTP=' . $http . "\n";
+          echo 'PROVIDER_CODE=' . (is_array($error) ? (string) ($error['code'] ?? '') : '') . "\n";
+          echo 'PROVIDER_MESSAGE=' . substr($message, 0, 220) . "\n";
+          echo 'PROVIDER_RIFF=' . (substr((string) $body, 0, 4) === 'RIFF' ? 'yes' : 'no') . "\n";
+          PHP
+            "${SSH[@]}" "${REMOTE}" "rm -f ${ROOT}/.voice-run-${TOKEN}.php"
+            rm -f "${KEY_PATH}" "$WORK/cookies"
+            exit 1
+          fi
+          CAMPAIGN_ID=$(python3 - "$WORK/voice.hdr" << 'PY'
+          import sys
+          for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
+              if line.lower().startswith("x-campaign-id:"):
+                  print(line.split(":", 1)[1].strip())
+                  break
+          PY
+          )
+          curl -sS -c "$WORK/cookies" -b "$WORK/cookies" -o "$WORK/campaign.html" \
+            "https://ai.rateb.sa/campaign.php?id=${CAMPAIGN_ID}"
+          python3 - "$WORK/campaign.html" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          audio = re.search(r'<audio\b[^>]*\bsrc="([^"]+)"', html)
+          print("PAGE_AUDIO=" + ("yes" if audio else "no"))
+          if not audio:
+              raise SystemExit(1)
+          open(sys.argv[1] + ".src", "w", encoding="utf-8").write(audio.group(1).replace("&amp;", "&"))
+          PY
+          SRC=$(cat "$WORK/campaign.html.src")
+          curl -sS -c "$WORK/cookies" -b "$WORK/cookies" -D "$WORK/file.hdr" -o "$WORK/file.bin" \
+            "https://ai.rateb.sa${SRC}"
+          python3 - "$WORK/file.hdr" "$WORK/file.bin" << 'PY'
+          import sys
+          header = open(sys.argv[1], encoding="utf-8", errors="replace").read().lower()
+          data = open(sys.argv[2], "rb").read()
+          ctype = ""
+          status = "0"
+          for line in header.splitlines():
+              if line.startswith("http/"):
+                  parts = line.split()
+                  if len(parts) > 1:
+                      status = parts[1]
+              if line.startswith("content-type:"):
+                  ctype = line.split(":", 1)[1].strip()
+          riff = data[:4] == b"RIFF" and data[8:12] == b"WAVE"
+          print("FILE_HTTP=" + status)
+          print("FILE_TYPE=" + ctype)
+          print("FILE_BYTES=" + str(len(data)))
+          print("FILE_WAV=" + ("yes" if riff else "no"))
+          if status != "200" or not riff or "audio/" not in ctype:
+              raise SystemExit(1)
+          PY
+          "${SSH[@]}" "${REMOTE}" "export CAMPAIGN_ID=${CAMPAIGN_ID}; php" << 'PHP'
+          <?php
+          require '/home/admin/domains/ai.rateb.sa/app/bootstrap.php';
+          $id = (int) getenv('CAMPAIGN_ID');
+          $stmt = db()->prepare("SELECT id, kind, source, mime, bytes, stored_name FROM campaign_media WHERE campaign_id = ? AND source = 'ai' AND kind = 'audio' ORDER BY id DESC LIMIT 1");
+          $stmt->execute([$id]);
+          $row = $stmt->fetch();
+          if (!$row) {
+              echo "MEDIA_ROW=no\n";
+              exit(1);
+          }
+          $path = '/home/admin/.campaign-media/' . $id . '/' . $row['stored_name'];
+          $head = is_file($path) ? file_get_contents($path, false, null, 0, 12) : '';
+          echo "MEDIA_ROW=yes\n";
+          echo 'MEDIA_KIND=' . $row['kind'] . "\n";
+          echo 'MEDIA_SOURCE=' . $row['source'] . "\n";
+          echo 'MEDIA_MIME=' . $row['mime'] . "\n";
+          echo 'MEDIA_BYTES=' . $row['bytes'] . "\n";
+          echo 'DISK_WAV=' . ($head !== false && str_starts_with($head, 'RIFF') && substr($head, 8, 4) === 'WAVE' ? 'yes' : 'no') . "\n";
+          PHP
+          "${SSH[@]}" "${REMOTE}" "rm -f ${ROOT}/.voice-run-${TOKEN}.php"
+          rm -f "${KEY_PATH}" "$WORK/cookies"
