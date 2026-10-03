@@ -145,9 +145,11 @@ jobs:
                   found = match.group(0)
                   break
           if not found:
-              found = "HTTP 500 without a visible PHP message"
+              snippet = text.strip()[:180]
+              found = "HTTP 500 body=" + (snippet if snippet else "empty")
           found = re.sub(r"(password|api_key|secret)=[^\s]+", r"\1=[redacted]", found, flags=re.I)
           print("SAVE_ERROR=" + found[:220])
+          print("SAVE_BODY_LEN=" + str(len(raw)))
           PY
             say "GENERATE_HTTP=0"
             say "GENERATE_ERROR=campaign was not created"
