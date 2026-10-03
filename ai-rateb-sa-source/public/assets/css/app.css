@@ -104,26 +104,49 @@ tr:hover td{background:var(--surface2)}
 @media(max-width:700px){
   .kpi-grid,.dash-kpis,.summary-grid{grid-template-columns:1fr}
 }
-body.studio{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif;background:var(--bg);isolation:isolate}
-body.studio::before,body.studio::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
-body.studio::before{background:
-  radial-gradient(42% 36% at 12% 18%,rgba(124,58,237,.34),transparent 70%),
-  radial-gradient(38% 32% at 88% 12%,rgba(14,165,233,.28),transparent 72%),
-  radial-gradient(46% 40% at 78% 82%,rgba(15,118,110,.26),transparent 70%),
-  radial-gradient(34% 30% at 18% 86%,rgba(249,115,22,.24),transparent 72%),
-  radial-gradient(28% 24% at 52% 46%,rgba(219,39,119,.16),transparent 70%);
-background-size:140% 140%;animation:color-drift 18s ease-in-out infinite}
+html:has(body.studio),body.studio{min-height:100%}
+body.studio{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif;min-height:100vh;background:var(--bg);isolation:isolate}
+body.studio::before,body.studio::after{content:"";position:fixed;z-index:-1;pointer-events:none}
+body.studio::before{inset:-25%;background:
+  radial-gradient(48% 42% at 8% 12%,rgba(124,58,237,.42),transparent 68%),
+  radial-gradient(46% 40% at 92% 8%,rgba(14,165,233,.34),transparent 70%),
+  radial-gradient(52% 48% at 84% 88%,rgba(15,118,110,.32),transparent 68%),
+  radial-gradient(44% 40% at 10% 90%,rgba(249,115,22,.30),transparent 70%),
+  radial-gradient(40% 36% at 50% 48%,rgba(219,39,119,.22),transparent 68%);
+background-size:160% 160%;animation:color-drift 18s ease-in-out infinite}
 [data-theme=dark] body.studio::before{background:
-  radial-gradient(44% 38% at 10% 16%,rgba(139,92,246,.42),transparent 70%),
-  radial-gradient(40% 34% at 90% 10%,rgba(34,211,238,.28),transparent 72%),
-  radial-gradient(48% 42% at 80% 84%,rgba(45,212,191,.24),transparent 70%),
-  radial-gradient(36% 32% at 16% 88%,rgba(251,146,60,.26),transparent 72%),
-  radial-gradient(30% 26% at 48% 48%,rgba(244,114,182,.22),transparent 70%)}
-body.studio::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 220' preserveAspectRatio='none'%3E%3Cpath fill='%237c3aed' fill-opacity='.20' d='M0 110c90 48 170-48 260 0s170 48 260 0 170-48 260 0 170 48 260 0 90-36 160 0v110H0z'/%3E%3Cpath fill='%230d9488' fill-opacity='.18' d='M0 146c110-46 190 42 300 0s190-42 300 0 190 46 300 0 90-28 200 0v74H0z'/%3E%3Cpath fill='%23f97316' fill-opacity='.16' d='M0 172c130 28 210-32 340 0s210 32 340 0 180-22 280 0 120 18 240 0v48H0z'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 180' preserveAspectRatio='none'%3E%3Cpath fill='%2338bdf8' fill-opacity='.16' d='M0 0h1200v64C1080 20 980 90 860 48S700-8 560 40 360 96 220 42 40 8 0 48z'/%3E%3Cpath fill='%23db2777' fill-opacity='.10' d='M0 0h1200v36C1040 70 900 8 760 40S520 88 360 36 80 0 0 28z'/%3E%3C/svg%3E");background-repeat:repeat-x,repeat-x;background-size:180% 240px,160% 150px;background-position:0% 100%,0% 0%;animation:wave-slide 26s linear infinite}
-[data-theme=dark] body.studio::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 220' preserveAspectRatio='none'%3E%3Cpath fill='%23a78bfa' fill-opacity='.28' d='M0 110c90 48 170-48 260 0s170 48 260 0 170-48 260 0 170 48 260 0 90-36 160 0v110H0z'/%3E%3Cpath fill='%232dd4bf' fill-opacity='.22' d='M0 146c110-46 190 42 300 0s190-42 300 0 190 46 300 0 90-28 200 0v74H0z'/%3E%3Cpath fill='%23fb923c' fill-opacity='.20' d='M0 172c130 28 210-32 340 0s210 32 340 0 180-22 280 0 120 18 240 0v48H0z'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 180' preserveAspectRatio='none'%3E%3Cpath fill='%2322d3ee' fill-opacity='.20' d='M0 0h1200v64C1080 20 980 90 860 48S700-8 560 40 360 96 220 42 40 8 0 48z'/%3E%3Cpath fill='%23f472b6' fill-opacity='.16' d='M0 0h1200v36C1040 70 900 8 760 40S520 88 360 36 80 0 0 28z'/%3E%3C/svg%3E")}
-@keyframes color-drift{0%{background-position:0% 12%,100% 0%,82% 100%,8% 100%,50% 42%}50%{background-position:28% 74%,36% 86%,18% 28%,92% 18%,12% 88%}100%{background-position:86% 18%,4% 62%,100% 8%,22% 36%,90% 78%}}
-@keyframes wave-slide{from{background-position:0% 100%,0% 0%}to{background-position:100% 100%,-100% 0%}}
-body.studio .top,body.studio .topbar{background:color-mix(in srgb,var(--surface) 84%,transparent);backdrop-filter:blur(16px)}
+  radial-gradient(50% 44% at 8% 12%,rgba(167,139,250,.55),transparent 68%),
+  radial-gradient(48% 42% at 94% 6%,rgba(34,211,238,.40),transparent 70%),
+  radial-gradient(54% 50% at 86% 90%,rgba(45,212,191,.36),transparent 68%),
+  radial-gradient(46% 42% at 8% 92%,rgba(251,146,60,.38),transparent 70%),
+  radial-gradient(42% 38% at 48% 46%,rgba(244,114,182,.32),transparent 68%)}
+body.studio::after{inset:0;background-repeat:repeat-x,repeat-x;background-size:220% 100%,180% 100%;background-position:0% 0%,0% 0%;animation:wave-slide 26s linear infinite;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cpath fill='%237c3aed' fill-opacity='.22' d='M0 70c180 80 320-80 500 0s320 80 500 0 280-70 440 0v140c-180 60-320-70-500 0s-320 70-500 0-260-50-440 0z'/%3E%3Cpath fill='%230d9488' fill-opacity='.2' d='M0 300c160-90 340 90 520 0s340-90 520 0 240 70 400 0v160c-160 50-340-80-520 0s-340 80-520 0-240-40-400 0z'/%3E%3Cpath fill='%23f97316' fill-opacity='.18' d='M0 530c200 70 360-90 560 0s360 90 560 0 200-60 320 0v160c-200-40-360 80-560 0s-360-80-560 0-180 40-320 0z'/%3E%3Cpath fill='%2338bdf8' fill-opacity='.2' d='M0 760c170-60 330 80 520 0s330-80 520 0 240 50 400 0V900H0z'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cpath fill='%23db2777' fill-opacity='.16' d='M0 180c200-70 380 80 560 0s340-80 520 0 220 60 360 0v150c-200 40-360-70-540 0s-340 70-520 0-220-40-380 0z'/%3E%3Cpath fill='%236d28d9' fill-opacity='.16' d='M0 450c150 90 320-70 500 0s340 80 520 0 250-60 420 0v150c-150-50-320 60-500 0s-340-60-520 0-240 40-420 0z'/%3E%3Cpath fill='%2314b8a6' fill-opacity='.16' d='M0 700c180-50 340 90 540 0s320-70 500 0 220 40 400 0V900H0z'/%3E%3C/svg%3E")}
+[data-theme=dark] body.studio::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cpath fill='%23a78bfa' fill-opacity='.32' d='M0 70c180 80 320-80 500 0s320 80 500 0 280-70 440 0v140c-180 60-320-70-500 0s-320 70-500 0-260-50-440 0z'/%3E%3Cpath fill='%232dd4bf' fill-opacity='.26' d='M0 300c160-90 340 90 520 0s340-90 520 0 240 70 400 0v160c-160 50-340-80-520 0s-340 80-520 0-240-40-400 0z'/%3E%3Cpath fill='%23fb923c' fill-opacity='.24' d='M0 530c200 70 360-90 560 0s360 90 560 0 200-60 320 0v160c-200-40-360 80-560 0s-360-80-560 0-180 40-320 0z'/%3E%3Cpath fill='%2322d3ee' fill-opacity='.24' d='M0 760c170-60 330 80 520 0s330-80 520 0 240 50 400 0V900H0z'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 900' preserveAspectRatio='none'%3E%3Cpath fill='%23f472b6' fill-opacity='.22' d='M0 180c200-70 380 80 560 0s340-80 520 0 220 60 360 0v150c-200 40-360-70-540 0s-340 70-520 0-220-40-380 0z'/%3E%3Cpath fill='%23c4b5fd' fill-opacity='.22' d='M0 450c150 90 320-70 500 0s340 80 520 0 250-60 420 0v150c-150-50-320 60-500 0s-340-60-520 0-240 40-420 0z'/%3E%3Cpath fill='%235eead4' fill-opacity='.2' d='M0 700c180-50 340 90 540 0s320-70 500 0 220 40 400 0V900H0z'/%3E%3C/svg%3E")}
+body.home.studio::before{animation:color-drift 16s ease-in-out infinite}
+body.home.studio::after{animation:wave-slide 22s linear infinite}
+body.page-dash.studio::before{animation:spin-wash 28s linear infinite}
+body.page-dash.studio::after{animation:wave-rise 18s ease-in-out infinite alternate}
+body.page-campaign.studio::before{animation:pulse-wash 12s ease-in-out infinite}
+body.page-campaign.studio::after{animation:wave-diagonal 20s linear infinite}
+body.page-new.studio::before{animation:color-drift 11s ease-in-out infinite reverse}
+body.page-new.studio::after{animation:wave-slide 13s linear infinite reverse}
+body.page-brand.studio::before{animation:sway-wash 18s ease-in-out infinite}
+body.page-brand.studio::after{animation:wave-bob 10s ease-in-out infinite}
+body.page-login.studio::before{animation:spin-wash 36s linear infinite reverse}
+body.page-login.studio::after{animation:wave-breathe 8s ease-in-out infinite}
+body.page-register.studio::before{animation:sway-wash 14s ease-in-out infinite reverse}
+body.page-register.studio::after{animation:wave-rise 12s linear infinite}
+@keyframes color-drift{0%{background-position:0% 8%,100% 0%,86% 100%,6% 100%,48% 40%}50%{background-position:34% 78%,28% 90%,12% 24%,94% 16%,8% 86%}100%{background-position:90% 14%,2% 64%,100% 6%,18% 32%,92% 76%}}
+@keyframes wave-slide{from{background-position:0% 0%,0% 0%}to{background-position:100% 0%,-100% 0%}}
+@keyframes wave-rise{from{background-position:0% 30%,10% -20%}to{background-position:24% -30%,-36% 24%}}
+@keyframes wave-diagonal{from{background-position:0% 0%,100% 100%}to{background-position:100% 80%,0% 0%}}
+@keyframes wave-bob{0%,100%{transform:translateY(0) scale(1.02)}50%{transform:translateY(-7%) scale(1.12)}}
+@keyframes wave-breathe{0%,100%{transform:scale(1);opacity:.82}50%{transform:scale(1.14);opacity:1}}
+@keyframes spin-wash{from{transform:rotate(0deg) scale(1.35)}to{transform:rotate(360deg) scale(1.35)}}
+@keyframes pulse-wash{0%,100%{transform:scale(1.12);filter:hue-rotate(0deg)}50%{transform:scale(1.42);filter:hue-rotate(48deg)}}
+@keyframes sway-wash{0%{transform:translate3d(-8%,-6%,0) scale(1.2)}50%{transform:translate3d(10%,8%,0) scale(1.42)}100%{transform:translate3d(-6%,10%,0) scale(1.16)}}
+body.studio .card,body.studio .panel,body.studio .kpi,body.studio .studio-stat,body.studio .flow-board li,body.studio .mock-screen,body.studio .auth-card,body.studio fieldset,body.studio .result,body.studio .media-card,body.studio .media-uploads form,body.studio .sample-card,body.studio .showcase-card,body.studio .campaign-tile,body.studio .tabs{background-color:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(8px)}
+body.studio .top,body.studio .topbar,body.studio .home-bar{background:color-mix(in srgb,var(--surface) 58%,transparent);backdrop-filter:blur(16px)}
 body.studio .brand span{background:linear-gradient(90deg,#6d28d9,#0f766e);-webkit-background-clip:text;background-clip:text;color:transparent}
 body.studio .container,body.studio .wrap{width:min(1180px,92%)}
 body.studio .wrap{max-width:1180px}
