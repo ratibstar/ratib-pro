@@ -85,7 +85,12 @@
       type_voiceover: 'Voice-over Script',
       type_content_plan_7_days: '7-Day Content Plan',
       media_gallery: 'Media gallery',
-      media_generation_gap: 'Image and video generation need a provider that is not configured. You can upload image, video, and audio files. Voice generation uses the configured speech model.',
+      provider_required: 'Provider required',
+      accept_model_terms: 'Accept model terms',
+      image_provider_required: 'AI image generation requires an image provider.',
+      video_provider_required: 'AI video generation requires a video provider. The current Groq credential has no video model.',
+      voice_terms_required: 'The Groq organization admin must accept the speech model terms in the Groq console before an Arabic voice file can be generated.',
+      open_groq_terms: 'Open Groq terms',
       upload_image: 'Upload image',
       upload_video: 'Upload video',
       upload_audio: 'Upload audio',
@@ -166,7 +171,12 @@
       type_voiceover: 'نص التعليق الصوتي',
       type_content_plan_7_days: 'خطة محتوى لسبعة أيام',
       media_gallery: 'معرض الوسائط',
-      media_generation_gap: 'توليد الصور والفيديو يحتاج مزوداً غير مضاف. يمكنك رفع الصور والفيديو والصوت. توليد الصوت يستخدم نموذج الكلام المتاح.',
+      provider_required: 'مزود مطلوب',
+      accept_model_terms: 'اقبل شروط النموذج',
+      image_provider_required: 'توليد الصور بالذكاء الاصطناعي يحتاج مزود صور.',
+      video_provider_required: 'توليد الفيديو بالذكاء الاصطناعي يحتاج مزود فيديو. بيانات Groq الحالية لا تتضمن نموذج فيديو.',
+      voice_terms_required: 'يجب أن يقبل مسؤول حساب Groq شروط نموذج الكلام من لوحة Groq قبل توليد ملف صوتي عربي.',
+      open_groq_terms: 'فتح شروط Groq',
       upload_image: 'رفع صورة',
       upload_video: 'رفع فيديو',
       upload_audio: 'رفع صوت',
@@ -230,26 +240,4 @@
     };
   }
 
-  var voiceForm = document.getElementById('voiceForm');
-  if (voiceForm) {
-    voiceForm.onsubmit = async function (event) {
-      event.preventDefault();
-      var status = document.getElementById('voice-status');
-      var button = document.getElementById('voice');
-      document.querySelectorAll('input[name="lang"]').forEach(function (node) {
-        node.value = language;
-      });
-      button.disabled = true;
-      status.textContent = dict[language].generating_voice;
-      try {
-        var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm) });
-        var payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || 'Voice generation failed');
-        location.href = payload.redirect;
-      } catch (error) {
-        status.textContent = error.message;
-        button.disabled = false;
-      }
-    };
-  }
 })();

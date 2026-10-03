@@ -70,7 +70,21 @@ $knownTypes = [
   </section>
   <section class="panel" id="media">
     <h2 data-i18n="media_gallery">Media gallery</h2>
-    <p class="muted" data-i18n="media_generation_gap">Image and video generation need a provider that is not configured. You can upload image, video, and audio files. Voice generation uses the configured speech model.</p>
+    <div class="media-states">
+      <div>
+        <button type="button" class="icon" disabled data-i18n="provider_required">Provider required</button>
+        <p class="muted" data-i18n="image_provider_required">AI image generation requires an image provider.</p>
+      </div>
+      <div>
+        <button type="button" class="icon" disabled data-i18n="provider_required">Provider required</button>
+        <p class="muted" data-i18n="video_provider_required">AI video generation requires a video provider. The current Groq credential has no video model.</p>
+      </div>
+      <div>
+        <button type="button" class="icon" disabled data-i18n="accept_model_terms">Accept model terms</button>
+        <p class="muted" data-i18n="voice_terms_required">The Groq organization admin must accept the speech model terms in the Groq console before an Arabic voice file can be generated.</p>
+        <a href="https://console.groq.com/playground?model=canopylabs%2Forpheus-arabic-saudi" data-i18n="open_groq_terms">Open Groq terms</a>
+      </div>
+    </div>
     <?php if ($mediaError !== ''): ?>
       <p class="alert" data-i18n="media_error_<?= e($mediaError) ?>">The file could not be saved.</p>
     <?php endif; ?>
@@ -103,13 +117,6 @@ $knownTypes = [
         <button class="primary" type="submit" data-i18n="upload">Upload</button>
       </form>
     </div>
-    <form id="voiceForm">
-      <input type="hidden" name="campaign_id" value="<?= $id ?>">
-      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-      <input type="hidden" name="lang" id="voice-lang" value="en">
-      <button class="primary" id="voice" type="submit" data-i18n="generate_voice">Generate voice</button>
-    </form>
-    <p id="voice-status" class="muted"></p>
     <?php if (!$media): ?>
       <p class="muted" data-i18n="no_media">No media yet.</p>
     <?php else: ?>
