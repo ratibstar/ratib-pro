@@ -1,4 +1,4 @@
-name: Temporary read-only campaign save error
+name: Temporary fix campaign price save
 
 on:
   workflow_dispatch:
@@ -7,12 +7,12 @@ permissions:
   contents: read
 
 jobs:
-  diagnose:
+  fix:
     runs-on: ubuntu-latest
     environment: rateb.sa
     timeout-minutes: 10
     steps:
-      - name: Read production save error
+      - name: Install campaign save fix
         env:
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
           DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
@@ -20,6 +20,23 @@ jobs:
           DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
         run: |
           set -euo pipefail
+          cat > "${RUNNER_TEMP}/campaign-save.php" << 'PHP'
+          <?php
+          require_once __DIR__.'/app/bootstrap.php';
+          require_login();
+          if($_SERVER['REQUEST_METHOD']!=='POST') exit('Method not allowed');
+          check_csrf();
+          $rawPrice = trim((string) ($_POST['price'] ?? ''));
+          $price = null;
+          if ($rawPrice !== '' && preg_match('/\d+(?:\.\d+)?/', str_replace(',', '', $rawPrice), $match)) {
+              $price = $match[0];
+          }
+          $s=db()->prepare("INSERT INTO campaigns (user_id,title,product_name,description,price,target_customer,status,created_at,updated_at) VALUES (?,?,?,?,?,?, 'draft', NOW(), NOW())");
+          $s->execute([$_SESSION['user_id'],trim($_POST['title']??''),trim($_POST['product_name']??''),trim($_POST['description']??''),$price,trim($_POST['target_customer']??'')]);
+          header('Location: /campaign.php?id='.db()->lastInsertId());
+          exit;
+          PHP
+          php -l "${RUNNER_TEMP}/campaign-save.php"
           KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
           export KEY_PATH
           python3 - << 'PY'
@@ -35,15 +52,24 @@ jobs:
           os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
           PY
           PORT="${DEPLOY_SSH_PORT:-22}"
-          ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new \
-            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" bash -s > ai-save-error.txt << 'BASH'
-          set +e
-          echo "UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          php -r 'echo "SAVE_SHA=".hash_file("sha256", "/home/admin/domains/ai.rateb.sa/campaign-save.php"), "\n";'
-          echo "LOG_CANDIDATES_START"
-          find /home/admin /usr/local/php83 /var/log/httpd /var/log/php-fpm -type f \( -name '*error*' -o -name 'php*log' -o -name '*fpm*.log' \) 2>/dev/null | head -40
-          echo "LOG_CANDIDATES_END"
-          php << 'PHP'
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          SSH=(ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          "${SSH[@]}" "${REMOTE}" "mkdir -p /home/admin/domains/ai.rateb.sa-file-backup-${STAMP} && cp -a /home/admin/domains/ai.rateb.sa/campaign-save.php /home/admin/domains/ai.rateb.sa-file-backup-${STAMP}/campaign-save.php && echo BACKUP=/home/admin/domains/ai.rateb.sa-file-backup-${STAMP}/campaign-save.php"
+          scp -i "${KEY_PATH}" -P "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${RUNNER_TEMP}/campaign-save.php" "${REMOTE}:/home/admin/domains/ai.rateb.sa/campaign-save.php"
+          TOKEN=$(openssl rand -hex 16)
+          "${SSH[@]}" "${REMOTE}" "cat > /home/admin/domains/ai.rateb.sa/.opcache-campaign-${TOKEN}.php" << EOF
+          <?php
+          if ((\$_GET['t'] ?? '') !== '${TOKEN}') { http_response_code(404); exit; }
+          header('Content-Type: text/plain; charset=UTF-8');
+          \$ok = function_exists('opcache_invalidate') ? opcache_invalidate('/home/admin/domains/ai.rateb.sa/campaign-save.php', true) : false;
+          echo \$ok ? "INVALIDATED=yes\n" : "INVALIDATED=no\n";
+          EOF
+          curl -sk -H 'Cache-Control: no-cache' "https://ai.rateb.sa/.opcache-campaign-${TOKEN}.php?t=${TOKEN}"
+          echo
+          "${SSH[@]}" "${REMOTE}" "rm -f /home/admin/domains/ai.rateb.sa/.opcache-campaign-${TOKEN}.php; php -l /home/admin/domains/ai.rateb.sa/campaign-save.php"
+          "${SSH[@]}" "${REMOTE}" php << 'PHP'
           <?php
           $c = require '/home/admin/domains/ai.rateb.sa/config/database.php';
           $pdo = new PDO(
@@ -52,39 +78,21 @@ jobs:
               $c['password'],
               [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false]
           );
+          $rawPrice = '100 SAR';
+          $price = null;
+          if ($rawPrice !== '' && preg_match('/\d+(?:\.\d+)?/', str_replace(',', '', $rawPrice), $match)) {
+              $price = $match[0];
+          }
           $userId = (int) $pdo->query('SELECT id FROM users ORDER BY id DESC LIMIT 1')->fetchColumn();
-          echo "USER_ID_PRESENT=" . ($userId > 0 ? 'yes' : 'no') . "\n";
-          $sql = "INSERT INTO campaigns (user_id,title,product_name,description,price,target_customer,status,created_at,updated_at) VALUES (?,?,?,?,?,?, 'draft', NOW(), NOW())";
-          try {
-              $pdo->beginTransaction();
-              $stmt = $pdo->prepare($sql);
-              $stmt->execute([$userId, 'Production generation check', 'RATEB AI Campaign', 'A short production check for campaign generation.', '100 SAR', 'Small business owners']);
-              $pdo->rollBack();
-              echo "INSERT_RESULT=ok\n";
-          } catch (Throwable $e) {
-              if ($pdo->inTransaction()) {
-                  $pdo->rollBack();
-              }
-              $message = preg_replace('/(password|pwd)\s*[=:]\s*\S+/i', '$1=[redacted]', $e->getMessage());
-              echo "ERROR_CLASS=" . $e::class . "\n";
-              echo "SQLSTATE=" . $e->getCode() . "\n";
-              echo "ERROR_MESSAGE=" . $message . "\n";
-          }
-          $cols = $pdo->query("SELECT COLUMN_NAME, IS_NULLABLE, COLUMN_DEFAULT, DATA_TYPE, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaigns' ORDER BY ORDINAL_POSITION");
-          foreach ($cols as $col) {
-              $default = $col['COLUMN_DEFAULT'];
-              $defaultText = $default === null ? 'NULL' : $default;
-              echo "COL {$col['COLUMN_NAME']} nullable={$col['IS_NULLABLE']} default={$defaultText} type={$col['DATA_TYPE']} extra={$col['EXTRA']}\n";
-          }
+          $pdo->beginTransaction();
+          $stmt = $pdo->prepare("INSERT INTO campaigns (user_id,title,product_name,description,price,target_customer,status,created_at,updated_at) VALUES (?,?,?,?,?,?, 'draft', NOW(), NOW())");
+          $stmt->execute([$userId, 'price check', 'product', 'desc', $price, 'customer']);
+          $id = (int) $pdo->lastInsertId();
+          $saved = $pdo->query('SELECT price FROM campaigns WHERE id=' . $id)->fetchColumn();
+          $pdo->rollBack();
+          echo "NORMALIZED_PRICE=" . $price . "\n";
+          echo "ROLLED_BACK_PRICE=" . $saved . "\n";
+          echo "DB_AI_UNCHANGED=" . (hash_file('sha256', '/home/admin/domains/ai.rateb.sa/config/ai.php') === '574f6c27b1d726dff89c6408df4b83ecfa197fcb2b4f6f032bf5a307ac1e2bd1' ? 'yes' : 'no') . "\n";
+          echo "DB_CONFIG_UNCHANGED=" . (hash_file('sha256', '/home/admin/domains/ai.rateb.sa/config/database.php') === '5afc681e1982ed40734678fba966feb15426cb26ffec465cb263e73049b4556d' ? 'yes' : 'no') . "\n";
           PHP
-          BASH
           rm -f "${KEY_PATH}"
-
-      - name: Upload error report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-save-error
-          path: ai-save-error.txt
-          retention-days: 1
-          if-no-files-found: warn
