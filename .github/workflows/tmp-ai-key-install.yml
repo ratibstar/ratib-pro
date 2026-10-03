@@ -1,0 +1,304 @@
+name: Temporary install AI key for PHP-FPM
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 10
+    outputs:
+      public_key: ${{ steps.seal.outputs.public_key }}
+    steps:
+      - name: Create a one-time encryption key on the server
+        id: seal
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" bash -s > "${RUNNER_TEMP}/seal.txt" << 'BASH'
+          set -euo pipefail
+          mkdir -p /home/admin/.secrets
+          chmod 700 /home/admin/.secrets
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /home/admin/.secrets/seal.pem
+          chmod 600 /home/admin/.secrets/seal.pem
+          openssl pkey -in /home/admin/.secrets/seal.pem -pubout -out /home/admin/.secrets/seal.pub
+          echo -n "PUBLIC_KEY_B64="
+          base64 -w0 /home/admin/.secrets/seal.pub
+          echo
+          BASH
+          line=$(grep '^PUBLIC_KEY_B64=' "${RUNNER_TEMP}/seal.txt")
+          echo "public_key=${line#PUBLIC_KEY_B64=}" >> "$GITHUB_OUTPUT"
+          rm -f "${KEY_PATH}" "${RUNNER_TEMP}/seal.txt"
+
+  seal:
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: ai.rateb.sa
+    timeout-minutes: 10
+    steps:
+      - name: Seal the existing API key
+        env:
+          RATEB_AI_API_KEY: ${{ secrets.RATEB_AI_API_KEY }}
+          PUBLIC_KEY_B64: ${{ needs.prepare.outputs.public_key }}
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os, pathlib
+          value = os.environ.get("RATEB_AI_API_KEY", "").strip()
+          if not value:
+              raise SystemExit("SECRET_MISSING")
+          work = pathlib.Path(os.environ["RUNNER_TEMP"]) / "sealed"
+          work.mkdir(parents=True, exist_ok=True)
+          (work / "key.txt").write_text(value, encoding="utf-8")
+          os.chmod(work / "key.txt", 0o600)
+          print("SECRET_PRESENT=yes")
+          PY
+          if [ -z "${PUBLIC_KEY_B64}" ]; then
+            echo "PUBLIC_KEY_MISSING"
+            exit 1
+          fi
+          echo "${PUBLIC_KEY_B64}" | base64 -d > "${RUNNER_TEMP}/sealed/pub.pem"
+          openssl rand -hex 32 > "${RUNNER_TEMP}/sealed/aes.pass"
+          chmod 600 "${RUNNER_TEMP}/sealed/aes.pass"
+          openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -pass "file:${RUNNER_TEMP}/sealed/aes.pass" -in "${RUNNER_TEMP}/sealed/key.txt" -out "${RUNNER_TEMP}/sealed/key.enc"
+          openssl pkeyutl -encrypt -pubin -inkey "${RUNNER_TEMP}/sealed/pub.pem" -in "${RUNNER_TEMP}/sealed/aes.pass" -out "${RUNNER_TEMP}/sealed/aes.enc"
+          rm -f "${RUNNER_TEMP}/sealed/key.txt" "${RUNNER_TEMP}/sealed/aes.pass" "${RUNNER_TEMP}/sealed/pub.pem"
+          echo "SEALED=yes"
+
+      - name: Upload sealed key
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-key-sealed
+          path: |
+            ${{ runner.temp }}/sealed/key.enc
+            ${{ runner.temp }}/sealed/aes.enc
+          retention-days: 1
+
+  install:
+    needs: seal
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 20
+    steps:
+      - name: Download sealed key
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-key-sealed
+          path: sealed
+
+      - name: Install key for ai.rateb.sa PHP-FPM and generate
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          SSH=(ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          scp -i "${KEY_PATH}" -P "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            sealed/key.enc sealed/aes.enc "${REMOTE}:/home/admin/.secrets/"
+          rm -f sealed/key.enc sealed/aes.enc
+          "${SSH[@]}" "${REMOTE}" bash -s > "${RUNNER_TEMP}/install.txt" << 'BASH'
+          set -euo pipefail
+          cd /home/admin/.secrets
+          openssl pkeyutl -decrypt -inkey seal.pem -in aes.enc -out aes.pass
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass file:aes.pass -in key.enc -out rateb_ai_api_key
+          chmod 600 rateb_ai_api_key
+          shred -u aes.pass aes.enc key.enc seal.pem seal.pub 2>/dev/null || rm -f aes.pass aes.enc key.enc seal.pem seal.pub
+          if [ ! -s rateb_ai_api_key ]; then
+            echo "KEY_FILE=empty"
+            exit 1
+          fi
+          echo "KEY_FILE=present"
+          cat > /home/admin/.secrets/rateb-ai-env.php << 'PHP'
+          <?php
+          $path = '/home/admin/.secrets/rateb_ai_api_key';
+          if (is_readable($path)) {
+              $value = trim((string) file_get_contents($path));
+              if ($value !== '') {
+                  putenv('RATEB_AI_API_KEY=' . $value);
+                  $_ENV['RATEB_AI_API_KEY'] = $value;
+                  $_SERVER['RATEB_AI_API_KEY'] = $value;
+              }
+          }
+          PHP
+          chmod 600 /home/admin/.secrets/rateb-ai-env.php
+          printf '%s\n' 'auto_prepend_file=/home/admin/.secrets/rateb-ai-env.php' > /home/admin/domains/ai.rateb.sa/.user.ini
+          chmod 644 /home/admin/domains/ai.rateb.sa/.user.ini
+          HT=/home/admin/domains/ai.rateb.sa/.htaccess
+          if ! grep -q 'rateb-ai-user-ini-deny' "$HT" 2>/dev/null; then
+            printf '\n# rateb-ai-user-ini-deny\n<Files ".user.ini">\nRequire all denied\n</Files>\n' >> "$HT"
+          fi
+          echo "USER_INI=written"
+          BASH
+          TOKEN=$(openssl rand -hex 16)
+          "${SSH[@]}" "${REMOTE}" "cat > /home/admin/domains/ai.rateb.sa/.key-probe-${TOKEN}.php" << EOF
+          <?php
+          if ((\$_GET['t'] ?? '') !== '${TOKEN}') { http_response_code(404); exit; }
+          header('Content-Type: text/plain; charset=UTF-8');
+          header('Cache-Control: no-store');
+          \$disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+          echo in_array('putenv', \$disabled, true) ? "PUTENV=disabled\n" : "PUTENV=enabled\n";
+          echo 'OPEN_BASEDIR=' . ini_get('open_basedir') . "\n";
+          echo 'USER_INI_TTL=' . ini_get('user_ini.cache_ttl') . "\n";
+          \$v = getenv('RATEB_AI_API_KEY');
+          if (\$v === false || \$v === '') { \$v = \$_SERVER['RATEB_AI_API_KEY'] ?? ''; }
+          echo (\$v === '' ? "WEB_KEY=NOT_SET\n" : "WEB_KEY=SET\n");
+          \$cfg = require __DIR__ . '/config/ai.php';
+          echo !empty(\$cfg['api_key']) ? "CONFIG_RESOLVES=SET\n" : "CONFIG_RESOLVES=NOT_SET\n";
+          echo 'PROVIDER=' . \$cfg['provider'] . "\n";
+          echo 'MODEL=' . \$cfg['model'] . "\n";
+          echo 'BASE=' . \$cfg['base_url'] . "\n";
+          EOF
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            curl -sk -H 'Cache-Control: no-cache' "https://ai.rateb.sa/.key-probe-${TOKEN}.php?t=${TOKEN}" | tee "${RUNNER_TEMP}/probe.txt"
+            if grep -q 'WEB_KEY=SET' "${RUNNER_TEMP}/probe.txt" && grep -q 'CONFIG_RESOLVES=SET' "${RUNNER_TEMP}/probe.txt"; then
+              echo "PROBE_READY=$attempt"
+              break
+            fi
+            sleep 20
+          done
+          "${SSH[@]}" "${REMOTE}" "rm -f /home/admin/domains/ai.rateb.sa/.key-probe-${TOKEN}.php"
+          if ! grep -q 'WEB_KEY=SET' "${RUNNER_TEMP}/probe.txt"; then
+            echo "WEB_KEY_STILL_UNSET"
+            cat "${RUNNER_TEMP}/install.txt"
+            exit 1
+          fi
+          cat "${RUNNER_TEMP}/install.txt"
+          rm -f "${KEY_PATH}"
+
+      - name: Run Campaign Details generation
+        run: |
+          set -euo pipefail
+          BASE="https://ai.rateb.sa"
+          WORK="${RUNNER_TEMP}/ai-gen"
+          mkdir -p "$WORK"
+          chmod 700 "$WORK"
+          python3 - << 'PY'
+          import os, pathlib, secrets
+          work = pathlib.Path(os.environ["RUNNER_TEMP"]) / "ai-gen"
+          work.mkdir(parents=True, exist_ok=True)
+          (work / "email").write_text("ai-gen-" + secrets.token_hex(4) + "@rateb.sa", encoding="utf-8")
+          (work / "password").write_text(secrets.token_urlsafe(18), encoding="utf-8")
+          os.chmod(work / "password", 0o600)
+          PY
+          CSRF_FILE="$WORK/csrf"
+          COOKIE="$WORK/cookies"
+          extract_csrf() {
+            python3 - "$1" "$2" "$CSRF_FILE" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          match = re.search(r'name="' + re.escape(sys.argv[2]) + r'" value="([^"]+)"', html)
+          if not match:
+              raise SystemExit(1)
+          open(sys.argv[3], "w", encoding="utf-8").write(match.group(1))
+          PY
+          }
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/register.html" "$BASE/register.php"
+          extract_csrf "$WORK/register.html" csrf_token
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/register.hdr" -o "$WORK/register-post.html" \
+            --data-urlencode "csrf_token@${CSRF_FILE}" \
+            --data-urlencode "name=AI Generation Check" \
+            --data-urlencode "email@${WORK}/email" \
+            --data-urlencode "password@${WORK}/password" \
+            "$BASE/register.php"
+          grep -qi 'dashboard.php' "$WORK/register.hdr"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/new.html" "$BASE/campaign-new.php"
+          extract_csrf "$WORK/new.html" csrf
+          curl -sS -c "$COOKIE" -b "$COOKIE" -D "$WORK/save.hdr" -o "$WORK/save.html" -w 'CAMPAIGN_HTTP=%{http_code}\n' \
+            --data-urlencode "csrf@${CSRF_FILE}" \
+            --data-urlencode "title=Production generation check" \
+            --data-urlencode "product_name=RATEB AI Campaign" \
+            --data-urlencode "description=A short production check for campaign generation." \
+            --data-urlencode "price=100 SAR" \
+            --data-urlencode "target_customer=Small business owners" \
+            "$BASE/campaign-save.php"
+          CAMPAIGN_ID=$(python3 - "$WORK/save.hdr" << 'PY'
+          import re, sys
+          text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          match = re.search(r'campaign\.php\?id=(\d+)', text)
+          print(match.group(1) if match else "")
+          PY
+          )
+          echo "CAMPAIGN_ID=${CAMPAIGN_ID}"
+          test -n "$CAMPAIGN_ID"
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          extract_csrf "$WORK/campaign.html" csrf
+          code=$(curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/generate.json" -w '%{http_code}' --max-time 120 \
+            --data-urlencode "csrf@${CSRF_FILE}" \
+            --data-urlencode "campaign_id=${CAMPAIGN_ID}" \
+            --data-urlencode "lang=en" \
+            "$BASE/app/ai/generate.php" || true)
+          python3 - "$WORK/generate.json" "$code" << 'PY'
+          import json, re, sys
+          raw = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          http_code = sys.argv[2]
+          error = ""
+          ok = False
+          try:
+              data = json.loads(raw)
+          except json.JSONDecodeError:
+              data = {}
+              error = "generation response was not JSON"
+          if isinstance(data, dict):
+              ok = bool(data.get("ok"))
+              if not ok and not error:
+                  error = str(data.get("error") or "")
+          error = re.sub(r"sk-[A-Za-z0-9_\-]+", "[redacted]", error)[:180]
+          print("GENERATE_HTTP=" + http_code)
+          print("GENERATE_OK=" + ("yes" if ok else "no"))
+          if error:
+              print("GENERATE_ERROR=" + error)
+          PY
+          curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign-after.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
+          python3 - "$WORK/campaign-after.html" << 'PY'
+          import re, sys
+          html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          found = re.findall(r'data-i18n="type_([a-z0-9_]+)"', html)
+          wanted = ["strategy","ad_copy","social_posts","whatsapp","product_description","video_ideas","voiceover","content_plan_7_days"]
+          present = [name for name in wanted if name in found]
+          print("OUTPUT_COUNT=" + str(len(present)))
+          print("OUTPUT_TYPES=" + (",".join(present) if present else "none"))
+          PY
+          rm -f "$WORK/password" "$CSRF_FILE" "$COOKIE"
