@@ -104,7 +104,55 @@
       delete: 'Delete',
       media_error_size: 'That file is too large.',
       media_error_type: 'That file type is not allowed.',
-      media_error_upload: 'The file could not be saved.'
+      media_error_upload: 'The file could not be saved.',
+      brand_kit: 'Brand kit',
+      brand_kit_title: 'Brand kit',
+      brand_lead: 'These details are optional context for future campaign copy.',
+      brand_saved: 'Brand kit saved.',
+      brand_name: 'Brand name',
+      brand_tone: 'Tone of voice',
+      brand_contact: 'Contact information',
+      brand_language: 'Preferred language',
+      brand_primary: 'Primary color',
+      brand_secondary: 'Secondary color',
+      brand_logo: 'Logo',
+      save_brand: 'Save brand kit',
+      objective: 'Objective',
+      budget: 'Budget',
+      start_date: 'Start date',
+      end_date: 'End date',
+      dates: 'Dates',
+      progress: 'Progress',
+      campaign_workspace: 'Campaign workspace',
+      save_changes: 'Save changes',
+      strategy_heading: 'AI-generated strategy',
+      no_strategy: 'No strategy yet. Generate the campaign below.',
+      status_draft: 'Draft',
+      status_in_progress: 'In Progress',
+      status_ready: 'Ready',
+      status_completed: 'Completed',
+      content_planner: 'Content planner',
+      item_title: 'Content title',
+      item_body: 'Content',
+      planner_status: 'Planner status',
+      approval_status: 'Approval',
+      add_content: 'Add content',
+      no_items: 'No content items yet.',
+      assign_date: 'Assign to date',
+      add_to_calendar: 'Add to calendar',
+      planner_draft: 'Draft',
+      planner_review: 'Review',
+      planner_approved: 'Approved',
+      planner_scheduled: 'Scheduled',
+      planner_published: 'Published',
+      approval_draft: 'Draft',
+      approval_approved: 'Approved',
+      approval_rejected: 'Rejected',
+      save_variation: 'Save current copy as a variation',
+      generate_variation: 'Generate another variation',
+      generating_variation: 'Generating variation...',
+      variations: 'Content variations',
+      no_variations: 'No saved variations yet.'
     },
     ar: {
       dashboard: 'لوحة التحكم',
@@ -192,7 +240,55 @@
       delete: 'حذف',
       media_error_size: 'حجم الملف أكبر من المسموح.',
       media_error_type: 'نوع الملف غير مسموح.',
-      media_error_upload: 'تعذر حفظ الملف.'
+      media_error_upload: 'تعذر حفظ الملف.',
+      brand_kit: 'هوية العلامة',
+      brand_kit_title: 'هوية العلامة',
+      brand_lead: 'هذه البيانات سياق اختياري لتوليد محتوى الحملات لاحقاً.',
+      brand_saved: 'تم حفظ هوية العلامة.',
+      brand_name: 'اسم العلامة',
+      brand_tone: 'نبرة الخطاب',
+      brand_contact: 'بيانات التواصل',
+      brand_language: 'اللغة المفضلة',
+      brand_primary: 'اللون الأساسي',
+      brand_secondary: 'اللون الثانوي',
+      brand_logo: 'الشعار',
+      save_brand: 'حفظ هوية العلامة',
+      objective: 'الهدف',
+      budget: 'الميزانية',
+      start_date: 'تاريخ البداية',
+      end_date: 'تاريخ النهاية',
+      dates: 'التواريخ',
+      progress: 'التقدم',
+      campaign_workspace: 'مساحة الحملة',
+      save_changes: 'حفظ التغييرات',
+      strategy_heading: 'الاستراتيجية المولدة',
+      no_strategy: 'لا توجد استراتيجية بعد. ولّد الحملة بالأسفل.',
+      status_draft: 'مسودة',
+      status_in_progress: 'قيد التنفيذ',
+      status_ready: 'جاهزة',
+      status_completed: 'مكتملة',
+      content_planner: 'مخطط المحتوى',
+      item_title: 'عنوان المحتوى',
+      item_body: 'المحتوى',
+      planner_status: 'حالة المخطط',
+      approval_status: 'الاعتماد',
+      add_content: 'إضافة محتوى',
+      no_items: 'لا توجد عناصر محتوى بعد.',
+      assign_date: 'تعيين لتاريخ',
+      add_to_calendar: 'إضافة إلى التقويم',
+      planner_draft: 'مسودة',
+      planner_review: 'مراجعة',
+      planner_approved: 'معتمد',
+      planner_scheduled: 'مجدول',
+      planner_published: 'منشور',
+      approval_draft: 'مسودة',
+      approval_approved: 'معتمد',
+      approval_rejected: 'مرفوض',
+      save_variation: 'حفظ النسخة الحالية كتنويع',
+      generate_variation: 'توليد تنويع آخر',
+      generating_variation: 'جاري توليد التنويع...',
+      variations: 'تنويعات المحتوى',
+      no_variations: 'لا توجد تنويعات محفوظة بعد.'
     }
   };
 
@@ -294,6 +390,28 @@
         var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm) });
         var payload = await response.json();
         if (!response.ok) throw new Error(payload.error || 'Voice generation failed');
+        location.href = payload.redirect;
+      } catch (error) {
+        status.textContent = error.message;
+        button.disabled = false;
+      }
+    };
+  }
+  var variationForm = document.getElementById('variationForm');
+  if (variationForm) {
+    variationForm.onsubmit = async function (event) {
+      event.preventDefault();
+      var status = document.getElementById('variation-status');
+      var button = document.getElementById('generate-variation');
+      document.querySelectorAll('input[name="lang"]').forEach(function (node) {
+        node.value = language;
+      });
+      button.disabled = true;
+      status.textContent = dict[language].generating_variation;
+      try {
+        var response = await fetch('/app/ai/variation.php', { method: 'POST', body: new FormData(variationForm) });
+        var payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Variation failed');
         location.href = payload.redirect;
       } catch (error) {
         status.textContent = error.message;

@@ -29,6 +29,26 @@ $knownTypes = [
     'voiceover',
     'content_plan_7_days',
 ];
+$items = db()->prepare('SELECT * FROM campaign_items WHERE campaign_id=? AND user_id=? ORDER BY item_date IS NULL, item_date, id');
+$items->execute([$id, $_SESSION['user_id']]);
+$items = $items->fetchAll();
+$variations = db()->prepare('SELECT * FROM campaign_variations WHERE campaign_id=? AND user_id=? ORDER BY id DESC');
+$variations->execute([$id, $_SESSION['user_id']]);
+$variationGroups = [];
+foreach ($variations->fetchAll() as $variation) {
+    $variationGroups[(string) $variation['label']][] = $variation;
+}
+$status = campaign_one_of((string) ($campaign['status'] ?? 'draft'), campaign_status_values(), 'draft');
+$progress = ['draft' => 25, 'in_progress' => 50, 'ready' => 75, 'completed' => 100][$status];
+$strategy = '';
+$textOutputs = [];
+foreach ($outputs as $row) {
+    if ((string) $row['output_type'] === 'strategy' && $strategy === '') {
+        $strategy = (string) $row['content'];
+    } else {
+        $textOutputs[] = $row;
+    }
+}
 ?>
 <!doctype html>
 <html lang="en" data-theme="light">
@@ -45,21 +65,62 @@ $knownTypes = [
   <nav>
     <a href="/dashboard.php" data-i18n="dashboard">Dashboard</a>
     <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
+    <a href="/brand.php" data-i18n="brand_kit">Brand kit</a>
     <a href="/logout.php" data-i18n="logout">Logout</a>
     <button type="button" id="lang" class="icon">عربي</button>
     <button type="button" id="theme" class="icon">☾</button>
   </nav>
 </header>
 <main class="wrap">
-  <section class="panel">
+  <section class="panel" id="overview">
     <span class="eyebrow" data-i18n="campaign_details">CAMPAIGN DETAILS</span>
     <h1><?= e($campaign['title']) ?></h1>
+    <p><span class="badge" data-i18n="status_<?= e($status) ?>"><?= e($status) ?></span></p>
+    <div class="progress" aria-hidden="true"><span style="width:<?= (int) $progress ?>%"></span></div>
+    <p class="muted"><span data-i18n="progress">Progress</span>: <?= (int) $progress ?>%</p>
     <div class="grid two">
       <div><b data-i18n="product">Product / Service</b><p><?= e($campaign['product_name']) ?></p></div>
       <div><b data-i18n="price">Price</b><p><?= e($campaign['price']) ?></p></div>
       <div><b data-i18n="target">Target customer</b><p><?= e($campaign['target_customer']) ?></p></div>
+      <div><b data-i18n="objective">Objective</b><p><?= e($campaign['objective'] ?? '') ?></p></div>
+      <div><b data-i18n="budget">Budget</b><p><?= e($campaign['budget'] ?? '') ?></p></div>
+      <div><b data-i18n="dates">Dates</b><p><?= e($campaign['start_date'] ?? '') ?> – <?= e($campaign['end_date'] ?? '') ?></p></div>
       <div><b data-i18n="description">Description</b><p><?= nl2br(e($campaign['description'])) ?></p></div>
     </div>
+  </section>
+  <section class="panel" id="details">
+    <h2 data-i18n="campaign_workspace">Campaign workspace</h2>
+    <form method="post" action="/campaign-update.php">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="campaign_id" value="<?= $id ?>">
+      <div class="grid two">
+        <label><span data-i18n="campaign_title">Campaign title *</span><input name="title" value="<?= e($campaign['title']) ?>" required></label>
+        <label><span data-i18n="product_required">Product / Service *</span><input name="product_name" value="<?= e($campaign['product_name']) ?>" required></label>
+        <label><span data-i18n="objective">Objective</span><input name="objective" value="<?= e($campaign['objective'] ?? '') ?>"></label>
+        <label><span data-i18n="target_required">Target customer *</span><input name="target_customer" value="<?= e($campaign['target_customer']) ?>" required></label>
+        <label><span data-i18n="budget">Budget</span><input name="budget" value="<?= e($campaign['budget'] ?? '') ?>"></label>
+        <label><span data-i18n="price">Price</span><input name="price" value="<?= e($campaign['price']) ?>"></label>
+        <label><span data-i18n="start_date">Start date</span><input type="date" name="start_date" value="<?= e($campaign['start_date'] ?? '') ?>"></label>
+        <label><span data-i18n="end_date">End date</span><input type="date" name="end_date" value="<?= e($campaign['end_date'] ?? '') ?>"></label>
+        <label><span data-i18n="col_status">Status</span>
+          <select name="status">
+            <?php foreach (campaign_status_values() as $option): ?>
+              <option value="<?= e($option) ?>" data-i18n="status_<?= e($option) ?>" <?= $option === $status ? 'selected' : '' ?>><?= e($option) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label><span data-i18n="description_required">Description *</span><textarea name="description" required><?= e($campaign['description']) ?></textarea></label>
+      </div>
+      <button class="primary" type="submit" data-i18n="save_changes">Save changes</button>
+    </form>
+  </section>
+  <section class="panel" id="strategy">
+    <h2 data-i18n="strategy_heading">AI-generated strategy</h2>
+    <?php if ($strategy === ''): ?>
+      <p class="muted" data-i18n="no_strategy">No strategy yet. Generate the campaign below.</p>
+    <?php else: ?>
+      <div><?= nl2br(e($strategy)) ?></div>
+    <?php endif; ?>
     <form id="generateForm">
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
@@ -160,12 +221,12 @@ $knownTypes = [
       </div>
     <?php endif; ?>
   </section>
-  <section class="panel">
+  <section class="panel" id="copy">
     <h2 data-i18n="results">AI Results</h2>
-    <?php if (!$outputs): ?>
+    <?php if (!$textOutputs): ?>
       <p class="muted" data-i18n="no_results">No AI results yet. Generate the campaign above.</p>
     <?php else: ?>
-      <?php foreach ($outputs as $r): ?>
+      <?php foreach ($textOutputs as $r): ?>
         <?php
         $type = (string) $r['output_type'];
         $label = ucwords(str_replace('_', ' ', $type));
@@ -173,6 +234,104 @@ $knownTypes = [
         <article class="result">
           <h3<?php if (in_array($type, $knownTypes, true)): ?> data-i18n="type_<?= e($type) ?>"<?php endif; ?>><?= e($label) ?></h3>
           <div><?= nl2br(e($r['content'])) ?></div>
+          <form method="post" action="/app/content/save.php" class="assign-form">
+            <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="campaign_id" value="<?= $id ?>">
+            <input type="hidden" name="title" value="<?= e($label) ?>">
+            <input type="hidden" name="body" value="<?= e($r['content']) ?>">
+            <input type="hidden" name="planner_status" value="draft">
+            <input type="hidden" name="approval_status" value="draft">
+            <label><span data-i18n="assign_date">Assign to date</span><input type="date" name="item_date"></label>
+            <button type="submit" data-i18n="add_to_calendar">Add to calendar</button>
+          </form>
+        </article>
+      <?php endforeach; ?>
+    <?php endif; ?>
+    <form method="post" action="/app/content/variation-save.php">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="campaign_id" value="<?= $id ?>">
+      <button type="submit" data-i18n="save_variation">Save current copy as a variation</button>
+    </form>
+    <form id="variationForm">
+      <input type="hidden" name="campaign_id" value="<?= $id ?>">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="lang" value="en">
+      <button class="primary" id="generate-variation" type="submit" data-i18n="generate_variation">Generate another variation</button>
+    </form>
+    <p id="variation-status" class="muted"></p>
+  </section>
+  <section class="panel" id="planner">
+    <h2 data-i18n="content_planner">Content planner</h2>
+    <form method="post" action="/app/content/save.php">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="campaign_id" value="<?= $id ?>">
+      <div class="grid two">
+        <label><span data-i18n="item_title">Content title</span><input name="title" required></label>
+        <label><span data-i18n="assign_date">Assign to date</span><input type="date" name="item_date"></label>
+        <label><span data-i18n="item_body">Content</span><textarea name="body" required></textarea></label>
+        <label><span data-i18n="planner_status">Planner status</span>
+          <select name="planner_status">
+            <?php foreach (planner_status_values() as $option): ?>
+              <option value="<?= e($option) ?>" data-i18n="planner_<?= e($option) ?>"><?= e($option) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label><span data-i18n="approval_status">Approval</span>
+          <select name="approval_status">
+            <?php foreach (approval_status_values() as $option): ?>
+              <option value="<?= e($option) ?>" data-i18n="approval_<?= e($option) ?>"><?= e($option) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+      </div>
+      <button class="primary" type="submit" data-i18n="add_content">Add content</button>
+    </form>
+    <?php if (!$items): ?>
+      <p class="muted" data-i18n="no_items">No content items yet.</p>
+    <?php else: ?>
+      <?php foreach ($items as $item): ?>
+        <form method="post" action="/app/content/save.php" class="result">
+          <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+          <input type="hidden" name="campaign_id" value="<?= $id ?>">
+          <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+          <div class="grid two">
+            <label><span data-i18n="item_title">Content title</span><input name="title" value="<?= e($item['title']) ?>" required></label>
+            <label><span data-i18n="assign_date">Assign to date</span><input type="date" name="item_date" value="<?= e($item['item_date'] ?? '') ?>"></label>
+            <label><span data-i18n="item_body">Content</span><textarea name="body" required><?= e($item['body']) ?></textarea></label>
+            <label><span data-i18n="planner_status">Planner status</span>
+              <select name="planner_status">
+                <?php foreach (planner_status_values() as $option): ?>
+                  <option value="<?= e($option) ?>" data-i18n="planner_<?= e($option) ?>" <?= $option === $item['planner_status'] ? 'selected' : '' ?>><?= e($option) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <label><span data-i18n="approval_status">Approval</span>
+              <select name="approval_status">
+                <?php foreach (approval_status_values() as $option): ?>
+                  <option value="<?= e($option) ?>" data-i18n="approval_<?= e($option) ?>" <?= $option === $item['approval_status'] ? 'selected' : '' ?>><?= e($option) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+          </div>
+          <button class="primary" type="submit" data-i18n="save_changes">Save changes</button>
+          <button type="submit" name="action" value="delete" data-i18n="delete">Delete</button>
+        </form>
+      <?php endforeach; ?>
+    <?php endif; ?>
+  </section>
+  <section class="panel" id="variations">
+    <h2 data-i18n="variations">Content variations</h2>
+    <?php if (!$variationGroups): ?>
+      <p class="muted" data-i18n="no_variations">No saved variations yet.</p>
+    <?php else: ?>
+      <?php foreach ($variationGroups as $label => $group): ?>
+        <article class="result">
+          <h3><?= e($label) ?></h3>
+          <?php foreach ($group as $row): ?>
+            <?php $type = (string) $row['output_type']; ?>
+            <h4<?php if (in_array($type, $knownTypes, true)): ?> data-i18n="type_<?= e($type) ?>"<?php endif; ?>><?= e(ucwords(str_replace('_', ' ', $type))) ?></h4>
+            <div><?= nl2br(e($row['content'])) ?></div>
+          <?php endforeach; ?>
         </article>
       <?php endforeach; ?>
     <?php endif; ?>

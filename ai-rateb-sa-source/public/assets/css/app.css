@@ -6,7 +6,12 @@
 .media-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .media-actions form{margin:0}
 .media-actions .button{padding:8px 12px}
-@media(max-width:700px){.media-uploads,.media-grid,.media-states{grid-template-columns:1fr}}
+.progress{height:10px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:12px 0}
+.progress span{display:block;height:100%;background:var(--accent)}
+.assign-form{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:12px}
+.assign-form label{margin:0;min-width:180px}
+.brand-logo{max-width:160px;max-height:80px;border-radius:8px}
+@media(max-width:700px){.assign-form{display:block}}
 
 a{color:inherit}
 .topbar{height:70px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%;position:sticky;top:0;z-index:5}
