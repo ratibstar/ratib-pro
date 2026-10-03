@@ -19,8 +19,30 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
     exit;
 }
 
-set_time_limit(240);
+set_time_limit(90);
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
+$jobId = (string) ($_POST['job_id'] ?? '');
+if ($jobId !== '') {
+    if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
+        http_response_code(422);
+        echo json_encode(['error' => 'Image provider request failed.']);
+        exit;
+    }
+    $saved = $_SESSION['ai_image_jobs'][$jobId] ?? null;
+    if (!is_array($saved) || (int) ($saved['campaign_id'] ?? 0) !== (int) $campaign['id']) {
+        http_response_code(404);
+        echo json_encode(['error' => 'Image provider request failed.']);
+        exit;
+    }
+    if (time() - (int) ($saved['created'] ?? 0) > 900) {
+        unset($_SESSION['ai_image_jobs'][$jobId]);
+        http_response_code(504);
+        echo json_encode(['error' => 'Image generation is still queued on the free provider. Try again.']);
+        exit;
+    }
+    ai_horde_finish_job($campaign, $jobId);
+}
+
 $parts = [];
 foreach (['product_name', 'title', 'description'] as $field) {
     $value = trim((string) ($campaign[$field] ?? ''));
@@ -77,72 +99,82 @@ if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
     echo json_encode(['error' => 'Image provider request failed.']);
     exit;
 }
+if (!isset($_SESSION['ai_image_jobs']) || !is_array($_SESSION['ai_image_jobs'])) {
+    $_SESSION['ai_image_jobs'] = [];
+}
+$_SESSION['ai_image_jobs'][$jobId] = [
+    'campaign_id' => (int) $campaign['id'],
+    'created' => time(),
+];
+if (count($_SESSION['ai_image_jobs']) > 3) {
+    $_SESSION['ai_image_jobs'] = array_slice($_SESSION['ai_image_jobs'], -3, null, true);
+}
+echo json_encode(['pending' => true, 'job_id' => $jobId], JSON_UNESCAPED_UNICODE);
 
-$done = false;
-for ($attempt = 0; $attempt < 90; $attempt++) {
-    sleep(2);
+function ai_horde_finish_job(array $campaign, string $jobId): void
+{
     $check = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/check/' . rawurlencode($jobId));
     $state = json_decode($check['body'], true);
     if (is_array($state) && !empty($state['faulted'])) {
+        unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
         echo json_encode(['error' => 'Image provider request failed.']);
         exit;
     }
-    if (is_array($state) && !empty($state['done'])) {
-        $done = true;
-        break;
+    if (!is_array($state) || empty($state['done'])) {
+        echo json_encode(['pending' => true, 'job_id' => $jobId], JSON_UNESCAPED_UNICODE);
+        exit;
     }
-}
-if (!$done) {
-    http_response_code(504);
-    echo json_encode(['error' => 'Image generation is still queued on the free provider. Try again.']);
-    exit;
-}
 
-$status = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/status/' . rawurlencode($jobId));
-$result = json_decode($status['body'], true);
-$imageUrl = '';
-$modelName = '';
-if (is_array($result)) {
-    $imageUrl = (string) ($result['generations'][0]['img'] ?? '');
-    $modelName = (string) ($result['generations'][0]['model'] ?? '');
-}
-$host = strtolower((string) parse_url($imageUrl, PHP_URL_HOST));
-if (parse_url($imageUrl, PHP_URL_SCHEME) !== 'https' || !str_ends_with($host, '.r2.cloudflarestorage.com')) {
-    http_response_code(502);
-    echo json_encode(['error' => 'Image provider request failed.']);
-    exit;
-}
+    $status = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/status/' . rawurlencode($jobId));
+    $result = json_decode($status['body'], true);
+    $imageUrl = '';
+    $modelName = '';
+    if (is_array($result)) {
+        $imageUrl = (string) ($result['generations'][0]['img'] ?? '');
+        $modelName = (string) ($result['generations'][0]['model'] ?? '');
+    }
+    $host = strtolower((string) parse_url($imageUrl, PHP_URL_HOST));
+    if (parse_url($imageUrl, PHP_URL_SCHEME) !== 'https' || !str_ends_with($host, '.r2.cloudflarestorage.com')) {
+        unset($_SESSION['ai_image_jobs'][$jobId]);
+        http_response_code(502);
+        echo json_encode(['error' => 'Image provider request failed.']);
+        exit;
+    }
 
-$download = ai_horde_request('GET', $imageUrl);
-$finalHost = strtolower((string) parse_url($download['effective'], PHP_URL_HOST));
-if ($download['http'] !== 200 || !str_ends_with($finalHost, '.r2.cloudflarestorage.com')) {
-    http_response_code(502);
-    echo json_encode(['error' => 'Image provider request failed.']);
-    exit;
-}
-$bytes = $download['body'];
-$mime = ai_image_mime($bytes);
-if ($mime === null || strlen($bytes) < 32 || strlen($bytes) > media_max_bytes('image')) {
-    http_response_code(502);
-    echo json_encode(['error' => 'Image provider request failed.']);
-    exit;
-}
+    $download = ai_horde_request('GET', $imageUrl);
+    $finalHost = strtolower((string) parse_url($download['effective'], PHP_URL_HOST));
+    if ($download['http'] !== 200 || !str_ends_with($finalHost, '.r2.cloudflarestorage.com')) {
+        unset($_SESSION['ai_image_jobs'][$jobId]);
+        http_response_code(502);
+        echo json_encode(['error' => 'Image provider request failed.']);
+        exit;
+    }
+    $bytes = $download['body'];
+    $mime = ai_image_mime($bytes);
+    if ($mime === null || strlen($bytes) < 32 || strlen($bytes) > media_max_bytes('image')) {
+        unset($_SESSION['ai_image_jobs'][$jobId]);
+        http_response_code(502);
+        echo json_encode(['error' => 'Image provider request failed.']);
+        exit;
+    }
 
-try {
-    media_store_bytes($campaign, 'image', 'ai', 'ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
-} catch (Throwable $error) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Could not save the image file.']);
+    try {
+        media_store_bytes($campaign, 'image', 'ai', 'ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
+    } catch (Throwable $error) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Could not save the image file.']);
+        exit;
+    }
+    unset($_SESSION['ai_image_jobs'][$jobId]);
+    echo json_encode([
+        'ok' => true,
+        'model' => $modelName,
+        'mime' => $mime,
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'],
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
-
-echo json_encode([
-    'ok' => true,
-    'model' => $modelName,
-    'mime' => $mime,
-    'redirect' => '/campaign.php?id=' . (int) $campaign['id'],
-], JSON_UNESCAPED_UNICODE);
 
 function ai_horde_request(string $method, string $url, ?string $body = null): array
 {

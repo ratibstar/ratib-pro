@@ -10,7 +10,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: rateb.sa
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -53,7 +53,8 @@ jobs:
           <?php
           if ((\$_GET['t'] ?? '') !== '${TOKEN}') { http_response_code(404); exit; }
           header('Content-Type: text/plain; charset=UTF-8');
-          echo 'INVALIDATED=' . (function_exists('opcache_invalidate') && opcache_invalidate('${ROOT}/campaign.php', true) ? 'yes' : 'no') . "\\n";
+          echo 'INVALIDATED_CAMPAIGN=' . (function_exists('opcache_invalidate') && opcache_invalidate('${ROOT}/campaign.php', true) ? 'yes' : 'no') . "\\n";
+          echo 'INVALIDATED_IMAGE=' . (function_exists('opcache_invalidate') && opcache_invalidate('${ROOT}/app/ai/image.php', true) ? 'yes' : 'no') . "\\n";
           EOF
           curl -fsS "https://ai.rateb.sa/.ai-refresh-${TOKEN}.php?t=${TOKEN}"
           echo
@@ -131,11 +132,11 @@ jobs:
             "$BASE/app/ai/image.php")
           echo "FOREIGN_CAMPAIGN_HTTP=${code}"
           test "$code" = "404"
-          code=$(curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/image.json" -w '%{http_code}' --max-time 250 \
+          code=$(curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/image.json" -w '%{http_code}' --max-time 60 \
             --data-urlencode "csrf@${CSRF}" \
             --data-urlencode "campaign_id=${CAMPAIGN_ID}" \
             "$BASE/app/ai/image.php" || true)
-          python3 - "$WORK/image.json" "$code" << 'PY'
+          python3 - "$WORK/image.json" "$code" "$WORK/job" << 'PY'
           import json, re, sys
           raw = open(sys.argv[1], encoding="utf-8", errors="replace").read()
           try:
@@ -143,15 +144,61 @@ jobs:
           except json.JSONDecodeError:
               data = {}
           error = re.sub(r"(?:sk-|gsk_)[A-Za-z0-9_\-]+", "[redacted]", str(data.get("error") or ""))[:180]
-          print("IMAGE_HTTP=" + sys.argv[2])
-          print("IMAGE_OK=" + ("yes" if data.get("ok") else "no"))
-          print("IMAGE_MODEL=" + str(data.get("model") or ""))
-          print("IMAGE_MIME=" + str(data.get("mime") or ""))
+          job = str(data.get("job_id") or "")
+          print("IMAGE_SUBMIT_HTTP=" + sys.argv[2])
+          print("IMAGE_PENDING=" + ("yes" if data.get("pending") and len(job) == 36 else "no"))
           if error:
               print("IMAGE_ERROR=" + error)
-          if not data.get("ok"):
+          if not data.get("pending") or len(job) != 36:
               raise SystemExit(1)
+          open(sys.argv[3], "w", encoding="utf-8").write(job)
           PY
+          JOB=$(cat "$WORK/job")
+          for attempt in $(seq 1 240); do
+            sleep 3
+            code=$(curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/image.json" -w '%{http_code}' --max-time 60 \
+              --data-urlencode "csrf@${CSRF}" \
+              --data-urlencode "campaign_id=${CAMPAIGN_ID}" \
+              --data-urlencode "job_id=${JOB}" \
+              "$BASE/app/ai/image.php" || true)
+            state=$(python3 - "$WORK/image.json" "$code" << 'PY'
+          import json, re, sys
+          raw = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+          try:
+              data = json.loads(raw or "{}")
+          except json.JSONDecodeError:
+              data = {}
+          error = re.sub(r"(?:sk-|gsk_)[A-Za-z0-9_\-]+", "[redacted]", str(data.get("error") or ""))[:180]
+          if data.get("ok"):
+              print("done")
+              print("IMAGE_HTTP=" + sys.argv[2])
+              print("IMAGE_OK=yes")
+              print("IMAGE_MODEL=" + str(data.get("model") or ""))
+              print("IMAGE_MIME=" + str(data.get("mime") or ""))
+          elif data.get("pending"):
+              print("pending")
+          else:
+              print("failed")
+              print("IMAGE_HTTP=" + sys.argv[2])
+              print("IMAGE_OK=no")
+              if error:
+                  print("IMAGE_ERROR=" + error)
+          PY
+            )
+            first=${state%%$'\n'*}
+            if [ "$first" = "done" ]; then
+              printf '%s\n' "$state"
+              break
+            fi
+            if [ "$first" = "pending" ]; then
+              if [ $((attempt % 20)) -eq 0 ]; then echo "IMAGE_STILL_PENDING=${attempt}"; fi
+              continue
+            fi
+            printf '%s\n' "$state"
+            exit 1
+          done
+          first=${state%%$'\n'*}
+          if [ "$first" != "done" ]; then echo "IMAGE_ERROR=still queued"; exit 1; fi
           curl -sS -c "$COOKIE" -b "$COOKIE" -o "$WORK/campaign.html" "$BASE/campaign.php?id=${CAMPAIGN_ID}"
           python3 - "$WORK/campaign.html" << 'PY'
           import re, sys

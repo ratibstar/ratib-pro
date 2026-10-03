@@ -91,6 +91,7 @@
       voice_available: 'Voice: available',
       generate_image: 'Generate image',
       generating_image: 'Generating image...',
+      image_queued: 'Image generation is still queued on the free provider. Try again.',
       video_provider_required: 'AI video generation requires a video provider. No free video API is available, and the current Groq credential has no video model.',
       upload_image: 'Upload image',
       upload_video: 'Upload video',
@@ -178,6 +179,7 @@
       voice_available: 'الصوت: متاح',
       generate_image: 'توليد صورة',
       generating_image: 'جاري توليد الصورة...',
+      image_queued: 'توليد الصورة ما زال في الانتظار لدى المزود المجاني. حاول مرة أخرى.',
       video_provider_required: 'توليد الفيديو بالذكاء الاصطناعي يحتاج مزود فيديو. لا توجد واجهة فيديو مجانية، وبيانات Groq الحالية لا تتضمن نموذج فيديو.',
       upload_image: 'رفع صورة',
       upload_video: 'رفع فيديو',
@@ -251,15 +253,30 @@
       button.disabled = true;
       status.textContent = dict[language].generating_image;
       try {
-        var response = await fetch('/app/ai/image.php', { method: 'POST', body: new FormData(imageForm) });
-        var payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || 'Image generation failed');
+        var payload = await requestImage(imageForm, '');
+        var waits = 0;
+        while (payload.pending) {
+          if (waits >= 240) throw new Error(dict[language].image_queued);
+          await new Promise(function (resolve) { setTimeout(resolve, 3000); });
+          payload = await requestImage(imageForm, payload.job_id);
+          waits += 1;
+        }
+        if (!payload.ok) throw new Error(payload.error || 'Image generation failed');
         location.href = payload.redirect;
       } catch (error) {
         status.textContent = error.message;
         button.disabled = false;
       }
     };
+  }
+
+  async function requestImage(form, jobId) {
+    var body = new FormData(form);
+    if (jobId) body.set('job_id', jobId);
+    var response = await fetch('/app/ai/image.php', { method: 'POST', body: body });
+    var payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || 'Image generation failed');
+    return payload;
   }
 
   var voiceForm = document.getElementById('voiceForm');
