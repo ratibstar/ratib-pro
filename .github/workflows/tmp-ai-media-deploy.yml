@@ -217,7 +217,7 @@ jobs:
           for item in ids:
               if item not in unique:
                   unique.append(item)
-          open(sys.argv[1] + ".ids", "w", encoding="utf-8").write("\n".join(unique))
+          open(sys.argv[1] + ".ids", "w", encoding="utf-8").write("\n".join(unique) + ("\n" if unique else ""))
           print("GALLERY_IDS=" + str(len(unique)))
           PY
           test "$(wc -l < "$WORK/campaign.html.ids")" -ge 3
@@ -297,7 +297,7 @@ jobs:
           for item in re.findall(r'/app/media/file.php\?id=(\d+)', html):
               if item not in ids:
                   ids.append(item)
-          open(sys.argv[1] + ".ids", "w", encoding="utf-8").write("\n".join(ids))
+          open(sys.argv[1] + ".ids", "w", encoding="utf-8").write("\n".join(ids) + ("\n" if ids else ""))
           PY
           echo "$CAMPAIGN_ID" > "$WORK/campaign-id"
           "${SSH[@]}" "${REMOTE}" "export CAMPAIGN_ID=${CAMPAIGN_ID}; php" << 'PHP'
