@@ -110,7 +110,13 @@ jobs:
               exit(0);
           }
           if ($action === 'insert' || $action === 'hash') {
-              $kind = $argv[3] ?? '';
+              $kind = (string) ($argv[2] ?? '');
+              $emailPath = (string) ($argv[3] ?? '');
+              if (is_file($emailPath)) {
+                  $email = strtolower(trim((string) file_get_contents($emailPath)));
+                  $user->execute([$email]);
+                  $userId = (int) $user->fetchColumn();
+              }
               $tokenPath = (string) ($argv[4] ?? '');
               $token = trim((string) @file_get_contents($tokenPath));
               if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1 || $userId < 1) {
