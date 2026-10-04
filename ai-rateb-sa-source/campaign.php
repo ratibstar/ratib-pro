@@ -66,7 +66,7 @@ $tone = ($id % 4) + 1;
 <title>RATEB AI — Campaign</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=waves2">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=del1">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -168,6 +168,18 @@ $tone = ($id % 4) + 1;
       </div>
       <button class="primary" type="submit" data-i18n="save_changes">Save changes</button>
     </form>
+    <?php if (($_GET['delete_error'] ?? '') === '1'): ?>
+      <p class="alert" data-i18n="delete_failed">The campaign could not be deleted.</p>
+    <?php endif; ?>
+    <details class="delete-campaign">
+      <summary data-i18n="delete_campaign">Delete campaign</summary>
+      <p data-i18n="delete_warning">This permanently removes the campaign, its text, planner items, variations, and media files.</p>
+      <form method="post" action="/campaign-delete.php">
+        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+        <input type="hidden" name="campaign_id" value="<?= $id ?>">
+        <button class="danger" type="submit" data-i18n="delete_confirm_button">Delete permanently</button>
+      </form>
+    </details>
   </section>
   <section class="panel" id="strategy" data-panel="ai">
     <h2 data-i18n="strategy_heading">AI-generated strategy</h2>
@@ -399,6 +411,6 @@ $tone = ($id % 4) + 1;
     <a class="button" href="/brand.php" data-i18n="open_brand">Open brand kit</a>
   </section>
 </main>
-<script src="/public/assets/js/app.js"></script>
+<script src="/public/assets/js/app.js?v=del1"></script>
 </body>
 </html>

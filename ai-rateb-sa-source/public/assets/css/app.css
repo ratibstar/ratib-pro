@@ -85,6 +85,9 @@ body.tabs-ready [data-panel].is-active{display:block}
 button.is-busy{opacity:.72;cursor:progress}
 button.quiet,a.quiet{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
 button.danger{background:transparent;color:#a33b3b;border:1px solid #f0caca}
+.delete-campaign{margin-top:28px;padding:16px 18px;border:1px solid var(--border);border-radius:16px;background:var(--surface)}
+.delete-campaign summary{cursor:pointer;font-weight:800;width:fit-content}
+.delete-campaign p{margin:12px 0}
 [data-theme=dark] button.danger{color:#fecaca;border-color:#6b3030}
 .badge.status-in_progress{background:#e8eefc;color:#1e3a8a}
 .badge.status-ready{background:#e7f6ee;color:#166534}

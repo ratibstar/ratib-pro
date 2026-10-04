@@ -229,7 +229,13 @@
       format_stories: 'Stories',
       format_feed: 'Feed ad',
       format_product: 'Product ad',
-      format_short: 'Short video'
+      format_short: 'Short video',
+      delete_campaign: 'Delete campaign',
+      delete_warning: 'This permanently removes the campaign, its text, planner items, variations, and media files.',
+      delete_confirm_button: 'Delete permanently',
+      campaign_deleted: 'Campaign deleted.',
+      delete_failed: 'The campaign could not be deleted.',
+      delete_files_failed: 'The campaign record was removed, but some of its files could not be deleted.'
     },
     ar: {
       dashboard: 'لوحة التحكم',
@@ -442,7 +448,13 @@
       format_stories: 'ستوري',
       format_feed: 'إعلان الخلاصة',
       format_product: 'إعلان منتج',
-      format_short: 'فيديو قصير'
+      format_short: 'فيديو قصير',
+      delete_campaign: 'حذف الحملة',
+      delete_warning: 'هذا يحذف الحملة ونصها وعناصر المخطط والنسخ والملفات نهائياً.',
+      delete_confirm_button: 'احذف نهائياً',
+      campaign_deleted: 'تم حذف الحملة.',
+      delete_failed: 'تعذر حذف الحملة.',
+      delete_files_failed: 'حُذف سجل الحملة، لكن تعذر حذف بعض ملفاتها.'
     }
   };
 

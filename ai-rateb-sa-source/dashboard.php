@@ -43,7 +43,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=waves2">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=del1">
 </head>
 <body class="studio page-dash">
 <header class="topbar">
@@ -58,6 +58,11 @@ foreach ($campaigns as $row) {
   </nav>
 </header>
 <main class="container studio-page">
+  <?php if (($_GET['deleted'] ?? '') === '1'): ?>
+    <p class="muted" data-i18n="campaign_deleted">Campaign deleted.</p>
+  <?php elseif (($_GET['delete_error'] ?? '') === '1'): ?>
+    <p class="alert" data-i18n="delete_files_failed">The campaign record was removed, but some of its files could not be deleted.</p>
+  <?php endif; ?>
   <section class="studio-hero">
     <div class="studio-hero-copy">
       <p class="eyebrow" data-i18n="workspace">AI CAMPAIGN WORKSPACE</p>
@@ -202,6 +207,6 @@ foreach ($campaigns as $row) {
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js"></script>
+<script src="/public/assets/js/app.js?v=del1"></script>
 </body>
 </html>
