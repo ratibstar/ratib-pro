@@ -69,6 +69,51 @@ jobs:
           open("/tmp/pixel.png", "wb").write(png)
           PY
           cp /tmp/pixel.png "$WORK/pixel.png"
+          cat > "$WORK/cleanup-early.php" << 'PHP'
+          <?php
+          $emailsFile = "/home/admin/.secrets/delete-test-emails.txt";
+          if (!is_file($emailsFile)) {
+              echo "EARLY_CLEANUP=skip\n";
+              exit(0);
+          }
+          $ini = (string) file_get_contents("/home/admin/domains/ai.rateb.sa/.user.ini");
+          if (preg_match('/auto_prepend_file\s*=\s*(\S+)/', $ini, $match) === 1) {
+              require trim($match[1], "\"'");
+          }
+          require "/home/admin/domains/ai.rateb.sa/config/bootstrap.php";
+          $emails = file($emailsFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+          foreach ($emails as $email) {
+              $user = $pdo->prepare("SELECT id FROM users WHERE email=?");
+              $user->execute([$email]);
+              $uid = (int) $user->fetchColumn();
+              if ($uid < 1) {
+                  continue;
+              }
+              $ids = $pdo->prepare("SELECT id FROM campaigns WHERE user_id=?");
+              $ids->execute([$uid]);
+              foreach ($ids->fetchAll(PDO::FETCH_COLUMN) as $campaignId) {
+                  $campaignId = (int) $campaignId;
+                  $pdo->prepare("DELETE FROM campaign_media WHERE campaign_id=? AND user_id=?")->execute([$campaignId, $uid]);
+                  $pdo->prepare("DELETE FROM campaign_outputs WHERE campaign_id=?")->execute([$campaignId]);
+                  $pdo->prepare("DELETE FROM campaign_items WHERE campaign_id=? AND user_id=?")->execute([$campaignId, $uid]);
+                  $pdo->prepare("DELETE FROM campaign_variations WHERE campaign_id=? AND user_id=?")->execute([$campaignId, $uid]);
+                  $pdo->prepare("DELETE FROM campaigns WHERE id=? AND user_id=?")->execute([$campaignId, $uid]);
+                  $dir = "/home/admin/.campaign-media/" . $campaignId;
+                  if (is_dir($dir)) {
+                      foreach (glob($dir . "/*") ?: [] as $file) {
+                          if (is_file($file)) {
+                              unlink($file);
+                          }
+                      }
+                      @rmdir($dir);
+                  }
+              }
+              $pdo->prepare("DELETE FROM users WHERE id=?")->execute([$uid]);
+          }
+          echo "EARLY_CLEANUP=ok\n";
+          PHP
+          "${SCP[@]}" "$WORK/cleanup-early.php" "${REMOTE}:/home/admin/.secrets/delete-cleanup-early.php"
+          "${SSH[@]}" "${REMOTE}" "php /home/admin/.secrets/delete-cleanup-early.php && rm -f /home/admin/.secrets/delete-cleanup-early.php"
           stamp="$(date +%s)"
           email_a="delete-a-${stamp}@example.com"
           email_b="delete-b-${stamp}@example.com"
@@ -127,6 +172,10 @@ jobs:
           python3 -c 'import sys; raise SystemExit("media_error" in sys.argv[1])' "$upload_b"
           cat > "$WORK/seed.php" << 'PHP'
           <?php
+          $ini = (string) file_get_contents("/home/admin/domains/ai.rateb.sa/.user.ini");
+          if (preg_match('/auto_prepend_file\s*=\s*(\S+)/', $ini, $match) === 1) {
+              require trim($match[1], "\"'");
+          }
           require "/home/admin/domains/ai.rateb.sa/config/bootstrap.php";
           $id = (int) getenv("CID");
           $uid = (int) $pdo->query("SELECT user_id FROM campaigns WHERE id=" . $id)->fetchColumn();
@@ -170,6 +219,10 @@ jobs:
           test "$other" = "200"
           cat > "$WORK/verify.php" << 'PHP'
           <?php
+          $ini = (string) file_get_contents("/home/admin/domains/ai.rateb.sa/.user.ini");
+          if (preg_match('/auto_prepend_file\s*=\s*(\S+)/', $ini, $match) === 1) {
+              require trim($match[1], "\"'");
+          }
           require "/home/admin/domains/ai.rateb.sa/config/bootstrap.php";
           $id = (int) getenv("CID");
           $keep = (int) getenv("KEEP");
@@ -207,6 +260,10 @@ jobs:
           "${SSH[@]}" "${REMOTE}" "CID=${id_a} KEEP=${id_keep} OTHER=${id_b} php /home/admin/.secrets/delete-verify.php && rm -f /home/admin/.secrets/delete-verify.php" || verify_ok=1
           cat > "$WORK/cleanup.php" << 'PHP'
           <?php
+          $ini = (string) file_get_contents("/home/admin/domains/ai.rateb.sa/.user.ini");
+          if (preg_match('/auto_prepend_file\s*=\s*(\S+)/', $ini, $match) === 1) {
+              require trim($match[1], "\"'");
+          }
           require "/home/admin/domains/ai.rateb.sa/config/bootstrap.php";
           $emails = file("/home/admin/.secrets/delete-test-emails.txt", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
           foreach ($emails as $email) {
