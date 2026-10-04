@@ -111,8 +111,13 @@ jobs:
           }
           if ($action === 'insert' || $action === 'hash') {
               $kind = $argv[3] ?? '';
-              $token = trim((string) file_get_contents((string) ($argv[4] ?? '')));
-              if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1 || $userId < 1) { echo "TOKEN_BAD\n"; exit(1); }
+              $tokenPath = (string) ($argv[4] ?? '');
+              $token = trim((string) @file_get_contents($tokenPath));
+              if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1 || $userId < 1) {
+                  $bad = preg_match_all('/[^a-f0-9]/', $token);
+                  echo 'TOKEN_BAD USER=' . $userId . ' FILE=' . (is_file($tokenPath) ? '1' : '0') . ' SIZE=' . (is_file($tokenPath) ? (string) filesize($tokenPath) : '0') . ' LEN=' . strlen($token) . ' BAD=' . (int) $bad . "\n";
+                  exit(1);
+              }
               $hash = hash('sha256', $token);
               if ($action === 'insert') {
                   $when = $kind === 'expired' ? 'DATE_SUB(NOW(), INTERVAL 5 MINUTE)' : 'DATE_ADD(NOW(), INTERVAL 60 MINUTE)';
