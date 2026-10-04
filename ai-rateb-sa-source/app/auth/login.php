@@ -49,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <a class="brand" href="/">RATEB <span>AI</span></a>
     <h1 data-i18n="welcome_back">Welcome back</h1>
     <p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p>
+    <?php if (($_GET['reset'] ?? '') === '1' && $message === ''): ?><p class="muted" data-i18n="reset_success">Your password was changed. You can log in now.</p><?php endif; ?>
     <?php if ($message): ?><div class="alert" data-i18n="<?= e($message) ?>">Invalid email or password.</div><?php endif; ?>
     <form method="post">
       <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -58,9 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input type="password" name="password" required autocomplete="current-password">
       <button type="submit" data-i18n="login_button">Login</button>
     </form>
+    <p class="footer-link"><a href="/forgot-password.php" data-i18n="forgot_password">Forgot password?</a></p>
     <p class="footer-link"><span data-i18n="no_account">Don't have an account?</span> <a href="/register.php" data-i18n="create_one">Create one</a></p>
   </div>
 </div>
-<script src="/public/assets/js/app.js"></script>
+<script src="/public/assets/js/app.js?v=reset1"></script>
 </body>
 </html>
