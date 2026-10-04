@@ -1,0 +1,57 @@
+name: Temporary logout redirect check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy logout redirect
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          KEY_PATH="${RUNNER_TEMP}/rateb-readonly-key"
+          export KEY_PATH
+          python3 - << 'PY'
+          import os, stat
+          key = (os.environ.get("DEPLOY_SSH_PRIVATE_KEY") or "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          path = os.environ["KEY_PATH"]
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          PY
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          SSH=(ssh -i "${KEY_PATH}" -p "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i "${KEY_PATH}" -P "${PORT}" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new)
+          ROOT=/home/admin/domains/ai.rateb.sa
+          BASE=https://ai.rateb.sa
+          "${SCP[@]}" ai-rateb-sa-source/app/auth/logout.php "${REMOTE}:${ROOT}/app/auth/logout.php"
+          "${SSH[@]}" "${REMOTE}" "php -l ${ROOT}/app/auth/logout.php"
+          WORK="${RUNNER_TEMP}/logout"
+          mkdir -p "$WORK"
+          printf '%s\n' '<?php $path="/home/admin/domains/ai.rateb.sa/app/auth/logout.php"; echo function_exists("opcache_invalidate") && opcache_invalidate($path, true) ? "yes" : "no";' > "$WORK/refresh.php"
+          "${SCP[@]}" "$WORK/refresh.php" "${REMOTE}:${ROOT}/logout-refresh.php"
+          curl -sS "$BASE/logout-refresh.php" || true
+          echo
+          "${SSH[@]}" "${REMOTE}" "rm -f ${ROOT}/logout-refresh.php"
+          loc=$(curl -sS -D - -o /dev/null "$BASE/logout.php" | tr -d '\r' | awk 'tolower($1)=="location:" {print $2}')
+          echo "LOCATION=${loc}"
+          test "$loc" = "/"
+          echo "LOGOUT=pass"
+          rm -f "${KEY_PATH}"
