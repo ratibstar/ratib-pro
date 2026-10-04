@@ -114,8 +114,9 @@ jobs:
               $tokenPath = (string) ($argv[4] ?? '');
               $token = trim((string) @file_get_contents($tokenPath));
               if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1 || $userId < 1) {
-                  $bad = preg_match_all('/[^a-f0-9]/', $token);
-                  echo 'TOKEN_BAD USER=' . $userId . ' FILE=' . (is_file($tokenPath) ? '1' : '0') . ' SIZE=' . (is_file($tokenPath) ? (string) filesize($tokenPath) : '0') . ' LEN=' . strlen($token) . ' BAD=' . (int) $bad . "\n";
+                  $emailPath = (string) ($argv[2] ?? '');
+                  $prefix = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE email LIKE 'pwreset-%'")->fetchColumn();
+                  echo 'TOKEN_BAD USER=' . $userId . ' ARGC=' . $argc . ' EMAILFILE=' . (is_file($emailPath) ? '1' : '0') . ' EMAILSIZE=' . (is_file($emailPath) ? (string) filesize($emailPath) : '0') . ' EMAILLEN=' . strlen($email) . ' PREFIX=' . $prefix . "\n";
                   exit(1);
               }
               $hash = hash('sha256', $token);
@@ -202,9 +203,10 @@ jobs:
           email_file.write_text(email, encoding="utf-8")
           valid_file.write_text(valid, encoding="utf-8")
           expired_file.write_text(expired, encoding="utf-8")
-          remote_email = "/home/admin/.secrets/pwreset-email.txt"
-          remote_valid = "/home/admin/.secrets/pwreset-valid.txt"
-          remote_expired = "/home/admin/.secrets/pwreset-expired.txt"
+          suffix = secrets.token_hex(4)
+          remote_email = f"/home/admin/.secrets/pwreset-email-{suffix}.txt"
+          remote_valid = f"/home/admin/.secrets/pwreset-valid-{suffix}.txt"
+          remote_expired = f"/home/admin/.secrets/pwreset-expired-{suffix}.txt"
           failures = []
 
           def check(name, ok):
