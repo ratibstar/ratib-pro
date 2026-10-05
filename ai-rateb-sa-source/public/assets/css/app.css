@@ -232,7 +232,10 @@ body.studio .progress span{background:linear-gradient(90deg,#6d28d9,#14b8a6)}
   .flow-step{margin-bottom:8px}
 }
 [data-theme=light] body.studio{--bg:#f6f3ff;--surface:#fff;--surface2:#f3eefe;--text:#1c1433;--muted:#5c5672;--border:#e4dcf6;--accent:#6d28d9}
-[data-theme=dark] body.studio{--accent:#8b7cff}
+[data-theme=dark] body.studio{--bg:#241c3d;--surface:#342a56;--surface2:#41356a;--text:#f7f4fb;--muted:#d2cbe4;--border:rgba(214,196,255,.34);--accent:#c4b5fd;--shadow:rgba(58,28,96,.32)}
+[data-theme=dark] body.studio .card,[data-theme=dark] body.studio .auth-card,[data-theme=dark] body.studio .kpi,[data-theme=dark] body.studio .result,[data-theme=dark] body.studio .media-card,[data-theme=dark] body.studio fieldset,[data-theme=dark] body.studio fieldset.form-section,[data-theme=dark] body.studio .studio-stat,[data-theme=dark] body.studio .campaign-tile,[data-theme=dark] body.studio .showcase-card{background-color:color-mix(in srgb,#3a2f62 76%,transparent);border-color:rgba(214,196,255,.3);backdrop-filter:blur(18px)}
+[data-theme=dark] body.studio input,[data-theme=dark] body.studio textarea,[data-theme=dark] body.studio select{background:color-mix(in srgb,#2a2148 86%,transparent);border-color:rgba(196,181,253,.4);color:var(--text)}
+[data-theme=dark] body.studio .top,[data-theme=dark] body.studio .topbar,[data-theme=dark] body.studio .home-bar{background:color-mix(in srgb,#3a2f62 64%,transparent);border-bottom-color:rgba(214,196,255,.24)}
 body.studio .auth-shell{background:transparent}
 body.studio .auth-card{border-radius:28px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:0 24px 60px var(--shadow)}
 body.studio .auth-card .brand{display:inline-block;margin-bottom:18px;text-decoration:none}

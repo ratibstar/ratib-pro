@@ -17,7 +17,7 @@ if (!in_array($error, ['size', 'type', 'upload'], true)) {
 <title>RATEB AI — Brand kit</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=waves2">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=ink1">
 </head>
 <body class="studio page-brand">
 <header class="top">

@@ -1,0 +1,62 @@
+name: ai dark ink
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Upload dark mode colors
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          KEY="$RUNNER_TEMP/sshkey"
+          umask 077
+          printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > "$KEY"
+          if ! grep -q "BEGIN" "$KEY"; then
+            printf '%b\n' "${DEPLOY_SSH_PRIVATE_KEY//\\n/$'\n'}" > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+          ROOT=/home/admin/domains/ai.rateb.sa
+          SRC=ai-rateb-sa-source
+          SCP=(scp -i "$KEY" -P "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new)
+          SSH=(ssh -i "$KEY" -p "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new)
+          DEST="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          for rel in \
+            public/assets/css/app.css \
+            app/auth/login.php \
+            app/auth/register.php \
+            app/auth/forgot-password.php \
+            app/auth/reset-password.php \
+            index.php \
+            brand.php \
+            campaign-new.php \
+            campaign.php \
+            dashboard.php
+          do
+            "${SCP[@]}" "$SRC/$rel" "$DEST:$ROOT/$rel"
+            if [[ "$rel" == *.php ]]; then
+              "${SSH[@]}" "$DEST" "php -l $ROOT/$rel"
+            fi
+          done
+          OC="ink-oc-$RANDOM.php"
+          printf '%s\n' '<?php foreach (glob("/home/admin/domains/ai.rateb.sa/{index,brand,campaign,campaign-new,dashboard}.php", GLOB_BRACE) as $f) { opcache_invalidate($f, true); } foreach (glob("/home/admin/domains/ai.rateb.sa/app/auth/*.php") as $f) { opcache_invalidate($f, true); } echo "OPCACHE=ok";' > "$RUNNER_TEMP/$OC"
+          "${SCP[@]}" "$RUNNER_TEMP/$OC" "$DEST:$ROOT/$OC"
+          curl -fsS "https://ai.rateb.sa/$OC"
+          echo
+          "${SSH[@]}" "$DEST" "rm -f $ROOT/$OC"
+          curl -fsS "https://ai.rateb.sa/public/assets/css/app.css?v=ink1" | grep -q "#3a2f62"
+          echo "INK_CSS=yes"
+          curl -fsS -o /dev/null -w "NEW=%{http_code}\n" "https://ai.rateb.sa/campaign-new.php"
+          curl -fsS "https://ai.rateb.sa/login.php" | grep -q "app.css?v=ink1"
+          echo "LOGIN_CSS=yes"

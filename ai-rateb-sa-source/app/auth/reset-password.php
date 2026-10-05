@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>RATEB AI — Reset password</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=waves2">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=ink1">
 </head>
 <body class="studio page-login">
 <div class="auth-shell">
