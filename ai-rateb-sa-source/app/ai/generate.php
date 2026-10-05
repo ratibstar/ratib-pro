@@ -127,8 +127,14 @@ $facts = rateb_workspace_facts(db(), $campaign, $brief);
 $system = 'You are RATEB. Return one JSON object only. Do not invent prices, budgets, dates, locations, audiences, or channels that are not in the facts. If a fact is missing, say that it was not specified in the requested language.';
 
 if ($stage === 'strategy') {
-    $prompt = "Write one campaign strategy from these facts only. Return JSON with English keys: positioning, core_message, audience, channels, tone, creative_direction, call_to_action. " . $decision['instruction'] . "\nFacts:\n" . $facts;
+    $shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar and en. ' : 'Each value must be a plain string. ';
+    $prompt = "Write one campaign strategy from these facts only. Return JSON with English keys: positioning, core_message, audience, channels, tone, creative_direction, call_to_action. " . $shape . $decision['instruction'] . "\nFacts:\n" . $facts;
     $result = rateb_model_json($cfg, $system, $prompt);
+    $result = rateb_prepare_result($result, $resolved, rateb_strategy_keys());
+    if (!is_array($result) || !rateb_strategy_valid($result, $resolved)) {
+        $result = rateb_model_json($cfg, $system, $prompt . "\nThe previous answer was invalid. Follow the language shape exactly and do not leave a key empty.");
+        $result = rateb_prepare_result($result, $resolved, rateb_strategy_keys());
+    }
     if (!is_array($result) || !rateb_strategy_valid($result, $resolved)) {
         rateb_usage_finish(db(), (int) $gate['id'], 'failed');
         $bad = [];
@@ -159,8 +165,14 @@ if ($stage === 'strategy') {
 $only = trim((string) ($_POST['output_type'] ?? ''));
 $keys = $only !== '' ? [$only] : rateb_copy_types();
 $strategy = rateb_strategy_document((string) $strategyRow['content']);
-$prompt = 'Write campaign copy from the approved strategy and the facts. Return JSON with English keys: ' . implode(', ', $keys) . '. ' . $decision['instruction'] . "\nFacts:\n" . $facts . "\nApproved strategy:\n" . json_encode($strategy, JSON_UNESCAPED_UNICODE);
+$shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar and en. ' : 'Each value must be a plain string. ';
+$prompt = 'Write campaign copy from the approved strategy and the facts. Return JSON with English keys: ' . implode(', ', $keys) . '. ' . $shape . $decision['instruction'] . "\nFacts:\n" . $facts . "\nApproved strategy:\n" . json_encode($strategy, JSON_UNESCAPED_UNICODE);
 $result = rateb_model_json($cfg, $system, $prompt);
+$result = rateb_prepare_result($result, $resolved, $keys);
+if (!is_array($result) || !rateb_copy_valid($result, $resolved, $only)) {
+    $result = rateb_model_json($cfg, $system, $prompt . "\nThe previous answer was invalid. Follow the language shape exactly and do not leave a key empty.");
+    $result = rateb_prepare_result($result, $resolved, $keys);
+}
 if (!is_array($result) || !rateb_copy_valid($result, $resolved, $only)) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     $bad = [];
@@ -187,6 +199,19 @@ try {
 rateb_usage_finish(db(), (int) $gate['id'], 'completed');
 echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . $id . '#copy'], JSON_UNESCAPED_UNICODE);
 exit;
+
+function rateb_prepare_result(mixed $result, string $resolved, array $keys): mixed
+{
+    if (!is_array($result)) {
+        return $result;
+    }
+    foreach ($keys as $key) {
+        if (array_key_exists($key, $result)) {
+            $result[$key] = rateb_coerce_output($result[$key], $resolved);
+        }
+    }
+    return $result;
+}
 
 function rateb_fail(int $status, string $code, array $extra = []): void
 {

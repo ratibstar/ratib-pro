@@ -293,6 +293,31 @@ function rateb_text_fits(string $text, string $resolved): bool
     return false;
 }
 
+function rateb_coerce_output(mixed $value, string $resolved): mixed
+{
+    if ($resolved === 'bilingual') {
+        return $value;
+    }
+    if (is_string($value)) {
+        return trim($value);
+    }
+    if (is_array($value) && isset($value[$resolved]) && is_string($value[$resolved])) {
+        return trim($value[$resolved]);
+    }
+    if (is_array($value) && array_is_list($value)) {
+        $parts = [];
+        foreach ($value as $item) {
+            if (is_string($item) && trim($item) !== '') {
+                $parts[] = trim($item);
+            }
+        }
+        if ($parts !== []) {
+            return implode("\n\n", $parts);
+        }
+    }
+    return $value;
+}
+
 function rateb_value_fits(mixed $value, string $resolved): bool
 {
     if ($resolved === 'bilingual') {
