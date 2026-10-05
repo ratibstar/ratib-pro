@@ -68,6 +68,25 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' "https://ai.rateb.sa/oc-$TOKEN.php")
           echo "OPCACHE_FILE=$code"
           test "$code" != "200"
+          "${SSH[@]}" "php -r '\$im=imagecreatetruecolor(2,2); imagejpeg(\$im,\"/tmp/pixel.jpg\",80);'"
+          "${SSH[@]}" "cat > /tmp/idea-mp4.php" << 'PHP'
+          <?php
+          function box($type, $payload) { return pack('N', 8 + strlen($payload)) . $type . $payload; }
+          function mvhd($ticks) {
+              $body = "\0\0\0\0" . pack('N', 0) . pack('N', 0) . pack('N', 1000) . pack('N', $ticks) . str_repeat("\0", 72);
+              return box('mvhd', $body);
+          }
+          $ftyp = pack('N', 20) . 'ftyp' . 'isom' . pack('N', 0) . 'mp41';
+          file_put_contents('/tmp/short.mp4', $ftyp . box('moov', mvhd(5000)));
+          file_put_contents('/tmp/long.mp4', $ftyp . box('moov', mvhd(30000)));
+          $info = new finfo(FILEINFO_MIME_TYPE);
+          echo 'JPEG=' . $info->file('/tmp/pixel.jpg') . "\n";
+          echo 'SHORT=' . $info->file('/tmp/short.mp4') . "\n";
+          echo 'LONG=' . $info->file('/tmp/long.mp4') . "\n";
+          PHP
+          "${SSH[@]}" "php /tmp/idea-mp4.php"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            "$USER@$HOST:/tmp/pixel.jpg" "$USER@$HOST:/tmp/short.mp4" "$USER@$HOST:/tmp/long.mp4" /tmp/
 
       - name: Exercise the creation flow
         id: flow
@@ -88,6 +107,9 @@ jobs:
           (work / "password").chmod(0o600)
           flags = {}
           ids = {}
+
+          def save_ids():
+              (work / "ids").write_text(json.dumps(ids), encoding="utf-8")
 
           def mark(name, ok):
               flags[name] = "PASS" if ok else "FAIL"
@@ -172,6 +194,7 @@ jobs:
           }))
           match = re.search(r"campaign\.php\?id=(\d+)", url)
           ids["ar"] = match.group(1) if match else ""
+          save_ids()
           mark("CONFIRM", bool(ids["ar"]) and code == 200)
 
           for key in ("en", "bilingual", "auto"):
@@ -190,6 +213,7 @@ jobs:
               }))
               found = re.search(r"campaign\.php\?id=(\d+)", url)
               ids[key] = found.group(1) if found else ""
+              save_ids()
               mark("LANG_" + key.upper(), bool(ids[key]))
 
           code, url, body, _ = request(base + "/campaign-new.php")
@@ -203,39 +227,28 @@ jobs:
           asked = body.decode("utf-8", "replace")
           mark("ASK_ONLY", "view=ask" in url and "وش المنتج أو الخدمة؟" in asked and "الرياض" not in asked and 'name="price"' not in asked)
 
-          bare = urllib.request.build_opener()
+          code, url, body, _ = request(base + "/campaign-new.php", form({
+              "csrf": "bad",
+              "step": "understand",
+              "idea": idea,
+              "campaign_language": "ar",
+          }))
+          mark("CSRF", code == 419)
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          plain = urllib.request.build_opener(NoRedirect)
           try:
-              bare.open(urllib.request.Request(base + "/campaign-new.php", form({
-                  "step": "understand",
-                  "idea": idea,
-                  "campaign_language": "ar",
-              })), timeout=30)
-              mark("CSRF", False)
-          except urllib.error.HTTPError as error:
-              mark("CSRF", error.code == 419)
-          try:
-              bare.open(base + "/campaign-new.php", timeout=30)
+              plain.open(base + "/campaign-new.php", timeout=30)
               mark("AUTH", False)
           except urllib.error.HTTPError as error:
               location = error.headers.get("Location", "")
               mark("AUTH", error.code in (301, 302, 303) and "login.php" in location)
 
-          jpeg = base64.b64decode(
-              "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-          )
-          # The bytes above are a PNG. Build a real one-pixel JPEG instead.
-          jpeg = bytes.fromhex(
-              "ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707070909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c1c2837292c30313434341f27393d38323c2e333432ffc0000b080001000101011100ffc4001f0000010501010101010100000000000000000102030405060708090a0bffc400b5100002010303020403050504040000017d01020300041105122131410613516107227114328191a1082342b1c11552d1f02433627282090a161718191a25262728292a3435363738393a434445464748494a535455565758595a636465666768696a737475767778797a838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9cad2d3d4d5d6d7d8d9dae1e2e3e4e5e6e7e8e9eaf1f2f3f4f5f6f7f8f9faffda000c03010002110311003f00f7fa28a2800ffd9"
-          )
-
-          def box(kind, payload):
-              return struct.pack(">I", 8 + len(payload)) + kind + payload
-
-          def mp4(ticks):
-              body = bytes(4) + struct.pack(">II", 0, 0) + struct.pack(">II", 1000, ticks) + bytes(72)
-              atom = box(b"mvhd", body)
-              ftyp = struct.pack(">I", 20) + b"ftyp" + b"isom" + struct.pack(">I", 0) + b"mp41"
-              return ftyp + box(b"moov", atom)
+          jpeg = Path("/tmp/pixel.jpg").read_bytes()
+          short = Path("/tmp/short.mp4").read_bytes()
+          long_video = Path("/tmp/long.mp4").read_bytes()
 
           def multipart(fields, files):
               boundary = "----idea" + secrets.token_hex(8)
@@ -273,9 +286,9 @@ jobs:
           }))
           found = re.search(r"campaign\.php\?id=(\d+)", url)
           ids["images"] = found.group(1) if found else ""
+          save_ids()
           mark("IMAGE_SAVE", bool(ids["images"]))
 
-          short = mp4(5000)
           code, url, body, _ = upload(
               [("step", "understand"), ("idea", "عندي عطر جديد"), ("campaign_language", "en")],
               [("files[]", "clip.mp4", "video/mp4", short)],
@@ -285,6 +298,7 @@ jobs:
           code, url, body, _ = request(base + "/campaign-new.php", form({"csrf": csrf(html, "csrf"), "step": "confirm"}))
           found = re.search(r"campaign\.php\?id=(\d+)", url)
           ids["video"] = found.group(1) if found else ""
+          save_ids()
           mark("VIDEO_SAVE", bool(ids["video"]))
 
           code, url, body, _ = upload(
@@ -296,7 +310,7 @@ jobs:
 
           code, url, body, _ = upload(
               [("step", "understand"), ("idea", "عندي عطر جديد"), ("campaign_language", "ar")],
-              [("files[]", "long.mp4", "video/mp4", mp4(30000))],
+              [("files[]", "long.mp4", "video/mp4", long_video)],
           )
           html = body.decode("utf-8", "replace")
           mark("VIDEO_LONG", "مدة الفيديو أطول من حد خطتك." in html)
