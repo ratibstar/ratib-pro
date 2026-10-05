@@ -19,6 +19,14 @@ function rateb_ui_error(string $code): string
         'plan_limit' => $arabic ? 'وصلت إلى حد باقتك لهذا الشهر.' : 'You have reached your plan limit for this month.',
         'video_too_long' => $arabic ? 'مدة الفيديو أطول من المسموح في باقتك.' : 'This video is longer than your plan allows.',
         'watermark' => $arabic ? 'تعذر إضافة علامة RATEB AI على الملف.' : 'The RATEB AI mark could not be applied to the file.',
+        'ai_failed' => $arabic ? 'تعذر على RATEB إكمال الطلب. لم يُحفظ شيء.' : 'RATEB could not complete the request. Nothing was saved.',
+        'ai_unconfigured' => $arabic ? 'توليد النص غير متاح حاليًا.' : 'Text generation is not available right now.',
+        'strategy_locked' => $arabic ? 'الاستراتيجية معتمدة. أكّد إعادة التوليد قبل استبدالها.' : 'The strategy is approved. Confirm regeneration before replacing it.',
+        'copy_locked' => $arabic ? 'اعتمد الاستراتيجية أولًا.' : 'Approve the strategy first.',
+        'output_locked' => $arabic ? 'هذا النص معتمد. أكّد إعادة التوليد قبل استبداله.' : 'This copy is approved. Confirm regeneration before replacing it.',
+        'invalid_output' => $arabic ? 'النتيجة غير صالحة، ولم تُحفظ.' : 'The result was not valid, so it was not saved.',
+        'edit_unclear' => $arabic ? 'ما وضحت التعديل. اكتب التغيير الذي تبيه.' : 'The change was not clear. Write the change you want.',
+        'edit_empty' => $arabic ? 'اكتب التعديل أولًا.' : 'Write the change first.',
     ];
     return $messages[$code] ?? ($arabic ? 'تعذر تنفيذ الطلب.' : 'The request could not be completed.');
 }
@@ -252,4 +260,143 @@ function rateb_output_language(PDO $pdo, array $campaign): array
         $speech = preg_match('/\p{Arabic}/u', $sample) === 1 ? 'ar' : 'en';
     }
     return ['choice' => $choice, 'resolved' => $resolved, 'instruction' => $instruction, 'speech' => $speech];
+}
+
+function rateb_strategy_keys(): array
+{
+    return ['positioning', 'core_message', 'audience', 'channels', 'tone', 'creative_direction', 'call_to_action'];
+}
+
+function rateb_copy_types(): array
+{
+    return ['headline', 'ad_copy', 'short_ad', 'social_posts', 'whatsapp', 'call_to_action', 'product_description'];
+}
+
+function rateb_text_fits(string $text, string $resolved): bool
+{
+    $text = trim($text);
+    if ($text === '') {
+        return false;
+    }
+    $arabic = preg_match_all('/\p{Arabic}/u', $text) ?: 0;
+    $latin = preg_match_all('/[A-Za-z]/', $text) ?: 0;
+    $total = $arabic + $latin;
+    if ($total < 1) {
+        return false;
+    }
+    if ($resolved === 'ar') {
+        return $arabic >= 4 && ($arabic / $total) >= 0.5;
+    }
+    if ($resolved === 'en') {
+        return $latin >= 4 && ($arabic / $total) <= 0.35;
+    }
+    return false;
+}
+
+function rateb_value_fits(mixed $value, string $resolved): bool
+{
+    if ($resolved === 'bilingual') {
+        return is_array($value)
+            && rateb_text_fits((string) ($value['ar'] ?? ''), 'ar')
+            && rateb_text_fits((string) ($value['en'] ?? ''), 'en');
+    }
+    return is_string($value) && rateb_text_fits($value, $resolved);
+}
+
+function rateb_strategy_valid(array $data, string $resolved): bool
+{
+    foreach (rateb_strategy_keys() as $key) {
+        if (!rateb_value_fits($data[$key] ?? null, $resolved)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function rateb_copy_valid(array $data, string $resolved, string $only = ''): bool
+{
+    $keys = $only !== '' ? [$only] : rateb_copy_types();
+    foreach ($keys as $key) {
+        if (!rateb_value_fits($data[$key] ?? null, $resolved)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function rateb_normalize_value(mixed $value, string $resolved): mixed
+{
+    if ($resolved === 'bilingual' && is_array($value)) {
+        return [
+            'ar' => trim((string) ($value['ar'] ?? '')),
+            'en' => trim((string) ($value['en'] ?? '')),
+        ];
+    }
+    return trim((string) $value);
+}
+
+function rateb_field_parts(mixed $value): array
+{
+    if (is_string($value)) {
+        $decoded = json_decode($value, true);
+        if (is_array($decoded)) {
+            $value = $decoded;
+        }
+    }
+    if (is_array($value) && isset($value['ar'], $value['en']) && is_string($value['ar']) && is_string($value['en'])) {
+        return [
+            ['code' => 'ar', 'text' => $value['ar']],
+            ['code' => 'en', 'text' => $value['en']],
+        ];
+    }
+    if (is_string($value) && trim($value) !== '') {
+        return [['code' => '', 'text' => $value]];
+    }
+    return [];
+}
+
+function rateb_strategy_document(string $content): ?array
+{
+    $decoded = json_decode($content, true);
+    if (!is_array($decoded)) {
+        return null;
+    }
+    foreach (rateb_strategy_keys() as $key) {
+        if (!array_key_exists($key, $decoded) || rateb_field_parts($decoded[$key]) === []) {
+            return null;
+        }
+    }
+    return $decoded;
+}
+
+function rateb_workspace_facts(PDO $pdo, array $campaign, array $brief): string
+{
+    $lines = [];
+    $map = [
+        'Product' => (string) ($brief['product'] ?? $campaign['product_name'] ?? ''),
+        'Idea' => (string) ($brief['description'] ?? $campaign['description'] ?? ''),
+        'Objective' => (string) ($brief['objective'] ?? $campaign['objective'] ?? ''),
+        'Audience' => (string) ($brief['audience'] ?? $campaign['target_customer'] ?? ''),
+        'Location' => (string) ($brief['location'] ?? ''),
+        'Channels' => (string) ($brief['channels'] ?? ''),
+        'Tone' => (string) ($brief['brand_tone'] ?? ''),
+    ];
+    foreach ($map as $label => $value) {
+        $value = trim($value);
+        if ($value !== '') {
+            $lines[] = $label . ': ' . $value;
+        }
+    }
+    $brand = $pdo->prepare('SELECT brand_name, tone, contact FROM brand_kits WHERE user_id = ?');
+    $brand->execute([(int) ($campaign['user_id'] ?? 0)]);
+    $kit = $brand->fetch();
+    if ($kit) {
+        foreach (['brand_name' => 'Brand name', 'tone' => 'Brand tone', 'contact' => 'Contact'] as $field => $label) {
+            $value = trim((string) ($kit[$field] ?? ''));
+            if ($value !== '') {
+                $lines[] = $label . ': ' . $value;
+            }
+        }
+    }
+    return $lines === [] ? 'No facts were provided.' : implode("\n", $lines);
 }

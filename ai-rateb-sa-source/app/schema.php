@@ -164,6 +164,24 @@ function ensure_campaign_schema(PDO $pdo): void
         KEY user_id (user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS campaign_outputs (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        campaign_id BIGINT UNSIGNED NOT NULL,
+        output_type VARCHAR(64) NOT NULL,
+        content MEDIUMTEXT NOT NULL,
+        approval_status VARCHAR(16) NOT NULL DEFAULT 'draft',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY campaign_id (campaign_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $outputColumns = [];
+    foreach ($pdo->query('SHOW COLUMNS FROM campaign_outputs') as $row) {
+        $outputColumns[(string) $row['Field']] = true;
+    }
+    if (!isset($outputColumns['approval_status'])) {
+        $pdo->exec("ALTER TABLE campaign_outputs ADD COLUMN approval_status VARCHAR(16) NOT NULL DEFAULT 'draft'");
+    }
+
     $catalog = [
         ['free', 'مجانية', 'Free', '0.00', 3, 8, 15, 1, 1],
         ['starter', 'أساسية', 'Starter', '79.00', 10, 10, 100, 0, 2],

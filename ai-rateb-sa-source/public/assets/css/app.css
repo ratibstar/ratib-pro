@@ -443,6 +443,23 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .edit-campaign summary{cursor:pointer;font-weight:800}
 .edit-campaign form{display:grid;gap:12px;margin-top:14px}
 .workspace-brief{margin-top:8px}
+.build-stages .is-progress button{border-color:#6d28d9}
+.build-stages .is-open button{border-color:color-mix(in srgb,#0f766e 55%,var(--border))}
+.build-stages .is-next button,.build-stages .is-locked button{opacity:.72}
+.build-stages button.is-active{outline:2px solid color-mix(in srgb,#6d28d9 65%,transparent);outline-offset:2px}
+.build-stages small{color:var(--muted);font-size:12px;font-weight:700}
+.build-stages .is-done small{color:rgba(255,255,255,.82)}
+.workspace-top{margin-bottom:8px}
+.strategy-card,.copy-card,.idea-edit{border:1px solid var(--border);border-radius:22px;padding:22px;margin:18px 0;background:var(--surface)}
+.strategy-card h3,.copy-card h3{margin:18px 0 8px}
+.strategy-card h3:first-of-type{margin-top:8px}
+.copy-body p,.strategy-card p{font-size:18px;line-height:1.7}
+.idea-edit{display:grid;gap:12px}
+.idea-edit textarea{width:100%;min-height:96px;border-radius:16px;border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:14px;font:inherit}
+.lang-block{margin:8px 0 14px}
+.compact-media{margin-top:18px}
+.action-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+@media (max-width:720px){.build-stages{grid-template-columns:1fr 1fr}.workspace-top h1{font-size:30px}}
 #upload-bar{display:block;width:0;height:100%}
 .server-removes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 [data-theme=dark] .idea-error{color:#ffb4ab}

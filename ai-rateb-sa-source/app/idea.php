@@ -434,6 +434,106 @@ function rateb_size_label(int $bytes, bool $arabic): string
     return (string) $bytes . ($arabic ? ' بايت' : ' B');
 }
 
+function rateb_edit_changes(string $note, array $brief): ?array
+{
+    $note = trim(preg_replace('/\s+/u', ' ', $note) ?? '');
+    if ($note === '') {
+        return [];
+    }
+    $changes = [];
+    if (preg_match('/(?:غيّر|غير|حدّث|حدث|خلّ|خل)\s+الموقع\s+(?:إلى|الى)\s+(.+)/u', $note, $match) === 1) {
+        $changes['location'] = rateb_idea_clean($match[1]);
+    } elseif (preg_match('/\b(?:change|set|update)\s+the\s+location\s+to\s+(.+)/i', $note, $match) === 1) {
+        $changes['location'] = rateb_idea_clean($match[1]);
+    }
+    if (preg_match('/(?:أبغى|ابغى|أبي|ابي|ودي|بغيت)?\s*(?:أستهدف|استهدف)\s+(.+)/u', $note, $match) === 1) {
+        $extra = rateb_idea_clean((string) (preg_replace('/\s*(?:أيضاً|ايضاً|أيضا|ايضا)\s*$/u', '', $match[1]) ?? $match[1]));
+        $current = trim((string) ($brief['audience'] ?? ''));
+        if ($extra !== '') {
+            $changes['audience'] = (preg_match('/أيضاً|ايضاً|أيضا|ايضا/u', $note) === 1 && $current !== '')
+                ? mb_substr($current . '، ' . $extra, 0, 255)
+                : $extra;
+        }
+    } elseif (preg_match('/\b(?:also\s+)?target\s+(.+?)(?:\s+as well)?\s*$/i', $note, $match) === 1) {
+        $extra = rateb_idea_clean($match[1]);
+        $current = trim((string) ($brief['audience'] ?? ''));
+        if ($extra !== '') {
+            $changes['audience'] = (preg_match('/\b(?:also|as well)\b/i', $note) === 1 && $current !== '')
+                ? mb_substr($current . ', ' . $extra, 0, 255)
+                : $extra;
+        }
+    }
+    if (preg_match('/أكثر\s+حماس|اكثر\s+حماس/u', $note) === 1) {
+        $changes['brand_tone'] = 'حماسي';
+    } elseif (preg_match('/\bmore\s+enthusiastic\b/i', $note) === 1) {
+        $changes['brand_tone'] = 'enthusiastic';
+    }
+    if (preg_match('/(?:سمِّ|سمّ|سمي)\s+(?:الحملة\s+)?(.+)/u', $note, $match) === 1) {
+        $changes['title'] = mb_substr(rateb_idea_clean($match[1]), 0, 120);
+    } elseif (preg_match('/\brename\s+the\s+campaign\s+to\s+(.+)/i', $note, $match) === 1) {
+        $changes['title'] = mb_substr(rateb_idea_clean($match[1]), 0, 120);
+    }
+    return $changes === [] ? null : $changes;
+}
+
+function rateb_store_edit(int $userId, int $campaignId, array $brief, array $changes): void
+{
+    $pdo = db();
+    $columns = [
+        'title' => 120,
+        'product' => 255,
+        'description' => 4000,
+        'audience' => 255,
+        'objective' => 500,
+        'location' => 160,
+        'channels' => 255,
+        'brand_tone' => 160,
+    ];
+    $clean = [];
+    foreach ($changes as $key => $value) {
+        if (!isset($columns[$key]) && $key !== 'campaign_language') {
+            continue;
+        }
+        $text = trim((string) $value);
+        if ($text === '') {
+            continue;
+        }
+        $clean[$key] = $key === 'campaign_language'
+            ? rateb_valid_language($text)
+            : mb_substr($text, 0, $columns[$key]);
+    }
+    if ($clean === []) {
+        return;
+    }
+    if (isset($clean['title'])) {
+        $pdo->prepare('UPDATE campaigns SET title = ?, updated_at = NOW() WHERE id = ? AND user_id = ?')->execute([$clean['title'], $campaignId, $userId]);
+    }
+    $sets = [];
+    $values = [];
+    foreach (['product' => 'product_name', 'description' => 'description', 'audience' => 'target_customer', 'objective' => 'objective'] as $key => $column) {
+        if (!isset($clean[$key])) {
+            continue;
+        }
+        $sets[] = $column . ' = ?';
+        $values[] = $clean[$key];
+    }
+    if ($sets !== []) {
+        $values[] = $campaignId;
+        $values[] = $userId;
+        $pdo->prepare('UPDATE campaigns SET ' . implode(', ', $sets) . ', updated_at = NOW() WHERE id = ? AND user_id = ?')->execute($values);
+    }
+    $input = ['campaign_language' => (string) ($brief['campaign_language'] ?? 'auto')];
+    foreach (['product', 'description', 'audience', 'objective', 'location', 'channels', 'brand_tone', 'campaign_language'] as $key) {
+        if (isset($clean[$key])) {
+            $input[$key] = $clean[$key];
+        }
+    }
+    if (isset($clean['description'])) {
+        $input['core_message'] = $clean['description'];
+    }
+    rateb_sync_brief($pdo, $userId, $campaignId, $input);
+}
+
 function rateb_idea_message(string $key): string
 {
     $arabic = ui_language() === 'ar';

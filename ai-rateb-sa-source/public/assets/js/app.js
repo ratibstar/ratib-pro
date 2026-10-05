@@ -153,10 +153,13 @@
       save_campaign: 'Save Campaign',
       generating: 'Generating campaign...',
       type_strategy: 'Campaign Strategy',
-      type_ad_copy: 'Ad Copy',
-      type_social_posts: 'Social Media Posts',
-      type_whatsapp: 'WhatsApp Message',
-      type_product_description: 'Product Description',
+      type_headline: 'Headline',
+      type_ad_copy: 'Main advertisement',
+      type_short_ad: 'Short advertisement',
+      type_social_posts: 'Social post',
+      type_whatsapp: 'WhatsApp message',
+      type_call_to_action: 'Call to action',
+      type_product_description: 'Product description',
       type_video_ideas: 'Video Ideas',
       type_voiceover: 'Voice-over Script',
       type_content_plan_7_days: '7-Day Content Plan',
@@ -202,7 +205,50 @@
       campaign_workspace: 'Campaign workspace',
       save_changes: 'Save changes',
       strategy_heading: 'AI-generated strategy',
-      no_strategy: 'No strategy yet. Generate the campaign below.',
+      no_strategy: 'No strategy yet. Build it from the campaign brief.',
+      brief_title: 'Campaign brief',
+      brief_idea: 'Idea',
+      brief_tone: 'Tone',
+      edit_lead: 'Edit the idea in your own words',
+      edit_placeholder: 'Example: change the location to Jeddah',
+      edit_example: 'Example: also target small and medium businesses, or make the ad more enthusiastic.',
+      update_idea: 'Update the idea',
+      updating_idea: 'Updating the idea...',
+      strategy_title: 'Campaign strategy',
+      strategy_positioning: 'Positioning',
+      strategy_core_message: 'Core message',
+      strategy_audience: 'Audience',
+      strategy_channels: 'Suggested channels',
+      strategy_tone: 'Tone',
+      strategy_creative_direction: 'Creative direction',
+      strategy_call_to_action: 'Call to action',
+      strategy_approved: 'Approved',
+      build_strategy: 'Build the strategy',
+      approve_strategy: 'Approve strategy',
+      regenerate: 'Regenerate',
+      regenerate_copy: 'Rewrite the copy',
+      generating_strategy: 'RATEB is writing the strategy...',
+      generating_copy: 'RATEB is writing the copy...',
+      regen_confirm: 'This replaces the approved result. Continue?',
+      copy_title: 'Campaign copy',
+      copy_locked: 'Approve the strategy first, then RATEB writes the copy.',
+      no_copy: 'Copy is ready to write from the approved strategy.',
+      write_copy: 'Write the copy',
+      copy_button: 'Copy',
+      copy_draft: 'Draft',
+      copy_approved: 'Approved',
+      approve_output: 'Approve',
+      copied: 'Copied',
+      copy_failed: 'Could not copy',
+      state_done: 'Done',
+      state_progress: 'In progress',
+      state_open: 'Ready to start',
+      state_next: 'Later',
+      state_locked: 'Not available',
+      stage_images_next: 'The image stage comes later. No generated campaign images are shown here.',
+      stage_voice_next: 'The voice stage comes later.',
+      stage_video_locked: 'Video generation is not available in this stage.',
+      stage_ready_next: 'The ready campaign comes after the earlier stages are complete.',
       status_draft: 'Draft',
       status_in_progress: 'In Progress',
       status_ready: 'Ready',
@@ -448,9 +494,12 @@
       save_campaign: 'حفظ الحملة',
       generating: 'جاري توليد الحملة...',
       type_strategy: 'استراتيجية الحملة',
-      type_ad_copy: 'نص الإعلان',
-      type_social_posts: 'منشورات التواصل',
+      type_headline: 'العنوان',
+      type_ad_copy: 'الإعلان الرئيسي',
+      type_short_ad: 'الإعلان القصير',
+      type_social_posts: 'منشور التواصل',
       type_whatsapp: 'رسالة واتساب',
+      type_call_to_action: 'الدعوة إلى الإجراء',
       type_product_description: 'وصف المنتج',
       type_video_ideas: 'أفكار الفيديو',
       type_voiceover: 'نص التعليق الصوتي',
@@ -497,7 +546,50 @@
       campaign_workspace: 'مساحة الحملة',
       save_changes: 'حفظ التغييرات',
       strategy_heading: 'الاستراتيجية المولدة',
-      no_strategy: 'لا توجد استراتيجية بعد. ولّد الحملة بالأسفل.',
+      no_strategy: 'ما فيه استراتيجية بعد. ابنِها من ملخص الحملة.',
+      brief_title: 'ملخص الحملة',
+      brief_idea: 'الفكرة',
+      brief_tone: 'النبرة',
+      edit_lead: 'عدّل الفكرة بكلامك',
+      edit_placeholder: 'مثال: غيّر الموقع إلى الرياض وجدة',
+      edit_example: 'مثال: أبغى أستهدف الشركات الصغيرة والمتوسطة أيضاً، أو خل الإعلان أكثر حماساً.',
+      update_idea: 'حدّث الفكرة',
+      updating_idea: 'RATEB يحدّث الفكرة...',
+      strategy_title: 'استراتيجية الحملة',
+      strategy_positioning: 'الفكرة الرئيسية',
+      strategy_core_message: 'الرسالة الأساسية',
+      strategy_audience: 'الجمهور',
+      strategy_channels: 'القنوات المقترحة',
+      strategy_tone: 'النبرة',
+      strategy_creative_direction: 'الاتجاه الإبداعي',
+      strategy_call_to_action: 'الدعوة إلى الإجراء',
+      strategy_approved: 'معتمدة',
+      build_strategy: 'ابنِ الاستراتيجية',
+      approve_strategy: 'اعتمد الاستراتيجية',
+      regenerate: 'أعد التوليد',
+      regenerate_copy: 'أعد كتابة النصوص',
+      generating_strategy: 'RATEB يكتب الاستراتيجية...',
+      generating_copy: 'RATEB يكتب النصوص...',
+      regen_confirm: 'هذا يستبدل النتيجة المعتمدة. تبي تكمل؟',
+      copy_title: 'نصوص الحملة',
+      copy_locked: 'اعتمد الاستراتيجية أولًا، ثم يكتب RATEB النصوص.',
+      no_copy: 'النصوص جاهزة للكتابة من الاستراتيجية المعتمدة.',
+      write_copy: 'اكتب النصوص',
+      copy_button: 'نسخ',
+      copy_draft: 'مسودة',
+      copy_approved: 'معتمد',
+      approve_output: 'اعتماد',
+      copied: 'تم النسخ',
+      copy_failed: 'تعذر النسخ',
+      state_done: 'مكتملة',
+      state_progress: 'قيد الإعداد',
+      state_open: 'جاهزة للبدء',
+      state_next: 'لاحقًا',
+      state_locked: 'غير متاحة',
+      stage_images_next: 'مرحلة الصور لاحقًا. لا توجد صور حملة مولَّدة هنا.',
+      stage_voice_next: 'مرحلة الصوت لاحقًا.',
+      stage_video_locked: 'توليد الفيديو غير متاح في هذه المرحلة.',
+      stage_ready_next: 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.',
       status_draft: 'مسودة',
       status_in_progress: 'قيد التنفيذ',
       status_ready: 'جاهزة',
@@ -651,9 +743,12 @@
   function initTabs() {
     var tabs = document.querySelectorAll('[data-tab]');
     if (!tabs.length) return;
-    var names = ['overview', 'ai', 'media', 'planner', 'variations', 'brand'];
+    var names = ['idea', 'strategy', 'copy', 'images', 'voice', 'video', 'ready'];
     function openTab(name) {
-      if (names.indexOf(name) < 0) name = 'overview';
+      if (name === 'overview' || name === 'details' || name === 'planner' || name === 'variations' || name === 'brand') name = 'idea';
+      if (name === 'ai') name = 'strategy';
+      if (name === 'media') name = 'images';
+      if (names.indexOf(name) < 0) name = 'idea';
       document.body.classList.add('tabs-ready');
       document.querySelectorAll('[data-panel]').forEach(function (panel) {
         panel.classList.toggle('is-active', panel.getAttribute('data-panel') === name);
@@ -679,11 +774,61 @@
       };
     });
     var hash = (location.hash || '').replace('#', '');
-    if (hash === 'details') hash = 'overview';
-    if (hash === 'strategy' || hash === 'copy') hash = 'ai';
-    if (new URLSearchParams(location.search).get('media_error')) hash = 'media';
-    openTab(names.indexOf(hash) >= 0 ? hash : 'overview');
+    if (new URLSearchParams(location.search).get('media_error')) hash = 'images';
+    openTab(hash || 'idea');
   }
+
+  document.querySelectorAll('form[data-ai]').forEach(function (form) {
+    form.onsubmit = async function (event) {
+      event.preventDefault();
+      if (form.getAttribute('data-locked') === '1' && !window.confirm(dict[language].regen_confirm)) {
+        return;
+      }
+      if (form.getAttribute('data-locked') === '1') {
+        var confirmInput = form.querySelector('input[name="confirm"]');
+        if (confirmInput) confirmInput.value = '1';
+      }
+      var status = document.getElementById(form.getAttribute('data-status') || '');
+      var button = form.querySelector('button[type="submit"]');
+      var busyKey = form.getAttribute('data-busy') || 'generating';
+      if (button) {
+        button.disabled = true;
+        button.classList.add('is-busy');
+      }
+      if (status) {
+        status.className = 'notice';
+        status.textContent = dict[language][busyKey] || dict[language].generating;
+      }
+      try {
+        var response = await fetch('/app/ai/generate.php', { method: 'POST', body: new FormData(form) });
+        var payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || dict[language].ai_failed || 'Request failed');
+        location.href = payload.redirect || location.href;
+      } catch (error) {
+        if (status) {
+          status.className = 'notice is-error';
+          status.textContent = error.message;
+        }
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('is-busy');
+        }
+      }
+    };
+  });
+
+  document.querySelectorAll('[data-copy]').forEach(function (button) {
+    button.onclick = async function () {
+      var node = document.getElementById(button.getAttribute('data-copy'));
+      if (!node) return;
+      try {
+        await navigator.clipboard.writeText(node.innerText);
+        button.textContent = dict[language].copied;
+      } catch (error) {
+        button.textContent = dict[language].copy_failed;
+      }
+    };
+  });
 
   var form = document.getElementById('generateForm');
   if (form) {
