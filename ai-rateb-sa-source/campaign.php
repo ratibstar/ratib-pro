@@ -12,9 +12,10 @@ if (!$campaign) {
 $o = db()->prepare('SELECT * FROM campaign_outputs WHERE campaign_id=? ORDER BY id');
 $o->execute([$id]);
 $outputs = $o->fetchAll();
-$briefStmt = db()->prepare('SELECT campaign_language FROM campaign_briefs WHERE campaign_id = ? AND user_id = ? LIMIT 1');
+$briefStmt = db()->prepare('SELECT * FROM campaign_briefs WHERE campaign_id = ? AND user_id = ? LIMIT 1');
 $briefStmt->execute([$id, (int) $_SESSION['user_id']]);
-$campaignLanguage = (string) ($briefStmt->fetchColumn() ?: 'auto');
+$brief = $briefStmt->fetch() ?: [];
+$campaignLanguage = (string) ($brief['campaign_language'] ?? 'auto');
 $m = db()->prepare('SELECT * FROM campaign_media WHERE campaign_id=? AND user_id=? ORDER BY id DESC');
 $m->execute([$id, $_SESSION['user_id']]);
 $media = $m->fetchAll();
@@ -60,16 +61,41 @@ foreach ($media as $mediaItem) {
     }
 }
 $tone = ($id % 4) + 1;
+$arabic = ui_language() === 'ar';
+$imageCount = 0;
+$videoCount = 0;
+$audioCount = 0;
+foreach ($media as $mediaItem) {
+    if ((string) $mediaItem['kind'] === 'image') {
+        $imageCount++;
+    } elseif ((string) $mediaItem['kind'] === 'video') {
+        $videoCount++;
+    } elseif ((string) $mediaItem['kind'] === 'audio') {
+        $audioCount++;
+    }
+}
+$hasCopy = false;
+foreach ($textOutputs as $textRow) {
+    if (in_array((string) $textRow['output_type'], ['ad_copy', 'social_posts', 'whatsapp', 'product_description', 'voiceover', 'content_plan_7_days'], true)) {
+        $hasCopy = true;
+    }
+}
+$statusLabels = $arabic
+    ? ['draft' => 'مسودة', 'in_progress' => 'قيد التنفيذ', 'ready' => 'جاهزة', 'completed' => 'مكتملة']
+    : ['draft' => 'Draft', 'in_progress' => 'In Progress', 'ready' => 'Ready', 'completed' => 'Completed'];
+$langLabels = $arabic
+    ? ['ar' => 'العربية', 'en' => 'الإنجليزية', 'bilingual' => 'العربية والإنجليزية', 'auto' => 'خل RATEB يختار']
+    : ['ar' => 'Arabic', 'en' => 'English', 'bilingual' => 'Arabic and English', 'auto' => 'Let RATEB choose'];
 ?>
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="<?= $arabic ? 'ar' : 'en' ?>" dir="<?= $arabic ? 'rtl' : 'ltr' ?>" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RATEB AI — Campaign</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=ink1">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=idea2">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -79,7 +105,7 @@ $tone = ($id % 4) + 1;
     <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
     <a href="/brand.php" data-i18n="brand_kit">Brand kit</a>
     <a href="/logout.php" data-i18n="logout">Logout</a>
-    <button type="button" id="lang" class="icon">عربي</button>
+    <button type="button" id="lang" class="icon"><?= $arabic ? 'English' : 'عربي' ?></button>
     <button type="button" id="theme" class="icon">☾</button>
   </nav>
 </header>
@@ -100,9 +126,9 @@ $tone = ($id % 4) + 1;
       <div class="studio-hero-copy">
         <div class="workspace-head">
           <div>
-            <span class="eyebrow" data-i18n="campaign_details">CAMPAIGN DETAILS</span>
+            <span class="eyebrow" data-i18n="campaign_details"><?= $arabic ? 'تفاصيل الحملة' : 'CAMPAIGN DETAILS' ?></span>
             <h1><?= e($campaign['title']) ?></h1>
-            <span class="badge status-<?= e($status) ?>" data-i18n="status_<?= e($status) ?>"><?= e($status) ?></span>
+            <span class="badge status-<?= e($status) ?>" data-i18n="status_<?= e($status) ?>"><?= e($statusLabels[$status] ?? $status) ?></span>
           </div>
           <div class="action-row">
             <button type="button" class="primary" data-open="ai" data-i18n="open_ai">Open AI content</button>
@@ -121,63 +147,59 @@ $tone = ($id % 4) + 1;
         </ol>
       </div>
     </div>
-    <div class="showcase">
-      <button type="button" class="showcase-card show-strategy" data-open="ai"><span class="show-mark">01</span><h3 data-i18n="show_strategy_title">AI campaign strategy</h3><p data-i18n="show_strategy_body">A clear plan for the offer, audience, and message.</p></button>
-      <button type="button" class="showcase-card show-copy" data-open="ai"><span class="show-mark">02</span><h3 data-i18n="show_copy_title">Ad copy</h3><p data-i18n="show_copy_body">Ready lines for ads, landing pages, and offers.</p></button>
-      <button type="button" class="showcase-card show-social" data-open="ai"><span class="show-mark">03</span><h3 data-i18n="show_social_title">Social posts</h3><p data-i18n="show_social_body">Posts shaped for the platforms your customers use.</p></button>
-      <button type="button" class="showcase-card show-images" data-open="media"><span class="show-mark">04</span><h3 data-i18n="show_images_title">AI images</h3><p data-i18n="show_images_body">Campaign visuals generated for this brand.</p></button>
-      <button type="button" class="showcase-card show-voice" data-open="media"><span class="show-mark">05</span><h3 data-i18n="show_voice_title">Saudi Arabic voice</h3><p data-i18n="show_voice_body">A natural Saudi Arabic voice-over from your script.</p></button>
-      <button type="button" class="showcase-card show-video" data-open="ai"><span class="show-mark">06</span><h3 data-i18n="show_video_title">Video ideas</h3><p data-i18n="show_video_body">Shot ideas and scripts. Video rendering stays unavailable.</p></button>
-      <button type="button" class="showcase-card show-planner" data-open="planner"><span class="show-mark">07</span><h3 data-i18n="show_planner_title">Content planner</h3><p data-i18n="show_planner_body">Dates, drafts, and approvals for what goes live next.</p></button>
-    </div>
     <div class="progress progress-<?= (int) $progress ?>" role="progressbar" aria-valuenow="<?= (int) $progress ?>" aria-valuemin="0" aria-valuemax="100"><span></span></div>
-    <p class="muted"><span data-i18n="progress">Progress</span> <?= (int) $progress ?>%</p>
-    <div class="kpi-grid">
-      <article class="kpi"><span data-i18n="product">Product / Service</span><strong><?= e($campaign['product_name']) ?></strong></article>
-      <article class="kpi"><span data-i18n="price">Price</span><strong><?= trim((string) $campaign['price']) !== '' ? e($campaign['price']) : '<span class="muted" data-i18n="not_set">Not set</span>' ?></strong></article>
-      <article class="kpi"><span data-i18n="budget">Budget</span><strong><?php if (trim((string) ($campaign['budget'] ?? '')) === ''): ?><span class="muted" data-i18n="not_set">Not set</span><?php else: ?><?= e($campaign['budget']) ?><?php endif; ?></strong></article>
-      <article class="kpi"><span data-i18n="dates">Dates</span><strong><?php if (empty($campaign['start_date']) && empty($campaign['end_date'])): ?><span class="muted" data-i18n="not_set">Not set</span><?php else: ?><?= e($campaign['start_date'] ?? '') ?> – <?= e($campaign['end_date'] ?? '') ?><?php endif; ?></strong></article>
-      <article class="kpi"><span data-i18n="kpi_outputs">AI outputs</span><strong><?= count($outputs) ?></strong></article>
-      <article class="kpi"><span data-i18n="kpi_media">Media files</span><strong><?= count($media) ?></strong></article>
-      <article class="kpi"><span data-i18n="kpi_items">Planner items</span><strong><?= count($items) ?></strong></article>
-      <article class="kpi"><span data-i18n="kpi_variations">Variations</span><strong><?= count($variationGroups) ?></strong></article>
-    </div>
-    <div class="summary-grid">
-      <div><b data-i18n="target">Target customer</b><p><?= e($campaign['target_customer']) ?></p></div>
-      <div><b data-i18n="objective">Objective</b><p><?php if (trim((string) ($campaign['objective'] ?? '')) === ''): ?><span class="muted" data-i18n="not_set">Not set</span><?php else: ?><?= e($campaign['objective']) ?><?php endif; ?></p></div>
-      <div class="wide"><b data-i18n="description">Description</b><p><?= nl2br(e($campaign['description'])) ?></p></div>
-    </div>
-    <h2 data-i18n="campaign_workspace">Campaign workspace</h2>
-    <form method="post" action="/campaign-update.php" id="details">
-      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-      <input type="hidden" name="campaign_id" value="<?= $id ?>">
-      <div class="grid two">
-        <label><span data-i18n="campaign_title">Campaign title *</span><input name="title" value="<?= e($campaign['title']) ?>" required></label>
-        <label><span data-i18n="product_required">Product / Service *</span><input name="product_name" value="<?= e($campaign['product_name']) ?>" required></label>
-        <label><span data-i18n="objective">Objective</span><input name="objective" value="<?= e($campaign['objective'] ?? '') ?>"></label>
-        <label><span data-i18n="target_required">Target customer *</span><input name="target_customer" value="<?= e($campaign['target_customer']) ?>" required></label>
-        <label><span data-i18n="budget">Budget</span><input name="budget" value="<?= e($campaign['budget'] ?? '') ?>"></label>
-        <label><span data-i18n="price">Price</span><input name="price" value="<?= e($campaign['price']) ?>"></label>
-        <label><span data-i18n="campaign_language">Campaign language</span>
+    <p class="muted"><span data-i18n="progress"><?= $arabic ? 'التقدم' : 'Progress' ?></span> <?= (int) $progress ?>%</p>
+    <dl class="brief-list workspace-brief">
+      <?php if (trim((string) ($brief['product'] ?? $campaign['product_name'])) !== ''): ?>
+        <div><dt data-i18n="brief_product"><?= $arabic ? 'المنتج' : 'Product' ?></dt><dd><?= e((string) ($brief['product'] ?? $campaign['product_name'])) ?></dd></div>
+      <?php endif; ?>
+      <?php if (trim((string) ($brief['location'] ?? '')) !== ''): ?>
+        <div><dt data-i18n="brief_location"><?= $arabic ? 'الموقع' : 'Location' ?></dt><dd><?= e((string) $brief['location']) ?></dd></div>
+      <?php endif; ?>
+      <?php if (trim((string) ($brief['objective'] ?? $campaign['objective'] ?? '')) !== ''): ?>
+        <div><dt data-i18n="brief_objective"><?= $arabic ? 'الهدف' : 'Goal' ?></dt><dd><?= e((string) ($brief['objective'] ?? $campaign['objective'])) ?></dd></div>
+      <?php endif; ?>
+      <?php if (trim((string) ($brief['channels'] ?? '')) !== ''): ?>
+        <div><dt data-i18n="brief_channel"><?= $arabic ? 'القناة' : 'Channel' ?></dt><dd><?= e((string) $brief['channels']) ?></dd></div>
+      <?php endif; ?>
+      <div><dt data-i18n="brief_audience"><?= $arabic ? 'الجمهور' : 'Audience' ?></dt><dd><?php if (trim((string) ($brief['audience'] ?? $campaign['target_customer'])) !== ''): ?><?= e((string) ($brief['audience'] ?? $campaign['target_customer'])) ?><?php else: ?><span data-i18n="audience_unknown"><?= $arabic ? 'غير محدد' : 'Not specified' ?></span><?php endif; ?></dd></div>
+      <div><dt data-i18n="brief_language"><?= $arabic ? 'اللغة' : 'Language' ?></dt><dd><span data-i18n="<?= e(['ar' => 'lang_ar', 'en' => 'lang_en', 'bilingual' => 'lang_bilingual', 'auto' => 'lang_auto'][$campaignLanguage] ?? 'lang_auto') ?>"><?= e($langLabels[$campaignLanguage] ?? $langLabels['auto']) ?></span></dd></div>
+      <?php if ($imageCount > 0 || $videoCount > 0): ?>
+        <div><dt data-i18n="brief_files"><?= $arabic ? 'المواد المرفقة' : 'Attached files' ?></dt><dd><?php if ($imageCount > 0): ?><?= $imageCount ?> <span data-i18n="files_photos"><?= $arabic ? 'صور' : 'photos' ?></span><?php endif; ?><?php if ($imageCount > 0 && $videoCount > 0): ?> <span data-i18n="files_and"><?= $arabic ? 'و' : 'and' ?></span> <?php endif; ?><?php if ($videoCount > 0): ?><span data-i18n="files_video"><?= $arabic ? 'فيديو' : 'a video' ?></span><?php endif; ?></dd></div>
+      <?php endif; ?>
+    </dl>
+    <ol class="build-stages">
+      <li class="is-done"><button type="button" data-open="overview"><span>01</span><b data-i18n="stage_idea"><?= $arabic ? 'الفكرة' : 'Idea' ?></b></button></li>
+      <li class="<?= $strategy !== '' ? 'is-done' : '' ?>"><button type="button" data-open="ai"><span>02</span><b data-i18n="stage_strategy"><?= $arabic ? 'الاستراتيجية' : 'Strategy' ?></b></button></li>
+      <li class="<?= $hasCopy ? 'is-done' : '' ?>"><button type="button" data-open="ai"><span>03</span><b data-i18n="stage_copy"><?= $arabic ? 'النص' : 'Copy' ?></b></button></li>
+      <li class="<?= $imageCount > 0 ? 'is-done' : '' ?>"><button type="button" data-open="media"><span>04</span><b data-i18n="stage_images"><?= $arabic ? 'الصور' : 'Images' ?></b></button></li>
+      <li class="<?= $audioCount > 0 ? 'is-done' : '' ?>"><button type="button" data-open="media"><span>05</span><b data-i18n="stage_voice"><?= $arabic ? 'الصوت' : 'Voice' ?></b></button></li>
+      <li class="is-later"><button type="button" data-open="ai"><span>06</span><b data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></b></button></li>
+      <li class="<?= in_array($status, ['ready', 'completed'], true) ? 'is-done' : '' ?>"><button type="button" data-open="overview"><span>07</span><b data-i18n="stage_ready"><?= $arabic ? 'الحملة الجاهزة' : 'Ready campaign' ?></b></button></li>
+    </ol>
+    <details class="edit-campaign">
+      <summary data-i18n="edit_campaign"><?= $arabic ? 'تعديل الحملة' : 'Edit campaign' ?></summary>
+      <form method="post" action="/campaign-update.php">
+        <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+        <input type="hidden" name="campaign_id" value="<?= $id ?>">
+        <input type="hidden" name="brief_edit" value="1">
+        <label><span data-i18n="campaign_name"><?= $arabic ? 'اسم الحملة' : 'Campaign name' ?></span><input name="title" value="<?= e($campaign['title']) ?>" required></label>
+        <label><span data-i18n="brief_product"><?= $arabic ? 'المنتج' : 'Product' ?></span><input name="product_name" value="<?= e((string) ($brief['product'] ?? $campaign['product_name'])) ?>"></label>
+        <label><span data-i18n="brief_objective"><?= $arabic ? 'الهدف' : 'Goal' ?></span><input name="objective" value="<?= e((string) ($brief['objective'] ?? $campaign['objective'] ?? '')) ?>"></label>
+        <label><span data-i18n="brief_audience"><?= $arabic ? 'الجمهور' : 'Audience' ?></span><input name="target_customer" value="<?= e((string) ($brief['audience'] ?? $campaign['target_customer'])) ?>"></label>
+        <label><span data-i18n="brief_location"><?= $arabic ? 'الموقع' : 'Location' ?></span><input name="location" value="<?= e((string) ($brief['location'] ?? '')) ?>"></label>
+        <label><span data-i18n="brief_channel"><?= $arabic ? 'القناة' : 'Channel' ?></span><input name="channels" value="<?= e((string) ($brief['channels'] ?? '')) ?>"></label>
+        <label><span data-i18n="campaign_language"><?= $arabic ? 'لغة الحملة' : 'Campaign language' ?></span>
           <select name="campaign_language">
-            <?php foreach (['auto' => 'lang_auto', 'ar' => 'lang_ar', 'en' => 'lang_en', 'bilingual' => 'lang_bilingual'] as $code => $key): ?>
-              <option value="<?= e($code) ?>" data-i18n="<?= e($key) ?>" <?= $campaignLanguage === $code ? 'selected' : '' ?>><?= e($code) ?></option>
+            <?php foreach (['ar' => 'lang_ar', 'en' => 'lang_en', 'bilingual' => 'lang_bilingual', 'auto' => 'lang_auto'] as $code => $key): ?>
+              <option value="<?= e($code) ?>" data-i18n="<?= e($key) ?>" <?= $campaignLanguage === $code ? 'selected' : '' ?>><?= e($langLabels[$code]) ?></option>
             <?php endforeach; ?>
           </select>
         </label>
-        <label><span data-i18n="start_date">Start date</span><input type="date" name="start_date" value="<?= e($campaign['start_date'] ?? '') ?>"></label>
-        <label><span data-i18n="end_date">End date</span><input type="date" name="end_date" value="<?= e($campaign['end_date'] ?? '') ?>"></label>
-        <label><span data-i18n="col_status">Status</span>
-          <select name="status">
-            <?php foreach (campaign_status_values() as $option): ?>
-              <option value="<?= e($option) ?>" data-i18n="status_<?= e($option) ?>" <?= $option === $status ? 'selected' : '' ?>><?= e($option) ?></option>
-            <?php endforeach; ?>
-          </select>
-        </label>
-        <label><span data-i18n="description_required">Description *</span><textarea name="description" required><?= e($campaign['description']) ?></textarea></label>
-      </div>
-      <button class="primary" type="submit" data-i18n="save_changes">Save changes</button>
-    </form>
+        <label><span data-i18n="idea_lead"><?= $arabic ? 'اكتب فكرتك بطريقتك...' : 'Describe the idea in your own words.' ?></span><textarea name="description"><?= e((string) ($brief['description'] ?? $campaign['description'])) ?></textarea></label>
+        <button class="primary" type="submit" data-i18n="save_changes"><?= $arabic ? 'حفظ التغييرات' : 'Save changes' ?></button>
+      </form>
+    </details>
     <?php if (($_GET['delete_error'] ?? '') === '1'): ?>
       <p class="alert" data-i18n="delete_failed">The campaign could not be deleted.</p>
     <?php endif; ?>
@@ -421,6 +443,6 @@ $tone = ($id % 4) + 1;
     <a class="button" href="/brand.php" data-i18n="open_brand">Open brand kit</a>
   </section>
 </main>
-<script src="/public/assets/js/app.js?v=plans1"></script>
+<script src="/public/assets/js/app.js?v=idea2"></script>
 </body>
 </html>

@@ -409,6 +409,31 @@ function rateb_idea_commit(int $userId, array $draft): int
     return $campaignId;
 }
 
+function rateb_next_gap(array $extract, array $answered): ?string
+{
+    if (trim((string) ($extract['product'] ?? '')) === '') {
+        return 'product';
+    }
+    if (trim((string) ($extract['objective'] ?? '')) === '' && empty($answered['objective'])) {
+        return 'objective';
+    }
+    if (trim((string) ($extract['audience'] ?? '')) === '' && empty($answered['audience'])) {
+        return 'audience';
+    }
+    return null;
+}
+
+function rateb_size_label(int $bytes, bool $arabic): string
+{
+    if ($bytes >= 1048576) {
+        return round($bytes / 1048576, 1) . ($arabic ? ' م.ب' : ' MB');
+    }
+    if ($bytes >= 1024) {
+        return (string) round($bytes / 1024) . ($arabic ? ' ك.ب' : ' KB');
+    }
+    return (string) $bytes . ($arabic ? ' بايت' : ' B');
+}
+
 function rateb_idea_message(string $key): string
 {
     $arabic = ui_language() === 'ar';

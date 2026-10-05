@@ -13,6 +13,29 @@ if (!$owned->fetch()) {
     http_response_code(404);
     exit('Campaign not found.');
 }
+if ((string) ($_POST['brief_edit'] ?? '') === '1') {
+    $stmt = db()->prepare('UPDATE campaigns SET title=?, product_name=?, description=?, target_customer=?, objective=?, updated_at=NOW() WHERE id=? AND user_id=?');
+    $stmt->execute([
+        mb_substr(trim((string) ($_POST['title'] ?? '')), 0, 255),
+        mb_substr(trim((string) ($_POST['product_name'] ?? '')), 0, 255),
+        trim((string) ($_POST['description'] ?? '')),
+        mb_substr(trim((string) ($_POST['target_customer'] ?? '')), 0, 255),
+        mb_substr(trim((string) ($_POST['objective'] ?? '')), 0, 500),
+        $id,
+        $_SESSION['user_id'],
+    ]);
+    rateb_sync_brief(db(), (int) $_SESSION['user_id'], $id, [
+        'product' => (string) ($_POST['product_name'] ?? ''),
+        'description' => (string) ($_POST['description'] ?? ''),
+        'audience' => (string) ($_POST['target_customer'] ?? ''),
+        'objective' => (string) ($_POST['objective'] ?? ''),
+        'campaign_language' => (string) ($_POST['campaign_language'] ?? 'auto'),
+        'location' => (string) ($_POST['location'] ?? ''),
+        'channels' => (string) ($_POST['channels'] ?? ''),
+    ]);
+    header('Location: /campaign.php?id=' . $id);
+    exit;
+}
 $stmt = db()->prepare('UPDATE campaigns SET title=?, product_name=?, description=?, price=?, target_customer=?, status=?, objective=?, start_date=?, end_date=?, budget=?, updated_at=NOW() WHERE id=? AND user_id=?');
 $stmt->execute([
     mb_substr(trim((string) ($_POST['title'] ?? '')), 0, 255),

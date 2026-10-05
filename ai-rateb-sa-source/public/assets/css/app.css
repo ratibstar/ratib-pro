@@ -430,6 +430,19 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .idea-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .idea-actions form{margin:0}
 .idea-error{color:#b42318;font-weight:700}
+.read-steps,.build-stages{list-style:none;margin:18px 0;padding:0;display:grid;gap:10px}
+.read-steps li,.build-stages li button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;text-align:start;padding:14px 16px;border-radius:18px;border:1px solid var(--border);background:var(--surface2);color:var(--text)}
+.read-steps li{opacity:.45}
+.read-steps li.is-on,.read-steps li[data-state="done"],.read-steps li[data-state="ready"]{opacity:1}
+.build-stages{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.build-stages button{font:inherit;cursor:pointer;min-height:92px}
+.build-stages span{color:var(--muted);font-weight:800}
+.build-stages .is-done button{border-color:transparent;background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff}
+.build-stages .is-done span{color:rgba(255,255,255,.8)}
+.edit-campaign{margin-top:18px}
+.edit-campaign summary{cursor:pointer;font-weight:800}
+.edit-campaign form{display:grid;gap:12px;margin-top:14px}
+.workspace-brief{margin-top:8px}
 #upload-bar{display:block;width:0;height:100%}
 .server-removes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 [data-theme=dark] .idea-error{color:#ffb4ab}

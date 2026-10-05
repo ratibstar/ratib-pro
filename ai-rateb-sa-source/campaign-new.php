@@ -78,27 +78,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         $draft['extract'] = rateb_read_idea($idea);
-        $draft['ready'] = trim((string) ($draft['extract']['product'] ?? '')) !== '';
+        $draft['answered'] = [];
+        $draft['question'] = null;
+        $draft['ready'] = false;
+        $_SESSION['campaign_draft'] = $draft;
+        header('Location: /campaign-new.php?view=reading');
+        exit;
+    }
+    if ($step === 'continue') {
+        if (!is_array($draft['extract'] ?? null)) {
+            $draft['extract'] = rateb_read_idea((string) ($draft['idea'] ?? ''));
+        }
+        $gap = rateb_next_gap($draft['extract'], (array) ($draft['answered'] ?? []));
+        $draft['question'] = $gap;
+        $draft['ready'] = $gap === null && trim((string) ($draft['extract']['product'] ?? '')) !== '';
+        $draft['error'] = '';
         $_SESSION['campaign_draft'] = $draft;
         header('Location: /campaign-new.php?view=' . ($draft['ready'] ? 'confirm' : 'ask'));
         exit;
     }
     if ($step === 'answer') {
-        $product = rateb_idea_clean((string) ($_POST['product'] ?? ''));
-        if ($product === '' || trim((string) ($draft['idea'] ?? '')) === '') {
+        if (!is_array($draft['extract'] ?? null)) {
+            $draft['extract'] = rateb_read_idea((string) ($draft['idea'] ?? ''));
+        }
+        $question = (string) ($draft['question'] ?? 'product');
+        if (!in_array($question, ['product', 'objective', 'audience'], true)) {
+            $question = 'product';
+        }
+        $value = rateb_idea_clean((string) ($_POST['answer'] ?? ''));
+        if ($question === 'product' && ($value === '' || trim((string) ($draft['idea'] ?? '')) === '')) {
             $draft['error'] = 'ask_required';
+            $draft['question'] = 'product';
             $_SESSION['campaign_draft'] = $draft;
             header('Location: /campaign-new.php?view=ask');
             exit;
         }
-        if (!is_array($draft['extract'] ?? null)) {
-            $draft['extract'] = rateb_read_idea((string) $draft['idea']);
+        if (!isset($draft['answered']) || !is_array($draft['answered'])) {
+            $draft['answered'] = [];
         }
-        $draft['extract']['product'] = $product;
-        $draft['ready'] = true;
+        $draft['answered'][$question] = true;
+        if ($value !== '') {
+            $draft['extract'][$question] = $value;
+        }
+        $gap = rateb_next_gap($draft['extract'], $draft['answered']);
+        $draft['question'] = $gap;
+        $draft['ready'] = $gap === null && trim((string) ($draft['extract']['product'] ?? '')) !== '';
         $draft['error'] = '';
         $_SESSION['campaign_draft'] = $draft;
-        header('Location: /campaign-new.php?view=confirm');
+        header('Location: /campaign-new.php?view=' . ($draft['ready'] ? 'confirm' : 'ask'));
         exit;
     }
     if ($step === 'drop') {
@@ -143,14 +170,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $view = (string) ($_GET['view'] ?? 'idea');
-if ($view === 'confirm' && empty($draft['ready'])) {
-    $view = trim((string) ($draft['idea'] ?? '')) !== '' ? 'ask' : 'idea';
+$answered = is_array($draft['answered'] ?? null) ? $draft['answered'] : [];
+$extractPreview = is_array($draft['extract'] ?? null) ? $draft['extract'] : [];
+$gap = rateb_next_gap($extractPreview, $answered);
+if ($view === 'confirm' && $gap !== null) {
+    $draft['question'] = $gap;
+    $view = 'ask';
 }
-if ($view === 'ask' && !empty($draft['ready'])) {
+if ($view === 'ask' && $gap === null && !empty($draft['ready'])) {
     $view = 'confirm';
 }
-if (!in_array($view, ['idea', 'ask', 'confirm'], true)) {
+if ($view === 'reading' && trim((string) ($draft['idea'] ?? '')) === '') {
     $view = 'idea';
+}
+if (!in_array($view, ['idea', 'reading', 'ask', 'confirm'], true)) {
+    $view = 'idea';
+}
+$question = (string) ($draft['question'] ?? $gap ?? 'product');
+if (!in_array($question, ['product', 'objective', 'audience'], true)) {
+    $question = 'product';
 }
 $error = (string) ($draft['error'] ?? '');
 if ($error !== '') {
@@ -182,7 +220,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=idea1">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=idea2">
 </head>
 <body class="studio page-new">
 <header class="top">
@@ -195,15 +233,67 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
   </nav>
 </header>
 <main class="wrap idea-shell">
-<?php if ($view === 'ask'): ?>
+<?php if ($view === 'reading'): ?>
+  <section class="card idea-card" id="reading-flow">
+    <h1 data-i18n="reading_title"><?= $arabic ? 'RATEB يفهم فكرتك...' : 'RATEB is understanding your idea...' ?></h1>
+    <ol class="read-steps">
+      <li data-state="<?= trim((string) ($extract['product'] ?? '')) !== '' ? 'done' : 'wait' ?>">
+        <span data-i18n="read_product"><?= $arabic ? 'فهم المنتج' : 'Understanding the product' ?></span>
+        <?php if (trim((string) ($extract['product'] ?? '')) !== ''): ?><b><?= e((string) $extract['product']) ?></b><?php endif; ?>
+      </li>
+      <li data-state="<?= trim((string) ($extract['objective'] ?? '')) !== '' ? 'done' : 'wait' ?>">
+        <span data-i18n="read_objective"><?= $arabic ? 'فهم الهدف' : 'Understanding the objective' ?></span>
+        <?php if (trim((string) ($extract['objective'] ?? '')) !== ''): ?><b><?= e((string) $extract['objective']) ?></b><?php endif; ?>
+      </li>
+      <li data-state="<?= trim((string) ($extract['audience'] ?? '')) !== '' ? 'done' : 'wait' ?>">
+        <span data-i18n="read_audience"><?= $arabic ? 'فهم الجمهور' : 'Understanding the audience' ?></span>
+        <?php if (trim((string) ($extract['audience'] ?? '')) !== ''): ?><b><?= e((string) $extract['audience']) ?></b><?php endif; ?>
+      </li>
+      <li data-state="<?= $files !== [] ? 'ready' : 'none' ?>">
+        <span data-i18n="read_media"><?= $arabic ? 'تجهيز المواد المرفقة' : 'Processing attached materials' ?></span>
+        <?php if ($files !== []): ?>
+          <b data-i18n="materials_ready"><?= $arabic ? 'موادك جاهزة للاستخدام.' : 'Your uploaded materials are ready to use.' ?></b>
+          <?php if ($imageCount > 0): ?><small data-i18n="images_not_analyzed"><?= $arabic ? 'ما تم تحليل الصور.' : 'The photos were not analyzed.' ?></small><?php endif; ?>
+          <?php if ($videoCount > 0): ?><small data-i18n="video_not_analyzed"><?= $arabic ? 'ما تم تحليل الفيديو.' : 'The video was not analyzed.' ?></small><?php endif; ?>
+        <?php else: ?>
+          <b data-i18n="no_attachments"><?= $arabic ? 'ما فيه مرفقات.' : 'No files were attached.' ?></b>
+        <?php endif; ?>
+      </li>
+      <li data-state="later">
+        <span data-i18n="read_direction"><?= $arabic ? 'تجهيز اتجاه الحملة' : 'Preparing the campaign direction' ?></span>
+        <b data-i18n="direction_later"><?= $arabic ? 'هذا يجهز لاحقًا.' : 'This comes later.' ?></b>
+      </li>
+    </ol>
+    <form method="post" action="/campaign-new.php">
+      <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+      <input type="hidden" name="step" value="continue">
+      <button class="primary idea-go" id="reading-continue" type="submit" data-i18n="ask_continue"><?= $arabic ? 'متابعة' : 'Continue' ?></button>
+    </form>
+  </section>
+<?php elseif ($view === 'ask'): ?>
+  <?php
+    $productName = trim((string) ($extract['product'] ?? ''));
+    if ($question === 'audience') {
+        $askKey = 'ask_audience';
+        $askTitle = $arabic
+            ? ('مين تبي يوصل له ' . ($productName !== '' ? $productName : 'هذا المنتج') . '؟')
+            : ('Who do you want to reach' . ($productName !== '' ? ' with ' . $productName : '') . '?');
+    } elseif ($question === 'objective') {
+        $askKey = 'ask_objective';
+        $askTitle = $arabic ? 'وش تبي تحقق من هالحملة؟' : 'What should this campaign achieve?';
+    } else {
+        $askKey = 'ask_product';
+        $askTitle = $arabic ? 'وش المنتج أو الخدمة؟' : 'What is the product or service?';
+    }
+  ?>
   <section class="card idea-card">
-    <h1 data-i18n="ask_product"><?= $arabic ? 'وش المنتج أو الخدمة؟' : 'What is the product or service?' ?></h1>
-    <p class="muted" data-i18n="ask_lead"><?= $arabic ? 'باقي هالمعلومة فقط.' : 'Only this detail is still missing.' ?></p>
+    <p class="muted" data-i18n="ask_intro"><?= $arabic ? 'فهمت فكرتك. باقي سؤال واحد.' : 'I understood your idea. One question is still open.' ?></p>
+    <h1<?php if ($question === 'audience'): ?> data-ask="audience" data-product="<?= e($productName) ?>"<?php else: ?> data-i18n="<?= e($askKey) ?>"<?php endif; ?>><?= e($askTitle) ?></h1>
     <?php if (in_array($error, $errorKeys, true)): ?><p class="idea-error" data-i18n="<?= e($error) ?>"><?= e(rateb_idea_message($error)) ?></p><?php endif; ?>
     <form method="post" action="/campaign-new.php">
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="step" value="answer">
-      <textarea name="product" required maxlength="160"></textarea>
+      <textarea name="answer" <?= $question === 'product' ? 'required' : '' ?> maxlength="160"></textarea>
       <button class="primary idea-go" type="submit" data-i18n="ask_continue"><?= $arabic ? 'متابعة' : 'Continue' ?></button>
     </form>
   </section>
@@ -254,7 +344,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
           <?php else: ?>
             <img src="/campaign-new.php?draft=<?= e((string) $file['stored']) ?>" alt="">
           <?php endif; ?>
-          <figcaption><?= e((string) ($file['name'] ?? '')) ?></figcaption>
+          <figcaption><?= e((string) ($file['name'] ?? '')) ?> · <?= e(rateb_size_label((int) ($file['bytes'] ?? 0), $arabic)) ?></figcaption>
           <form method="post" action="/campaign-new.php">
             <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
             <input type="hidden" name="step" value="drop">
@@ -268,7 +358,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
       <form method="post" action="/campaign-new.php">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="step" value="confirm">
-        <button class="primary idea-go" type="submit" data-i18n="confirm_start"><?= $arabic ? '✨ اعتمد وابدأ' : '✨ Confirm and start' ?></button>
+        <button class="primary idea-go" type="submit" data-i18n="confirm_start"><?= $arabic ? '🚀 اعتمد وابدأ' : '🚀 Approve and start' ?></button>
       </form>
       <form method="post" action="/campaign-new.php">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
@@ -294,7 +384,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
             <?php else: ?>
               <img src="/campaign-new.php?draft=<?= e((string) $file['stored']) ?>" alt="">
             <?php endif; ?>
-            <figcaption><?= e((string) ($file['name'] ?? '')) ?></figcaption>
+            <figcaption><?= e((string) ($file['name'] ?? '')) ?> · <?= e(rateb_size_label((int) ($file['bytes'] ?? 0), $arabic)) ?></figcaption>
             <input type="hidden" name="keep[]" value="<?= e((string) $file['stored']) ?>">
           </figure>
         <?php endforeach; ?>
@@ -342,6 +432,6 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
   </section>
 <?php endif; ?>
 </main>
-<script src="/public/assets/js/app.js?v=idea1"></script>
+<script src="/public/assets/js/app.js?v=idea2"></script>
 </body>
 </html>

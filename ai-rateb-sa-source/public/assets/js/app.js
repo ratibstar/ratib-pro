@@ -38,7 +38,28 @@
       idea_attach: '＋ Add photos or a video',
       idea_optional: 'Attachments are optional. You can continue without files.',
       understood_title: 'I understood your idea',
-      confirm_start: '✨ Confirm and start',
+      confirm_start: '🚀 Approve and start',
+      reading_title: 'RATEB is understanding your idea...',
+      read_product: 'Understanding the product',
+      read_objective: 'Understanding the objective',
+      read_audience: 'Understanding the audience',
+      read_media: 'Processing attached materials',
+      read_direction: 'Preparing the campaign direction',
+      materials_ready: 'Your uploaded materials are ready to use.',
+      no_attachments: 'No files were attached.',
+      direction_later: 'This comes later.',
+      ask_intro: 'I understood your idea. One question is still open.',
+      ask_objective: 'What should this campaign achieve?',
+      ask_audience: 'Who do you want to reach?',
+      edit_campaign: 'Edit campaign',
+      campaign_name: 'Campaign name',
+      stage_idea: 'Idea',
+      stage_strategy: 'Strategy',
+      stage_copy: 'Copy',
+      stage_images: 'Images',
+      stage_voice: 'Voice',
+      stage_video: 'Video',
+      stage_ready: 'Ready campaign',
       revise_idea: 'Edit',
       ask_product: 'What is the product or service?',
       ask_lead: 'Only this detail is still missing.',
@@ -312,7 +333,28 @@
       idea_attach: '＋ أضف صورًا أو فيديو',
       idea_optional: 'المرفقات اختيارية. تقدر تكمل بدون ملفات.',
       understood_title: 'فهمت فكرتك 👌',
-      confirm_start: '✨ اعتمد وابدأ',
+      confirm_start: '🚀 اعتمد وابدأ',
+      reading_title: 'RATEB يفهم فكرتك...',
+      read_product: 'فهم المنتج',
+      read_objective: 'فهم الهدف',
+      read_audience: 'فهم الجمهور',
+      read_media: 'تجهيز المواد المرفقة',
+      read_direction: 'تجهيز اتجاه الحملة',
+      materials_ready: 'موادك جاهزة للاستخدام.',
+      no_attachments: 'ما فيه مرفقات.',
+      direction_later: 'هذا يجهز لاحقًا.',
+      ask_intro: 'فهمت فكرتك. باقي سؤال واحد.',
+      ask_objective: 'وش تبي تحقق من هالحملة؟',
+      ask_audience: 'مين تبي يوصل له هذا المنتج؟',
+      edit_campaign: 'تعديل الحملة',
+      campaign_name: 'اسم الحملة',
+      stage_idea: 'الفكرة',
+      stage_strategy: 'الاستراتيجية',
+      stage_copy: 'النص',
+      stage_images: 'الصور',
+      stage_voice: 'الصوت',
+      stage_video: 'الفيديو',
+      stage_ready: 'الحملة الجاهزة',
       revise_idea: 'تعديل',
       ask_product: 'وش المنتج أو الخدمة؟',
       ask_lead: 'باقي هالمعلومة فقط.',
@@ -581,6 +623,12 @@
       var key = node.dataset.i18nPlaceholder;
       if (labels[key]) node.setAttribute('placeholder', labels[key]);
     });
+    document.querySelectorAll('[data-ask="audience"]').forEach(function (node) {
+      var product = node.getAttribute('data-product') || '';
+      node.textContent = language === 'ar'
+        ? 'مين تبي يوصل له ' + (product || 'هذا المنتج') + '؟'
+        : 'Who do you want to reach' + (product ? ' with ' + product : '') + '?';
+    });
     root.lang = language;
     root.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.cookie = 'rateb_ui_lang=' + language + ';path=/;SameSite=Lax';
@@ -804,6 +852,23 @@
     });
   }
 
+  var readingFlow = document.getElementById('reading-flow');
+  if (readingFlow) {
+    var readingRows = readingFlow.querySelectorAll('[data-state]');
+    var readingIndex = 0;
+    var readingButton = document.getElementById('reading-continue');
+    function showReadingStep() {
+      if (readingIndex >= readingRows.length) {
+        if (readingButton) readingButton.click();
+        return;
+      }
+      readingRows[readingIndex].classList.add('is-on');
+      readingIndex += 1;
+      window.setTimeout(showReadingStep, 420);
+    }
+    window.setTimeout(showReadingStep, 280);
+  }
+
   var ideaForm = document.getElementById('idea-form');
   var ideaFiles = document.getElementById('idea-files');
   var ideaPicks = document.getElementById('idea-picks');
@@ -839,7 +904,10 @@
         media.src = URL.createObjectURL(file);
         item.appendChild(media);
         var caption = document.createElement('figcaption');
-        caption.textContent = file.name;
+        var sizeLabel = file.size >= 1048576
+          ? (Math.round(file.size / 104857.6) / 10) + (language === 'ar' ? ' م.ب' : ' MB')
+          : Math.max(1, Math.round(file.size / 1024)) + (language === 'ar' ? ' ك.ب' : ' KB');
+        caption.textContent = file.name + ' · ' + sizeLabel;
         item.appendChild(caption);
         var remove = document.createElement('button');
         remove.type = 'button';
