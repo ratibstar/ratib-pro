@@ -12,6 +12,9 @@ if (!$campaign) {
 $o = db()->prepare('SELECT * FROM campaign_outputs WHERE campaign_id=? ORDER BY id');
 $o->execute([$id]);
 $outputs = $o->fetchAll();
+$briefStmt = db()->prepare('SELECT campaign_language FROM campaign_briefs WHERE campaign_id = ? AND user_id = ? LIMIT 1');
+$briefStmt->execute([$id, (int) $_SESSION['user_id']]);
+$campaignLanguage = (string) ($briefStmt->fetchColumn() ?: 'auto');
 $m = db()->prepare('SELECT * FROM campaign_media WHERE campaign_id=? AND user_id=? ORDER BY id DESC');
 $m->execute([$id, $_SESSION['user_id']]);
 $media = $m->fetchAll();
@@ -155,6 +158,13 @@ $tone = ($id % 4) + 1;
         <label><span data-i18n="target_required">Target customer *</span><input name="target_customer" value="<?= e($campaign['target_customer']) ?>" required></label>
         <label><span data-i18n="budget">Budget</span><input name="budget" value="<?= e($campaign['budget'] ?? '') ?>"></label>
         <label><span data-i18n="price">Price</span><input name="price" value="<?= e($campaign['price']) ?>"></label>
+        <label><span data-i18n="campaign_language">Campaign language</span>
+          <select name="campaign_language">
+            <?php foreach (['auto' => 'lang_auto', 'ar' => 'lang_ar', 'en' => 'lang_en', 'bilingual' => 'lang_bilingual'] as $code => $key): ?>
+              <option value="<?= e($code) ?>" data-i18n="<?= e($key) ?>" <?= $campaignLanguage === $code ? 'selected' : '' ?>><?= e($code) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
         <label><span data-i18n="start_date">Start date</span><input type="date" name="start_date" value="<?= e($campaign['start_date'] ?? '') ?>"></label>
         <label><span data-i18n="end_date">End date</span><input type="date" name="end_date" value="<?= e($campaign['end_date'] ?? '') ?>"></label>
         <label><span data-i18n="col_status">Status</span>
@@ -411,6 +421,6 @@ $tone = ($id % 4) + 1;
     <a class="button" href="/brand.php" data-i18n="open_brand">Open brand kit</a>
   </section>
 </main>
-<script src="/public/assets/js/app.js?v=del1"></script>
+<script src="/public/assets/js/app.js?v=plans1"></script>
 </body>
 </html>

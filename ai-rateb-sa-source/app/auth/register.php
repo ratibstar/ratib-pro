@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../../config/bootstrap.php';
+require __DIR__ . '/../plans.php';
 
 if (!empty($_SESSION['user_id'])) {
     header('Location: /dashboard.php');
@@ -32,7 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             $stmt->execute([$oldName, $oldEmail, $hash]);
 
-            $_SESSION['user_id'] = (int)$pdo->lastInsertId();
+            $newUserId = (int) $pdo->lastInsertId();
+            rateb_user_plan($pdo, $newUserId);
+            $_SESSION['user_id'] = $newUserId;
             session_regenerate_id(true);
             header('Location: /dashboard.php');
             exit;

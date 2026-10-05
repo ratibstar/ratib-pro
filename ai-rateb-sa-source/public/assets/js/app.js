@@ -26,6 +26,11 @@
       campaign_details: 'CAMPAIGN DETAILS',
       product: 'Product / Service',
       price: 'Price',
+      campaign_language: 'Campaign language',
+      lang_auto: 'Let RATEB choose',
+      lang_ar: 'Arabic',
+      lang_en: 'English',
+      lang_bilingual: 'Arabic and English',
       target: 'Target customer',
       description: 'Description',
       generate: 'Generate AI Campaign',
@@ -255,6 +260,11 @@
       campaign_details: 'تفاصيل الحملة',
       product: 'المنتج / الخدمة',
       price: 'السعر',
+      campaign_language: 'لغة الحملة',
+      lang_auto: 'خل RATEB يختار',
+      lang_ar: 'العربية',
+      lang_en: 'الإنجليزية',
+      lang_bilingual: 'العربية والإنجليزية',
       target: 'العميل المستهدف',
       description: 'الوصف',
       generate: 'توليد الحملة بالذكاء الاصطناعي',
@@ -489,6 +499,7 @@
     });
     root.lang = language;
     root.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.cookie = 'rateb_ui_lang=' + language + ';path=/;SameSite=Lax';
     if (langButton) langButton.textContent = language === 'ar' ? 'English' : 'عربي';
     localStorage.setItem('rateb-lang', language);
     document.querySelectorAll('input[name="lang"]').forEach(function (node) {

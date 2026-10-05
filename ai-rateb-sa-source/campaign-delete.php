@@ -47,6 +47,7 @@ try {
     $pdo->prepare('DELETE FROM campaign_outputs WHERE campaign_id = ?')->execute([$id]);
     $pdo->prepare('DELETE FROM campaign_items WHERE campaign_id = ? AND user_id = ?')->execute([$id, $userId]);
     $pdo->prepare('DELETE FROM campaign_variations WHERE campaign_id = ? AND user_id = ?')->execute([$id, $userId]);
+    $pdo->prepare('DELETE FROM campaign_briefs WHERE campaign_id = ? AND user_id = ?')->execute([$id, $userId]);
     $deleted = $pdo->prepare('DELETE FROM campaigns WHERE id = ? AND user_id = ?');
     $deleted->execute([$id, $userId]);
     if ($deleted->rowCount() !== 1) {

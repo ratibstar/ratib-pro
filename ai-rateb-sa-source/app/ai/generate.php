@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/../plans.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_encode(['error'=>'Method not allowed']); exit; }
@@ -20,13 +21,12 @@ if (!$cfg['api_key']) {
     exit;
 }
 
-$lang = $_POST['lang'] ?? 'en';
-if ($lang !== 'ar' && $lang !== 'en') {
-    $lang = 'en';
+$gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], $id, 'campaign_text');
+if (!$gate['ok']) {
+    rateb_deny((string) $gate['code']);
 }
-$languageInstruction = $lang === 'ar'
-    ? 'Write every JSON value in Arabic.'
-    : 'Write every JSON value in English.';
+$decision = rateb_output_language(db(), $campaign);
+$languageInstruction = $decision['instruction'];
 $prompt = "Create a complete marketing campaign. Return valid JSON with English keys only: strategy, ad_copy, social_posts, whatsapp, product_description, video_ideas, voiceover, content_plan_7_days. {$languageInstruction} Campaign title: {$campaign['title']}. Product/service: {$campaign['product_name']}. Description: {$campaign['description']}. Price: {$campaign['price']}. Target customer: {$campaign['target_customer']}." . campaign_brand_context(db(), (int) $_SESSION['user_id'], $campaign) . " Write useful marketing content. Do not include markdown fences.";
 
 $payload = json_encode([
@@ -52,6 +52,7 @@ $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $err = curl_error($ch);
 curl_close($ch);
 if ($err || $code < 200 || $code >= 300) {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(502);
     echo json_encode(['error'=>'AI provider request failed.']);
     exit;
@@ -79,4 +80,5 @@ foreach ($result as $type=>$value) {
     $ins->execute([$id, $type, is_string($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE)]);
 }
 db()->prepare("UPDATE campaigns SET status = IF(status = 'draft', 'in_progress', status), updated_at=NOW() WHERE id=?")->execute([$id]);
+rateb_usage_finish(db(), (int) $gate['id'], 'completed');
 echo json_encode(['ok'=>true,'redirect'=>'/campaign.php?id='.$id], JSON_UNESCAPED_UNICODE);

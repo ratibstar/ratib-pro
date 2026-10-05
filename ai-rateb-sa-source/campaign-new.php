@@ -44,6 +44,14 @@ require_login();
           <label><span data-i18n="objective">Objective</span><input name="objective"></label>
           <label><span data-i18n="price">Price</span><input name="price"></label>
           <label><span data-i18n="budget">Budget</span><input name="budget"></label>
+          <label><span data-i18n="campaign_language">Campaign language</span>
+            <select name="campaign_language">
+              <option value="auto" selected data-i18n="lang_auto">Let RATEB choose</option>
+              <option value="ar" data-i18n="lang_ar">Arabic</option>
+              <option value="en" data-i18n="lang_en">English</option>
+              <option value="bilingual" data-i18n="lang_bilingual">Arabic and English</option>
+            </select>
+          </label>
         </div>
       </fieldset>
       <fieldset class="form-section">
@@ -65,6 +73,6 @@ require_login();
     </form>
   </section>
 </main>
-<script src="/public/assets/js/app.js"></script>
+<script src="/public/assets/js/app.js?v=plans1"></script>
 </body>
 </html>

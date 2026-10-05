@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../media/library.php';
+require_once __DIR__ . '/../plans.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 
@@ -20,10 +21,12 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
 }
 
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
-$lang = (string) ($_POST['lang'] ?? 'en');
-if ($lang !== 'ar' && $lang !== 'en') {
-    $lang = 'en';
+$gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'voice');
+if (!$gate['ok']) {
+    rateb_deny((string) $gate['code']);
 }
+$decision = rateb_output_language(db(), $campaign);
+$lang = $decision['speech'] === 'ar' ? 'ar' : 'en';
 
 $cfg = require __DIR__ . '/../../config/ai.php';
 if (!$cfg['api_key']) {
@@ -101,6 +104,7 @@ curl_close($ch);
 if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {
     $decoded = json_decode((string) $audio, true);
     $errorCode = is_array($decoded) ? (string) ($decoded['error']['code'] ?? '') : '';
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     if ($errorCode === 'model_terms_required') {
         http_response_code(403);
         echo json_encode(['error' => 'The speech model is available, but its terms have not been accepted for this API key.']);
@@ -121,9 +125,11 @@ try {
         (string) $audio
     );
 } catch (Throwable $error) {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(500);
     echo json_encode(['error' => 'Could not save the voice file.']);
     exit;
 }
+rateb_usage_finish(db(), (int) $gate['id'], 'completed');
 
 echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . (int) $campaign['id']], JSON_UNESCAPED_UNICODE);

@@ -82,6 +82,118 @@ function ensure_campaign_schema(PDO $pdo): void
         UNIQUE KEY token_hash (token_hash),
         KEY user_id (user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $userColumns = [];
+    foreach ($pdo->query('SHOW COLUMNS FROM users') as $row) {
+        $userColumns[(string) $row['Field']] = true;
+    }
+    if (!isset($userColumns['role'])) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN role VARCHAR(32) NOT NULL DEFAULT 'user'");
+    }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS plans (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        code VARCHAR(32) NOT NULL,
+        name_ar VARCHAR(80) NOT NULL,
+        name_en VARCHAR(80) NOT NULL,
+        price_sar DECIMAL(10,2) NOT NULL DEFAULT 0,
+        video_limit INT UNSIGNED NOT NULL DEFAULT 0,
+        video_max_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+        image_limit INT UNSIGNED NOT NULL DEFAULT 0,
+        watermark TINYINT(1) NOT NULL DEFAULT 1,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        sort_order INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY code (code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS subscriptions (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT UNSIGNED NOT NULL,
+        plan_id BIGINT UNSIGNED NOT NULL,
+        status VARCHAR(16) NOT NULL DEFAULT 'active',
+        period_start DATETIME NOT NULL,
+        period_end DATETIME NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_status (user_id, status),
+        KEY plan_id (plan_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS usage_events (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT UNSIGNED NOT NULL,
+        campaign_id BIGINT UNSIGNED NULL,
+        operation VARCHAR(32) NOT NULL,
+        units INT UNSIGNED NOT NULL DEFAULT 1,
+        seconds INT UNSIGNED NULL,
+        status VARCHAR(16) NOT NULL DEFAULT 'reserved',
+        cost_sar DECIMAL(10,4) NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_operation (user_id, operation, status, created_at),
+        KEY campaign_id (campaign_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS campaign_briefs (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        campaign_id BIGINT UNSIGNED NOT NULL,
+        user_id BIGINT UNSIGNED NOT NULL,
+        product VARCHAR(255) NOT NULL DEFAULT '',
+        description MEDIUMTEXT NULL,
+        audience VARCHAR(255) NOT NULL DEFAULT '',
+        objective VARCHAR(500) NOT NULL DEFAULT '',
+        location VARCHAR(160) NOT NULL DEFAULT '',
+        campaign_language VARCHAR(16) NOT NULL DEFAULT 'auto',
+        resolved_language VARCHAR(16) NULL,
+        brand_tone VARCHAR(160) NOT NULL DEFAULT '',
+        source_media MEDIUMTEXT NULL,
+        media_analysis MEDIUMTEXT NULL,
+        core_message MEDIUMTEXT NULL,
+        channels VARCHAR(255) NOT NULL DEFAULT '',
+        creative_direction MEDIUMTEXT NULL,
+        campaign_score TINYINT UNSIGNED NULL,
+        recommendation MEDIUMTEXT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY campaign_id (campaign_id),
+        KEY user_id (user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $catalog = [
+        ['free', 'مجانية', 'Free', '0.00', 3, 8, 15, 1, 1],
+        ['starter', 'أساسية', 'Starter', '79.00', 10, 10, 100, 0, 2],
+        ['growth', 'نمو', 'Growth', '199.00', 30, 15, 300, 0, 3],
+        ['pro', 'احترافية', 'Pro', '399.00', 80, 20, 1000, 0, 4],
+        ['business', 'أعمال', 'Business', '799.00', 200, 30, 3000, 0, 5],
+    ];
+    $planExists = $pdo->prepare('SELECT id FROM plans WHERE code = ? LIMIT 1');
+    $planInsert = $pdo->prepare('INSERT INTO plans (code, name_ar, name_en, price_sar, video_limit, video_max_seconds, image_limit, watermark, is_active, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)');
+    foreach ($catalog as $plan) {
+        $planExists->execute([$plan[0]]);
+        if (!$planExists->fetch()) {
+            $planInsert->execute($plan);
+        }
+    }
+
+    $freeId = (int) $pdo->query("SELECT id FROM plans WHERE code = 'free' LIMIT 1")->fetchColumn();
+    if ($freeId > 0) {
+        $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end)
+            SELECT u.id, ?, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 1 MONTH)
+            FROM users u
+            WHERE NOT EXISTS (
+                SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.status = 'active'
+            )")->execute([$freeId]);
+    }
+
+    $ownerEmail = strtolower(trim((string) getenv('RATEB_AI_OWNER_EMAIL')));
+    if (filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
+        $pdo->prepare("UPDATE users SET role = 'owner' WHERE email = ? AND role <> 'owner'")->execute([$ownerEmail]);
+    }
 }
 
 function campaign_status_values(): array

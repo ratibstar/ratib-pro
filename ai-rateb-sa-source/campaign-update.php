@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/app/bootstrap.php';
+require_once __DIR__ . '/app/plans.php';
 require_login();
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method not allowed');
@@ -26,6 +27,13 @@ $stmt->execute([
     campaign_money_or_null((string) ($_POST['budget'] ?? '')),
     $id,
     $_SESSION['user_id'],
+]);
+rateb_sync_brief(db(), (int) $_SESSION['user_id'], $id, [
+    'product' => (string) ($_POST['product_name'] ?? ''),
+    'description' => (string) ($_POST['description'] ?? ''),
+    'audience' => (string) ($_POST['target_customer'] ?? ''),
+    'objective' => (string) ($_POST['objective'] ?? ''),
+    'campaign_language' => (string) ($_POST['campaign_language'] ?? 'auto'),
 ]);
 header('Location: /campaign.php?id=' . $id);
 exit;

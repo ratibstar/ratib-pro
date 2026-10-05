@@ -1,0 +1,313 @@
+name: ai phase1 foundation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Upload and verify phase one
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          KEY="$RUNNER_TEMP/sshkey"
+          umask 077
+          printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > "$KEY"
+          if ! grep -q "BEGIN" "$KEY"; then
+            printf '%b\n' "${DEPLOY_SSH_PRIVATE_KEY//\\n/$'\n'}" > "$KEY"
+          fi
+          chmod 600 "$KEY"
+          ssh-keyscan -p "$DEPLOY_SSH_PORT" -H "$DEPLOY_SSH_HOST" >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+          export SSH_KEY="$KEY"
+          python3 - << 'PY'
+          import os, re, secrets, subprocess, urllib.error, urllib.parse, urllib.request
+          from http.cookiejar import CookieJar
+          from pathlib import Path
+
+          host = os.environ["DEPLOY_SSH_HOST"]
+          user = os.environ["DEPLOY_SSH_USER"]
+          port = os.environ["DEPLOY_SSH_PORT"]
+          key = os.environ["SSH_KEY"]
+          root = "/home/admin/domains/ai.rateb.sa"
+          src = Path("ai-rateb-sa-source")
+          tmp = Path(os.environ["RUNNER_TEMP"])
+          remote = f"{user}@{host}"
+          ssh_base = ["ssh", "-i", key, "-p", port, "-o", "StrictHostKeyChecking=accept-new", remote]
+          scp_base = ["scp", "-i", key, "-P", port, "-o", "StrictHostKeyChecking=accept-new"]
+
+          def run(cmd):
+              result = subprocess.run(cmd, capture_output=True, text=True)
+              if result.returncode != 0:
+                  print("CMD_FAIL")
+                  print((result.stderr or result.stdout or "")[-500:])
+                  raise SystemExit(1)
+              return result.stdout
+
+          run(ssh_base + [f"mkdir -p {root}/admin {root}/app/ai {root}/app/auth"])
+          files = [
+              "app/schema.php", "app/plans.php", "app/watermark.php", "config/guard.php",
+              "app/ai/generate.php", "app/ai/variation.php", "app/ai/voice.php", "app/ai/image.php",
+              "app/auth/register.php", "campaign-save.php", "campaign-update.php", "campaign-delete.php",
+              "campaign.php", "campaign-new.php", "public/assets/js/app.js",
+              "admin/bootstrap.php", "admin/index.php", "admin/users.php", "admin/plans.php",
+              "admin/subscriptions.php", "admin/usage.php", "admin/campaigns.php", "admin/admin.css",
+          ]
+          for rel in files:
+              run(scp_base + [str(src / rel), f"{remote}:{root}/{rel}"])
+              if rel.endswith(".php"):
+                  print(run(ssh_base + [f"php -l {root}/{rel}"]).strip())
+
+          oc_name = "phase1-oc-" + secrets.token_hex(6) + ".php"
+          php_files = [f"{root}/{rel}" for rel in files if rel.endswith(".php")]
+          (tmp / oc_name).write_text("<?php foreach (" + repr(php_files) + " as $f) { opcache_invalidate($f, true); } echo 'OPCACHE=ok';\n", encoding="utf-8")
+          run(scp_base + [str(tmp / oc_name), f"{remote}:{root}/{oc_name}"])
+          print(urllib.request.urlopen(f"https://ai.rateb.sa/{oc_name}", timeout=30).read().decode())
+          run(ssh_base + [f"rm -f {root}/{oc_name}"])
+
+          checker = r'''<?php
+          declare(strict_types=1);
+          $root = '/home/admin/domains/ai.rateb.sa';
+          $ini = (string) file_get_contents($root . '/.user.ini');
+          if (!preg_match('/auto_prepend_file\s*=\s*"?([^"\r\n]+)"?/', $ini, $m)) { fwrite(STDERR, "NO_PREPEND\n"); exit(1); }
+          require trim($m[1]);
+          require $root . '/config/bootstrap.php';
+          require $root . '/app/plans.php';
+          require $root . '/app/watermark.php';
+          $action = $argv[1] ?? '';
+          $email = '';
+          if (($argv[2] ?? '') !== '' && is_file($argv[2])) { $email = strtolower(trim((string) file_get_contents($argv[2]))); }
+          $userStmt = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+          $userStmt->execute([$email]);
+          $userId = (int) $userStmt->fetchColumn();
+          if ($action === 'plans') {
+              $count = (int) $pdo->query('SELECT COUNT(*) FROM plans')->fetchColumn();
+              $free = $pdo->query("SELECT video_limit, video_max_seconds, image_limit, watermark, price_sar FROM plans WHERE code = 'free'")->fetch();
+              $business = $pdo->query("SELECT video_limit, image_limit, watermark, price_sar FROM plans WHERE code = 'business'")->fetch();
+              echo 'PLANS=' . $count . "\n";
+              echo 'FREE_VIDEO=' . (int) $free['video_limit'] . ' FREE_SECONDS=' . (int) $free['video_max_seconds'] . ' FREE_IMAGES=' . (int) $free['image_limit'] . ' FREE_WM=' . (int) $free['watermark'] . ' FREE_PRICE=' . $free['price_sar'] . "\n";
+              echo 'BIZ_VIDEO=' . (int) $business['video_limit'] . ' BIZ_IMAGES=' . (int) $business['image_limit'] . ' BIZ_WM=' . (int) $business['watermark'] . ' BIZ_PRICE=' . $business['price_sar'] . "\n";
+              exit(0);
+          }
+          if ($action === 'raw') {
+              $pdo->prepare('INSERT INTO users (name, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())')->execute(['Existing', $email, password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT)]);
+              echo "RAW=1\n";
+              exit(0);
+          }
+          if ($action === 'planof') {
+              $stmt = $pdo->prepare("SELECT p.code, p.watermark FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.user_id = ? AND s.status = 'active' ORDER BY s.id DESC LIMIT 1");
+              $stmt->execute([$userId]);
+              $row = $stmt->fetch() ?: ['code' => '', 'watermark' => ''];
+              echo 'PLAN=' . $row['code'] . ' WM=' . $row['watermark'] . "\n";
+              exit(0);
+          }
+          if ($action === 'limits') {
+              $plan = rateb_user_plan($pdo, $userId);
+              $limit = (int) $plan['image_limit'];
+              $max = (int) $plan['video_max_seconds'];
+              $ins = $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status) VALUES (?, NULL, 'image', 1, 'completed')");
+              for ($i = 0; $i < $limit; $i++) { $ins->execute([$userId]); }
+              $image = rateb_usage_begin($pdo, $userId, null, 'image');
+              $video = rateb_usage_begin($pdo, $userId, null, 'video', $max + 1);
+              $allowed = rateb_usage_begin($pdo, $userId, null, 'video', $max);
+              if (!empty($allowed['id'])) { rateb_usage_finish($pdo, (int) $allowed['id'], 'failed'); }
+              $jpeg = '';
+              $img = imagecreatetruecolor(48, 24);
+              ob_start(); imagejpeg($img, null, 90); $jpeg = (string) ob_get_clean(); imagedestroy($img);
+              $marked = rateb_apply_watermark($jpeg, 'image/jpeg');
+              echo 'IMAGE_CODE=' . $image['code'] . "\n";
+              echo 'VIDEO_CODE=' . $video['code'] . "\n";
+              echo 'VIDEO_OK=' . (!empty($allowed['ok']) ? '1' : '0') . "\n";
+              echo 'FREE_REQUIRED=' . (rateb_watermark_required($pdo, $userId) ? '1' : '0') . "\n";
+              echo 'MARKED=' . ($marked['bytes'] !== $jpeg && str_starts_with($marked['bytes'], "\xFF\xD8\xFF") ? '1' : '0') . "\n";
+              $starter = (int) $pdo->query("SELECT id FROM plans WHERE code = 'starter'")->fetchColumn();
+              $pdo->prepare("UPDATE subscriptions SET plan_id = ? WHERE user_id = ? AND status = 'active'")->execute([$starter, $userId]);
+              echo 'PAID_REQUIRED=' . (rateb_watermark_required($pdo, $userId) ? '1' : '0') . "\n";
+              $free = (int) $pdo->query("SELECT id FROM plans WHERE code = 'free'")->fetchColumn();
+              $pdo->prepare("UPDATE subscriptions SET plan_id = ? WHERE user_id = ? AND status = 'active'")->execute([$free, $userId]);
+              exit(0);
+          }
+          if ($action === 'brief') {
+              $campaignId = (int) ($argv[3] ?? 0);
+              $otherEmail = strtolower(trim((string) ($argv[4] ?? '')));
+              $other = $pdo->prepare('SELECT id FROM users WHERE email = ?');
+              $other->execute([$otherEmail]);
+              $otherId = (int) $other->fetchColumn();
+              $row = $pdo->prepare('SELECT user_id, campaign_id, campaign_language FROM campaign_briefs WHERE campaign_id = ? LIMIT 1');
+              $row->execute([$campaignId]);
+              $brief = $row->fetch();
+              echo 'BRIEF_LINK=' . ($brief && (int) $brief['user_id'] === $userId && (int) $brief['campaign_id'] === $campaignId ? '1' : '0') . "\n";
+              echo 'FOREIGN=' . (rateb_sync_brief($pdo, $otherId, $campaignId, ['campaign_language' => 'en']) ? '1' : '0') . "\n";
+              rateb_sync_brief($pdo, $userId, $campaignId, ['campaign_language' => 'en', 'description' => 'A launch in Riyadh']);
+              $campaign = $pdo->prepare('SELECT * FROM campaigns WHERE id = ?')->execute([$campaignId]);
+              $campaign = $pdo->prepare('SELECT * FROM campaigns WHERE id = ?');
+              $campaign->execute([$campaignId]);
+              $record = $campaign->fetch();
+              $english = rateb_output_language($pdo, $record);
+              echo 'EN_SPEECH=' . $english['speech'] . "\n";
+              echo 'EN_ONLY=' . (str_contains($english['instruction'], 'English only') ? '1' : '0') . "\n";
+              rateb_sync_brief($pdo, $userId, $campaignId, ['campaign_language' => 'ar']);
+              $arabic = rateb_output_language($pdo, $record);
+              echo 'AR_SPEECH=' . $arabic['speech'] . "\n";
+              echo 'AR_ONLY=' . (str_contains($arabic['instruction'], 'Arabic only') ? '1' : '0') . "\n";
+              rateb_sync_brief($pdo, $userId, $campaignId, ['campaign_language' => 'bilingual']);
+              $both = rateb_output_language($pdo, $record);
+              echo 'BILINGUAL=' . ($both['resolved'] === 'bilingual' ? '1' : '0') . "\n";
+              $pdo->prepare('UPDATE campaigns SET description = ? WHERE id = ?')->execute(['عطر جديد في الرياض', $campaignId]);
+              rateb_sync_brief($pdo, $userId, $campaignId, ['campaign_language' => 'auto', 'description' => 'عطر جديد في الرياض']);
+              $record['description'] = 'عطر جديد في الرياض';
+              $auto = rateb_output_language($pdo, $record);
+              echo 'UI=' . ui_language() . "\n";
+              echo 'AUTO=' . $auto['resolved'] . "\n";
+              echo 'SEPARATE=' . (ui_language() === 'en' && $auto['speech'] === 'ar' ? '1' : '0') . "\n";
+              exit(0);
+          }
+          if ($action === 'owner') {
+              $pdo->prepare("UPDATE users SET role = 'owner' WHERE id = ?")->execute([$userId]);
+              echo "OWNER=1\n";
+              exit(0);
+          }
+          if ($action === 'cleanup') {
+              if ($userId > 0) {
+                  $ids = $pdo->prepare('SELECT id FROM campaigns WHERE user_id = ?');
+                  $ids->execute([$userId]);
+                  foreach ($ids->fetchAll(PDO::FETCH_COLUMN) as $cid) {
+                      foreach (['campaign_media','campaign_outputs','campaign_items','campaign_variations','campaign_briefs'] as $table) {
+                          $pdo->prepare("DELETE FROM {$table} WHERE campaign_id = ?")->execute([(int) $cid]);
+                      }
+                  }
+                  $pdo->prepare('DELETE FROM campaigns WHERE user_id = ?')->execute([$userId]);
+                  $pdo->prepare('DELETE FROM usage_events WHERE user_id = ?')->execute([$userId]);
+                  $pdo->prepare('DELETE FROM subscriptions WHERE user_id = ?')->execute([$userId]);
+                  $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$userId]);
+              }
+              echo "CLEANUP=ok\n";
+              exit(0);
+          }
+          echo "BAD_ACTION\n";
+          exit(1);
+          '''
+          remote_checker = "/home/admin/.secrets/phase1-check.php"
+          local_checker = tmp / "phase1-check.php"
+          local_checker.write_text(checker, encoding="utf-8")
+          run(scp_base + [str(local_checker), f"{remote}:{remote_checker}"])
+          run(ssh_base + [f"chmod 600 {remote_checker}"])
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          jar = CookieJar()
+          follow = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+          stop = urllib.request.build_opener(NoRedirect, urllib.request.HTTPCookieProcessor(jar))
+
+          def set_ui(lang):
+              from http.cookiejar import Cookie
+              jar.set_cookie(Cookie(0, "rateb_ui_lang", lang, None, False, "ai.rateb.sa", False, False, "/", True, False, None, False, None, None, {}))
+
+          def call(path, data=None, follow_redirects=True):
+              req = urllib.request.Request("https://ai.rateb.sa" + path, data=None if data is None else urllib.parse.urlencode(data).encode())
+              opener = follow if follow_redirects else stop
+              try:
+                  resp = opener.open(req, timeout=40)
+                  return resp.status, resp.geturl(), resp.read().decode("utf-8", "replace"), dict(resp.headers)
+              except urllib.error.HTTPError as error:
+                  return error.code, error.headers.get("Location", ""), error.read().decode("utf-8", "replace"), dict(error.headers)
+
+          def field(html, name):
+              match = re.search(r'name="' + name + r'" value="([^"]*)"', html)
+              return match.group(1) if match else ""
+
+          failures = []
+          def check(name, ok):
+              print(f"{name}={'yes' if ok else 'no'}")
+              if not ok:
+                  failures.append(name)
+
+          email_new = "phase1-" + secrets.token_hex(4) + "@rateb.sa"
+          email_old = "phase1-old-" + secrets.token_hex(4) + "@rateb.sa"
+          email_other = "phase1-b-" + secrets.token_hex(4) + "@rateb.sa"
+          password = secrets.token_urlsafe(12)
+          new_file = tmp / "phase1-new.txt"
+          old_file = tmp / "phase1-old.txt"
+          other_file = tmp / "phase1-b.txt"
+          new_file.write_text(email_new, encoding="utf-8")
+          old_file.write_text(email_old, encoding="utf-8")
+          other_file.write_text(email_other, encoding="utf-8")
+          remote_new = "/home/admin/.secrets/phase1-new.txt"
+          remote_old = "/home/admin/.secrets/phase1-old.txt"
+          remote_other = "/home/admin/.secrets/phase1-b.txt"
+          for local, remote_path in ((new_file, remote_new), (old_file, remote_old), (other_file, remote_other)):
+              run(scp_base + [str(local), f"{remote}:{remote_path}"])
+              run(ssh_base + [f"chmod 600 {remote_path}"])
+
+          try:
+              print(run(ssh_base + [f"php {remote_checker} plans"]).strip())
+              plans = run(ssh_base + [f"php {remote_checker} plans"])
+              check("PLANS", "PLANS=5" in plans and "FREE_IMAGES=15" in plans and "FREE_WM=1" in plans and "BIZ_IMAGES=3000" in plans and "BIZ_WM=0" in plans and "BIZ_PRICE=799.00" in plans)
+              code, url, html, _ = call("/register.php")
+              code, url, html, _ = call("/register.php", {"csrf_token": field(html, "csrf_token"), "name": "Phase One", "email": email_new, "password": password})
+              check("REGISTER", code == 200 and "/dashboard.php" in url)
+              print(run(ssh_base + [f"php {remote_checker} planof {remote_new}"]).strip())
+              check("NEW_FREE", "PLAN=free" in run(ssh_base + [f"php {remote_checker} planof {remote_new}"]) and "WM=1" in run(ssh_base + [f"php {remote_checker} planof {remote_new}"]))
+              print(run(ssh_base + [f"php {remote_checker} raw {remote_old}"]).strip())
+              print(run(ssh_base + [f"php {remote_checker} planof {remote_old}"]).strip())
+              check("EXISTING_FREE", "PLAN=free" in run(ssh_base + [f"php {remote_checker} planof {remote_old}"]))
+              code, _, html, _ = call("/campaign-new.php")
+              check("LANGUAGE_FIELD", 'name="campaign_language"' in html)
+              token = field(html, "csrf")
+              code, location, html, _ = call("/campaign-save.php", {"csrf": token, "title": "Phase campaign", "product_name": "Sample", "description": "A launch in Riyadh", "target_customer": "Shops", "campaign_language": "en", "status": "draft"}, follow_redirects=False)
+              check("CAMPAIGN_SAVE", code == 302 and "/campaign.php?id=" in location)
+              campaign_id = location.split("id=")[-1]
+              code, url, html, _ = call("/campaign.php?id=" + campaign_id)
+              check("CAMPAIGN_PAGE", code == 200 and "Phase campaign" in html)
+              code, _, other_html, _ = call("/logout.php")
+              code, _, other_html, _ = call("/register.php")
+              call("/register.php", {"csrf_token": field(other_html, "csrf_token"), "name": "Other", "email": email_other, "password": password})
+              code, _, body, _ = call("/campaign.php?id=" + campaign_id, follow_redirects=False)
+              check("FOREIGN_CAMPAIGN", code == 404)
+              set_ui("ar")
+              code, _, body, _ = call("/admin/index.php", follow_redirects=False)
+              check("ADMIN_AR", code == 403 and 'dir="rtl"' in body and "هذه الصفحة للمالك فقط" in body)
+              set_ui("en")
+              code, _, body, _ = call("/admin/index.php", follow_redirects=False)
+              check("ADMIN_EN", code == 403 and 'dir="ltr"' in body and "This page is for the owner only." in body)
+              print(run(ssh_base + [f"php {remote_checker} owner {remote_new}"]).strip())
+              call("/logout.php")
+              code, _, html, _ = call("/login.php")
+              code, url, html, _ = call("/login.php", {"csrf_token": field(html, "csrf_token"), "email": email_new, "password": password})
+              check("OWNER_LOGIN", "/dashboard.php" in url)
+              set_ui("ar")
+              code, _, body, _ = call("/admin/index.php", follow_redirects=False)
+              check("OWNER_PAGE", code == 200 and 'dir="rtl"' in body and "المستخدمون" in body)
+              set_ui("en")
+              code, _, body, _ = call("/admin/plans.php", follow_redirects=False)
+              check("OWNER_PLANS", code == 200 and 'dir="ltr"' in body and "Starter" in body)
+              js = urllib.request.urlopen("https://ai.rateb.sa/public/assets/js/app.js?v=plans1", timeout=30).read().decode("utf-8", "replace")
+              check("UI_DIR", "rtl" in js and "ltr" in js and "rateb_ui_lang" in js)
+              print(run(ssh_base + [f"php {remote_checker} brief {remote_new} {campaign_id} {email_other}"]).strip())
+              brief = run(ssh_base + [f"php {remote_checker} brief {remote_new} {campaign_id} {email_other}"])
+              check("BRIEF", "BRIEF_LINK=1" in brief and "FOREIGN=0" in brief and "EN_SPEECH=en" in brief and "AR_SPEECH=ar" in brief and "BILINGUAL=1" in brief and "AUTO=ar" in brief and "SEPARATE=1" in brief)
+              print(run(ssh_base + [f"php {remote_checker} limits {remote_new}"]).strip())
+              limits = run(ssh_base + [f"php {remote_checker} limits {remote_new}"])
+              check("LIMITS", "IMAGE_CODE=plan_limit" in limits and "VIDEO_CODE=video_too_long" in limits and "VIDEO_OK=1" in limits and "FREE_REQUIRED=1" in limits and "MARKED=1" in limits and "PAID_REQUIRED=0" in limits)
+              code, _, html, _ = call("/campaign.php?id=" + campaign_id)
+              code, _, body, _ = call("/app/ai/image.php", {"csrf": field(html, "csrf"), "campaign_id": campaign_id}, follow_redirects=False)
+              check("IMAGE_BLOCKED", code == 402 and "plan_limit" in body and "pending" not in body)
+          finally:
+              print(run(ssh_base + [f"php {remote_checker} cleanup {remote_new}"]).strip())
+              print(run(ssh_base + [f"php {remote_checker} cleanup {remote_old}"]).strip())
+              print(run(ssh_base + [f"php {remote_checker} cleanup {remote_other}"]).strip())
+              run(ssh_base + [f"rm -f {remote_checker} {remote_new} {remote_old} {remote_other}"])
+          if failures:
+              print("FAILURES=" + ",".join(failures))
+              raise SystemExit(1)
+          print("PHASE1_TEST=pass")
+          PY

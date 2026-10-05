@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../media/library.php';
+require_once __DIR__ . '/../plans.php';
+require_once __DIR__ . '/../watermark.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 
@@ -61,6 +63,10 @@ if ($prompt === '') {
     echo json_encode(['error' => 'The campaign has no text to illustrate.']);
     exit;
 }
+$gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'image');
+if (!$gate['ok']) {
+    rateb_deny((string) $gate['code']);
+}
 
 $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image');
 $modelList = json_decode($models['body'], true);
@@ -74,6 +80,7 @@ if (is_array($modelList)) {
     }
 }
 if ($models['http'] !== 200 || $workers < 1) {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(503);
     echo json_encode(['error' => 'The free image model has no workers right now. Try again later.']);
     exit;
@@ -90,11 +97,13 @@ $payload = json_encode([
 
 $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);
 if ($submit['http'] !== 202) {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     ai_horde_fail($submit['http'], $submit['body']);
 }
 $job = json_decode($submit['body'], true);
 $jobId = is_array($job) ? (string) ($job['id'] ?? '') : '';
 if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(502);
     echo json_encode(['error' => 'Image provider request failed.']);
     exit;
@@ -105,6 +114,7 @@ if (!isset($_SESSION['ai_image_jobs']) || !is_array($_SESSION['ai_image_jobs']))
 $_SESSION['ai_image_jobs'][$jobId] = [
     'campaign_id' => (int) $campaign['id'],
     'created' => time(),
+    'usage_id' => (int) $gate['id'],
 ];
 if (count($_SESSION['ai_image_jobs']) > 3) {
     $_SESSION['ai_image_jobs'] = array_slice($_SESSION['ai_image_jobs'], -3, null, true);
@@ -116,6 +126,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     $check = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/check/' . rawurlencode($jobId));
     $state = json_decode($check['body'], true);
     if (is_array($state) && !empty($state['faulted'])) {
+        rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
         echo json_encode(['error' => 'Image provider request failed.']);
@@ -136,6 +147,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     }
     $host = strtolower((string) parse_url($imageUrl, PHP_URL_HOST));
     if (parse_url($imageUrl, PHP_URL_SCHEME) !== 'https' || !str_ends_with($host, '.r2.cloudflarestorage.com')) {
+        rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
         echo json_encode(['error' => 'Image provider request failed.']);
@@ -145,6 +157,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     $download = ai_horde_request('GET', $imageUrl);
     $finalHost = strtolower((string) parse_url($download['effective'], PHP_URL_HOST));
     if ($download['http'] !== 200 || !str_ends_with($finalHost, '.r2.cloudflarestorage.com')) {
+        rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
         echo json_encode(['error' => 'Image provider request failed.']);
@@ -152,20 +165,35 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     }
     $bytes = $download['body'];
     $mime = ai_image_mime($bytes);
+    $usageId = (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0);
     if ($mime === null || strlen($bytes) < 32 || strlen($bytes) > media_max_bytes('image')) {
+        rateb_usage_finish(db(), $usageId, 'failed');
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
         echo json_encode(['error' => 'Image provider request failed.']);
         exit;
     }
+    if (rateb_watermark_required(db(), (int) $_SESSION['user_id'])) {
+        try {
+            $marked = rateb_apply_watermark($bytes, $mime);
+            $bytes = $marked['bytes'];
+            $mime = $marked['mime'];
+        } catch (Throwable $error) {
+            rateb_usage_finish(db(), $usageId, 'failed');
+            unset($_SESSION['ai_image_jobs'][$jobId]);
+            rateb_deny('watermark');
+        }
+    }
 
     try {
         media_store_bytes($campaign, 'image', 'ai', 'ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
     } catch (Throwable $error) {
+        rateb_usage_finish(db(), $usageId, 'failed');
         http_response_code(500);
         echo json_encode(['error' => 'Could not save the image file.']);
         exit;
     }
+    rateb_usage_finish(db(), $usageId, 'completed');
     unset($_SESSION['ai_image_jobs'][$jobId]);
     echo json_encode([
         'ok' => true,
