@@ -169,7 +169,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act1">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act2">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -204,14 +204,13 @@ $csrf = e(csrf_token());
           <small data-i18n="<?= e($stateKeys[$stage['state']]) ?>"><?= e($stateNames[$stage['state']]) ?></small>
         </button>
         <?php if ($key === 'strategy' && $ideaDone && $strategyDoc === null): ?>
-          <form class="stage-action" data-ai="1" data-status="strategy-card-status" data-busy="generating_strategy">
+          <form class="stage-action" data-ai="1" data-status="stage-status" data-busy="generating_strategy">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <input type="hidden" name="stage" value="strategy">
             <input type="hidden" name="confirm" value="0">
             <button class="primary stage-go" type="submit" data-i18n="start_strategy"><?= $arabic ? 'ابدأ الاستراتيجية' : 'Start Strategy' ?></button>
           </form>
-          <p id="strategy-card-status" class="muted"></p>
         <?php elseif ($key === 'strategy' && $strategyDoc !== null && !$strategyApproved): ?>
           <form class="stage-action" method="post" action="/app/content/approve.php">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
@@ -219,36 +218,34 @@ $csrf = e(csrf_token());
             <input type="hidden" name="kind" value="strategy">
             <button class="primary stage-go" type="submit" data-i18n="approve_strategy"><?= $arabic ? 'اعتماد الاستراتيجية' : 'Approve Strategy' ?></button>
           </form>
-          <form class="stage-action" data-ai="1" data-status="strategy-card-status" data-busy="generating_strategy">
+          <form class="stage-action" data-ai="1" data-status="stage-status" data-busy="generating_strategy">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <input type="hidden" name="stage" value="strategy">
             <input type="hidden" name="confirm" value="0">
             <button class="quiet stage-go" type="submit" data-i18n="regenerate"><?= $arabic ? 'إعادة توليد' : 'Regenerate' ?></button>
           </form>
-          <p id="strategy-card-status" class="muted"></p>
         <?php elseif ($key === 'strategy' && $strategyApproved): ?>
-          <form class="stage-action" data-ai="1" data-status="strategy-card-status" data-busy="generating_strategy" data-locked="1">
+          <form class="stage-action" data-ai="1" data-status="stage-status" data-busy="generating_strategy" data-locked="1">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <input type="hidden" name="stage" value="strategy">
             <input type="hidden" name="confirm" value="0">
             <button class="quiet stage-go" type="submit" data-i18n="regenerate"><?= $arabic ? 'إعادة توليد' : 'Regenerate' ?></button>
           </form>
-          <p id="strategy-card-status" class="muted"></p>
         <?php elseif ($key === 'copy' && $strategyApproved && !$copyStarted): ?>
-          <form class="stage-action" data-ai="1" data-status="copy-card-status" data-busy="generating_copy">
+          <form class="stage-action" data-ai="1" data-status="stage-status" data-busy="generating_copy">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <input type="hidden" name="stage" value="copy">
             <input type="hidden" name="confirm" value="0">
             <button class="primary stage-go" type="submit" data-i18n="start_copy"><?= $arabic ? 'ابدأ كتابة الإعلان' : 'Generate Copy' ?></button>
           </form>
-          <p id="copy-card-status" class="muted"></p>
         <?php endif; ?>
       </li>
     <?php endforeach; ?>
   </ol>
+  <p id="stage-status" class="stage-status"></p>
 
   <section class="panel is-active" id="idea" data-panel="idea">
     <h2 data-i18n="brief_title"><?= $arabic ? 'ملخص الحملة' : 'Campaign brief' ?></h2>
@@ -410,6 +407,6 @@ $csrf = e(csrf_token());
     <p class="empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
   </section>
 </main>
-<script src="/public/assets/js/app.js?v=act1"></script>
+<script src="/public/assets/js/app.js?v=act2"></script>
 </body>
 </html>

@@ -1,0 +1,181 @@
+name: AI copy speed
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+      DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Upload and time copy generation
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "-----BEGIN" not in key:
+              raise SystemExit("SSH key missing")
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          PY
+          HOST="$DEPLOY_SSH_HOST"
+          USER="$DEPLOY_SSH_USER"
+          PORT="$DEPLOY_SSH_PORT"
+          ROOT=/home/admin/domains/ai.rateb.sa
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/campaign.php "$USER@$HOST:$ROOT/campaign.php"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/app/ai/generate.php "$USER@$HOST:$ROOT/app/ai/generate.php"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/public/assets/js/app.js "$USER@$HOST:$ROOT/public/assets/js/app.js"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/public/assets/css/app.css "$USER@$HOST:$ROOT/public/assets/css/app.css"
+          ssh -i "$HOME/.ssh/ai_key" -p "$PORT" -o StrictHostKeyChecking=accept-new "$USER@$HOST" \
+            "php -l $ROOT/campaign.php && php -l $ROOT/app/ai/generate.php"
+          TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(6))')
+          ssh -i "$HOME/.ssh/ai_key" -p "$PORT" -o StrictHostKeyChecking=accept-new "$USER@$HOST" "cat > $ROOT/oc-$TOKEN.php" << 'PHP'
+          <?php
+          foreach (['/campaign.php', '/app/ai/generate.php'] as $file) {
+              if (function_exists('opcache_invalidate')) opcache_invalidate(__DIR__ . $file, true);
+          }
+          echo 'OPCACHE=ok';
+          PHP
+          curl -fsS "https://ai.rateb.sa/oc-$TOKEN.php"; echo
+          ssh -i "$HOME/.ssh/ai_key" -p "$PORT" -o StrictHostKeyChecking=accept-new "$USER@$HOST" "rm -f $ROOT/oc-$TOKEN.php"
+          python3 - << 'PY'
+          import http.cookiejar, json, re, secrets, time, urllib.parse, urllib.request
+          base = "https://ai.rateb.sa"
+          email = "fast3-" + secrets.token_hex(4) + "@example.com"
+          password = secrets.token_urlsafe(18)
+          jar = http.cookiejar.CookieJar()
+          opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+          def request(url, data=None, timeout=60):
+              req = urllib.request.Request(url, data=data)
+              try:
+                  with opener.open(req, timeout=timeout) as response:
+                      return response.status, response.geturl(), response.read()
+              except urllib.error.HTTPError as error:
+                  return error.code, error.geturl(), error.read()
+          def csrf(html, field):
+              match = re.search(r'name="' + re.escape(field) + r'" value="([a-f0-9]+)"', html)
+              if not match:
+                  raise RuntimeError("missing token")
+              return match.group(1)
+          def form(pairs):
+              return urllib.parse.urlencode(pairs).encode()
+          code, url, body = request(base + "/register.php")
+          html = body.decode("utf-8", "replace")
+          request(base + "/register.php", form({"csrf_token": csrf(html, "csrf_token"), "name": "Fast Copy", "email": email, "password": password}))
+          jar.set_cookie(http.cookiejar.Cookie(0, "rateb_ui_lang", "ar", None, False, "ai.rateb.sa", True, False, "/", True, True, None, False, None, None, {}))
+          def post_new(fields):
+              code, url, body = request(base + "/campaign-new.php")
+              html = body.decode("utf-8", "replace")
+              code, url, body = request(base + "/campaign-new.php", form({"csrf": csrf(html, "csrf"), **fields}))
+              return code, url, body.decode("utf-8", "replace")
+          post_new({"step": "understand", "idea": "عندي عطر جديد وأبغى أطلقه في الرياض وأزيد مبيعات الواتساب.", "campaign_language": "ar"})
+          code, url, html = post_new({"step": "continue"})
+          steps = 0
+          while "view=ask" in url and steps < 4:
+              answer = "النساء" if "مين تبي" in html else ""
+              code, url, html = post_new({"step": "answer", "answer": answer})
+              steps += 1
+          code, url, body = request(base + "/campaign-new.php", form({"csrf": csrf(html, "csrf"), "step": "confirm"}))
+          match = re.search(r"id=(\d+)", url)
+          campaign_id = match.group(1) if match else ""
+          open("/tmp/idea-flow-email", "w").write(email)
+          open("/tmp/idea-flow-ids", "w").write(json.dumps({"main": campaign_id}))
+          def generate(fields):
+              code, url, body = request(base + "/campaign.php?id=" + campaign_id)
+              html = body.decode("utf-8", "replace")
+              started = time.time()
+              code, url, body = request(base + "/app/ai/generate.php", form({"csrf": csrf(html, "csrf"), "campaign_id": campaign_id, **fields}), 50)
+              elapsed = round(time.time() - started, 1)
+              try:
+                  data = json.loads(body.decode("utf-8", "replace"))
+              except Exception:
+                  data = {"code": "bad_json"}
+              print(f"GEN {fields.get('stage')} {code} {data.get('code','')} {elapsed}s", flush=True)
+              return code, data, elapsed
+          code, data, elapsed = generate({"stage": "strategy"})
+          strategy_ok = code == 200 and elapsed < 40
+          code, url, body = request(base + "/campaign.php?id=" + campaign_id)
+          html = body.decode("utf-8", "replace")
+          request(base + "/app/content/approve.php", form({"csrf": csrf(html, "csrf"), "campaign_id": campaign_id, "kind": "strategy"}))
+          code, data, elapsed = generate({"stage": "copy"})
+          code2, url, body = request(base + "/campaign.php?id=" + campaign_id)
+          page = body.decode("utf-8", "replace")
+          copy_ok = code == 200 and elapsed < 40 and "الإعلان الرئيسي" in page and "RATEB يكتب النصوص" not in page
+          print("STRATEGY_FAST=" + ("PASS" if strategy_ok else "FAIL"))
+          print("COPY_FAST=" + ("PASS" if copy_ok else "FAIL"))
+          print("FLOW=" + ("PASS" if strategy_ok and copy_ok else "FAIL"))
+          raise SystemExit(0 if strategy_ok and copy_ok else 1)
+          PY
+
+      - name: Clean the test account
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "-----BEGIN" not in key:
+              raise SystemExit(0)
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          PY
+          if [ -f /tmp/idea-flow-email ]; then
+            scp -i "$HOME/.ssh/ai_key" -P "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new /tmp/idea-flow-email "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:/tmp/idea-flow-email"
+          fi
+          ssh -i "$HOME/.ssh/ai_key" -p "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "cat > /tmp/idea-flow-check.php" << 'PHP'
+          <?php
+          $root = '/home/admin/domains/ai.rateb.sa';
+          $ini = file_get_contents($root . '/.user.ini');
+          if (!preg_match('/auto_prepend_file\s*=\s*"?([^"\r\n]+)/', $ini, $match)) exit(0);
+          require trim($match[1], " \"'");
+          require $root . '/config/bootstrap.php';
+          if (!is_file('/tmp/idea-flow-email')) { echo "CLEANUP=skipped\n"; exit(0); }
+          $email = trim(file_get_contents('/tmp/idea-flow-email'));
+          $user = $pdo->prepare('SELECT id FROM users WHERE email = ?');
+          $user->execute([$email]);
+          $id = (int) $user->fetchColumn();
+          if ($id > 0) {
+              $campaigns = $pdo->prepare('SELECT id FROM campaigns WHERE user_id = ?');
+              $campaigns->execute([$id]);
+              foreach ($campaigns->fetchAll() as $campaign) {
+                  $campaignId = (int) $campaign['id'];
+                  foreach (['campaign_media','campaign_outputs','campaign_items','campaign_variations','campaign_briefs'] as $table) {
+                      $pdo->prepare("DELETE FROM {$table} WHERE campaign_id = ?")->execute([$campaignId]);
+                  }
+                  $pdo->prepare('DELETE FROM campaigns WHERE id = ? AND user_id = ?')->execute([$campaignId, $id]);
+              }
+              $pdo->prepare('DELETE FROM usage_events WHERE user_id = ?')->execute([$id]);
+              $pdo->prepare('DELETE FROM subscriptions WHERE user_id = ?')->execute([$id]);
+              $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
+          }
+          echo "CLEANUP=ok\n";
+          PHP
+          ssh -i "$HOME/.ssh/ai_key" -p "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "php /tmp/idea-flow-check.php; rm -f /tmp/idea-flow-check.php /tmp/idea-flow-email"

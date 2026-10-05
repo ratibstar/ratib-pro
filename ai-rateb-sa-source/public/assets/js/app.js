@@ -231,6 +231,7 @@
       regenerate_copy: 'Regenerate',
       generating_strategy: 'RATEB is writing the strategy...',
       generating_copy: 'RATEB is writing the copy...',
+      write_slow: 'Writing took too long. Try again.',
       regen_confirm: 'This replaces the approved result. Continue?',
       copy_title: 'Campaign copy',
       copy_locked: 'Approve the strategy first, then RATEB writes the copy.',
@@ -574,6 +575,7 @@
       regenerate_copy: 'إعادة توليد',
       generating_strategy: 'RATEB يكتب الاستراتيجية...',
       generating_copy: 'RATEB يكتب النصوص...',
+      write_slow: 'الكتابة تأخرت. حاول مرة أخرى.',
       regen_confirm: 'هذا يستبدل النتيجة المعتمدة. تبي تكمل؟',
       copy_title: 'نصوص الحملة',
       copy_locked: 'اعتمد الاستراتيجية أولًا، ثم يكتب RATEB النصوص.',
@@ -800,18 +802,22 @@
         button.classList.add('is-busy');
       }
       if (status) {
-        status.className = 'notice';
+        status.className = 'notice stage-status';
         status.textContent = dict[language][busyKey] || dict[language].generating;
       }
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, 45000);
       try {
-        var response = await fetch('/app/ai/generate.php', { method: 'POST', body: new FormData(form) });
+        var response = await fetch('/app/ai/generate.php', { method: 'POST', body: new FormData(form), signal: controller.signal });
+        clearTimeout(timer);
         var payload = await response.json();
         if (!response.ok) throw new Error(payload.error || dict[language].ai_failed || 'Request failed');
         location.href = payload.redirect || location.href;
       } catch (error) {
+        clearTimeout(timer);
         if (status) {
-          status.className = 'notice is-error';
-          status.textContent = error.message;
+          status.className = 'notice is-error stage-status';
+          status.textContent = error.name === 'AbortError' ? dict[language].write_slow : error.message;
         }
         if (button) {
           button.disabled = false;
