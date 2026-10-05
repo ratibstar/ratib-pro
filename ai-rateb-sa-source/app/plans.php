@@ -166,6 +166,7 @@ function rateb_sync_brief(PDO $pdo, int $userId, int $campaignId, array $input):
             $language,
             $language === 'auto' ? null : ($language === 'bilingual' ? 'bilingual' : $language),
         ]);
+        rateb_brief_extra($pdo, $userId, $campaignId, $input);
         return true;
     }
     $resolved = $language === 'auto' ? null : ($language === 'bilingual' ? 'bilingual' : $language);
@@ -173,12 +174,40 @@ function rateb_sync_brief(PDO $pdo, int $userId, int $campaignId, array $input):
         $pdo->prepare('UPDATE campaign_briefs SET product = ?, description = ?, audience = ?, objective = ?, campaign_language = ?, resolved_language = NULL WHERE id = ? AND user_id = ?')->execute([
             $product, $description, $audience, $objective, $language, (int) $brief['id'], $userId,
         ]);
+        rateb_brief_extra($pdo, $userId, $campaignId, $input);
         return true;
     }
     $pdo->prepare('UPDATE campaign_briefs SET product = ?, description = ?, audience = ?, objective = ?, campaign_language = ?, resolved_language = ? WHERE id = ? AND user_id = ?')->execute([
         $product, $description, $audience, $objective, $language, $resolved, (int) $brief['id'], $userId,
     ]);
+    rateb_brief_extra($pdo, $userId, $campaignId, $input);
     return true;
+}
+
+function rateb_brief_extra(PDO $pdo, int $userId, int $campaignId, array $input): void
+{
+    $sets = [];
+    $values = [];
+    foreach (['location' => 160, 'channels' => 255, 'brand_tone' => 160] as $key => $limit) {
+        if (!array_key_exists($key, $input)) {
+            continue;
+        }
+        $sets[] = $key . ' = ?';
+        $values[] = mb_substr(trim((string) $input[$key]), 0, $limit);
+    }
+    foreach (['core_message', 'source_media', 'media_analysis'] as $key) {
+        if (!array_key_exists($key, $input)) {
+            continue;
+        }
+        $sets[] = $key . ' = ?';
+        $values[] = $input[$key] === null ? null : trim((string) $input[$key]);
+    }
+    if ($sets === []) {
+        return;
+    }
+    $values[] = $campaignId;
+    $values[] = $userId;
+    $pdo->prepare('UPDATE campaign_briefs SET ' . implode(', ', $sets) . ' WHERE campaign_id = ? AND user_id = ?')->execute($values);
 }
 
 function rateb_output_language(PDO $pdo, array $campaign): array

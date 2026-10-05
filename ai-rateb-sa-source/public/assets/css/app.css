@@ -406,3 +406,34 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
   ::view-transition-old(root),::view-transition-new(root){animation:none}
   a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creative,.mock-screen,.flow-board li{transition:none}
 }
+.idea-shell{max-width:760px}
+.idea-card{border-radius:28px;padding:32px 28px}
+.idea-card h1{font-size:clamp(32px,5vw,46px);line-height:1.25;margin-bottom:8px}
+.idea-box{min-height:180px;font-size:20px;line-height:1.6;border-radius:20px;padding:18px}
+.idea-go{margin-top:18px;min-height:54px;padding:0 22px;border-radius:999px;font-size:18px}
+.idea-tools{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:14px}
+.attach{position:relative;display:inline-flex;align-items:center;min-height:46px;padding:0 16px;border-radius:999px;border:1px dashed var(--border);background:var(--surface2);cursor:pointer;font-weight:800}
+.attach input{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.lang-block{margin:18px 0 0;padding:0;border:0}
+.lang-title{margin:0 0 6px;font-weight:800}
+.lang-choices{display:flex;flex-wrap:wrap;gap:8px}
+.lang-choice{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:var(--surface2)}
+.lang-choice input{width:auto}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:14px}
+.pick{margin:0;padding:8px;border:1px solid var(--border);border-radius:16px;background:var(--surface2)}
+.pick img,.pick video{width:100%;height:110px;object-fit:cover;border-radius:12px;background:#111}
+.pick figcaption{margin:8px 0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brief-list{display:grid;gap:14px;margin:18px 0}
+.brief-list div{display:grid;gap:2px}
+.brief-list dt{color:var(--muted);font-size:13px}
+.brief-list dd{margin:0;font-size:20px;font-weight:800}
+.idea-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.idea-actions form{margin:0}
+.idea-error{color:#b42318;font-weight:700}
+#upload-bar{display:block;width:0;height:100%}
+.server-removes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+[data-theme=dark] .idea-error{color:#ffb4ab}
+@media(max-width:700px){
+  .idea-card{padding:22px 16px}
+  .idea-go,.idea-actions,.idea-actions form,.idea-actions button{width:100%}
+}

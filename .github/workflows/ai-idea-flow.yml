@@ -1,0 +1,492 @@
+name: AI idea flow
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 20
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+      DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Upload campaign creation files
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "-----BEGIN" not in key:
+              raise SystemExit("SSH key missing")
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          PY
+          HOST="$DEPLOY_SSH_HOST"
+          USER="$DEPLOY_SSH_USER"
+          PORT="$DEPLOY_SSH_PORT"
+          ROOT=/home/admin/domains/ai.rateb.sa
+          SSH=(ssh -i "$HOME/.ssh/ai_key" -p "$PORT" -o StrictHostKeyChecking=accept-new "$USER@$HOST")
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/campaign-new.php "$USER@$HOST:$ROOT/campaign-new.php"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/app/idea.php ai-rateb-sa-source/app/vision.php ai-rateb-sa-source/app/plans.php \
+            "$USER@$HOST:$ROOT/app/"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/public/assets/js/app.js "$USER@$HOST:$ROOT/public/assets/js/app.js"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/public/assets/css/app.css "$USER@$HOST:$ROOT/public/assets/css/app.css"
+          "${SSH[@]}" "php -l $ROOT/campaign-new.php && php -l $ROOT/app/idea.php && php -l $ROOT/app/vision.php && php -l $ROOT/app/plans.php"
+          TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(6))')
+          "${SSH[@]}" "cat > $ROOT/oc-$TOKEN.php" << 'PHP'
+          <?php
+          $root = __DIR__;
+          foreach (['/campaign-new.php', '/app/idea.php', '/app/vision.php', '/app/plans.php'] as $file) {
+              if (function_exists('opcache_invalidate')) {
+                  opcache_invalidate($root . $file, true);
+              }
+          }
+          echo 'OPCACHE=ok';
+          PHP
+          curl -fsS "https://ai.rateb.sa/oc-$TOKEN.php"
+          echo
+          "${SSH[@]}" "rm -f $ROOT/oc-$TOKEN.php"
+          code=$(curl -s -o /dev/null -w '%{http_code}' "https://ai.rateb.sa/oc-$TOKEN.php")
+          echo "OPCACHE_FILE=$code"
+          test "$code" != "200"
+
+      - name: Exercise the creation flow
+        id: flow
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import base64, http.cookiejar, json, re, secrets, struct, urllib.parse, urllib.request
+          from pathlib import Path
+
+          base = "https://ai.rateb.sa"
+          work = Path("/tmp/idea-flow")
+          work.mkdir(mode=0o700, exist_ok=True)
+          email = "idea2-" + secrets.token_hex(4) + "@example.com"
+          other = "idea2b-" + secrets.token_hex(4) + "@example.com"
+          password = secrets.token_urlsafe(18)
+          (work / "email").write_text(email + "\n" + other, encoding="utf-8")
+          (work / "password").write_text(password, encoding="utf-8")
+          (work / "password").chmod(0o600)
+          flags = {}
+          ids = {}
+
+          def mark(name, ok):
+              flags[name] = "PASS" if ok else "FAIL"
+              print(f"{name}={flags[name]}")
+
+          jar = http.cookiejar.CookieJar()
+          opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+
+          def set_lang(value):
+              for cookie in list(jar):
+                  if cookie.name == "rateb_ui_lang":
+                      jar.clear(cookie.domain, cookie.path, cookie.name)
+              jar.set_cookie(http.cookiejar.Cookie(0, "rateb_ui_lang", value, None, False, "ai.rateb.sa", True, False, "/", True, True, None, False, None, None, {}))
+
+          def request(url, data=None, headers=None, follow=True):
+              req = urllib.request.Request(url, data=data, headers=headers or {})
+              try:
+                  with opener.open(req, timeout=60) as response:
+                      return response.status, response.geturl(), response.read(), response.headers
+              except urllib.error.HTTPError as error:
+                  return error.code, error.geturl(), error.read(), error.headers
+
+          def csrf(html, field):
+              match = re.search(r'name="' + re.escape(field) + r'" value="([a-f0-9]+)"', html)
+              if not match:
+                  raise RuntimeError("missing token")
+              return match.group(1)
+
+          def form(pairs):
+              return urllib.parse.urlencode(pairs).encode()
+
+          code, url, body, _ = request(base + "/register.php")
+          html = body.decode("utf-8", "replace")
+          code, url, body, _ = request(base + "/register.php", form({
+              "csrf_token": csrf(html, "csrf_token"),
+              "name": "Idea Flow",
+              "email": email,
+              "password": password,
+          }))
+          mark("REGISTER", code == 200 and "dashboard.php" in url)
+          set_lang("ar")
+          code, url, body, _ = request(base + "/campaign-new.php")
+          html = body.decode("utf-8", "replace")
+          old = ['name="title"', 'name="price"', 'name="budget"', 'name="start_date"', 'name="end_date"', 'name="status"', 'name="product_name"', 'name="target_customer"', 'data-i18n="save_campaign"']
+          mark("SCREEN_AR", code == 200 and 'dir="rtl"' in html and "وش تبي تسوّق اليوم؟" in html and "＋ أضف صورًا أو فيديو" in html and "What do you want to market today?" not in html)
+          mark("NO_OLD_FORM", all(item not in html for item in old) and all(value in html for value in ['value="ar"', 'value="en"', 'value="bilingual"', 'value="auto"']))
+          set_lang("en")
+          code, url, body, _ = request(base + "/campaign-new.php")
+          english = body.decode("utf-8", "replace")
+          mark("SCREEN_EN", 'dir="ltr"' in english and "What do you want to market today?" in english and "وش تبي تسوّق اليوم؟" not in english and "Campaign language is separate from the page language." in english)
+          set_lang("ar")
+
+          idea = "عندي عطر جديد وأبغى أطلقه في الرياض وأزيد مبيعات الواتساب."
+          code, url, body, _ = request(base + "/campaign-new.php")
+          html = body.decode("utf-8", "replace")
+          code, url, body, _ = request(base + "/campaign-new.php", form({
+              "csrf": csrf(html, "csrf"),
+              "step": "understand",
+              "idea": idea,
+              "campaign_language": "ar",
+          }))
+          html = body.decode("utf-8", "replace")
+          mark("NO_FILES", "view=confirm" in url and "عطر جديد" in html and "الرياض" in html and "زيادة مبيعات واتساب" in html and "واتساب" in html and "غير محدد" in html)
+          mark("NO_REASK", "وش المنتج أو الخدمة؟" not in html and 'name="product_name"' not in html)
+          mark("BRIEF_CARD", "فهمت فكرتك" in html and "✨ اعتمد وابدأ" in html and "تعديل" in html)
+          code, final, body, _ = request(base + "/campaign-new.php", form({
+              "csrf": csrf(html, "csrf"),
+              "step": "revise",
+          }))
+          revised = body.decode("utf-8", "replace")
+          mark("EDIT", idea in revised and "وش تبي تسوّق اليوم؟" in revised and "فهمت فكرتك" not in revised)
+          code, url, body, _ = request(base + "/campaign-new.php", form({
+              "csrf": csrf(revised, "csrf"),
+              "step": "understand",
+              "idea": idea,
+              "campaign_language": "ar",
+          }))
+          html = body.decode("utf-8", "replace")
+          code, url, body, _ = request(base + "/campaign-new.php", form({
+              "csrf": csrf(html, "csrf"),
+              "step": "confirm",
+          }))
+          match = re.search(r"campaign\.php\?id=(\d+)", url)
+          ids["ar"] = match.group(1) if match else ""
+          mark("CONFIRM", bool(ids["ar"]) and code == 200)
+
+          for key in ("en", "bilingual", "auto"):
+              code, url, body, _ = request(base + "/campaign-new.php")
+              page = body.decode("utf-8", "replace")
+              code, url, body, _ = request(base + "/campaign-new.php", form({
+                  "csrf": csrf(page, "csrf"),
+                  "step": "understand",
+                  "idea": "عندي عطر جديد",
+                  "campaign_language": key,
+              }))
+              page = body.decode("utf-8", "replace")
+              code, url, body, _ = request(base + "/campaign-new.php", form({
+                  "csrf": csrf(page, "csrf"),
+                  "step": "confirm",
+              }))
+              found = re.search(r"campaign\.php\?id=(\d+)", url)
+              ids[key] = found.group(1) if found else ""
+              mark("LANG_" + key.upper(), bool(ids[key]))
+
+          code, url, body, _ = request(base + "/campaign-new.php")
+          page = body.decode("utf-8", "replace")
+          code, url, body, _ = request(base + "/campaign-new.php", form({
+              "csrf": csrf(page, "csrf"),
+              "step": "understand",
+              "idea": "مرحبا",
+              "campaign_language": "auto",
+          }))
+          asked = body.decode("utf-8", "replace")
+          mark("ASK_ONLY", "view=ask" in url and "وش المنتج أو الخدمة؟" in asked and "الرياض" not in asked and 'name="price"' not in asked)
+
+          bare = urllib.request.build_opener()
+          try:
+              bare.open(urllib.request.Request(base + "/campaign-new.php", form({
+                  "step": "understand",
+                  "idea": idea,
+                  "campaign_language": "ar",
+              })), timeout=30)
+              mark("CSRF", False)
+          except urllib.error.HTTPError as error:
+              mark("CSRF", error.code == 419)
+          try:
+              bare.open(base + "/campaign-new.php", timeout=30)
+              mark("AUTH", False)
+          except urllib.error.HTTPError as error:
+              location = error.headers.get("Location", "")
+              mark("AUTH", error.code in (301, 302, 303) and "login.php" in location)
+
+          jpeg = base64.b64decode(
+              "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+          )
+          # The bytes above are a PNG. Build a real one-pixel JPEG instead.
+          jpeg = bytes.fromhex(
+              "ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707070909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c1c2837292c30313434341f27393d38323c2e333432ffc0000b080001000101011100ffc4001f0000010501010101010100000000000000000102030405060708090a0bffc400b5100002010303020403050504040000017d01020300041105122131410613516107227114328191a1082342b1c11552d1f02433627282090a161718191a25262728292a3435363738393a434445464748494a535455565758595a636465666768696a737475767778797a838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9cad2d3d4d5d6d7d8d9dae1e2e3e4e5e6e7e8e9eaf1f2f3f4f5f6f7f8f9faffda000c03010002110311003f00f7fa28a2800ffd9"
+          )
+
+          def box(kind, payload):
+              return struct.pack(">I", 8 + len(payload)) + kind + payload
+
+          def mp4(ticks):
+              body = bytes(4) + struct.pack(">II", 0, 0) + struct.pack(">II", 1000, ticks) + bytes(72)
+              atom = box(b"mvhd", body)
+              ftyp = struct.pack(">I", 20) + b"ftyp" + b"isom" + struct.pack(">I", 0) + b"mp41"
+              return ftyp + box(b"moov", atom)
+
+          def multipart(fields, files):
+              boundary = "----idea" + secrets.token_hex(8)
+              chunks = []
+              for name, value in fields:
+                  chunks.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n'.encode() + value.encode() + b"\r\n")
+              for name, filename, mime, data in files:
+                  chunks.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"; filename="{filename}"\r\nContent-Type: {mime}\r\n\r\n'.encode() + data + b"\r\n")
+              chunks.append(f"--{boundary}--\r\n".encode())
+              return b"".join(chunks), "multipart/form-data; boundary=" + boundary
+
+          def upload(fields, files):
+              code, url, body, _ = request(base + "/campaign-new.php")
+              page = body.decode("utf-8", "replace")
+              payload, content = multipart([("csrf", csrf(page, "csrf")), *fields], files)
+              return request(base + "/campaign-new.php", payload, {"Content-Type": content})
+
+          code, url, body, _ = upload(
+              [("step", "understand"), ("idea", idea), ("campaign_language", "ar")],
+              [("files[]", "one.jpg", "image/jpeg", jpeg), ("files[]", "two.jpg", "image/jpeg", jpeg)],
+          )
+          html = body.decode("utf-8", "replace")
+          mark("IMAGES", "view=confirm" in url and ">2 <span" in html.replace("\n", " ") and "صور" in html and "ما تم تحليل الصور." in html and "حلل الصورة" not in html)
+          tokens = re.findall(r'name="stored" value="([a-f0-9]{32}\.jpg)"', html)
+          code, url, body, _ = request(base + "/campaign-new.php", form({
+              "csrf": csrf(html, "csrf"),
+              "step": "drop",
+              "stored": tokens[0] if tokens else "",
+          }))
+          dropped = body.decode("utf-8", "replace")
+          mark("DROP_FILE", len(tokens) == 2 and len(re.findall(r'name="stored"', dropped)) == 1)
+          code, url, body, _ = request(base + "/campaign-new.php", form({
+              "csrf": csrf(dropped, "csrf"),
+              "step": "confirm",
+          }))
+          found = re.search(r"campaign\.php\?id=(\d+)", url)
+          ids["images"] = found.group(1) if found else ""
+          mark("IMAGE_SAVE", bool(ids["images"]))
+
+          short = mp4(5000)
+          code, url, body, _ = upload(
+              [("step", "understand"), ("idea", "عندي عطر جديد"), ("campaign_language", "en")],
+              [("files[]", "clip.mp4", "video/mp4", short)],
+          )
+          html = body.decode("utf-8", "replace")
+          mark("VIDEO", "view=confirm" in url and "ما تم تحليل الفيديو." in html and "video vision" not in html.lower())
+          code, url, body, _ = request(base + "/campaign-new.php", form({"csrf": csrf(html, "csrf"), "step": "confirm"}))
+          found = re.search(r"campaign\.php\?id=(\d+)", url)
+          ids["video"] = found.group(1) if found else ""
+          mark("VIDEO_SAVE", bool(ids["video"]))
+
+          code, url, body, _ = upload(
+              [("step", "understand"), ("idea", "عندي عطر جديد"), ("campaign_language", "ar")],
+              [("files[]", "a.mp4", "video/mp4", short), ("files[]", "b.mp4", "video/mp4", short)],
+          )
+          html = body.decode("utf-8", "replace")
+          mark("VIDEO_ONE", "يمكن إرفاق فيديو واحد." in html and "view=confirm" not in url)
+
+          code, url, body, _ = upload(
+              [("step", "understand"), ("idea", "عندي عطر جديد"), ("campaign_language", "ar")],
+              [("files[]", "long.mp4", "video/mp4", mp4(30000))],
+          )
+          html = body.decode("utf-8", "replace")
+          mark("VIDEO_LONG", "مدة الفيديو أطول من حد خطتك." in html)
+
+          code, url, body, _ = upload(
+              [("step", "understand"), ("idea", "عندي عطر جديد"), ("campaign_language", "ar")],
+              [("files[]", "bad.jpg", "image/jpeg", b"not an image")],
+          )
+          html = body.decode("utf-8", "replace")
+          mark("BAD_TYPE", "نوع الملف غير مدعوم." in html)
+
+          code, url, body, _ = upload(
+              [("step", "understand"), ("idea", "عندي عطر جديد"), ("campaign_language", "ar")],
+              [("files[]", f"{index}.jpg", "image/jpeg", jpeg) for index in range(16)],
+          )
+          html = body.decode("utf-8", "replace")
+          mark("PLAN_IMAGES", "عدد الصور يتجاوز حد خطتك." in html)
+
+          code, url, body, _ = request(base + "/logout.php")
+          code, url, body, _ = request(base + "/register.php")
+          page = body.decode("utf-8", "replace")
+          code, url, body, _ = request(base + "/register.php", form({
+              "csrf_token": csrf(page, "csrf_token"),
+              "name": "Other",
+              "email": other,
+              "password": password,
+          }))
+          target = ids.get("ar") or "1"
+          code, url, body, _ = request(base + f"/campaign.php?id={target}")
+          mark("ISOLATION", code == 404)
+
+          (work / "ids").write_text(json.dumps(ids), encoding="utf-8")
+          failed = [name for name, value in flags.items() if value != "PASS"]
+          print("FLOW=" + ("PASS" if not failed else "FAIL"))
+          if failed:
+              print("FAILED=" + ",".join(failed))
+              raise SystemExit(1)
+          PY
+
+      - name: Check saved briefs and remove test accounts
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          PY
+          if [ -f /tmp/idea-flow/email ]; then
+            scp -i "$HOME/.ssh/ai_key" -P "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new \
+              /tmp/idea-flow/email "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:/tmp/idea-flow-email"
+          fi
+          ssh -i "$HOME/.ssh/ai_key" -p "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new \
+            "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "cat > /tmp/idea-flow-check.php" << 'PHP'
+          <?php
+          $root = '/home/admin/domains/ai.rateb.sa';
+          $ini = file_get_contents($root . '/.user.ini');
+          if (!preg_match('/auto_prepend_file\s*=\s*"?([^"\r\n]+)/', $ini, $match)) {
+              fwrite(STDERR, "PREPEND=missing\n");
+              exit(1);
+          }
+          require trim($match[1], " \"'");
+          require $root . '/config/bootstrap.php';
+          if (!is_file('/tmp/idea-flow-email')) {
+              echo "CLEANUP=skipped\n";
+              exit(0);
+          }
+          $emails = array_values(array_filter(array_map('trim', file('/tmp/idea-flow-email'))));
+          $failed = false;
+          $ids = json_decode((string) @file_get_contents('/tmp/idea-flow-ids'), true);
+          if (!is_array($ids)) {
+              $ids = [];
+          }
+          $user = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+          $user->execute([$emails[0] ?? '']);
+          $userId = (int) $user->fetchColumn();
+          $brief = $pdo->prepare('SELECT campaign_language, resolved_language, product, location, objective, audience, channels, media_analysis FROM campaign_briefs WHERE campaign_id = ? AND user_id = ?');
+          $media = $pdo->prepare('SELECT kind, source FROM campaign_media WHERE campaign_id = ? AND user_id = ? ORDER BY id');
+          $usage = $pdo->prepare('SELECT COUNT(*) FROM usage_events WHERE user_id = ?');
+          $usage->execute([$userId]);
+          $usageCount = (int) $usage->fetchColumn();
+          echo 'USAGE=' . $usageCount . "\n";
+          if ($usageCount !== 0) {
+              $failed = true;
+          }
+          $checks = [
+              'ar' => ['ar', 'عطر جديد', 'الرياض', 'زيادة مبيعات واتساب', 'واتساب'],
+              'en' => ['en', 'عطر جديد', '', '', ''],
+              'bilingual' => ['bilingual', 'عطر جديد', '', '', ''],
+              'auto' => ['auto', 'عطر جديد', '', '', ''],
+          ];
+          foreach ($checks as $key => $expect) {
+              $brief->execute([(int) ($ids[$key] ?? 0), $userId]);
+              $row = $brief->fetch() ?: [];
+              $language = (string) ($row['campaign_language'] ?? '');
+              $resolved = $row['resolved_language'] ?? null;
+              $ok = $language === $expect[0]
+                  && (string) ($row['product'] ?? '') === $expect[1]
+                  && (string) ($row['location'] ?? '') === $expect[2]
+                  && (string) ($row['objective'] ?? '') === $expect[3]
+                  && (string) ($row['channels'] ?? '') === $expect[4]
+                  && (string) ($row['audience'] ?? '') === '';
+              if ($expect[0] === 'auto') {
+                  $ok = $ok && $resolved === null;
+              } else {
+                  $ok = $ok && (string) $resolved === $expect[0];
+              }
+              $analysis = $row['media_analysis'] ?? null;
+              $ok = $ok && ($analysis === null || $analysis === '');
+              echo 'DB_' . strtoupper($key) . '=' . ($ok ? 'PASS' : 'FAIL') . "\n";
+              if (!$ok) {
+                  $failed = true;
+                  echo 'DEBUG_' . strtoupper($key) . '=' . json_encode($row, JSON_UNESCAPED_UNICODE) . "\n";
+              }
+          }
+          $brief->execute([(int) ($ids['images'] ?? 0), $userId]);
+          $imageBrief = $brief->fetch() ?: [];
+          $media->execute([(int) ($ids['images'] ?? 0), $userId]);
+          $imageRows = $media->fetchAll();
+          $imageAnalysis = (string) ($imageBrief['media_analysis'] ?? '');
+          $imageOk = count($imageRows) === 1
+              && (string) $imageRows[0]['kind'] === 'image'
+              && (string) $imageRows[0]['source'] === 'upload'
+              && str_contains($imageAnalysis, '"status":"unavailable"')
+              && !str_contains($imageAnalysis, 'summary');
+          echo 'DB_IMAGES=' . ($imageOk ? 'PASS' : 'FAIL') . "\n";
+          if (!$imageOk) {
+              $failed = true;
+          }
+          $media->execute([(int) ($ids['video'] ?? 0), $userId]);
+          $videoRows = $media->fetchAll();
+          $brief->execute([(int) ($ids['video'] ?? 0), $userId]);
+          $videoBrief = $brief->fetch() ?: [];
+          $videoOk = count($videoRows) === 1
+              && (string) $videoRows[0]['kind'] === 'video'
+              && (string) ($videoBrief['campaign_language'] ?? '') === 'en'
+              && str_contains((string) ($videoBrief['media_analysis'] ?? ''), '"status":"unavailable"');
+          echo 'DB_VIDEO=' . ($videoOk ? 'PASS' : 'FAIL') . "\n";
+          if (!$videoOk) {
+              $failed = true;
+          }
+          $deleteMedia = $pdo->prepare('SELECT id FROM campaigns WHERE user_id = ?');
+          $tables = ['campaign_media', 'campaign_outputs', 'campaign_items', 'campaign_variations', 'campaign_briefs'];
+          foreach ($emails as $address) {
+              $user->execute([$address]);
+              $id = (int) $user->fetchColumn();
+              if ($id < 1) {
+                  continue;
+              }
+              $deleteMedia->execute([$id]);
+              foreach ($deleteMedia->fetchAll() as $campaign) {
+                  $campaignId = (int) $campaign['id'];
+                  foreach ($tables as $table) {
+                      $pdo->prepare("DELETE FROM {$table} WHERE campaign_id = ?")->execute([$campaignId]);
+                  }
+                  $dir = '/home/admin/.campaign-media/' . $campaignId;
+                  if (is_dir($dir)) {
+                      foreach (scandir($dir) ?: [] as $name) {
+                          if ($name !== '.' && $name !== '..' && is_file($dir . '/' . $name)) {
+                              unlink($dir . '/' . $name);
+                          }
+                      }
+                      rmdir($dir);
+                  }
+                  $pdo->prepare('DELETE FROM campaigns WHERE id = ? AND user_id = ?')->execute([$campaignId, $id]);
+              }
+              $draft = '/home/admin/.campaign-media/drafts/' . $id;
+              if (is_dir($draft)) {
+                  foreach (scandir($draft) ?: [] as $name) {
+                      if ($name !== '.' && $name !== '..' && is_file($draft . '/' . $name)) {
+                          unlink($draft . '/' . $name);
+                      }
+                  }
+                  rmdir($draft);
+              }
+              $pdo->prepare('DELETE FROM usage_events WHERE user_id = ?')->execute([$id]);
+              $pdo->prepare('DELETE FROM subscriptions WHERE user_id = ?')->execute([$id]);
+              $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
+          }
+          echo "CLEANUP=ok\n";
+          exit($failed ? 1 : 0);
+          PHP
+          scp -i "$HOME/.ssh/ai_key" -P "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new \
+            /tmp/idea-flow/ids "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:/tmp/idea-flow-ids" || true
+          ssh -i "$HOME/.ssh/ai_key" -p "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new \
+            "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" 'php /tmp/idea-flow-check.php; status=$?; rm -f /tmp/idea-flow-check.php /tmp/idea-flow-email /tmp/idea-flow-ids; exit $status'

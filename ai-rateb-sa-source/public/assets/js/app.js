@@ -31,6 +31,46 @@
       lang_ar: 'Arabic',
       lang_en: 'English',
       lang_bilingual: 'Arabic and English',
+      idea_title: 'What do you want to market today?',
+      idea_lead: 'Describe the idea in your own words.',
+      idea_placeholder: 'Example: I have a new fragrance and I want to launch it in Riyadh and increase WhatsApp sales.',
+      idea_submit: '✨ Build my campaign',
+      idea_attach: '＋ Add photos or a video',
+      idea_optional: 'Attachments are optional. You can continue without files.',
+      understood_title: 'I understood your idea',
+      confirm_start: '✨ Confirm and start',
+      revise_idea: 'Edit',
+      ask_product: 'What is the product or service?',
+      ask_lead: 'Only this detail is still missing.',
+      ask_continue: 'Continue',
+      audience_unknown: 'Not specified',
+      brief_product: 'Product',
+      brief_location: 'Location',
+      brief_objective: 'Goal',
+      brief_audience: 'Audience',
+      brief_channel: 'Channel',
+      brief_channels: 'Channels',
+      brief_language: 'Language',
+      brief_tone: 'Brand tone',
+      brief_files: 'Attached files',
+      files_photos: 'photos',
+      files_video: 'a video',
+      files_and: 'and',
+      images_not_analyzed: 'The photos were not analyzed.',
+      video_not_analyzed: 'The video was not analyzed.',
+      language_note: 'Campaign language is separate from the page language.',
+      remove_file: 'Remove',
+      idea_required: 'Write your idea first.',
+      idea_long: 'The idea is too long.',
+      file_type: 'This file type is not supported.',
+      file_size: 'The file is larger than the limit.',
+      video_one: 'You can attach one video.',
+      video_long: 'The video is longer than your plan allows.',
+      video_unknown: 'The video duration could not be checked.',
+      plan_images: 'The number of photos is above your plan limit.',
+      plan_videos: 'Your plan does not include video.',
+      ask_required: 'Write the product or service.',
+      save_failed: 'The campaign could not be saved.',
       target: 'Target customer',
       description: 'Description',
       generate: 'Generate AI Campaign',
@@ -265,6 +305,46 @@
       lang_ar: 'العربية',
       lang_en: 'الإنجليزية',
       lang_bilingual: 'العربية والإنجليزية',
+      idea_title: 'وش تبي تسوّق اليوم؟',
+      idea_lead: 'اكتب فكرتك بطريقتك...',
+      idea_placeholder: 'مثال: عندي عطر جديد وأبغى أطلقه في الرياض وأزيد مبيعات الواتساب.',
+      idea_submit: '✨ ابنِ حملتي',
+      idea_attach: '＋ أضف صورًا أو فيديو',
+      idea_optional: 'المرفقات اختيارية. تقدر تكمل بدون ملفات.',
+      understood_title: 'فهمت فكرتك 👌',
+      confirm_start: '✨ اعتمد وابدأ',
+      revise_idea: 'تعديل',
+      ask_product: 'وش المنتج أو الخدمة؟',
+      ask_lead: 'باقي هالمعلومة فقط.',
+      ask_continue: 'متابعة',
+      audience_unknown: 'غير محدد',
+      brief_product: 'المنتج',
+      brief_location: 'الموقع',
+      brief_objective: 'الهدف',
+      brief_audience: 'الجمهور',
+      brief_channel: 'القناة',
+      brief_channels: 'القنوات',
+      brief_language: 'اللغة',
+      brief_tone: 'نبرة العلامة',
+      brief_files: 'المواد المرفقة',
+      files_photos: 'صور',
+      files_video: 'فيديو',
+      files_and: 'و',
+      images_not_analyzed: 'ما تم تحليل الصور.',
+      video_not_analyzed: 'ما تم تحليل الفيديو.',
+      language_note: 'لغة الحملة مستقلة عن لغة الصفحة.',
+      remove_file: 'حذف',
+      idea_required: 'اكتب فكرتك أولًا.',
+      idea_long: 'الفكرة طويلة.',
+      file_type: 'نوع الملف غير مدعوم.',
+      file_size: 'حجم الملف أكبر من الحد.',
+      video_one: 'يمكن إرفاق فيديو واحد.',
+      video_long: 'مدة الفيديو أطول من حد خطتك.',
+      video_unknown: 'تعذر التحقق من مدة الفيديو.',
+      plan_images: 'عدد الصور يتجاوز حد خطتك.',
+      plan_videos: 'خطتك لا تسمح بفيديو.',
+      ask_required: 'اكتب المنتج أو الخدمة.',
+      save_failed: 'تعذر حفظ الحملة.',
       target: 'العميل المستهدف',
       description: 'الوصف',
       generate: 'توليد الحملة بالذكاء الاصطناعي',
@@ -497,6 +577,10 @@
       var key = node.dataset.i18n;
       if (labels[key]) node.textContent = labels[key];
     });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function (node) {
+      var key = node.dataset.i18nPlaceholder;
+      if (labels[key]) node.setAttribute('placeholder', labels[key]);
+    });
     root.lang = language;
     root.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.cookie = 'rateb_ui_lang=' + language + ';path=/;SameSite=Lax';
@@ -717,6 +801,111 @@
     demoDialog.addEventListener('close', function () { demoStage.replaceChildren(); });
     demoDialog.addEventListener('click', function (event) {
       if (event.target === demoDialog) demoDialog.close();
+    });
+  }
+
+  var ideaForm = document.getElementById('idea-form');
+  var ideaFiles = document.getElementById('idea-files');
+  var ideaPicks = document.getElementById('idea-picks');
+  if (ideaForm && ideaFiles && ideaPicks) {
+    var picked = [];
+    var imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    var videoTypes = ['video/mp4', 'video/webm'];
+    function ideaNotice(key) {
+      var old = document.getElementById('idea-client-error');
+      if (old) old.remove();
+      var labels = dict[language] || dict.en;
+      if (!labels[key]) return;
+      var note = document.createElement('p');
+      note.id = 'idea-client-error';
+      note.className = 'idea-error';
+      note.textContent = labels[key];
+      ideaForm.insertBefore(note, ideaForm.firstChild);
+    }
+    function renderPicks() {
+      ideaPicks.replaceChildren();
+      picked.forEach(function (file, index) {
+        var item = document.createElement('figure');
+        item.className = 'pick';
+        var media;
+        if (file.type.indexOf('image/') === 0) {
+          media = document.createElement('img');
+          media.alt = '';
+        } else {
+          media = document.createElement('video');
+          media.muted = true;
+          media.playsInline = true;
+        }
+        media.src = URL.createObjectURL(file);
+        item.appendChild(media);
+        var caption = document.createElement('figcaption');
+        caption.textContent = file.name;
+        item.appendChild(caption);
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'quiet';
+        remove.textContent = (dict[language] && dict[language].remove_file) || 'Remove';
+        remove.addEventListener('click', function () {
+          URL.revokeObjectURL(media.src);
+          picked.splice(index, 1);
+          renderPicks();
+        });
+        item.appendChild(remove);
+        ideaPicks.appendChild(item);
+      });
+    }
+    ideaFiles.addEventListener('change', function () {
+      var hasVideo = ideaForm.getAttribute('data-has-video') === '1' || picked.some(function (file) { return videoTypes.indexOf(file.type) >= 0; });
+      Array.prototype.forEach.call(ideaFiles.files, function (file) {
+        var image = imageTypes.indexOf(file.type) >= 0;
+        var video = videoTypes.indexOf(file.type) >= 0;
+        if (!image && !video) {
+          ideaNotice('file_type');
+          return;
+        }
+        if ((image && file.size > 8 * 1024 * 1024) || (video && file.size > 40 * 1024 * 1024)) {
+          ideaNotice('file_size');
+          return;
+        }
+        if (video && hasVideo) {
+          ideaNotice('video_one');
+          return;
+        }
+        if (video) hasVideo = true;
+        picked.push(file);
+      });
+      ideaFiles.value = '';
+      renderPicks();
+    });
+    ideaForm.addEventListener('submit', function (event) {
+      if (!window.FormData || !window.XMLHttpRequest) return;
+      event.preventDefault();
+      var data = new FormData(ideaForm);
+      data.delete('files[]');
+      picked.forEach(function (file) { data.append('files[]', file); });
+      var bar = document.getElementById('upload-bar');
+      var progress = document.getElementById('upload-progress');
+      if (progress) progress.hidden = false;
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', ideaForm.action);
+      xhr.upload.onprogress = function (e) {
+        if (bar && e.lengthComputable) bar.style.width = Math.round((e.loaded / e.total) * 100) + '%';
+      };
+      xhr.onload = function () {
+        var finalUrl = xhr.responseURL || '';
+        if (finalUrl.indexOf('/campaign.php') !== -1 || finalUrl.indexOf('view=') !== -1) {
+          window.location.href = finalUrl;
+          return;
+        }
+        document.open();
+        document.write(xhr.responseText);
+        document.close();
+      };
+      xhr.onerror = function () {
+        if (progress) progress.hidden = true;
+        ideaNotice('save_failed');
+      };
+      xhr.send(data);
     });
   }
 })();
