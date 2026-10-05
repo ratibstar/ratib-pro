@@ -91,6 +91,11 @@ if ($stage === 'edit') {
 if ($stage !== 'strategy' && $stage !== 'copy') {
     rateb_fail(400, 'invalid_output');
 }
+$briefReady = trim((string) ($brief['product'] ?? $campaign['product_name'] ?? '')) !== ''
+    || trim((string) ($brief['description'] ?? $campaign['description'] ?? '')) !== '';
+if (!$briefReady) {
+    rateb_fail(422, 'brief_missing');
+}
 
 $strategyRow = rateb_output_row($id, 'strategy');
 if ($stage === 'strategy' && $strategyRow && (string) $strategyRow['approval_status'] === 'approved' && !$confirm) {

@@ -27,6 +27,7 @@ function rateb_ui_error(string $code): string
         'invalid_output' => $arabic ? 'النتيجة غير صالحة، ولم تُحفظ.' : 'The result was not valid, so it was not saved.',
         'edit_unclear' => $arabic ? 'ما وضحت التعديل. اكتب التغيير الذي تبيه.' : 'The change was not clear. Write the change you want.',
         'edit_empty' => $arabic ? 'اكتب التعديل أولًا.' : 'Write the change first.',
+        'brief_missing' => $arabic ? 'أكمل ملخص الحملة قبل البدء.' : 'Complete the campaign brief before starting.',
     ];
     return $messages[$code] ?? ($arabic ? 'تعذر تنفيذ الطلب.' : 'The request could not be completed.');
 }

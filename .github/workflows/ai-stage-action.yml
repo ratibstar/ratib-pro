@@ -1,0 +1,408 @@
+name: AI stage action
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 30
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+      DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Upload workspace action files
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "-----BEGIN" not in key:
+              raise SystemExit("SSH key missing")
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          PY
+          HOST="$DEPLOY_SSH_HOST"
+          USER="$DEPLOY_SSH_USER"
+          PORT="$DEPLOY_SSH_PORT"
+          ROOT=/home/admin/domains/ai.rateb.sa
+          SSH=(ssh -i "$HOME/.ssh/ai_key" -p "$PORT" -o StrictHostKeyChecking=accept-new "$USER@$HOST")
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/campaign.php "$USER@$HOST:$ROOT/campaign.php"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/app/plans.php "$USER@$HOST:$ROOT/app/plans.php"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/app/ai/generate.php "$USER@$HOST:$ROOT/app/ai/generate.php"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/public/assets/js/app.js "$USER@$HOST:$ROOT/public/assets/js/app.js"
+          scp -i "$HOME/.ssh/ai_key" -P "$PORT" -o StrictHostKeyChecking=accept-new \
+            ai-rateb-sa-source/public/assets/css/app.css "$USER@$HOST:$ROOT/public/assets/css/app.css"
+          "${SSH[@]}" "php -l $ROOT/campaign.php && php -l $ROOT/app/plans.php && php -l $ROOT/app/ai/generate.php"
+          TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(6))')
+          "${SSH[@]}" "cat > $ROOT/oc-$TOKEN.php" << 'PHP'
+          <?php
+          $root = __DIR__;
+          foreach (['/campaign.php', '/app/plans.php', '/app/ai/generate.php'] as $file) {
+              if (function_exists('opcache_invalidate')) {
+                  opcache_invalidate($root . $file, true);
+              }
+          }
+          echo 'OPCACHE=ok';
+          PHP
+          curl -fsS "https://ai.rateb.sa/oc-$TOKEN.php"
+          echo
+          "${SSH[@]}" "rm -f $ROOT/oc-$TOKEN.php"
+          code=$(curl -s -o /dev/null -w '%{http_code}' "https://ai.rateb.sa/oc-$TOKEN.php")
+          echo "OPCACHE_FILE=$code"
+          test "$code" != "200"
+
+      - name: Exercise the stage actions
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import http.cookiejar, json, re, secrets, urllib.parse, urllib.request
+          from pathlib import Path
+
+          base = "https://ai.rateb.sa"
+          work = Path("/tmp/idea-flow")
+          work.mkdir(mode=0o700, exist_ok=True)
+          email = "act3-" + secrets.token_hex(4) + "@example.com"
+          other = "act3b-" + secrets.token_hex(4) + "@example.com"
+          password = secrets.token_urlsafe(18)
+          (work / "email").write_text(email + "\n" + other, encoding="utf-8")
+          (work / "password").write_text(password, encoding="utf-8")
+          (work / "password").chmod(0o600)
+          flags = {}
+          ids = {}
+          old = ['name="price"', 'name="budget"', 'name="start_date"', 'name="end_date"', 'name="status"', 'name="product_name"', 'name="target_customer"', 'name="title"', 'data-i18n="save_campaign"']
+
+          def mark(name, ok):
+              flags[name] = "PASS" if ok else "FAIL"
+              print(f"{name}={flags[name]}", flush=True)
+
+          def save_ids():
+              (work / "ids").write_text(json.dumps(ids), encoding="utf-8")
+
+          jar = http.cookiejar.CookieJar()
+          opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+
+          def set_lang(value):
+              for cookie in list(jar):
+                  if cookie.name == "rateb_ui_lang":
+                      jar.clear(cookie.domain, cookie.path, cookie.name)
+              jar.set_cookie(http.cookiejar.Cookie(0, "rateb_ui_lang", value, None, False, "ai.rateb.sa", True, False, "/", True, True, None, False, None, None, {}))
+
+          def request(url, data=None, timeout=60):
+              req = urllib.request.Request(url, data=data)
+              try:
+                  with opener.open(req, timeout=timeout) as response:
+                      return response.status, response.geturl(), response.read()
+              except urllib.error.HTTPError as error:
+                  return error.code, error.geturl(), error.read()
+
+          def csrf(html, field):
+              match = re.search(r'name="' + re.escape(field) + r'" value="([a-f0-9]+)"', html)
+              if not match:
+                  raise RuntimeError("missing token")
+              return match.group(1)
+
+          def form(pairs):
+              return urllib.parse.urlencode(pairs).encode()
+
+          def page(path):
+              code, url, body = request(base + path)
+              return code, url, body.decode("utf-8", "replace")
+
+          def post_new(fields):
+              _, _, html = page("/campaign-new.php")
+              code, url, body = request(base + "/campaign-new.php", form({"csrf": csrf(html, "csrf"), **fields}))
+              return code, url, body.decode("utf-8", "replace")
+
+          def stage(html, name):
+              match = re.search(r'data-stage="' + name + '"(.*?)</li>', html, re.S)
+              return match.group(1) if match else ""
+
+          code, url, body = request(base + "/register.php")
+          html = body.decode("utf-8", "replace")
+          code, url, body = request(base + "/register.php", form({
+              "csrf_token": csrf(html, "csrf_token"),
+              "name": "Stage Action",
+              "email": email,
+              "password": password,
+          }))
+          mark("REGISTER", code == 200 and "dashboard.php" in url)
+
+          def create(idea, language, audience=""):
+              set_lang("ar")
+              code, url, html = post_new({"step": "understand", "idea": idea, "campaign_language": language})
+              code, url, html = post_new({"step": "continue"})
+              steps = 0
+              while "view=ask" in url and steps < 4:
+                  answer = audience if ("مين تبي" in html or "Who do you want" in html) else ""
+                  code, url, html = post_new({"step": "answer", "answer": answer})
+                  steps += 1
+              if "view=confirm" not in url:
+                  return "", html
+              code, url, body = request(base + "/campaign-new.php", form({"csrf": csrf(html, "csrf"), "step": "confirm"}))
+              match = re.search(r"campaign\.php\?id=(\d+)", url)
+              return (match.group(1) if match else ""), body.decode("utf-8", "replace")
+
+          campaign_id, workspace = create("عندي عطر جديد وأبغى أطلقه في الرياض وأزيد مبيعات الواتساب.", "ar", "النساء")
+          ids["main"] = campaign_id
+          save_ids()
+          strategy_card = stage(workspace, "strategy")
+          mark("START_ON_CARD", bool(campaign_id) and "ابدأ الاستراتيجية" in strategy_card and 'data-state="open"' in strategy_card and "ملخص الحملة" in workspace and 'data-progress="14"' in workspace and 'data-stage="video" data-state="locked"' in workspace and "stage-go" not in stage(workspace, "images") and "stage-go" not in stage(workspace, "video") and all(item not in workspace for item in old))
+          set_lang("en")
+          _, _, english = page("/campaign.php?id=" + campaign_id)
+          mark("START_EN", "Start Strategy" in stage(english, "strategy") and "ابدأ الاستراتيجية" not in english and "Campaign brief" in english and 'dir="ltr"' in english)
+          set_lang("ar")
+
+          def generate(fields):
+              _, _, html = page("/campaign.php?id=" + campaign_id)
+              code, url, body = request(base + "/app/ai/generate.php", form({"csrf": csrf(html, "csrf"), "campaign_id": campaign_id, **fields}), 150)
+              try:
+                  data = json.loads(body.decode("utf-8", "replace"))
+              except Exception:
+                  data = {"code": "bad_json"}
+              if code >= 400:
+                  print("GEN", fields.get("stage"), fields.get("output_type", ""), code, data.get("code"), flush=True)
+              return code, data
+
+          def approve(fields):
+              _, _, html = page("/campaign.php?id=" + campaign_id)
+              code, url, body = request(base + "/app/content/approve.php", form({"csrf": csrf(html, "csrf"), "campaign_id": campaign_id, **fields}))
+              return code, url, body.decode("utf-8", "replace")
+
+          def show():
+              _, _, html = page("/campaign.php?id=" + campaign_id)
+              return html
+
+          code, data = generate({"stage": "copy"})
+          mark("COPY_LOCKED", code == 409 and data.get("code") == "copy_locked")
+          code, data = generate({"stage": "edit", "note": "شكراً"})
+          mark("EDIT_UNCLEAR", code in (422, 502) and data.get("code") in ("edit_unclear", "ai_failed"))
+          code, data = generate({"stage": "strategy"})
+          html = show()
+          mark("STRATEGY", code == 200 and "اعتماد الاستراتيجية" in stage(html, "strategy") and "إعادة توليد" in stage(html, "strategy") and "الفكرة الرئيسية" in html and 'data-stage="strategy" data-state="progress"' in html and 'data-stage="images" data-state="next"' in html)
+          code, data = generate({"stage": "strategy", "confirm": "0"})
+          mark("STRATEGY_DRAFT_REGEN", code == 200)
+          code, url, approved = approve({"kind": "strategy"})
+          mark("STRATEGY_APPROVE", code == 200 and 'data-progress="29"' in approved and "ابدأ كتابة الإعلان" in stage(approved, "copy") and 'data-stage="video" data-state="locked"' in approved)
+          code, data = generate({"stage": "strategy", "confirm": "0"})
+          mark("STRATEGY_LOCK", code == 409 and data.get("code") == "strategy_locked")
+          code, data = generate({"stage": "strategy", "confirm": "1"})
+          html = show()
+          mark("STRATEGY_REGEN", code == 200 and "اعتماد الاستراتيجية" in stage(html, "strategy"))
+          code, url, approved = approve({"kind": "strategy"})
+          mark("STRATEGY_REAPPROVE", code == 200 and 'data-stage="strategy" data-state="done"' in approved)
+          code, data = generate({"stage": "copy"})
+          html = show()
+          mark("COPY", code == 200 and "الإعلان الرئيسي" in html and 'data-stage="copy" data-state="progress"' in html and 'data-progress="29"' in html and "stage-go" not in stage(html, "images"))
+          match = re.search(r'data-output-id="(\d+)" data-output-type="headline"', html)
+          headline = match.group(1) if match else ""
+          code, url, approved = approve({"output_id": headline})
+          mark("COPY_APPROVE", bool(headline) and code == 200 and 'data-progress="43"' in approved and 'data-stage="copy" data-state="done"' in approved and 'data-stage="images" data-state="next"' in approved and 'data-stage="video" data-state="locked"' in approved)
+          set_lang("en")
+          english = show()
+          mark("ACTIONS_EN", 'dir="ltr"' in english and "Regenerate" in stage(english, "strategy") and "Approve Strategy" not in stage(english, "strategy") and "Generate Copy" not in stage(english, "images") and "ابدأ الاستراتيجية" not in stage(english, "strategy") and "ابدأ كتابة الإعلان" not in stage(english, "copy"))
+          set_lang("ar")
+
+          def run_lang(key, idea, language):
+              cid, _ = create(idea, language, "")
+              ids[key] = cid
+              save_ids()
+              if not cid:
+                  mark("LANG_" + key.upper(), False)
+                  return
+              global campaign_id
+              campaign_id = cid
+              code, data = generate({"stage": "strategy"})
+              if code != 200:
+                  mark("LANG_" + key.upper(), False)
+                  return
+              code, url, approved = approve({"kind": "strategy"})
+              card = stage(approved, "copy")
+              code, data = generate({"stage": "copy"})
+              html = show()
+              mark("LANG_" + key.upper(), code == 200 and "ابدأ كتابة الإعلان" in card and 'data-stage="video" data-state="locked"' in html and "name=\"price\"" not in html)
+
+          run_lang("en", "I have a new fragrance and want to launch it in Riyadh and increase WhatsApp sales.", "en")
+          run_lang("bilingual", "عندي عطر جديد", "bilingual")
+          run_lang("auto", "عندي عطر جديد", "auto")
+          campaign_id = ids["main"]
+
+          code, _, body = request(base + "/app/ai/generate.php", form({"csrf": "bad", "campaign_id": ids["main"], "stage": "strategy", "confirm": "1"}))
+          mark("CSRF", code == 419)
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          bare = urllib.request.build_opener(NoRedirect)
+          try:
+              bare.open(base + "/campaign.php?id=" + ids["main"], timeout=30)
+              mark("AUTH", False)
+          except urllib.error.HTTPError as error:
+              mark("AUTH", error.code in (302, 303) and "login.php" in error.headers.get("Location", ""))
+
+          jar2 = http.cookiejar.CookieJar()
+          opener2 = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar2))
+          def request2(url, data=None):
+              req = urllib.request.Request(url, data=data)
+              try:
+                  with opener2.open(req, timeout=60) as response:
+                      return response.status, response.geturl(), response.read()
+              except urllib.error.HTTPError as error:
+                  return error.code, error.geturl(), error.read()
+          code, url, body = request2(base + "/register.php")
+          html = body.decode("utf-8", "replace")
+          request2(base + "/register.php", form({
+              "csrf_token": csrf(html, "csrf_token"),
+              "name": "Other User",
+              "email": other,
+              "password": password,
+          }))
+          code, url, body = request2(base + "/campaign.php?id=" + ids["main"])
+          isolated = code == 404
+          code, url, body = request2(base + "/campaign-new.php")
+          token = csrf(body.decode("utf-8", "replace"), "csrf")
+          code, url, body = request2(base + "/app/ai/generate.php", form({"csrf": token, "campaign_id": ids["main"], "stage": "strategy"}))
+          mark("ISOLATION", isolated and code == 404)
+          save_ids()
+          print("FLOW=" + ("PASS" if all(value == "PASS" for value in flags.values()) else "FAIL"), flush=True)
+          raise SystemExit(0 if all(value == "PASS" for value in flags.values()) else 1)
+          PY
+
+      - name: Check saved results
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "-----BEGIN" not in key:
+              raise SystemExit(0)
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          PY
+          if [ -f /tmp/idea-flow/email ]; then
+            scp -i "$HOME/.ssh/ai_key" -P "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new \
+              /tmp/idea-flow/email "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:/tmp/idea-flow-email"
+          fi
+          if [ -f /tmp/idea-flow/ids ]; then
+            scp -i "$HOME/.ssh/ai_key" -P "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new \
+              /tmp/idea-flow/ids "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:/tmp/idea-flow-ids"
+          fi
+          ssh -i "$HOME/.ssh/ai_key" -p "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new \
+            "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "cat > /tmp/idea-flow-check.php" << 'PHP'
+          <?php
+          $root = '/home/admin/domains/ai.rateb.sa';
+          $ini = file_get_contents($root . '/.user.ini');
+          if (!preg_match('/auto_prepend_file\s*=\s*"?([^"\r\n]+)/', $ini, $match)) {
+              fwrite(STDERR, "PREPEND=missing\n");
+              exit(1);
+          }
+          require trim($match[1], " \"'");
+          require $root . '/config/bootstrap.php';
+          if (!is_file('/tmp/idea-flow-email')) {
+              echo "CLEANUP=skipped\n";
+              exit(0);
+          }
+          $emails = array_values(array_filter(array_map('trim', file('/tmp/idea-flow-email'))));
+          $failed = false;
+          $ids = json_decode((string) @file_get_contents('/tmp/idea-flow-ids'), true) ?: [];
+          $user = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+          $user->execute([$emails[0] ?? '']);
+          $userId = (int) $user->fetchColumn();
+          function fits_text(string $text, string $lang): bool {
+              $arabic = preg_match_all('/\p{Arabic}/u', $text) ?: 0;
+              $latin = preg_match_all('/[A-Za-z]/', $text) ?: 0;
+              $total = $arabic + $latin;
+              if ($total < 1) return false;
+              if ($lang === 'ar') return $arabic >= 4 && ($arabic / $total) >= 0.5;
+              return $latin >= 4 && ($arabic / $total) <= 0.35;
+          }
+          $brief = $pdo->prepare('SELECT * FROM campaign_briefs WHERE campaign_id = ? AND user_id = ?');
+          $outputs = $pdo->prepare('SELECT output_type, approval_status, content FROM campaign_outputs WHERE campaign_id = ?');
+          $main = (int) ($ids['main'] ?? 0);
+          $brief->execute([$main, $userId]);
+          $row = $brief->fetch() ?: [];
+          $outputs->execute([$main]);
+          $byType = [];
+          foreach ($outputs->fetchAll() as $item) $byType[(string) $item['output_type']] = $item;
+          $strategy = json_decode((string) ($byType['strategy']['content'] ?? ''), true);
+          $position = is_array($strategy) ? ($strategy['positioning'] ?? '') : '';
+          $mainOk = (string) ($row['campaign_language'] ?? '') === 'ar'
+              && (string) ($byType['strategy']['approval_status'] ?? '') === 'approved'
+              && is_string($position) && fits_text($position, 'ar')
+              && isset($byType['ad_copy']);
+          echo 'DB_MAIN=' . ($mainOk ? 'PASS' : 'FAIL') . "\n";
+          if (!$mainOk) $failed = true;
+          foreach (['en' => 'en', 'bilingual' => 'bilingual', 'auto' => 'ar'] as $key => $expect) {
+              $id = (int) ($ids[$key] ?? 0);
+              $brief->execute([$id, $userId]);
+              $info = $brief->fetch() ?: [];
+              $outputs->execute([$id]);
+              $found = [];
+              foreach ($outputs->fetchAll() as $item) $found[(string) $item['output_type']] = $item;
+              $doc = json_decode((string) ($found['strategy']['content'] ?? ''), true);
+              $value = is_array($doc) ? ($doc['positioning'] ?? null) : null;
+              $copy = (string) ($found['ad_copy']['content'] ?? '');
+              $decoded = json_decode($copy, true);
+              if (is_array($decoded)) $copy = $decoded;
+              $ok = (string) ($info['campaign_language'] ?? '') === ($key === 'auto' ? 'auto' : $key);
+              if ($key === 'auto') $ok = $ok && (string) ($info['resolved_language'] ?? '') === 'ar';
+              if ($expect === 'bilingual') {
+                  $ok = $ok && is_array($value) && fits_text((string) ($value['ar'] ?? ''), 'ar') && fits_text((string) ($value['en'] ?? ''), 'en');
+                  $ok = $ok && is_array($copy) && fits_text((string) ($copy['ar'] ?? ''), 'ar') && fits_text((string) ($copy['en'] ?? ''), 'en');
+              } else {
+                  $ok = $ok && is_string($value) && fits_text($value, $expect) && is_string($copy) && fits_text($copy, $expect);
+              }
+              echo 'DB_' . strtoupper($key) . '=' . ($ok ? 'PASS' : 'FAIL') . "\n";
+              if (!$ok) {
+                  $failed = true;
+                  echo 'DEBUG_' . strtoupper($key) . '=' . json_encode(['language' => $info['campaign_language'] ?? '', 'resolved' => $info['resolved_language'] ?? '', 'strategy' => isset($found['strategy']), 'copy' => isset($found['ad_copy'])], JSON_UNESCAPED_UNICODE) . "\n";
+              }
+          }
+          $campaigns = $pdo->prepare('SELECT id FROM campaigns WHERE user_id = ?');
+          $tables = ['campaign_media', 'campaign_outputs', 'campaign_items', 'campaign_variations', 'campaign_briefs'];
+          foreach ($emails as $address) {
+              $user->execute([$address]);
+              $id = (int) $user->fetchColumn();
+              if ($id < 1) continue;
+              $campaigns->execute([$id]);
+              foreach ($campaigns->fetchAll() as $campaign) {
+                  $campaignId = (int) $campaign['id'];
+                  foreach ($tables as $table) {
+                      $pdo->prepare("DELETE FROM {$table} WHERE campaign_id = ?")->execute([$campaignId]);
+                  }
+                  $pdo->prepare('DELETE FROM campaigns WHERE id = ? AND user_id = ?')->execute([$campaignId, $id]);
+              }
+              $pdo->prepare('DELETE FROM usage_events WHERE user_id = ?')->execute([$id]);
+              $pdo->prepare('DELETE FROM subscriptions WHERE user_id = ?')->execute([$id]);
+              $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
+          }
+          echo "CLEANUP=ok\n";
+          exit($failed ? 1 : 0);
+          PHP
+          ssh -i "$HOME/.ssh/ai_key" -p "$DEPLOY_SSH_PORT" -o StrictHostKeyChecking=accept-new \
+            "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "php /tmp/idea-flow-check.php; status=\$?; rm -f /tmp/idea-flow-check.php /tmp/idea-flow-email /tmp/idea-flow-ids; exit \$status"

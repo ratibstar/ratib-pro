@@ -437,7 +437,12 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .build-stages{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 .build-stages button{font:inherit;cursor:pointer;min-height:92px}
 .build-stages span{color:var(--muted);font-weight:800}
-.build-stages .is-done button{border-color:transparent;background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff}
+.build-stages .is-done > button.stage-tab{border-color:transparent;background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff}
+.build-stages li{display:flex;flex-direction:column;gap:8px}
+.build-stages li button.stage-go{min-height:42px;width:100%;border-radius:12px;padding:10px 12px;align-items:center;justify-content:center;font-weight:800}
+.build-stages li button.stage-go.primary{background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff;border-color:transparent}
+.build-stages li.is-done button.stage-go,.build-stages li.is-progress button.stage-go{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.build-stages .stage-action{margin:0}
 .build-stages .is-done span{color:rgba(255,255,255,.8)}
 .edit-campaign{margin-top:18px}
 .edit-campaign summary{cursor:pointer;font-weight:800}
