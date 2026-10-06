@@ -86,7 +86,7 @@
       file_type: 'This file type is not supported.',
       file_size: 'The file is larger than the limit.',
       video_one: 'You can attach one video.',
-      video_long: 'The video is longer than your plan allows.',
+      video_long: 'The video is longer than 40 seconds.',
       video_uploading: 'Uploading the video...',
       video_unknown: 'The video duration could not be checked.',
       plan_images: 'The number of photos is above your plan limit.',
@@ -194,7 +194,7 @@
       voice_need_images: 'Finish the images first, then start the voice.',
       attach_video: 'Attach a video',
       attach_video_button: 'Attach video',
-      video_no_provider: 'AI video generation is not available. Attach a video from your device.',
+      video_no_provider: 'AI video generation is not available. Attach a video from your device, up to 40 seconds.',
       no_media: 'No media yet.',
       download: 'Download',
       delete: 'Delete',
@@ -447,7 +447,7 @@
       file_type: 'نوع الملف غير مدعوم.',
       file_size: 'حجم الملف أكبر من الحد.',
       video_one: 'يمكن إرفاق فيديو واحد.',
-      video_long: 'مدة الفيديو أطول من حد خطتك.',
+      video_long: 'الفيديو أطول من ٤٠ ثانية.',
       video_uploading: 'جاري رفع الفيديو...',
       video_unknown: 'تعذر التحقق من مدة الفيديو.',
       plan_images: 'عدد الصور يتجاوز حد خطتك.',
@@ -555,7 +555,7 @@
       voice_need_images: 'أكمل الصور أولًا، ثم ابدأ الصوت.',
       attach_video: 'أرفق فيديو',
       attach_video_button: 'أرفق الفيديو',
-      video_no_provider: 'توليد الفيديو بالذكاء الاصطناعي غير متاح. أرفق فيديو من جهازك.',
+      video_no_provider: 'توليد الفيديو بالذكاء الاصطناعي غير متاح. أرفق فيديو من جهازك، بحد ٤٠ ثانية.',
       no_media: 'لا توجد وسائط بعد.',
       download: 'تنزيل',
       delete: 'حذف',
@@ -1047,7 +1047,7 @@
         form.submit();
       };
       probe.onloadedmetadata = function () {
-        if (max > 0 && isFinite(probe.duration) && probe.duration > max) {
+        if (max > 0 && isFinite(probe.duration) && probe.duration > max + 1) {
           URL.revokeObjectURL(url);
           if (status) {
             status.className = 'notice is-error stage-status';

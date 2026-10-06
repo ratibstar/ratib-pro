@@ -117,7 +117,7 @@ $location = trim((string) ($brief['location'] ?? ''));
 $channels = trim((string) ($brief['channels'] ?? ''));
 $tone = trim((string) ($brief['brand_tone'] ?? ''));
 $ideaDone = $product !== '' || $idea !== '';
-$videoMax = (int) (rateb_user_plan(db(), $userId)['video_max_seconds'] ?? 8);
+$videoMax = 40;
 $doneUnits = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($campaignVideos !== [] ? 1 : 0);
 $progress = (int) round($doneUnits * 100 / 7);
 $stages = [
@@ -183,7 +183,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act8">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act9">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -483,7 +483,7 @@ $csrf = e(csrf_token());
   </section>
   <section class="panel" id="video" data-panel="video">
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
-    <p class="muted" data-i18n="video_no_provider"><?= $arabic ? 'توليد الفيديو بالذكاء الاصطناعي غير متاح. أرفق فيديو من جهازك.' : 'AI video generation is not available. Attach a video from your device.' ?></p>
+    <p class="muted" data-i18n="video_no_provider"><?= $arabic ? 'توليد الفيديو بالذكاء الاصطناعي غير متاح. أرفق فيديو من جهازك، بحد ٤٠ ثانية.' : 'AI video generation is not available. Attach a video from your device, up to 40 seconds.' ?></p>
     <?php if ($campaignImages !== [] && $campaignVideos === []): ?>
       <form class="attach-image" method="post" action="/app/media/upload.php" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
         <input type="hidden" name="panel" value="video">
@@ -521,6 +521,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act8"></script>
+<script src="/public/assets/js/app.js?v=act9"></script>
 </body>
 </html>

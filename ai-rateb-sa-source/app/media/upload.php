@@ -49,7 +49,6 @@ if ($mime === null) {
 }
 if ($kind === 'video') {
     require_once __DIR__ . '/../idea.php';
-    require_once __DIR__ . '/../plans.php';
     $existing = db()->prepare('SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ?');
     $existing->execute([$campaignId, (int) $campaign['user_id'], 'video']);
     if ((int) $existing->fetchColumn() >= 1) {
@@ -59,8 +58,7 @@ if ($kind === 'video') {
     if ($seconds === null) {
         media_redirect($campaignId, 'video_unknown');
     }
-    $plan = rateb_user_plan(db(), (int) $_SESSION['user_id']);
-    if ($seconds > (int) ($plan['video_max_seconds'] ?? 0)) {
+    if ($seconds > 41) {
         media_redirect($campaignId, 'video_long');
     }
 }
