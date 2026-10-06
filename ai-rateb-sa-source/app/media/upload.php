@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method not allowed');
 }
 check_csrf();
+session_write_close();
 
 $campaignId = (int) ($_POST['campaign_id'] ?? 0);
 $kind = (string) ($_POST['kind'] ?? '');

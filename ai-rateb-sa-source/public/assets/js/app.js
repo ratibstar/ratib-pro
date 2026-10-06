@@ -87,6 +87,7 @@
       file_size: 'The file is larger than the limit.',
       video_one: 'You can attach one video.',
       video_long: 'The video is longer than your plan allows.',
+      video_uploading: 'Uploading the video...',
       video_unknown: 'The video duration could not be checked.',
       plan_images: 'The number of photos is above your plan limit.',
       plan_videos: 'Your plan does not include video.',
@@ -447,6 +448,7 @@
       file_size: 'حجم الملف أكبر من الحد.',
       video_one: 'يمكن إرفاق فيديو واحد.',
       video_long: 'مدة الفيديو أطول من حد خطتك.',
+      video_uploading: 'جاري رفع الفيديو...',
       video_unknown: 'تعذر التحقق من مدة الفيديو.',
       plan_images: 'عدد الصور يتجاوز حد خطتك.',
       plan_videos: 'خطتك لا تسمح بفيديو.',
@@ -812,7 +814,6 @@
       };
     });
     var hash = (location.hash || '').replace('#', '');
-    if (new URLSearchParams(location.search).get('media_error')) hash = 'images';
     openTab(hash || 'idea');
   }
 
@@ -962,6 +963,8 @@
   if (voiceForm) {
     voiceForm.onsubmit = async function (event) {
       event.preventDefault();
+      var voiceTab = document.querySelector('[data-tab="voice"]');
+      if (voiceTab) voiceTab.click();
       var status = document.getElementById(voiceForm.getAttribute('data-status') || 'voice-status');
       var button = voiceForm.querySelector('button');
       document.querySelectorAll('input[name="lang"]').forEach(function (node) {
@@ -996,6 +999,47 @@
       }
     };
   }
+
+  document.querySelectorAll('form[data-video-upload]').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (form.getAttribute('data-ready') === '1') return;
+      var input = form.querySelector('input[type="file"]');
+      var file = input && input.files ? input.files[0] : null;
+      if (!file) return;
+      event.preventDefault();
+      var status = document.getElementById(form.getAttribute('data-status') || '');
+      var button = form.querySelector('button[type="submit"]');
+      var max = Number(form.getAttribute('data-max-seconds') || 0);
+      var url = URL.createObjectURL(file);
+      var probe = document.createElement('video');
+      probe.preload = 'metadata';
+      var send = function () {
+        URL.revokeObjectURL(url);
+        if (status) {
+          status.className = 'notice stage-status';
+          status.textContent = dict[language].video_uploading;
+        }
+        if (button) button.disabled = true;
+        form.setAttribute('data-ready', '1');
+        form.submit();
+      };
+      probe.onloadedmetadata = function () {
+        if (max > 0 && isFinite(probe.duration) && probe.duration > max) {
+          URL.revokeObjectURL(url);
+          if (status) {
+            status.className = 'notice is-error stage-status';
+            status.textContent = dict[language].video_long;
+          }
+          if (input) input.value = '';
+          return;
+        }
+        send();
+      };
+      probe.onerror = send;
+      probe.src = url;
+    });
+  });
+
   var variationForm = document.getElementById('variationForm');
   if (variationForm) {
     variationForm.onsubmit = async function (event) {

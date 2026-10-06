@@ -41,44 +41,15 @@ $gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'
 if (!$gate['ok']) {
     rateb_deny((string) $gate['code']);
 }
+session_write_close();
 
 $base = rtrim((string) $cfg['base_url'], '/');
-$list = curl_init($base . '/models');
-curl_setopt_array($list, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $cfg['api_key']],
-    CURLOPT_TIMEOUT => 12,
-    CURLOPT_CONNECTTIMEOUT => 8,
-]);
-$modelsRaw = curl_exec($list);
-$modelsHttp = (int) curl_getinfo($list, CURLINFO_HTTP_CODE);
-curl_close($list);
-$models = json_decode((string) $modelsRaw, true);
-$ids = [];
-foreach (($models['data'] ?? []) as $row) {
-    if (isset($row['id'])) {
-        $ids[] = (string) $row['id'];
-    }
-}
-
-if ($modelsHttp !== 200) {
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
-    http_response_code(503);
-    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-if ($lang === 'ar' && in_array('canopylabs/orpheus-arabic-saudi', $ids, true)) {
+if ($lang === 'ar') {
     $model = 'canopylabs/orpheus-arabic-saudi';
     $voice = 'fahad';
-} elseif (in_array('canopylabs/orpheus-v1-english', $ids, true)) {
+} else {
     $model = 'canopylabs/orpheus-v1-english';
     $voice = 'troy';
-    $lang = 'en';
-} else {
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
-    http_response_code(503);
-    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
-    exit;
 }
 
 $payload = json_encode([
