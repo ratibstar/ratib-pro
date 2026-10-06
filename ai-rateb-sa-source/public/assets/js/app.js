@@ -779,6 +779,11 @@
   }
   apply();
   initTabs();
+  var playing = document.querySelector('audio.card-voice');
+  if (playing && new URLSearchParams(location.search).get('play') === '1') {
+    var started = playing.play();
+    if (started && started.catch) started.catch(function () {});
+  }
 
   function initTabs() {
     var tabs = document.querySelectorAll('[data-tab]');
@@ -978,19 +983,37 @@
         status.className = 'notice stage-status';
         status.textContent = dict[language].generating_voice;
       }
-      var controller = new AbortController();
-      var timer = setTimeout(function () { controller.abort(); }, 50000);
+      var campaignId = (voiceForm.querySelector('[name="campaign_id"]') || {}).value || '';
+      var current = '';
+      var existing = document.querySelector('audio.card-voice');
+      if (existing) current = existing.getAttribute('src') || '';
+      var stopped = false;
+      var watch = setInterval(async function () {
+        if (stopped || !campaignId) return;
+        try {
+          var look = await fetch('/campaign.php?id=' + encodeURIComponent(campaignId), { credentials: 'same-origin' });
+          var html = await look.text();
+          var match = html.match(/class="card-voice"[^>]*src="([^"]+)"/);
+          if (match && match[1] !== current) {
+            stopped = true;
+            clearInterval(watch);
+            location.href = '/campaign.php?id=' + encodeURIComponent(campaignId) + '&play=1#voice';
+          }
+        } catch (ignore) {}
+      }, 2500);
       try {
-        var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm), signal: controller.signal });
-        clearTimeout(timer);
+        var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm) });
+        stopped = true;
+        clearInterval(watch);
         var payload = await response.json();
         if (!response.ok) throw new Error(payload.error || dict[language].voice_provider || 'Voice generation failed');
         location.href = payload.redirect;
       } catch (error) {
-        clearTimeout(timer);
+        stopped = true;
+        clearInterval(watch);
         if (status) {
           status.className = 'notice is-error stage-status';
-          status.textContent = error.name === 'AbortError' ? dict[language].voice_provider : error.message;
+          status.textContent = error.message;
         }
         if (button) {
           button.disabled = false;

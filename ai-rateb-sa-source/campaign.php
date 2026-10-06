@@ -183,7 +183,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act7">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act8">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -267,6 +267,9 @@ $csrf = e(csrf_token());
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignVoices !== [] ? 'another_voice' : 'start_voice' ?>"><?= $campaignVoices !== [] ? ($arabic ? 'صوت آخر' : 'Another voice') : ($arabic ? 'ابدأ الصوت' : 'Start Voice') ?></button>
           </form>
+          <?php if ($campaignVoices): ?>
+            <audio class="card-voice" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $campaignVoices[0]['id'] ?>"<?= (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
+          <?php endif; ?>
         <?php elseif ($key === 'video' && $campaignImages !== [] && $campaignVideos === []): ?>
           <button type="button" class="primary stage-go" data-open="video" data-i18n="attach_video"><?= $arabic ? 'أرفق فيديو' : 'Attach a video' ?></button>
         <?php endif; ?>
@@ -518,6 +521,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act7"></script>
+<script src="/public/assets/js/app.js?v=act8"></script>
 </body>
 </html>

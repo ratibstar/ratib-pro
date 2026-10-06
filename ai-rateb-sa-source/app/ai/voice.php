@@ -64,7 +64,7 @@ curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
     CURLOPT_POSTFIELDS => $payload,
-    CURLOPT_TIMEOUT => 40,
+    CURLOPT_TIMEOUT => 55,
     CURLOPT_CONNECTTIMEOUT => 8,
 ]);
 $audio = curl_exec($ch);
@@ -101,7 +101,7 @@ try {
 }
 rateb_usage_finish(db(), (int) $gate['id'], 'completed');
 
-echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#voice'], JSON_UNESCAPED_UNICODE);
+echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '&play=1#voice'], JSON_UNESCAPED_UNICODE);
 
 function rateb_voice_script(PDO $pdo, int $campaignId, string $speech): string
 {
@@ -115,18 +115,25 @@ function rateb_voice_script(PDO $pdo, int $campaignId, string $speech): string
         }
     }
     $script = '';
-    foreach (['ad_copy', 'short_ad', 'headline'] as $type) {
+    foreach (['headline', 'call_to_action', 'short_ad', 'ad_copy'] as $type) {
         if (!empty($pieces[$type])) {
-            $script = rateb_voice_plain($pieces[$type], $speech);
-            if ($script !== '') {
+            $line = rateb_voice_plain($pieces[$type], $speech);
+            if ($line === '') {
+                continue;
+            }
+            $script = $script === '' ? $line : $script . ' ' . $line;
+            if (function_exists('mb_strlen') ? mb_strlen($script) >= 80 : strlen($script) >= 80) {
                 break;
             }
         }
     }
-    if (function_exists('mb_substr')) {
-        return trim(mb_substr($script, 0, 280));
+    if ($speech === 'en' && $script !== '') {
+        $script = '[cheerful] ' . $script;
     }
-    return trim(substr($script, 0, 280));
+    if (function_exists('mb_substr')) {
+        return trim(mb_substr($script, 0, 180));
+    }
+    return trim(substr($script, 0, 180));
 }
 
 function rateb_voice_plain(string $content, string $speech): string
