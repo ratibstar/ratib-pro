@@ -88,6 +88,7 @@
       video_one: 'You can attach one video.',
       video_long: 'The video is longer than 40 seconds.',
       video_uploading: 'Uploading the video...',
+      video_shortening: 'The video is longer than 40 seconds. RATEB is shortening it.',
       video_unknown: 'The video duration could not be checked.',
       plan_images: 'The number of photos is above your plan limit.',
       plan_videos: 'Your plan does not include video.',
@@ -194,7 +195,7 @@
       voice_need_images: 'Finish the images first, then start the voice.',
       attach_video: 'Attach a video',
       attach_video_button: 'Attach video',
-      video_no_provider: 'AI video generation is not available. Attach a video from your device, up to 40 seconds.',
+      video_no_provider: 'Attach a video of any length. If it is longer than 40 seconds, RATEB shortens it.',
       no_media: 'No media yet.',
       download: 'Download',
       delete: 'Delete',
@@ -449,6 +450,7 @@
       video_one: 'يمكن إرفاق فيديو واحد.',
       video_long: 'الفيديو أطول من ٤٠ ثانية.',
       video_uploading: 'جاري رفع الفيديو...',
+      video_shortening: 'الفيديو أطول من ٤٠ ثانية. RATEB يختصره الآن.',
       video_unknown: 'تعذر التحقق من مدة الفيديو.',
       plan_images: 'عدد الصور يتجاوز حد خطتك.',
       plan_videos: 'خطتك لا تسمح بفيديو.',
@@ -555,7 +557,7 @@
       voice_need_images: 'أكمل الصور أولًا، ثم ابدأ الصوت.',
       attach_video: 'أرفق فيديو',
       attach_video_button: 'أرفق الفيديو',
-      video_no_provider: 'توليد الفيديو بالذكاء الاصطناعي غير متاح. أرفق فيديو من جهازك، بحد ٤٠ ثانية.',
+      video_no_provider: 'أرفق فيديو بأي مدة. إذا كان أطول من ٤٠ ثانية يختصره RATEB.',
       no_media: 'لا توجد وسائط بعد.',
       download: 'تنزيل',
       delete: 'حذف',
@@ -1047,14 +1049,9 @@
         form.submit();
       };
       probe.onloadedmetadata = function () {
-        if (max > 0 && isFinite(probe.duration) && probe.duration > max + 1) {
-          URL.revokeObjectURL(url);
-          if (status) {
-            status.className = 'notice is-error stage-status';
-            status.textContent = dict[language].video_long;
-          }
-          if (input) input.value = '';
-          return;
+        if (max > 0 && isFinite(probe.duration) && probe.duration > max + 1 && status) {
+          status.className = 'notice stage-status';
+          status.textContent = dict[language].video_shortening;
         }
         send();
       };

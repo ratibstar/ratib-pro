@@ -49,17 +49,20 @@ if ($mime === null) {
 }
 if ($kind === 'video') {
     require_once __DIR__ . '/../idea.php';
+    set_time_limit(180);
     $existing = db()->prepare('SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ?');
     $existing->execute([$campaignId, (int) $campaign['user_id'], 'video']);
     if ((int) $existing->fetchColumn() >= 1) {
         media_redirect($campaignId, 'video_one');
     }
     $seconds = rateb_video_seconds($bytes, $mime);
-    if ($seconds === null) {
-        media_redirect($campaignId, 'video_unknown');
-    }
-    if ($seconds > 41) {
-        media_redirect($campaignId, 'video_long');
+    if ($seconds === null || $seconds > 40) {
+        $trimmed = rateb_trim_video_file((string) $file['tmp_name']);
+        if ($trimmed === null) {
+            media_redirect($campaignId, 'video_trim');
+        }
+        $bytes = $trimmed;
+        $mime = 'video/mp4';
     }
 }
 
@@ -69,3 +72,47 @@ try {
     media_redirect($campaignId, 'upload');
 }
 media_redirect($campaignId);
+
+function rateb_trim_video_file(string $source): ?string
+{
+    $ffmpeg = '';
+    foreach (['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/home/admin/bin/ffmpeg'] as $path) {
+        if (is_executable($path)) {
+            $ffmpeg = $path;
+            break;
+        }
+    }
+    if ($ffmpeg === '') {
+        return null;
+    }
+    $base = tempnam(sys_get_temp_dir(), 'rv');
+    if ($base === false) {
+        return null;
+    }
+    $target = $base . '.mp4';
+    @unlink($base);
+    $attempts = [
+        [$ffmpeg, '-y', '-i', $source, '-t', '40', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28', '-c:a', 'aac', '-movflags', '+faststart', $target],
+        [$ffmpeg, '-y', '-i', $source, '-t', '40', '-c', 'copy', '-movflags', '+faststart', $target],
+    ];
+    foreach ($attempts as $command) {
+        @unlink($target);
+        $pipes = [];
+        $process = proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        if (!is_resource($process)) {
+            continue;
+        }
+        foreach ($pipes as $pipe) {
+            stream_get_contents($pipe);
+            fclose($pipe);
+        }
+        $code = proc_close($process);
+        if ($code === 0 && is_file($target) && filesize($target) > 32) {
+            $trimmed = file_get_contents($target);
+            @unlink($target);
+            return $trimmed === false ? null : $trimmed;
+        }
+    }
+    @unlink($target);
+    return null;
+}

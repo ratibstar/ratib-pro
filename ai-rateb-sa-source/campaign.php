@@ -483,7 +483,7 @@ $csrf = e(csrf_token());
   </section>
   <section class="panel" id="video" data-panel="video">
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
-    <p class="muted" data-i18n="video_no_provider"><?= $arabic ? 'توليد الفيديو بالذكاء الاصطناعي غير متاح. أرفق فيديو من جهازك، بحد ٤٠ ثانية.' : 'AI video generation is not available. Attach a video from your device, up to 40 seconds.' ?></p>
+    <p class="muted" data-i18n="video_no_provider"><?= $arabic ? 'أرفق فيديو بأي مدة. إذا كان أطول من ٤٠ ثانية يختصره RATEB.' : 'Attach a video of any length. If it is longer than 40 seconds, RATEB shortens it.' ?></p>
     <?php if ($campaignImages !== [] && $campaignVideos === []): ?>
       <form class="attach-image" method="post" action="/app/media/upload.php" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
         <input type="hidden" name="panel" value="video">
@@ -494,8 +494,11 @@ $csrf = e(csrf_token());
         <button class="primary" type="submit" data-i18n="attach_video_button"><?= $arabic ? 'أرفق الفيديو' : 'Attach video' ?></button>
       </form>
     <?php endif; ?>
-    <?php if (($_GET['media_error'] ?? '') !== '' && (string) ($_GET['media_error'] ?? '') !== 'type'): ?>
-      <p class="notice is-error"><?= e($arabic ? 'تعذر إرفاق الفيديو. تأكد من الصيغة والمدة المسموحة في خطتك.' : 'The video could not be attached. Check the format and the duration allowed by your plan.') ?></p>
+    <?php $mediaError = (string) ($_GET['media_error'] ?? ''); ?>
+    <?php if ($mediaError === 'video_trim'): ?>
+      <p class="notice is-error"><?= $arabic ? 'تعذر اختصار الفيديو. حاول بملف MP4 آخر.' : 'The video could not be shortened. Try another MP4 file.' ?></p>
+    <?php elseif ($mediaError !== '' && $mediaError !== 'type'): ?>
+      <p class="notice is-error"><?= e($arabic ? 'تعذر إرفاق الفيديو.' : 'The video could not be attached.') ?></p>
     <?php endif; ?>
     <?php foreach ($campaignVideos as $item): ?>
       <article class="media-card">
@@ -521,6 +524,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act9"></script>
+<script src="/public/assets/js/app.js?v=act10"></script>
 </body>
 </html>

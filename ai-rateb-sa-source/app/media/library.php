@@ -7,7 +7,7 @@ function media_kind_limits(): array
 {
     return [
         'image' => 8 * 1024 * 1024,
-        'video' => 40 * 1024 * 1024,
+        'video' => 256 * 1024 * 1024,
         'audio' => 10 * 1024 * 1024,
     ];
 }
