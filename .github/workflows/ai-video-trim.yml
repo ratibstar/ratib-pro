@@ -50,7 +50,7 @@ jobs:
                   require $path;
               }
           }
-          require $root . '/config/bootstrap.php';
+          require $root . '/app/bootstrap.php';
           $fixed = 'ترويج لبرنامج رتب';
           $bad = 'ترويج لبرن';
           $count = 0;
