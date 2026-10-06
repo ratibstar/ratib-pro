@@ -443,6 +443,8 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .build-stages li button.stage-go.primary{background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff;border-color:transparent}
 .build-stages li.is-done button.stage-go,.build-stages li.is-progress button.stage-go{background:var(--surface);color:var(--text);border:1px solid var(--border)}
 .generated-images img{width:100%;border-radius:16px;display:block}
+.generated-images .image-preview{display:block;width:100%;padding:0;border:0;background:transparent;cursor:zoom-in}
+.attach-image{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:0 0 18px}
 .build-stages .is-done span{color:rgba(255,255,255,.8)}
 .edit-campaign{margin-top:18px}
 .edit-campaign summary{cursor:pointer;font-weight:800}

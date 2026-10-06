@@ -208,6 +208,9 @@ function media_redirect(int $campaignId, string $error = ''): void
     if ($error !== '') {
         $url .= '&media_error=' . rawurlencode($error);
     }
+    if ((string) ($_POST['panel'] ?? '') === 'images') {
+        $url .= '#images';
+    }
     header('Location: ' . $url);
     exit;
 }

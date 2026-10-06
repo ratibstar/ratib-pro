@@ -88,17 +88,15 @@ foreach ($copyRows as $row) {
     }
 }
 $imageCount = 0;
-$aiImageCount = 0;
 $videoCount = 0;
 $uploadMedia = [];
-$aiImages = [];
+$campaignImages = [];
 foreach ($media as $mediaItem) {
-    if ((string) $mediaItem['kind'] === 'image' && (string) $mediaItem['source'] === 'ai') {
-        $aiImageCount++;
-        $aiImages[] = $mediaItem;
-    } elseif ((string) $mediaItem['kind'] === 'image') {
-        $imageCount++;
-        $uploadMedia[] = $mediaItem;
+    if ((string) $mediaItem['kind'] === 'image') {
+        $campaignImages[] = $mediaItem;
+        if ((string) $mediaItem['source'] !== 'ai') {
+            $imageCount++;
+        }
     } elseif ((string) $mediaItem['kind'] === 'video') {
         $videoCount++;
         $uploadMedia[] = $mediaItem;
@@ -114,13 +112,13 @@ $location = trim((string) ($brief['location'] ?? ''));
 $channels = trim((string) ($brief['channels'] ?? ''));
 $tone = trim((string) ($brief['brand_tone'] ?? ''));
 $ideaDone = $product !== '' || $idea !== '';
-$doneUnits = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($aiImageCount > 0 ? 1 : 0);
+$doneUnits = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0);
 $progress = (int) round($doneUnits * 100 / 7);
 $stages = [
     'idea' => ['no' => '01', 'state' => $ideaDone ? 'done' : 'open'],
     'strategy' => ['no' => '02', 'state' => $strategyApproved ? 'done' : ($strategyDoc ? 'progress' : 'open')],
     'copy' => ['no' => '03', 'state' => $copyApproved ? 'done' : ($copyStarted ? 'progress' : ($strategyApproved ? 'open' : 'next'))],
-    'images' => ['no' => '04', 'state' => $aiImageCount > 0 ? 'done' : ($copyApproved ? 'open' : 'next')],
+    'images' => ['no' => '04', 'state' => $campaignImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
     'voice' => ['no' => '05', 'state' => 'next'],
     'video' => ['no' => '06', 'state' => 'locked'],
     'ready' => ['no' => '07', 'state' => 'next'],
@@ -179,7 +177,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act4">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act5">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -255,7 +253,7 @@ $csrf = e(csrf_token());
           <form id="imageForm" class="stage-action" data-status="stage-status">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
-            <button class="<?= $aiImageCount > 0 ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $aiImageCount > 0 ? 'another_image' : 'start_images' ?>"><?= $aiImageCount > 0 ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
+            <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
         <?php endif; ?>
       </li>
@@ -408,18 +406,42 @@ $csrf = e(csrf_token());
 
   <section class="panel" id="images" data-panel="images">
     <h2 data-i18n="stage_images"><?= $arabic ? 'الصور' : 'Images' ?></h2>
-    <?php if ($aiImages): ?>
+    <?php if ($copyApproved || $campaignImages !== []): ?>
+      <form class="attach-image" method="post" action="/app/media/upload.php" enctype="multipart/form-data">
+        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+        <input type="hidden" name="campaign_id" value="<?= $id ?>">
+        <input type="hidden" name="kind" value="image">
+        <input type="hidden" name="panel" value="images">
+        <label>
+          <span data-i18n="attach_images"><?= $arabic ? 'أرفق صورًا من جهازك' : 'Attach images from your device' ?></span>
+          <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" required>
+        </label>
+        <button class="primary" type="submit" data-i18n="attach_images_button"><?= $arabic ? 'أرفق الصورة' : 'Attach image' ?></button>
+      </form>
+    <?php endif; ?>
+    <?php if (($_GET['media_error'] ?? '') !== ''): ?>
+      <p class="notice is-error" data-i18n="attach_failed"><?= $arabic ? 'تعذر إرفاق الصورة. استخدم JPG أو PNG أو WEBP بحجم مناسب.' : 'The image could not be attached. Use a JPG, PNG, or WEBP file within the size limit.' ?></p>
+    <?php endif; ?>
+    <?php if ($campaignImages): ?>
       <div class="media-grid generated-images">
-        <?php foreach ($aiImages as $item): ?>
+        <?php foreach ($campaignImages as $item): ?>
           <article class="media-card">
-            <img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt="">
+            <button type="button" class="image-preview" data-kind="image" data-src="/app/media/file.php?id=<?= (int) $item['id'] ?>">
+              <img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt="">
+            </button>
+            <form method="post" action="/app/media/delete.php">
+              <input type="hidden" name="csrf" value="<?= $csrf ?>">
+              <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+              <input type="hidden" name="panel" value="images">
+              <button type="submit" class="quiet" data-i18n="delete"><?= $arabic ? 'حذف' : 'Delete' ?></button>
+            </form>
           </article>
         <?php endforeach; ?>
       </div>
     <?php elseif (!$copyApproved): ?>
       <p class="empty" data-i18n="images_need_copy"><?= $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.' ?></p>
     <?php else: ?>
-      <p class="empty" data-i18n="images_empty"><?= $arabic ? 'لم تُولَّد صورة بعد. ابدأ من بطاقة الصور.' : 'No image has been generated yet. Start from the Images card.' ?></p>
+      <p class="empty" data-i18n="images_empty"><?= $arabic ? 'لم تُولَّد صورة بعد. ابدأ من بطاقة الصور أو أرفق صورة.' : 'No image yet. Start from the Images card or attach one.' ?></p>
     <?php endif; ?>
   </section>
   <section class="panel" id="voice" data-panel="voice">
@@ -435,6 +457,13 @@ $csrf = e(csrf_token());
     <p class="empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
   </section>
 </main>
-<script src="/public/assets/js/app.js?v=act4"></script>
+<dialog class="demo-viewer" id="demo-viewer">
+  <form method="dialog" class="demo-bar">
+    <p data-i18n="preview_image"><?= $arabic ? 'معاينة الصورة' : 'Image preview' ?></p>
+    <button type="submit" class="icon" data-i18n="demo_close"><?= $arabic ? 'إغلاق' : 'Close' ?></button>
+  </form>
+  <div id="demo-stage"></div>
+</dialog>
+<script src="/public/assets/js/app.js?v=act5"></script>
 </body>
 </html>
