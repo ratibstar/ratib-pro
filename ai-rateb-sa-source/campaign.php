@@ -91,15 +91,20 @@ $imageCount = 0;
 $videoCount = 0;
 $uploadMedia = [];
 $campaignImages = [];
+$campaignVoices = [];
+$campaignVideos = [];
 foreach ($media as $mediaItem) {
-    if ((string) $mediaItem['kind'] === 'image') {
+    $kind = (string) $mediaItem['kind'];
+    if ($kind === 'image') {
         $campaignImages[] = $mediaItem;
         if ((string) $mediaItem['source'] !== 'ai') {
             $imageCount++;
         }
-    } elseif ((string) $mediaItem['kind'] === 'video') {
+    } elseif ($kind === 'audio') {
+        $campaignVoices[] = $mediaItem;
+    } elseif ($kind === 'video') {
         $videoCount++;
-        $uploadMedia[] = $mediaItem;
+        $campaignVideos[] = $mediaItem;
     } else {
         $uploadMedia[] = $mediaItem;
     }
@@ -112,15 +117,15 @@ $location = trim((string) ($brief['location'] ?? ''));
 $channels = trim((string) ($brief['channels'] ?? ''));
 $tone = trim((string) ($brief['brand_tone'] ?? ''));
 $ideaDone = $product !== '' || $idea !== '';
-$doneUnits = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0);
+$doneUnits = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($campaignVideos !== [] ? 1 : 0);
 $progress = (int) round($doneUnits * 100 / 7);
 $stages = [
     'idea' => ['no' => '01', 'state' => $ideaDone ? 'done' : 'open'],
     'strategy' => ['no' => '02', 'state' => $strategyApproved ? 'done' : ($strategyDoc ? 'progress' : 'open')],
     'copy' => ['no' => '03', 'state' => $copyApproved ? 'done' : ($copyStarted ? 'progress' : ($strategyApproved ? 'open' : 'next'))],
     'images' => ['no' => '04', 'state' => $campaignImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
-    'voice' => ['no' => '05', 'state' => 'next'],
-    'video' => ['no' => '06', 'state' => 'locked'],
+    'voice' => ['no' => '05', 'state' => $campaignVoices !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
+    'video' => ['no' => '06', 'state' => $campaignVideos !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
     'ready' => ['no' => '07', 'state' => 'next'],
 ];
 $stageNames = $arabic
@@ -177,7 +182,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act5">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act6">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -255,6 +260,14 @@ $csrf = e(csrf_token());
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
+        <?php elseif ($key === 'voice' && $campaignImages !== []): ?>
+          <form id="voiceForm" class="stage-action" data-status="stage-status">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
+            <input type="hidden" name="campaign_id" value="<?= $id ?>">
+            <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignVoices !== [] ? 'another_voice' : 'start_voice' ?>"><?= $campaignVoices !== [] ? ($arabic ? 'صوت آخر' : 'Another voice') : ($arabic ? 'ابدأ الصوت' : 'Start Voice') ?></button>
+          </form>
+        <?php elseif ($key === 'video' && $campaignImages !== [] && $campaignVideos === []): ?>
+          <button type="button" class="primary stage-go" data-open="video" data-i18n="attach_video"><?= $arabic ? 'أرفق فيديو' : 'Attach a video' ?></button>
         <?php endif; ?>
       </li>
     <?php endforeach; ?>
@@ -446,11 +459,54 @@ $csrf = e(csrf_token());
   </section>
   <section class="panel" id="voice" data-panel="voice">
     <h2 data-i18n="stage_voice"><?= $arabic ? 'الصوت' : 'Voice' ?></h2>
-    <p class="empty" data-i18n="stage_voice_next"><?= $arabic ? 'مرحلة الصوت لاحقًا.' : 'The voice stage comes later.' ?></p>
+    <?php if ($campaignVoices): ?>
+      <?php foreach ($campaignVoices as $item): ?>
+        <article class="media-card">
+          <audio controls src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></audio>
+          <form method="post" action="/app/media/delete.php">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
+            <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+            <input type="hidden" name="panel" value="voice">
+            <button type="submit" class="quiet" data-i18n="delete"><?= $arabic ? 'حذف' : 'Delete' ?></button>
+          </form>
+        </article>
+      <?php endforeach; ?>
+    <?php elseif ($campaignImages === []): ?>
+      <p class="empty" data-i18n="voice_need_images"><?= $arabic ? 'أكمل الصور أولًا، ثم ابدأ الصوت.' : 'Finish the images first, then start the voice.' ?></p>
+    <?php else: ?>
+      <p class="empty" data-i18n="voice_empty"><?= $arabic ? 'الصوت يُقرأ من النص المعتمد. ابدأ من بطاقة الصوت.' : 'The voice reads the approved copy. Start from the Voice card.' ?></p>
+    <?php endif; ?>
   </section>
   <section class="panel" id="video" data-panel="video">
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
-    <p class="empty" data-i18n="stage_video_locked"><?= $arabic ? 'توليد الفيديو غير متاح في هذه المرحلة.' : 'Video generation is not available in this stage.' ?></p>
+    <p class="muted" data-i18n="video_no_provider"><?= $arabic ? 'توليد الفيديو بالذكاء الاصطناعي غير متاح. أرفق فيديو من جهازك.' : 'AI video generation is not available. Attach a video from your device.' ?></p>
+    <?php if ($campaignImages !== [] && $campaignVideos === []): ?>
+      <form class="attach-image" method="post" action="/app/media/upload.php" enctype="multipart/form-data">
+        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+        <input type="hidden" name="campaign_id" value="<?= $id ?>">
+        <input type="hidden" name="kind" value="video">
+        <input type="hidden" name="panel" value="video">
+        <label>
+          <span data-i18n="attach_video"><?= $arabic ? 'أرفق فيديو' : 'Attach a video' ?></span>
+          <input type="file" name="file" accept="video/mp4,video/webm" required>
+        </label>
+        <button class="primary" type="submit" data-i18n="attach_video_button"><?= $arabic ? 'أرفق الفيديو' : 'Attach video' ?></button>
+      </form>
+    <?php endif; ?>
+    <?php if (($_GET['media_error'] ?? '') !== '' && (string) ($_GET['media_error'] ?? '') !== 'type'): ?>
+      <p class="notice is-error"><?= e($arabic ? 'تعذر إرفاق الفيديو. تأكد من الصيغة والمدة المسموحة في خطتك.' : 'The video could not be attached. Check the format and the duration allowed by your plan.') ?></p>
+    <?php endif; ?>
+    <?php foreach ($campaignVideos as $item): ?>
+      <article class="media-card">
+        <video controls playsinline src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
+        <form method="post" action="/app/media/delete.php">
+          <input type="hidden" name="csrf" value="<?= $csrf ?>">
+          <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+          <input type="hidden" name="panel" value="video">
+          <button type="submit" class="quiet" data-i18n="delete"><?= $arabic ? 'حذف' : 'Delete' ?></button>
+        </form>
+      </article>
+    <?php endforeach; ?>
   </section>
   <section class="panel" id="ready" data-panel="ready">
     <h2 data-i18n="stage_ready"><?= $arabic ? 'الحملة الجاهزة' : 'Ready campaign' ?></h2>
@@ -464,6 +520,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act5"></script>
+<script src="/public/assets/js/app.js?v=act6"></script>
 </body>
 </html>

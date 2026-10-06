@@ -185,7 +185,15 @@
       upload_audio: 'Upload audio',
       upload: 'Upload',
       generate_voice: 'Generate voice',
-      generating_voice: 'Generating voice...',
+      generating_voice: 'RATEB is recording the voice...',
+      start_voice: 'Start Voice',
+      another_voice: 'Another voice',
+      voice_provider: 'The voice could not be generated. Try again.',
+      voice_empty: 'The voice reads the approved copy. Start from the Voice card.',
+      voice_need_images: 'Finish the images first, then start the voice.',
+      attach_video: 'Attach a video',
+      attach_video_button: 'Attach video',
+      video_no_provider: 'AI video generation is not available. Attach a video from your device.',
       no_media: 'No media yet.',
       download: 'Download',
       delete: 'Delete',
@@ -537,7 +545,15 @@
       upload_audio: 'رفع صوت',
       upload: 'رفع',
       generate_voice: 'توليد التعليق الصوتي',
-      generating_voice: 'جاري توليد الصوت...',
+      generating_voice: 'RATEB يسجّل الصوت...',
+      start_voice: 'ابدأ الصوت',
+      another_voice: 'صوت آخر',
+      voice_provider: 'تعذر توليد الصوت. حاول مرة أخرى.',
+      voice_empty: 'الصوت يُقرأ من النص المعتمد. ابدأ من بطاقة الصوت.',
+      voice_need_images: 'أكمل الصور أولًا، ثم ابدأ الصوت.',
+      attach_video: 'أرفق فيديو',
+      attach_video_button: 'أرفق الفيديو',
+      video_no_provider: 'توليد الفيديو بالذكاء الاصطناعي غير متاح. أرفق فيديو من جهازك.',
       no_media: 'لا توجد وسائط بعد.',
       download: 'تنزيل',
       delete: 'حذف',
@@ -946,25 +962,37 @@
   if (voiceForm) {
     voiceForm.onsubmit = async function (event) {
       event.preventDefault();
-      var status = document.getElementById('voice-status');
-      var button = document.getElementById('voice');
+      var status = document.getElementById(voiceForm.getAttribute('data-status') || 'voice-status');
+      var button = voiceForm.querySelector('button');
       document.querySelectorAll('input[name="lang"]').forEach(function (node) {
         node.value = language;
       });
-      button.disabled = true;
-      button.classList.add('is-busy');
-      status.className = 'notice';
-      status.textContent = dict[language].generating_voice;
+      if (button) {
+        button.disabled = true;
+        button.classList.add('is-busy');
+      }
+      if (status) {
+        status.className = 'notice stage-status';
+        status.textContent = dict[language].generating_voice;
+      }
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, 50000);
       try {
-        var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm) });
+        var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm), signal: controller.signal });
+        clearTimeout(timer);
         var payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || 'Voice generation failed');
+        if (!response.ok) throw new Error(payload.error || dict[language].voice_provider || 'Voice generation failed');
         location.href = payload.redirect;
       } catch (error) {
-        status.className = 'notice is-error';
-        status.textContent = error.message;
-        button.disabled = false;
-        button.classList.remove('is-busy');
+        clearTimeout(timer);
+        if (status) {
+          status.className = 'notice is-error stage-status';
+          status.textContent = error.name === 'AbortError' ? dict[language].voice_provider : error.message;
+        }
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('is-busy');
+        }
       }
     };
   }

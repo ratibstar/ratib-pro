@@ -21,18 +21,25 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
 }
 
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
-$gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'voice');
-if (!$gate['ok']) {
-    rateb_deny((string) $gate['code']);
-}
 $decision = rateb_output_language(db(), $campaign);
 $lang = $decision['speech'] === 'ar' ? 'ar' : 'en';
+$script = rateb_voice_script(db(), (int) $campaign['id'], $lang);
+if ($script === '') {
+    http_response_code(409);
+    echo json_encode(['error' => rateb_ui_error('voice_locked'), 'code' => 'voice_locked'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 $cfg = require __DIR__ . '/../../config/ai.php';
 if (!$cfg['api_key']) {
     http_response_code(503);
-    echo json_encode(['error' => 'AI API key is not configured. Set RATEB_AI_API_KEY on the server.']);
+    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+$gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'voice');
+if (!$gate['ok']) {
+    rateb_deny((string) $gate['code']);
 }
 
 $base = rtrim((string) $cfg['base_url'], '/');
@@ -40,7 +47,8 @@ $list = curl_init($base . '/models');
 curl_setopt_array($list, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $cfg['api_key']],
-    CURLOPT_TIMEOUT => 30,
+    CURLOPT_TIMEOUT => 12,
+    CURLOPT_CONNECTTIMEOUT => 8,
 ]);
 $modelsRaw = curl_exec($list);
 $modelsHttp = (int) curl_getinfo($list, CURLINFO_HTTP_CODE);
@@ -53,6 +61,12 @@ foreach (($models['data'] ?? []) as $row) {
     }
 }
 
+if ($modelsHttp !== 200) {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    http_response_code(503);
+    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 if ($lang === 'ar' && in_array('canopylabs/orpheus-arabic-saudi', $ids, true)) {
     $model = 'canopylabs/orpheus-arabic-saudi';
     $voice = 'fahad';
@@ -61,26 +75,9 @@ if ($lang === 'ar' && in_array('canopylabs/orpheus-arabic-saudi', $ids, true)) {
     $voice = 'troy';
     $lang = 'en';
 } else {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(503);
-    echo json_encode(['error' => 'Voice generation is not available with the configured AI provider.']);
-    exit;
-}
-
-$stmt = db()->prepare('SELECT content FROM campaign_outputs WHERE campaign_id = ? AND output_type = ? ORDER BY id DESC LIMIT 1');
-$stmt->execute([(int) $campaign['id'], 'voiceover']);
-$script = trim((string) $stmt->fetchColumn());
-if ($script === '') {
-    $script = trim((string) $campaign['product_name'] . '. ' . (string) $campaign['title']);
-}
-if (function_exists('mb_substr')) {
-    $script = mb_substr($script, 0, 200);
-} else {
-    $script = substr($script, 0, 200);
-}
-$script = trim($script);
-if ($script === '') {
-    http_response_code(422);
-    echo json_encode(['error' => 'Nothing to speak.']);
+    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -96,7 +93,8 @@ curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
     CURLOPT_POSTFIELDS => $payload,
-    CURLOPT_TIMEOUT => 90,
+    CURLOPT_TIMEOUT => 40,
+    CURLOPT_CONNECTTIMEOUT => 8,
 ]);
 $audio = curl_exec($ch);
 $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -107,11 +105,11 @@ if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     if ($errorCode === 'model_terms_required') {
         http_response_code(403);
-        echo json_encode(['error' => 'The speech model is available, but its terms have not been accepted for this API key.']);
+        echo json_encode(['error' => rateb_ui_error('voice_terms'), 'code' => 'voice_terms'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     http_response_code(502);
-    echo json_encode(['error' => 'AI voice request failed.']);
+    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -127,9 +125,44 @@ try {
 } catch (Throwable $error) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(500);
-    echo json_encode(['error' => 'Could not save the voice file.']);
+    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 rateb_usage_finish(db(), (int) $gate['id'], 'completed');
 
-echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . (int) $campaign['id']], JSON_UNESCAPED_UNICODE);
+echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#voice'], JSON_UNESCAPED_UNICODE);
+
+function rateb_voice_script(PDO $pdo, int $campaignId, string $speech): string
+{
+    $stmt = $pdo->prepare('SELECT output_type, content FROM campaign_outputs WHERE campaign_id = ? AND approval_status = ? ORDER BY id DESC');
+    $stmt->execute([$campaignId, 'approved']);
+    $pieces = [];
+    foreach ($stmt as $row) {
+        $type = (string) $row['output_type'];
+        if (!isset($pieces[$type])) {
+            $pieces[$type] = (string) $row['content'];
+        }
+    }
+    $script = '';
+    foreach (['ad_copy', 'short_ad', 'headline'] as $type) {
+        if (!empty($pieces[$type])) {
+            $script = rateb_voice_plain($pieces[$type], $speech);
+            if ($script !== '') {
+                break;
+            }
+        }
+    }
+    if (function_exists('mb_substr')) {
+        return trim(mb_substr($script, 0, 280));
+    }
+    return trim(substr($script, 0, 280));
+}
+
+function rateb_voice_plain(string $content, string $speech): string
+{
+    $decoded = json_decode($content, true);
+    if (is_array($decoded)) {
+        $content = (string) ($decoded[$speech] ?? $decoded['ar'] ?? $decoded['en'] ?? '');
+    }
+    return trim(preg_replace('/\s+/u', ' ', $content) ?? '');
+}

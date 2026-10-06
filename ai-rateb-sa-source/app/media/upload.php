@@ -46,6 +46,23 @@ $mime = media_detect_mime($bytes, $kind);
 if ($mime === null) {
     media_redirect($campaignId, 'type');
 }
+if ($kind === 'video') {
+    require_once __DIR__ . '/../idea.php';
+    require_once __DIR__ . '/../plans.php';
+    $existing = db()->prepare('SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ?');
+    $existing->execute([$campaignId, (int) $campaign['user_id'], 'video']);
+    if ((int) $existing->fetchColumn() >= 1) {
+        media_redirect($campaignId, 'video_one');
+    }
+    $seconds = rateb_video_seconds($bytes, $mime);
+    if ($seconds === null) {
+        media_redirect($campaignId, 'video_unknown');
+    }
+    $plan = rateb_user_plan(db(), (int) $_SESSION['user_id']);
+    if ($seconds > (int) ($plan['video_max_seconds'] ?? 0)) {
+        media_redirect($campaignId, 'video_long');
+    }
+}
 
 try {
     media_store_bytes($campaign, $kind, 'upload', (string) ($file['name'] ?? ''), $mime, $bytes);
