@@ -41,12 +41,19 @@ if (!$gate['ok']) {
 session_write_close();
 
 $base = rtrim((string) $cfg['base_url'], '/');
+$choices = rateb_voice_choices($lang);
+$wanted = (string) ($_POST['voice'] ?? '');
+$voice = $lang === 'ar' ? 'noura' : 'hannah';
+foreach ($choices as $choice) {
+    if ($choice['id'] === $wanted) {
+        $voice = $wanted;
+        break;
+    }
+}
 if ($lang === 'ar') {
     $model = 'canopylabs/orpheus-arabic-saudi';
-    $voice = 'noura';
 } else {
     $model = 'canopylabs/orpheus-v1-english';
-    $voice = 'hannah';
 }
 
 $payload = json_encode([

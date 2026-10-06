@@ -475,3 +475,6 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .text-edit{margin-top:12px}
 .text-edit summary{cursor:pointer;font-weight:700}
 .text-edit textarea{display:block;width:100%;margin:8px 0 12px}
+.voice-picks{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}
+.voice-picks h3{width:100%;margin:8px 0 0;font-size:15px}
+.voice-picks label{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface2);cursor:pointer}

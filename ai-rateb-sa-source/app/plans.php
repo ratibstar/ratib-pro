@@ -274,6 +274,27 @@ function rateb_strategy_keys(): array
     return ['positioning', 'core_message', 'audience', 'channels', 'tone', 'creative_direction', 'call_to_action'];
 }
 
+function rateb_voice_choices(string $speech): array
+{
+    if ($speech === 'en') {
+        return [
+            ['id' => 'austin', 'label' => 'Austin', 'gender' => 'm'],
+            ['id' => 'daniel', 'label' => 'Daniel', 'gender' => 'm'],
+            ['id' => 'troy', 'label' => 'Troy', 'gender' => 'm'],
+            ['id' => 'autumn', 'label' => 'Autumn', 'gender' => 'f'],
+            ['id' => 'diana', 'label' => 'Diana', 'gender' => 'f'],
+            ['id' => 'hannah', 'label' => 'Hannah', 'gender' => 'f'],
+        ];
+    }
+    return [
+        ['id' => 'abdullah', 'label' => 'عبدالله', 'gender' => 'm'],
+        ['id' => 'fahad', 'label' => 'فهد', 'gender' => 'm'],
+        ['id' => 'sultan', 'label' => 'سلطان', 'gender' => 'm'],
+        ['id' => 'lulwa', 'label' => 'لولوة', 'gender' => 'f'],
+        ['id' => 'noura', 'label' => 'نورة', 'gender' => 'f'],
+        ['id' => 'aisha', 'label' => 'عائشة', 'gender' => 'f'],
+    ];
+}
 function rateb_copy_types(): array
 {
     return ['headline', 'ad_copy', 'short_ad', 'social_posts', 'whatsapp', 'call_to_action', 'product_description'];

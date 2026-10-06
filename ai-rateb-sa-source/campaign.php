@@ -183,7 +183,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act12">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act14">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -262,11 +262,7 @@ $csrf = e(csrf_token());
             <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
         <?php elseif ($key === 'voice' && $campaignImages !== []): ?>
-          <form id="voiceForm" class="stage-action" data-status="stage-status">
-            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <input type="hidden" name="campaign_id" value="<?= $id ?>">
-            <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignVoices !== [] ? 'another_voice' : 'start_voice' ?>"><?= $campaignVoices !== [] ? ($arabic ? 'صوت آخر' : 'Another voice') : ($arabic ? 'ابدأ الصوت' : 'Start Voice') ?></button>
-          </form>
+          <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm" data-i18n="<?= $campaignVoices !== [] ? 'another_voice' : 'start_voice' ?>"><?= $campaignVoices !== [] ? ($arabic ? 'صوت آخر' : 'Another voice') : ($arabic ? 'ابدأ الصوت' : 'Start Voice') ?></button>
           <?php if ($campaignVoices): ?>
             <audio class="card-voice" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $campaignVoices[0]['id'] ?>"<?= (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
           <?php endif; ?>
@@ -496,6 +492,24 @@ $csrf = e(csrf_token());
   </section>
   <section class="panel" id="voice" data-panel="voice">
     <h2 data-i18n="stage_voice"><?= $arabic ? 'الصوت' : 'Voice' ?></h2>
+    <?php if ($campaignImages !== []): ?>
+      <?php $speech = rateb_output_language(db(), $campaign)['speech'] === 'en' ? 'en' : 'ar'; $voiceChoices = rateb_voice_choices($speech); ?>
+      <form id="voiceForm" data-status="stage-status">
+        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+        <input type="hidden" name="campaign_id" value="<?= $id ?>">
+        <div class="voice-picks">
+          <h3><?= $arabic ? 'رجال' : 'Men' ?></h3>
+          <?php foreach ($voiceChoices as $choice): if ($choice['gender'] !== 'm') continue; ?>
+            <label><input type="radio" name="voice" value="<?= e($choice['id']) ?>"<?= $choice['id'] === ($speech === 'ar' ? 'noura' : 'hannah') ? ' checked' : '' ?>><span><?= e($choice['label']) ?></span></label>
+          <?php endforeach; ?>
+          <h3><?= $arabic ? 'نساء' : 'Women' ?></h3>
+          <?php foreach ($voiceChoices as $choice): if ($choice['gender'] !== 'f') continue; ?>
+            <label><input type="radio" name="voice" value="<?= e($choice['id']) ?>"<?= $choice['id'] === ($speech === 'ar' ? 'noura' : 'hannah') ? ' checked' : '' ?>><span><?= e($choice['label']) ?></span></label>
+          <?php endforeach; ?>
+        </div>
+        <button class="primary" type="submit"><?= $campaignVoices !== [] ? ($arabic ? 'صوت آخر' : 'Another voice') : ($arabic ? 'ابدأ الصوت' : 'Start Voice') ?></button>
+      </form>
+    <?php endif; ?>
     <?php if ($campaignVoices): ?>
       <?php foreach ($campaignVoices as $item): ?>
         <article class="media-card">
