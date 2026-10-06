@@ -72,15 +72,15 @@ $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 if ($audio !== false && $http >= 200 && $http < 300 && substr((string) $audio, 0, 4) === 'RIFF') {
     try {
-        $faster = rateb_speed_wav((string) $audio, 1.65);
+        $faster = rateb_speed_wav((string) $audio, 1.18);
         if ($faster === null) {
-            $faster = rateb_wav_faster((string) $audio, 1.65);
+            $faster = rateb_wav_faster((string) $audio, 1.18);
         }
         if ($faster !== null) {
             $audio = $faster;
         }
     } catch (Throwable $error) {
-        $audio = rateb_wav_faster((string) $audio, 1.65) ?? $audio;
+        $audio = rateb_wav_faster((string) $audio, 1.18) ?? $audio;
     }
 }
 if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {
