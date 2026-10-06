@@ -14,11 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 $csrf = (string) ($_POST['csrf'] ?? $_POST['csrf_token'] ?? '');
 $expected = (string) ($_SESSION['csrf_token'] ?? $_SESSION['csrf'] ?? '');
-if ($expected === '' || !hash_equals($expected, $csrf)) {
-    http_response_code(419);
-    echo json_encode(['error' => 'Invalid request']);
-    exit;
-}
+check_csrf();
+session_write_close();
 
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
 $decision = rateb_output_language(db(), $campaign);
@@ -72,15 +69,15 @@ $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 if ($audio !== false && $http >= 200 && $http < 300 && substr((string) $audio, 0, 4) === 'RIFF') {
     try {
-        $faster = rateb_speed_wav((string) $audio, 1.18);
+        $faster = rateb_speed_wav((string) $audio, 1.08);
         if ($faster === null) {
-            $faster = rateb_wav_faster((string) $audio, 1.18);
+            $faster = rateb_wav_faster((string) $audio, 1.08);
         }
         if ($faster !== null) {
             $audio = $faster;
         }
     } catch (Throwable $error) {
-        $audio = rateb_wav_faster((string) $audio, 1.18) ?? $audio;
+        $audio = rateb_wav_faster((string) $audio, 1.08) ?? $audio;
     }
 }
 if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {

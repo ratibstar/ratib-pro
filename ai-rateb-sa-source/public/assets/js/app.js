@@ -990,23 +990,23 @@
       var existing = document.querySelector('audio.card-voice');
       if (existing) current = existing.getAttribute('src') || '';
       var stopped = false;
+      var showVoice = function (src) {
+        if (stopped || !src || src === current) return;
+        stopped = true;
+        clearInterval(watch);
+        location.href = '/campaign.php?id=' + encodeURIComponent(campaignId) + '&play=1#voice';
+      };
       var watch = setInterval(async function () {
         if (stopped || !campaignId) return;
         try {
-          var look = await fetch('/campaign.php?id=' + encodeURIComponent(campaignId), { credentials: 'same-origin' });
+          var look = await fetch('/campaign.php?id=' + encodeURIComponent(campaignId), { credentials: 'same-origin', cache: 'no-store' });
           var html = await look.text();
           var match = html.match(/class="card-voice"[^>]*src="([^"]+)"/);
-          if (match && match[1] !== current) {
-            stopped = true;
-            clearInterval(watch);
-            location.href = '/campaign.php?id=' + encodeURIComponent(campaignId) + '&play=1#voice';
-          }
+          if (match) showVoice(match[1]);
         } catch (ignore) {}
-      }, 2500);
+      }, 2000);
       try {
         var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm) });
-        stopped = true;
-        clearInterval(watch);
         var payload = {};
         try {
           payload = await response.json();
@@ -1014,17 +1014,12 @@
           throw new Error(dict[language].voice_provider || 'Voice generation failed');
         }
         if (!response.ok) throw new Error(payload.error || dict[language].voice_provider || 'Voice generation failed');
-        location.href = payload.redirect;
+        if (payload.redirect) location.href = payload.redirect;
       } catch (error) {
-        stopped = true;
-        clearInterval(watch);
+        if (stopped) return;
         if (status) {
-          status.className = 'notice is-error stage-status';
-          status.textContent = error.message;
-        }
-        if (button) {
-          button.disabled = false;
-          button.classList.remove('is-busy');
+          status.className = 'notice stage-status';
+          status.textContent = dict[language].generating_voice;
         }
       }
     };

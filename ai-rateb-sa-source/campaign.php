@@ -561,6 +561,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act12"></script>
+<script src="/public/assets/js/app.js?v=act13"></script>
 </body>
 </html>
