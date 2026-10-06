@@ -169,7 +169,11 @@
       image_available: 'Image: available',
       voice_available: 'Voice: available',
       generate_image: 'Generate image',
-      generating_image: 'Generating image...',
+      generating_image: 'RATEB is preparing the image...',
+      start_images: 'Start Images',
+      another_image: 'Another image',
+      images_need_copy: 'Approve the copy first, then start the images.',
+      images_empty: 'No image has been generated yet. Start from the Images card.',
       image_queued: 'Image generation is still queued on the free provider. Try again.',
       video_provider_required: 'AI video generation requires a video provider. No free video API is available, and the current Groq credential has no video model.',
       upload_image: 'Upload image',
@@ -513,7 +517,11 @@
       image_available: 'الصورة: متاحة',
       voice_available: 'الصوت: متاح',
       generate_image: 'توليد صورة',
-      generating_image: 'جاري توليد الصورة...',
+      generating_image: 'RATEB يجهّز الصورة...',
+      start_images: 'ابدأ الصور',
+      another_image: 'صورة أخرى',
+      images_need_copy: 'اعتمد النص أولًا، ثم ابدأ الصور.',
+      images_empty: 'لم تُولَّد صورة بعد. ابدأ من بطاقة الصور.',
       image_queued: 'توليد الصورة ما زال في الانتظار لدى المزود المجاني. حاول مرة أخرى.',
       video_provider_required: 'توليد الفيديو بالذكاء الاصطناعي يحتاج مزود فيديو. لا توجد واجهة فيديو مجانية، وبيانات Groq الحالية لا تتضمن نموذج فيديو.',
       upload_image: 'رفع صورة',
@@ -870,12 +878,16 @@
   if (imageForm) {
     imageForm.onsubmit = async function (event) {
       event.preventDefault();
-      var status = document.getElementById('image-status');
-      var button = document.getElementById('generate-image');
-      button.disabled = true;
-      button.classList.add('is-busy');
-      status.className = 'notice';
-      status.textContent = dict[language].generating_image;
+      var status = document.getElementById(imageForm.getAttribute('data-status') || 'image-status');
+      var button = imageForm.querySelector('button');
+      if (button) {
+        button.disabled = true;
+        button.classList.add('is-busy');
+      }
+      if (status) {
+        status.className = 'notice stage-status';
+        status.textContent = dict[language].generating_image;
+      }
       try {
         var payload = await requestImage(imageForm, '');
         var waits = 0;
@@ -888,10 +900,14 @@
         if (!payload.ok) throw new Error(payload.error || 'Image generation failed');
         location.href = payload.redirect;
       } catch (error) {
-        status.className = 'notice is-error';
-        status.textContent = error.message;
-        button.disabled = false;
-        button.classList.remove('is-busy');
+        if (status) {
+          status.className = 'notice is-error stage-status';
+          status.textContent = error.message;
+        }
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('is-busy');
+        }
       }
     };
   }

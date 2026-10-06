@@ -442,7 +442,7 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .build-stages li button.stage-go{min-height:42px;width:100%;border-radius:12px;padding:10px 12px;align-items:center;justify-content:center;font-weight:800}
 .build-stages li button.stage-go.primary{background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff;border-color:transparent}
 .build-stages li.is-done button.stage-go,.build-stages li.is-progress button.stage-go{background:var(--surface);color:var(--text);border:1px solid var(--border)}
-.stage-status{min-height:1.4em;margin:4px 0 16px;font-weight:700}
+.generated-images img{width:100%;border-radius:16px;display:block}
 .build-stages .is-done span{color:rgba(255,255,255,.8)}
 .edit-campaign{margin-top:18px}
 .edit-campaign summary{cursor:pointer;font-weight:800}

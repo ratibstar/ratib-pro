@@ -45,14 +45,7 @@ if ($jobId !== '') {
     ai_horde_finish_job($campaign, $jobId);
 }
 
-$parts = [];
-foreach (['product_name', 'title', 'description'] as $field) {
-    $value = trim((string) ($campaign[$field] ?? ''));
-    if ($value !== '') {
-        $parts[] = $value;
-    }
-}
-$prompt = trim(implode('. ', $parts));
+$prompt = ai_campaign_image_prompt($campaign);
 if (function_exists('mb_substr')) {
     $prompt = mb_substr($prompt, 0, 400);
 } else {
@@ -60,7 +53,7 @@ if (function_exists('mb_substr')) {
 }
 if ($prompt === '') {
     http_response_code(422);
-    echo json_encode(['error' => 'The campaign has no text to illustrate.']);
+    echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 $gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'image');
@@ -199,9 +192,92 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         'ok' => true,
         'model' => $modelName,
         'mime' => $mime,
-        'redirect' => '/campaign.php?id=' . (int) $campaign['id'],
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
     ], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+function ai_campaign_image_prompt(array $campaign): string
+{
+    $rows = db()->prepare('SELECT output_type, content, approval_status FROM campaign_outputs WHERE campaign_id = ? ORDER BY id DESC');
+    $rows->execute([(int) $campaign['id']]);
+    $strategy = '';
+    $copy = [];
+    foreach ($rows as $row) {
+        $type = (string) $row['output_type'];
+        if ($type === 'strategy' && $strategy === '' && (string) $row['approval_status'] === 'approved') {
+            $document = rateb_strategy_document((string) $row['content']);
+            if ($document !== null) {
+                $strategy = json_encode($document, JSON_UNESCAPED_UNICODE);
+            }
+        } elseif (in_array($type, rateb_copy_types(), true) && (string) $row['approval_status'] === 'approved' && !isset($copy[$type])) {
+            $copy[$type] = trim((string) $row['content']);
+        }
+    }
+    if ($strategy === '' || $copy === []) {
+        http_response_code(409);
+        echo json_encode(['error' => rateb_ui_error('image_locked'), 'code' => 'image_locked'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $facts = [];
+    foreach (['product_name', 'title', 'description'] as $field) {
+        $value = trim((string) ($campaign[$field] ?? ''));
+        if ($value !== '') {
+            $facts[] = $field . ': ' . $value;
+        }
+    }
+    $facts[] = 'strategy: ' . $strategy;
+    foreach ($copy as $type => $value) {
+        if ($value !== '') {
+            $facts[] = $type . ': ' . $value;
+        }
+    }
+    $source = implode("\n", $facts);
+    $cfg = require dirname(__DIR__, 2) . '/config/ai.php';
+    $english = '';
+    if (trim((string) ($cfg['api_key'] ?? '')) !== '') {
+        $payload = json_encode([
+            'model' => $cfg['model'],
+            'messages' => [
+                ['role' => 'system', 'content' => 'Return one JSON object with the key prompt. The prompt is one English sentence describing a photograph. Use only the supplied facts. Do not add prices, awards, or text inside the picture.'],
+                ['role' => 'user', 'content' => $source],
+            ],
+            'temperature' => 0.3,
+            'reasoning_effort' => 'low',
+            'max_tokens' => 180,
+            'response_format' => ['type' => 'json_object'],
+        ], JSON_UNESCAPED_UNICODE);
+        $ch = curl_init(rtrim((string) $cfg['base_url'], '/') . '/chat/completions');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_CONNECTTIMEOUT => 8,
+        ]);
+        $raw = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        $decoded = json_decode((string) $raw, true);
+        $content = is_array($decoded) ? (string) ($decoded['choices'][0]['message']['content'] ?? '') : '';
+        $promptJson = json_decode($content, true);
+        if ($code >= 200 && $code < 300 && is_array($promptJson)) {
+            $english = trim((string) ($promptJson['prompt'] ?? ''));
+        }
+    }
+    $prompt = $english !== '' ? $english : trim((string) ($campaign['product_name'] ?? '') . ' ' . (string) reset($copy));
+    if (function_exists('mb_substr')) {
+        $prompt = mb_substr($prompt, 0, 400);
+    } else {
+        $prompt = substr($prompt, 0, 400);
+    }
+    if (trim($prompt) === '') {
+        http_response_code(422);
+        echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    return trim($prompt);
 }
 
 function ai_horde_request(string $method, string $url, ?string $body = null): array

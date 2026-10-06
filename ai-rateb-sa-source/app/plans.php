@@ -28,6 +28,7 @@ function rateb_ui_error(string $code): string
         'edit_unclear' => $arabic ? 'ما وضحت التعديل. اكتب التغيير الذي تبيه.' : 'The change was not clear. Write the change you want.',
         'edit_empty' => $arabic ? 'اكتب التعديل أولًا.' : 'Write the change first.',
         'brief_missing' => $arabic ? 'أكمل ملخص الحملة قبل البدء.' : 'Complete the campaign brief before starting.',
+        'image_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.',
     ];
     return $messages[$code] ?? ($arabic ? 'تعذر تنفيذ الطلب.' : 'The request could not be completed.');
 }
