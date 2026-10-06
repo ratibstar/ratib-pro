@@ -46,10 +46,10 @@ session_write_close();
 $base = rtrim((string) $cfg['base_url'], '/');
 if ($lang === 'ar') {
     $model = 'canopylabs/orpheus-arabic-saudi';
-    $voice = 'fahad';
+    $voice = 'noura';
 } else {
     $model = 'canopylabs/orpheus-v1-english';
-    $voice = 'troy';
+    $voice = 'hannah';
 }
 
 $payload = json_encode([
