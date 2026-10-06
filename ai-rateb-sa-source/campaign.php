@@ -491,15 +491,17 @@ $csrf = e(csrf_token());
         <input type="hidden" name="panel" value="video">
         <label>
           <span data-i18n="attach_video"><?= $arabic ? 'أرفق فيديو' : 'Attach a video' ?></span>
-          <input type="file" name="file" accept="video/mp4,video/webm" required>
+          <input type="file" name="file" accept="video/*" required>
         </label>
         <button class="primary" type="submit" data-i18n="attach_video_button"><?= $arabic ? 'أرفق الفيديو' : 'Attach video' ?></button>
       </form>
     <?php endif; ?>
     <?php $mediaError = (string) ($_GET['media_error'] ?? ''); ?>
     <?php if ($mediaError === 'video_trim'): ?>
-      <p class="notice is-error"><?= $arabic ? 'تعذر اختصار الفيديو. حاول بملف MP4 آخر.' : 'The video could not be shortened. Try another MP4 file.' ?></p>
-    <?php elseif ($mediaError !== '' && $mediaError !== 'type'): ?>
+      <p class="notice is-error"><?= $arabic ? 'تعذر قراءة الفيديو واختصاره. جرّب ملفاً آخر.' : 'The video could not be read and shortened. Try another file.' ?></p>
+    <?php elseif ($mediaError === 'type'): ?>
+      <p class="notice is-error"><?= $arabic ? 'هذا الملف ليس فيديو.' : 'This file is not a video.' ?></p>
+    <?php elseif ($mediaError !== ''): ?>
       <p class="notice is-error"><?= e($arabic ? 'تعذر إرفاق الفيديو.' : 'The video could not be attached.') ?></p>
     <?php endif; ?>
     <?php foreach ($campaignVideos as $item): ?>

@@ -48,9 +48,6 @@ if (media_reject_active_content($bytes)) {
     media_redirect($campaignId, 'type');
 }
 $mime = media_detect_mime($bytes, $kind);
-if ($mime === null) {
-    media_redirect($campaignId, 'type');
-}
 if ($kind === 'video') {
     require_once __DIR__ . '/../idea.php';
     set_time_limit(180);
@@ -59,8 +56,11 @@ if ($kind === 'video') {
     if ((int) $existing->fetchColumn() >= 1) {
         media_redirect($campaignId, 'video_one');
     }
-    $seconds = rateb_video_seconds($bytes, $mime);
-    if ($seconds === null || $seconds > 40) {
+    if ($mime === null && !rateb_looks_like_video($bytes)) {
+        media_redirect($campaignId, 'type');
+    }
+    $seconds = $mime === null ? null : rateb_video_seconds($bytes, $mime);
+    if ($mime === null || $seconds === null || $seconds > 40) {
         $trimmed = rateb_trim_video_file((string) $file['tmp_name']);
         if ($trimmed === null) {
             media_redirect($campaignId, 'video_trim');
@@ -68,6 +68,8 @@ if ($kind === 'video') {
         $bytes = $trimmed;
         $mime = 'video/mp4';
     }
+} elseif ($mime === null) {
+    media_redirect($campaignId, 'type');
 }
 
 try {
@@ -76,6 +78,18 @@ try {
     media_redirect($campaignId, 'upload');
 }
 media_redirect($campaignId);
+
+function rateb_looks_like_video(string $bytes): bool
+{
+    if (strlen($bytes) < 12) {
+        return false;
+    }
+    if (substr($bytes, 4, 4) === 'ftyp' || str_starts_with($bytes, "\x1A\x45\xDF\xA3")) {
+        return true;
+    }
+    $mime = strtolower((string) (new finfo(FILEINFO_MIME_TYPE))->buffer($bytes));
+    return str_starts_with($mime, 'video/');
+}
 
 function rateb_trim_video_file(string $source): ?string
 {
