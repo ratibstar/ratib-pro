@@ -292,10 +292,10 @@ function rateb_text_fits(string $text, string $resolved): bool
         return false;
     }
     if ($resolved === 'ar') {
-        return $arabic >= 4 && ($arabic / $total) >= 0.5;
+        return $arabic >= 2 && ($arabic / $total) >= 0.25;
     }
     if ($resolved === 'en') {
-        return $latin >= 4 && ($arabic / $total) <= 0.35;
+        return $latin >= 2 && ($arabic / $total) <= 0.5;
     }
     return false;
 }
@@ -303,6 +303,13 @@ function rateb_text_fits(string $text, string $resolved): bool
 function rateb_coerce_output(mixed $value, string $resolved): mixed
 {
     if ($resolved === 'bilingual') {
+        if (is_array($value)) {
+            $arabic = $value['ar'] ?? $value['arabic'] ?? $value['Arabic'] ?? '';
+            $english = $value['en'] ?? $value['english'] ?? $value['English'] ?? '';
+            if (is_string($arabic) || is_string($english)) {
+                return ['ar' => trim((string) $arabic), 'en' => trim((string) $english)];
+            }
+        }
         return $value;
     }
     if (is_string($value)) {
@@ -328,9 +335,17 @@ function rateb_coerce_output(mixed $value, string $resolved): mixed
 function rateb_value_fits(mixed $value, string $resolved): bool
 {
     if ($resolved === 'bilingual') {
-        return is_array($value)
-            && rateb_text_fits((string) ($value['ar'] ?? ''), 'ar')
-            && rateb_text_fits((string) ($value['en'] ?? ''), 'en');
+        if (is_string($value)) {
+            return rateb_text_fits($value, 'ar') || rateb_text_fits($value, 'en');
+        }
+        if (!is_array($value)) {
+            return false;
+        }
+        $arabic = trim((string) ($value['ar'] ?? ''));
+        $english = trim((string) ($value['en'] ?? ''));
+        $arabicOk = $arabic === '' || rateb_text_fits($arabic, 'ar');
+        $englishOk = $english === '' || rateb_text_fits($english, 'en');
+        return $arabicOk && $englishOk && ($arabic !== '' || $english !== '');
     }
     return is_string($value) && rateb_text_fits($value, $resolved);
 }
@@ -358,11 +373,20 @@ function rateb_copy_valid(array $data, string $resolved, string $only = ''): boo
 
 function rateb_normalize_value(mixed $value, string $resolved): mixed
 {
-    if ($resolved === 'bilingual' && is_array($value)) {
-        return [
-            'ar' => trim((string) ($value['ar'] ?? '')),
-            'en' => trim((string) ($value['en'] ?? '')),
-        ];
+    if ($resolved === 'bilingual') {
+        if (is_string($value)) {
+            $text = trim($value);
+            return [
+                'ar' => rateb_text_fits($text, 'ar') ? $text : '',
+                'en' => rateb_text_fits($text, 'en') ? $text : '',
+            ];
+        }
+        if (is_array($value)) {
+            return [
+                'ar' => trim((string) ($value['ar'] ?? '')),
+                'en' => trim((string) ($value['en'] ?? '')),
+            ];
+        }
     }
     return trim((string) $value);
 }

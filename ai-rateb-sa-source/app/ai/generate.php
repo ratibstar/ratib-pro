@@ -200,7 +200,53 @@ function rateb_prepare_result(mixed $result, string $resolved, array $keys): mix
     if (!is_array($result)) {
         return $result;
     }
+    $present = 0;
     foreach ($keys as $key) {
+        if (array_key_exists($key, $result)) {
+            $present++;
+        }
+    }
+    if ($present === 0) {
+        foreach ($result as $value) {
+            if (!is_array($value)) {
+                continue;
+            }
+            $inner = 0;
+            foreach ($keys as $key) {
+                if (array_key_exists($key, $value)) {
+                    $inner++;
+                }
+            }
+            if ($inner > $present) {
+                $result = $value;
+                $present = $inner;
+            }
+        }
+    }
+    $aliases = [
+        'positioning' => ['التموضع', 'position'],
+        'core_message' => ['الرسالة', 'message'],
+        'audience' => ['الجمهور'],
+        'channels' => ['القنوات'],
+        'tone' => ['النبرة'],
+        'creative_direction' => ['الاتجاه', 'direction'],
+        'call_to_action' => ['الدعوة', 'cta'],
+        'headline' => ['العنوان'],
+        'ad_copy' => ['النص'],
+        'short_ad' => ['الإعلان'],
+        'social_posts' => ['المنشورات'],
+        'whatsapp' => ['واتساب'],
+        'product_description' => ['الوصف'],
+    ];
+    foreach ($keys as $key) {
+        if (!array_key_exists($key, $result)) {
+            foreach ($aliases[$key] ?? [] as $alias) {
+                if (array_key_exists($alias, $result)) {
+                    $result[$key] = $result[$alias];
+                    break;
+                }
+            }
+        }
         if (array_key_exists($key, $result)) {
             $result[$key] = rateb_coerce_output($result[$key], $resolved);
         }
