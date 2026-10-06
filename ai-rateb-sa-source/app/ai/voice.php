@@ -72,12 +72,15 @@ $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 if ($audio !== false && $http >= 200 && $http < 300 && substr((string) $audio, 0, 4) === 'RIFF') {
     try {
-        $faster = rateb_speed_wav((string) $audio, 1.45);
+        $faster = rateb_speed_wav((string) $audio, 1.65);
+        if ($faster === null) {
+            $faster = rateb_wav_faster((string) $audio, 1.65);
+        }
         if ($faster !== null) {
             $audio = $faster;
         }
     } catch (Throwable $error) {
-        $faster = null;
+        $audio = rateb_wav_faster((string) $audio, 1.65) ?? $audio;
     }
 }
 if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {
@@ -198,4 +201,32 @@ function rateb_speed_wav(string $audio, float $tempo): ?string
     @unlink($target);
     @unlink($wav);
     return $faster;
+}
+
+function rateb_wav_faster(string $audio, float $tempo): ?string
+{
+    if ($tempo <= 1 || substr($audio, 0, 4) !== 'RIFF') {
+        return null;
+    }
+    $offset = 12;
+    $length = strlen($audio);
+    while ($offset + 24 <= $length) {
+        $id = substr($audio, $offset, 4);
+        $size = unpack('V', substr($audio, $offset + 4, 4))[1];
+        if ($id === 'fmt ' && $size >= 16) {
+            $rate = unpack('V', substr($audio, $offset + 12, 4))[1];
+            $bytes = unpack('V', substr($audio, $offset + 16, 4))[1];
+            if ($rate < 8000 || $rate > 96000) {
+                return null;
+            }
+            $audio = substr_replace($audio, pack('V', (int) round($rate * $tempo)), $offset + 12, 4);
+            return substr_replace($audio, pack('V', (int) round($bytes * $tempo)), $offset + 16, 4);
+        }
+        $step = 8 + $size + ($size % 2);
+        if ($step < 8) {
+            return null;
+        }
+        $offset += $step;
+    }
+    return null;
 }
