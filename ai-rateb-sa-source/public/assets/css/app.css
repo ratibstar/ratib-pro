@@ -475,3 +475,6 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
   .idea-card{padding:22px 16px}
   .idea-go,.idea-actions,.idea-actions form,.idea-actions button{width:100%}
 }
+.text-edit{margin-top:12px}
+.text-edit summary{cursor:pointer;font-weight:700}
+.text-edit textarea{display:block;width:100%;margin:8px 0 12px}

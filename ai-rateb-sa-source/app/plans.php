@@ -25,7 +25,7 @@ function rateb_ui_error(string $code): string
         'copy_locked' => $arabic ? 'اعتمد الاستراتيجية أولًا.' : 'Approve the strategy first.',
         'output_locked' => $arabic ? 'هذا النص معتمد. أكّد إعادة التوليد قبل استبداله.' : 'This copy is approved. Confirm regeneration before replacing it.',
         'invalid_output' => $arabic ? 'النتيجة غير صالحة، ولم تُحفظ.' : 'The result was not valid, so it was not saved.',
-        'edit_unclear' => $arabic ? 'ما وضحت التعديل. اكتب التغيير الذي تبيه.' : 'The change was not clear. Write the change you want.',
+        'edit_unclear' => $arabic ? 'اكتب التغيير الذي تبيه بصراحة. مثال: غيّر الفكرة إلى ترويج لبرنامج رتب.' : 'Write the change you want. Example: change the idea to a RATEB promotion.',
         'edit_empty' => $arabic ? 'اكتب التعديل أولًا.' : 'Write the change first.',
         'brief_missing' => $arabic ? 'أكمل ملخص الحملة قبل البدء.' : 'Complete the campaign brief before starting.',
         'image_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.',

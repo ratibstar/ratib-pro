@@ -121,13 +121,16 @@ function rateb_voice_script(PDO $pdo, int $campaignId, string $speech): string
         }
     }
     $script = '';
-    foreach (['headline', 'call_to_action'] as $type) {
+    foreach (array_merge(['headline', 'call_to_action', 'short_ad', 'ad_copy'], rateb_copy_types()) as $type) {
         if (!empty($pieces[$type])) {
             $line = rateb_voice_plain($pieces[$type], $speech);
             if ($line === '') {
                 continue;
             }
             $script = $script === '' ? $line : $script . ' ' . $line;
+            if (function_exists('mb_strlen') ? mb_strlen($script) >= 90 : strlen($script) >= 90) {
+                break;
+            }
         }
     }
     if ($speech === 'en' && $script !== '') {

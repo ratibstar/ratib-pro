@@ -183,7 +183,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act9">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act11">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -292,11 +292,11 @@ $csrf = e(csrf_token());
       <input type="hidden" name="csrf" value="<?= $csrf ?>">
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
       <input type="hidden" name="stage" value="edit">
-      <label>
-        <span data-i18n="edit_lead"><?= $arabic ? 'عدّل الفكرة بكلامك' : 'Edit the idea in your own words' ?></span>
-        <textarea name="note" rows="3" data-i18n-placeholder="edit_placeholder" placeholder="<?= $arabic ? 'مثال: غيّر الموقع إلى الرياض وجدة' : 'Example: change the location to Jeddah' ?>"></textarea>
-      </label>
-      <p class="muted" data-i18n="edit_example"><?= $arabic ? 'مثال: أبغى أستهدف الشركات الصغيرة والمتوسطة أيضاً، أو خل الإعلان أكثر حماساً.' : 'Example: also target small and medium businesses, or make the ad more enthusiastic.' ?></p>
+        <label>
+          <span data-i18n="edit_lead"><?= $arabic ? 'اكتب التغيير الذي تبيه' : 'Write the change you want' ?></span>
+          <textarea name="note" rows="3" data-i18n-placeholder="edit_placeholder" placeholder="<?= $arabic ? 'مثال: غيّر الفكرة إلى ترويج لبرنامج رتب' : 'Example: change the idea to a RATEB promotion' ?>"></textarea>
+        </label>
+        <p class="muted" data-i18n="edit_example"><?= $arabic ? 'اكتب التغيير بصراحة. مثال: غيّر الفكرة إلى ترويج لبرنامج رتب، أو غيّر الموقع إلى جدة.' : 'Say what should change. Example: change the idea to a RATEB promotion, or change the location to Jeddah.' ?></p>
       <button class="primary" type="submit" data-i18n="update_idea"><?= $arabic ? 'حدّث الفكرة' : 'Update the idea' ?></button>
     </form>
     <p id="edit-status" class="muted"></p>
@@ -348,6 +348,22 @@ $csrf = e(csrf_token());
           <?php endforeach; ?>
         <?php endforeach; ?>
       </article>
+      <details class="text-edit">
+        <summary><?= $arabic ? 'تعديل الاستراتيجية' : 'Edit strategy' ?></summary>
+        <form method="post" action="/app/content/text-save.php">
+          <input type="hidden" name="csrf" value="<?= $csrf ?>">
+          <input type="hidden" name="campaign_id" value="<?= $id ?>">
+          <input type="hidden" name="kind" value="strategy">
+          <?php foreach (rateb_strategy_keys() as $key): ?>
+            <?php $parts = rateb_field_parts($strategyDoc[$key] ?? null); $current = $parts[0]['text'] ?? ''; ?>
+            <label>
+              <span><?= e($strategyLabels[$key]) ?></span>
+              <textarea name="field[<?= e($key) ?>]" rows="2"><?= e($current) ?></textarea>
+            </label>
+          <?php endforeach; ?>
+          <button class="primary" type="submit"><?= $arabic ? 'حفظ التعديل' : 'Save edit' ?></button>
+        </form>
+      </details>
     <?php endif; ?>
     <div class="action-row">
       <?php if ($strategyDoc !== null && !$strategyApproved): ?>
@@ -407,6 +423,23 @@ $csrf = e(csrf_token());
                 <button class="primary" type="submit" data-i18n="approve_output"><?= $arabic ? 'اعتماد' : 'Approve' ?></button>
               </form>
             <?php endif; ?>
+            <details class="text-edit">
+              <summary><?= $arabic ? 'تعديل' : 'Edit' ?></summary>
+              <form method="post" action="/app/content/text-save.php">
+                <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                <input type="hidden" name="campaign_id" value="<?= $id ?>">
+                <input type="hidden" name="kind" value="copy">
+                <input type="hidden" name="output_id" value="<?= (int) $row['id'] ?>">
+                <textarea name="text" rows="4"><?php
+                  $editText = '';
+                  foreach (rateb_field_parts((string) $row['content']) as $part) {
+                      if ($part['text'] !== '') { $editText = $part['text']; break; }
+                  }
+                  echo e($editText);
+                ?></textarea>
+                <button class="primary" type="submit"><?= $arabic ? 'حفظ التعديل' : 'Save edit' ?></button>
+              </form>
+            </details>
           </div>
         </article>
       <?php endforeach; ?>
@@ -528,6 +561,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act10"></script>
+<script src="/public/assets/js/app.js?v=act11"></script>
 </body>
 </html>

@@ -468,6 +468,14 @@ function rateb_edit_changes(string $note, array $brief): ?array
     } elseif (preg_match('/\bmore\s+enthusiastic\b/i', $note) === 1) {
         $changes['brand_tone'] = 'enthusiastic';
     }
+    if (preg_match('/(?:غيّر|غير|صحح|خلّ|خل)\s+الفكرة\s+(?:إلى|الى)\s+(.+)/u', $note, $match) === 1) {
+        $changes['description'] = mb_substr(rateb_idea_clean($match[1]), 0, 4000);
+    } elseif (preg_match('/\b(?:change|correct)\s+the\s+idea\s+to\s+(.+)/i', $note, $match) === 1) {
+        $changes['description'] = mb_substr(rateb_idea_clean($match[1]), 0, 4000);
+    }
+    if (preg_match('/(?:غيّر|غير|صحح|خلّ|خل)\s+المنتج\s+(?:إلى|الى)\s+(.+)/u', $note, $match) === 1) {
+        $changes['product'] = mb_substr(rateb_idea_clean($match[1]), 0, 255);
+    }
     if (preg_match('/(?:سمِّ|سمّ|سمي)\s+(?:الحملة\s+)?(.+)/u', $note, $match) === 1) {
         $changes['title'] = mb_substr(rateb_idea_clean($match[1]), 0, 120);
     } elseif (preg_match('/\brename\s+the\s+campaign\s+to\s+(.+)/i', $note, $match) === 1) {
