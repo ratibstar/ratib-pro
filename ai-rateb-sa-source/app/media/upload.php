@@ -9,6 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     exit('Method not allowed');
 }
+$postedCampaign = (int) ($_POST['campaign_id'] ?? $_GET['campaign_id'] ?? 0);
+if (($_POST['csrf_token'] ?? $_POST['csrf'] ?? '') === '' && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+    media_redirect($postedCampaign, 'size');
+}
 check_csrf();
 session_write_close();
 
@@ -102,10 +106,11 @@ function rateb_trim_video_file(string $source): ?string
         if (!is_resource($process)) {
             continue;
         }
-        foreach ($pipes as $pipe) {
-            stream_get_contents($pipe);
-            fclose($pipe);
-        }
+        fclose($pipes[0]);
+        stream_get_contents($pipes[1]);
+        stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
         $code = proc_close($process);
         if ($code === 0 && is_file($target) && filesize($target) > 32) {
             $trimmed = file_get_contents($target);

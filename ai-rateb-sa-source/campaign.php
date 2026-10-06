@@ -485,7 +485,9 @@ $csrf = e(csrf_token());
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
     <p class="muted" data-i18n="video_no_provider"><?= $arabic ? 'أرفق فيديو بأي مدة. إذا كان أطول من ٤٠ ثانية يختصره RATEB.' : 'Attach a video of any length. If it is longer than 40 seconds, RATEB shortens it.' ?></p>
     <?php if ($campaignImages !== [] && $campaignVideos === []): ?>
-      <form class="attach-image" method="post" action="/app/media/upload.php" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
+      <form class="attach-image" method="post" action="/app/media/upload.php?campaign_id=<?= $id ?>&panel=video" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
+        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+        <input type="hidden" name="campaign_id" value="<?= $id ?>">
         <input type="hidden" name="panel" value="video">
         <label>
           <span data-i18n="attach_video"><?= $arabic ? 'أرفق فيديو' : 'Attach a video' ?></span>
