@@ -1007,7 +1007,12 @@
         var response = await fetch('/app/ai/voice.php', { method: 'POST', body: new FormData(voiceForm) });
         stopped = true;
         clearInterval(watch);
-        var payload = await response.json();
+        var payload = {};
+        try {
+          payload = await response.json();
+        } catch (parseError) {
+          throw new Error(dict[language].voice_provider || 'Voice generation failed');
+        }
         if (!response.ok) throw new Error(payload.error || dict[language].voice_provider || 'Voice generation failed');
         location.href = payload.redirect;
       } catch (error) {

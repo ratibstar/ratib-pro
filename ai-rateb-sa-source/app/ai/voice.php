@@ -71,9 +71,13 @@ $audio = curl_exec($ch);
 $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 if ($audio !== false && $http >= 200 && $http < 300 && substr((string) $audio, 0, 4) === 'RIFF') {
-    $faster = rateb_speed_wav((string) $audio, 1.45);
-    if ($faster !== null) {
-        $audio = $faster;
+    try {
+        $faster = rateb_speed_wav((string) $audio, 1.45);
+        if ($faster !== null) {
+            $audio = $faster;
+        }
+    } catch (Throwable $error) {
+        $faster = null;
     }
 }
 if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {
@@ -160,7 +164,7 @@ function rateb_speed_wav(string $audio, float $tempo): ?string
             break;
         }
     }
-    if ($ffmpeg === '') {
+    if ($ffmpeg === '' || !function_exists('proc_open')) {
         return null;
     }
     $source = tempnam(sys_get_temp_dir(), 'vw');
