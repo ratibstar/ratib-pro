@@ -70,6 +70,12 @@ curl_setopt_array($ch, [
 $audio = curl_exec($ch);
 $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
+if ($audio !== false && $http >= 200 && $http < 300 && substr((string) $audio, 0, 4) === 'RIFF') {
+    $faster = rateb_speed_wav((string) $audio, 1.45);
+    if ($faster !== null) {
+        $audio = $faster;
+    }
+}
 if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {
     $decoded = json_decode((string) $audio, true);
     $errorCode = is_array($decoded) ? (string) ($decoded['error']['code'] ?? '') : '';
@@ -115,20 +121,17 @@ function rateb_voice_script(PDO $pdo, int $campaignId, string $speech): string
         }
     }
     $script = '';
-    foreach (['headline', 'call_to_action', 'short_ad', 'ad_copy'] as $type) {
+    foreach (['headline', 'call_to_action'] as $type) {
         if (!empty($pieces[$type])) {
             $line = rateb_voice_plain($pieces[$type], $speech);
             if ($line === '') {
                 continue;
             }
             $script = $script === '' ? $line : $script . ' ' . $line;
-            if (function_exists('mb_strlen') ? mb_strlen($script) >= 80 : strlen($script) >= 80) {
-                break;
-            }
         }
     }
     if ($speech === 'en' && $script !== '') {
-        $script = '[cheerful] ' . $script;
+        $script = '[excited] [fast paced] ' . $script;
     }
     if (function_exists('mb_substr')) {
         return trim(mb_substr($script, 0, 180));
@@ -143,4 +146,49 @@ function rateb_voice_plain(string $content, string $speech): string
         $content = (string) ($decoded[$speech] ?? $decoded['ar'] ?? $decoded['en'] ?? '');
     }
     return trim(preg_replace('/\s+/u', ' ', $content) ?? '');
+}
+
+function rateb_speed_wav(string $audio, float $tempo): ?string
+{
+    $ffmpeg = '';
+    foreach (['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/home/admin/bin/ffmpeg'] as $path) {
+        if (is_executable($path)) {
+            $ffmpeg = $path;
+            break;
+        }
+    }
+    if ($ffmpeg === '') {
+        return null;
+    }
+    $source = tempnam(sys_get_temp_dir(), 'vw');
+    $target = tempnam(sys_get_temp_dir(), 'vf');
+    if ($source === false || $target === false) {
+        return null;
+    }
+    $wav = $target . '.wav';
+    file_put_contents($source, $audio);
+    $pipes = [];
+    $process = proc_open(
+        [$ffmpeg, '-y', '-i', $source, '-filter:a', 'atempo=' . $tempo, '-vn', $wav],
+        [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+        $pipes
+    );
+    $faster = null;
+    if (is_resource($process)) {
+        fclose($pipes[0]);
+        stream_get_contents($pipes[1]);
+        stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        if (proc_close($process) === 0 && is_file($wav)) {
+            $read = file_get_contents($wav);
+            if ($read !== false && substr($read, 0, 4) === 'RIFF') {
+                $faster = $read;
+            }
+        }
+    }
+    @unlink($source);
+    @unlink($target);
+    @unlink($wav);
+    return $faster;
 }
