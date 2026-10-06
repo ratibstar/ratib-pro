@@ -363,8 +363,6 @@ body.home main{width:min(1180px,92%);margin:0 auto 48px}
 html{scroll-behavior:smooth}
 body{animation:page-in .45s cubic-bezier(.22,.61,.36,1)}
 @keyframes page-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@view-transition{navigation:auto}
-::view-transition-old(root),::view-transition-new(root){animation-duration:.4s;animation-timing-function:cubic-bezier(.22,.61,.36,1)}
 a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creative,.mock-screen,.flow-board li{transition:transform .35s cubic-bezier(.22,.61,.36,1),box-shadow .35s ease,background-color .3s ease,color .25s ease,border-color .25s ease,opacity .3s ease}
 .home-section,.studio-hero,.landing-hero{scroll-margin-top:84px}
 .demo-hit{cursor:pointer}
@@ -403,7 +401,6 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   body,.demo-viewer[open],body.studio::before,body.studio::after{animation:none}
-  ::view-transition-old(root),::view-transition-new(root){animation:none}
   a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creative,.mock-screen,.flow-board li{transition:none}
 }
 .idea-shell{max-width:760px}
