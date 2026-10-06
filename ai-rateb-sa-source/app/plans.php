@@ -29,6 +29,8 @@ function rateb_ui_error(string $code): string
         'edit_empty' => $arabic ? 'اكتب التعديل أولًا.' : 'Write the change first.',
         'brief_missing' => $arabic ? 'أكمل ملخص الحملة قبل البدء.' : 'Complete the campaign brief before starting.',
         'image_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.',
+        'image_provider' => $arabic ? 'تعذر توليد الصورة. حاول مرة أخرى.' : 'The image could not be generated. Try again.',
+        'image_workers' => $arabic ? 'مزود الصور غير متاح الآن. حاول بعد قليل.' : 'The image provider is not available right now. Try again shortly.',
     ];
     return $messages[$code] ?? ($arabic ? 'تعذر تنفيذ الطلب.' : 'The request could not be completed.');
 }

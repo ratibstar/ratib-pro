@@ -889,10 +889,14 @@
         status.textContent = dict[language].generating_image;
       }
       try {
+        var imagesTab = document.querySelector('[data-tab="images"]');
+        if (imagesTab) imagesTab.click();
+        var started = Date.now();
         var payload = await requestImage(imageForm, '');
         var waits = 0;
         while (payload.pending) {
-          if (waits >= 240) throw new Error(dict[language].image_queued);
+          if (Date.now() - started > 70000 || waits >= 12) throw new Error(dict[language].image_queued);
+          if (status) status.textContent = dict[language].generating_image;
           await new Promise(function (resolve) { setTimeout(resolve, 3000); });
           payload = await requestImage(imageForm, payload.job_id);
           waits += 1;
@@ -915,10 +919,19 @@
   async function requestImage(form, jobId) {
     var body = new FormData(form);
     if (jobId) body.set('job_id', jobId);
-    var response = await fetch('/app/ai/image.php', { method: 'POST', body: body });
-    var payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || 'Image generation failed');
-    return payload;
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, 30000);
+    try {
+      var response = await fetch('/app/ai/image.php', { method: 'POST', body: body, signal: controller.signal });
+      clearTimeout(timer);
+      var payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || dict[language].image_queued);
+      return payload;
+    } catch (error) {
+      clearTimeout(timer);
+      if (error.name === 'AbortError') throw new Error(dict[language].image_queued);
+      throw error;
+    }
   }
 
   var voiceForm = document.getElementById('voiceForm');

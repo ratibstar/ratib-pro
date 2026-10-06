@@ -21,25 +21,33 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
     exit;
 }
 
-set_time_limit(90);
+set_time_limit(45);
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
 $jobId = (string) ($_POST['job_id'] ?? '');
+if ($jobId === '' && isset($_SESSION['ai_image_jobs']) && is_array($_SESSION['ai_image_jobs'])) {
+    foreach ($_SESSION['ai_image_jobs'] as $existingId => $saved) {
+        if (is_array($saved) && (int) ($saved['campaign_id'] ?? 0) === (int) $campaign['id'] && time() - (int) ($saved['created'] ?? 0) < 180) {
+            $jobId = (string) $existingId;
+            break;
+        }
+    }
+}
 if ($jobId !== '') {
     if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
         http_response_code(422);
-        echo json_encode(['error' => 'Image provider request failed.']);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     $saved = $_SESSION['ai_image_jobs'][$jobId] ?? null;
     if (!is_array($saved) || (int) ($saved['campaign_id'] ?? 0) !== (int) $campaign['id']) {
         http_response_code(404);
-        echo json_encode(['error' => 'Image provider request failed.']);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     if (time() - (int) ($saved['created'] ?? 0) > 900) {
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(504);
-        echo json_encode(['error' => 'Image generation is still queued on the free provider. Try again.']);
+        echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     ai_horde_finish_job($campaign, $jobId);
@@ -75,7 +83,7 @@ if (is_array($modelList)) {
 if ($models['http'] !== 200 || $workers < 1) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(503);
-    echo json_encode(['error' => 'The free image model has no workers right now. Try again later.']);
+    echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -98,7 +106,7 @@ $jobId = is_array($job) ? (string) ($job['id'] ?? '') : '';
 if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(502);
-    echo json_encode(['error' => 'Image provider request failed.']);
+    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 if (!isset($_SESSION['ai_image_jobs']) || !is_array($_SESSION['ai_image_jobs'])) {
@@ -122,11 +130,12 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
-        echo json_encode(['error' => 'Image provider request failed.']);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     if (!is_array($state) || empty($state['done'])) {
-        echo json_encode(['pending' => true, 'job_id' => $jobId], JSON_UNESCAPED_UNICODE);
+        $wait = is_array($state) ? (int) ($state['wait_time'] ?? 0) : 0;
+        echo json_encode(['pending' => true, 'job_id' => $jobId, 'wait' => $wait], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -143,7 +152,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
-        echo json_encode(['error' => 'Image provider request failed.']);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -153,7 +162,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
-        echo json_encode(['error' => 'Image provider request failed.']);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     $bytes = $download['body'];
@@ -163,7 +172,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         rateb_usage_finish(db(), $usageId, 'failed');
         unset($_SESSION['ai_image_jobs'][$jobId]);
         http_response_code(502);
-        echo json_encode(['error' => 'Image provider request failed.']);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     if (rateb_watermark_required(db(), (int) $_SESSION['user_id'])) {
@@ -219,54 +228,9 @@ function ai_campaign_image_prompt(array $campaign): string
         echo json_encode(['error' => rateb_ui_error('image_locked'), 'code' => 'image_locked'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $facts = [];
-    foreach (['product_name', 'title', 'description'] as $field) {
-        $value = trim((string) ($campaign[$field] ?? ''));
-        if ($value !== '') {
-            $facts[] = $field . ': ' . $value;
-        }
-    }
-    $facts[] = 'strategy: ' . $strategy;
-    foreach ($copy as $type => $value) {
-        if ($value !== '') {
-            $facts[] = $type . ': ' . $value;
-        }
-    }
-    $source = implode("\n", $facts);
-    $cfg = require dirname(__DIR__, 2) . '/config/ai.php';
-    $english = '';
-    if (trim((string) ($cfg['api_key'] ?? '')) !== '') {
-        $payload = json_encode([
-            'model' => $cfg['model'],
-            'messages' => [
-                ['role' => 'system', 'content' => 'Return one JSON object with the key prompt. The prompt is one English sentence describing a photograph. Use only the supplied facts. Do not add prices, awards, or text inside the picture.'],
-                ['role' => 'user', 'content' => $source],
-            ],
-            'temperature' => 0.3,
-            'reasoning_effort' => 'low',
-            'max_tokens' => 180,
-            'response_format' => ['type' => 'json_object'],
-        ], JSON_UNESCAPED_UNICODE);
-        $ch = curl_init(rtrim((string) $cfg['base_url'], '/') . '/chat/completions');
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
-            CURLOPT_POSTFIELDS => $payload,
-            CURLOPT_TIMEOUT => 15,
-            CURLOPT_CONNECTTIMEOUT => 8,
-        ]);
-        $raw = curl_exec($ch);
-        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        $decoded = json_decode((string) $raw, true);
-        $content = is_array($decoded) ? (string) ($decoded['choices'][0]['message']['content'] ?? '') : '';
-        $promptJson = json_decode($content, true);
-        if ($code >= 200 && $code < 300 && is_array($promptJson)) {
-            $english = trim((string) ($promptJson['prompt'] ?? ''));
-        }
-    }
-    $prompt = $english !== '' ? $english : trim((string) ($campaign['product_name'] ?? '') . ' ' . (string) reset($copy));
+    $headline = trim((string) reset($copy));
+    $product = trim((string) ($campaign['product_name'] ?? ''));
+    $prompt = trim('Advertising photograph, no written text. ' . $product . '. ' . $headline);
     if (function_exists('mb_substr')) {
         $prompt = mb_substr($prompt, 0, 400);
     } else {
@@ -294,7 +258,7 @@ function ai_horde_request(string $method, string $url, ?string $body = null): ar
         CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => $headers,
-        CURLOPT_TIMEOUT => 40,
+        CURLOPT_TIMEOUT => 12,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS => 2,
         CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
@@ -311,12 +275,8 @@ function ai_horde_request(string $method, string $url, ?string $body = null): ar
 
 function ai_horde_fail(int $http, string $body): void
 {
-    $decoded = json_decode($body, true);
-    $message = is_array($decoded) ? (string) ($decoded['message'] ?? 'Image provider request failed.') : 'Image provider request failed.';
-    $message = preg_replace('/sk-[A-Za-z0-9_\-]{6,}/', '[redacted]', $message) ?? $message;
-    $message = preg_replace('/gsk_[A-Za-z0-9_\-]{6,}/', '[redacted]', $message) ?? $message;
     http_response_code($http >= 400 && $http < 600 ? $http : 502);
-    echo json_encode(['error' => substr($message, 0, 180)]);
+    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

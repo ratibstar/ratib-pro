@@ -179,7 +179,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act3">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act4">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -435,6 +435,6 @@ $csrf = e(csrf_token());
     <p class="empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
   </section>
 </main>
-<script src="/public/assets/js/app.js?v=act3"></script>
+<script src="/public/assets/js/app.js?v=act4"></script>
 </body>
 </html>
