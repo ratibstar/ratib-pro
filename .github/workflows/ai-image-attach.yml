@@ -64,8 +64,8 @@ jobs:
               def redirect_request(self, req, fp, code, msg, headers, newurl):
                   return None
           plain = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar), NoRedirect)
-          def request(url, data=None, timeout=60, follow=True):
-              req = urllib.request.Request(url, data=data)
+          def request(url, data=None, timeout=60, follow=True, headers=None):
+              req = urllib.request.Request(url, data=data, headers=headers or {})
               tool = opener if follow else plain
               try:
                   with tool.open(req, timeout=timeout) as response:
@@ -123,7 +123,7 @@ jobs:
               parts.append(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + name + "\"\r\n\r\n" + value + "\r\n").encode())
           parts.append(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"photo.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n").encode() + jpeg + b"\r\n")
           parts.append(("--" + boundary + "--\r\n").encode())
-          code, url, body, headers = request(base + "/app/media/upload.php", b"".join(parts), follow=False)
+          code, url, body, headers = request(base + "/app/media/upload.php", b"".join(parts), follow=False, headers={"Content-Type": "multipart/form-data; boundary=" + boundary})
           location = headers.get("Location", "") if headers else ""
           code2, url2, body2, headers2 = request(base + location if location.startswith("http") else base + location)
           page_html = body2.decode("utf-8", "replace")
