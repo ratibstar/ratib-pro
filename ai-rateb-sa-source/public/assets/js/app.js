@@ -1023,6 +1023,15 @@
         }
       }
     };
+    document.querySelectorAll('#voiceForm .voice-picks label').forEach(function (label) {
+      label.addEventListener('click', function () {
+        var input = label.querySelector('input[name="voice"]');
+        var player = document.getElementById('voice-preview');
+        if (!input || !player) return;
+        player.src = '/app/ai/voice-preview.php?voice=' + encodeURIComponent(input.value);
+        player.play().catch(function () {});
+      });
+    });
   }
 
   document.querySelectorAll('form[data-video-upload]').forEach(function (form) {
