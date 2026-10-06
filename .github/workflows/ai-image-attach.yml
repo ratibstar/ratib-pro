@@ -54,7 +54,7 @@ jobs:
           curl -fsS "https://ai.rateb.sa/oc-$TOKEN.php"; echo
           ssh -i "$HOME/.ssh/ai_key" -p "$PORT" -o StrictHostKeyChecking=accept-new "$USER@$HOST" "rm -f $ROOT/oc-$TOKEN.php"
           python3 - << 'PY'
-          import base64, http.cookiejar, re, secrets, urllib.parse, urllib.request
+          import struct, zlib, http.cookiejar, re, secrets, urllib.parse, urllib.request
           base = "https://ai.rateb.sa"
           email = "img4-" + secrets.token_hex(4) + "@example.com"
           password = secrets.token_urlsafe(18)
@@ -115,13 +115,17 @@ jobs:
           html = page()
           attach_form = 'name="file"' in html and "أرفق الصورة" in html and 'id="demo-viewer"' in html
           print("ATTACH_FORM=" + ("PASS" if attach_form else "FAIL"), flush=True)
-          jpeg = base64.b64decode("/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxISEhUQEhIVFRUVFRUVFRUVFRUVFRUWFxUVFRUYHSggGBolGxUVITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGhAQGy0lHyUtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAQAAwAMBIgACEQEDEQH/xAAbAAEAAgMBAQAAAAAAAAAAAAAABQYDBAcCAf/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGf/9k=")
+          def png():
+              def chunk(tag, data):
+                  return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+              return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(b"\x00\xff\x00\x00")) + chunk(b"IEND", b"")
+          picture = png()
           boundary = "----rateb" + secrets.token_hex(8)
           token = csrf(html, "csrf")
           parts = []
           for name, value in (("csrf", token), ("campaign_id", campaign_id), ("kind", "image"), ("panel", "images")):
               parts.append(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + name + "\"\r\n\r\n" + value + "\r\n").encode())
-          parts.append(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"photo.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n").encode() + jpeg + b"\r\n")
+          parts.append(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"photo.png\"\r\nContent-Type: image/png\r\n\r\n").encode() + picture + b"\r\n")
           parts.append(("--" + boundary + "--\r\n").encode())
           code, url, body, headers = request(base + "/app/media/upload.php", b"".join(parts), follow=False, headers={"Content-Type": "multipart/form-data; boundary=" + boundary})
           location = headers.get("Location", "") if headers else ""
