@@ -121,7 +121,9 @@ $channels = trim((string) ($brief['channels'] ?? ''));
 $tone = trim((string) ($brief['brand_tone'] ?? ''));
 $ideaDone = $product !== '' || $idea !== '';
 $videoMax = 40;
-$doneUnits = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($campaignVideos !== [] ? 1 : 0);
+$readyDone = in_array((string) ($campaign['status'] ?? ''), ['ready', 'completed'], true);
+$priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($campaignVideos !== [] ? 1 : 0);
+$doneUnits = $priorDone + ($readyDone ? 1 : 0);
 $progress = (int) round($doneUnits * 100 / 7);
 $stages = [
     'idea' => ['no' => '01', 'state' => $ideaDone ? 'done' : 'open'],
@@ -130,7 +132,7 @@ $stages = [
     'images' => ['no' => '04', 'state' => $campaignImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
     'voice' => ['no' => '05', 'state' => $campaignVoices !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
     'video' => ['no' => '06', 'state' => $campaignVideos !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
-    'ready' => ['no' => '07', 'state' => $doneUnits >= 6 ? 'open' : 'next'],
+    'ready' => ['no' => '07', 'state' => $readyDone ? 'done' : ($priorDone >= 6 ? 'open' : 'next')],
 ];
 $stageNames = $arabic
     ? ['idea' => 'الفكرة', 'strategy' => 'الاستراتيجية', 'copy' => 'النص', 'images' => 'الصور', 'voice' => 'الصوت', 'video' => 'الفيديو', 'ready' => 'الحملة الجاهزة']
@@ -573,10 +575,44 @@ $csrf = e(csrf_token());
   </section>
   <section class="panel" id="ready" data-panel="ready">
     <h2 data-i18n="stage_ready"><?= $arabic ? 'الحملة الجاهزة' : 'Ready campaign' ?></h2>
-    <?php if ($doneUnits >= 6): ?>
-      <p class="empty" data-i18n="stage_ready_done"><?= $arabic ? 'المراحل السابقة مكتملة. تجميع الحملة الجاهزة هو الخطوة التالية، ولم يُجهَّز بعد.' : 'The earlier stages are complete. Assembling the ready campaign is the next step, and it is not built yet.' ?></p>
-    <?php else: ?>
+    <?php if ($priorDone < 6): ?>
       <p class="empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
+    <?php else: ?>
+      <?php if ($readyDone): ?><p class="badge"><?= $arabic ? 'جاهزة' : 'Ready' ?></p><?php endif; ?>
+      <article class="strategy-card">
+        <h3><?= e((string) $campaign['title']) ?></h3>
+        <?php if ($voiceScript !== ''): ?><p><?= e($voiceScript) ?></p><?php endif; ?>
+        <?php foreach (rateb_copy_types() as $type): ?>
+          <?php if (!isset($copyRows[$type]) || (string) $copyRows[$type]['approval_status'] !== 'approved') continue; ?>
+          <h3><?= e($copyLabels[$type] ?? $type) ?></h3>
+          <?php foreach (rateb_field_parts((string) $copyRows[$type]['content']) as $part): ?>
+            <p><?= nl2br(e($part['text'])) ?></p>
+          <?php endforeach; ?>
+        <?php endforeach; ?>
+      </article>
+      <?php if ($campaignImages): ?>
+        <div class="media-grid generated-images">
+          <?php foreach ($campaignImages as $item): ?>
+            <article class="media-card"><img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt=""></article>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+      <?php foreach ($campaignVoices as $item): ?>
+        <audio controls src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></audio>
+      <?php endforeach; ?>
+      <?php foreach ($campaignVideos as $item): ?>
+        <video controls playsinline src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
+      <?php endforeach; ?>
+      <?php if (!$readyDone): ?>
+        <form method="post" action="/app/campaign/ready.php">
+          <input type="hidden" name="csrf" value="<?= $csrf ?>">
+          <input type="hidden" name="campaign_id" value="<?= $id ?>">
+          <button class="primary" type="submit"><?= $arabic ? 'اعتماد الحملة الجاهزة' : 'Mark the campaign ready' ?></button>
+        </form>
+      <?php endif; ?>
+      <?php if (($_GET['ready_error'] ?? '') === '1'): ?>
+        <p class="notice is-error"><?= $arabic ? 'أكمل النص والصورة والصوت والفيديو أولاً.' : 'Finish the copy, image, voice, and video first.' ?></p>
+      <?php endif; ?>
     <?php endif; ?>
   </section>
 </main>
