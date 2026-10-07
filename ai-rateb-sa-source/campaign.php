@@ -70,10 +70,13 @@ $strategyLabels = $arabic
     ];
 $strategyRow = null;
 $copyRows = [];
+$voiceScript = '';
 foreach ($outputs as $row) {
     $type = (string) $row['output_type'];
     if ($type === 'strategy' && $strategyRow === null) {
         $strategyRow = $row;
+    } elseif ($type === 'voice_script' && !isset($voiceScript)) {
+        $voiceScript = (string) $row['content'];
     } elseif (in_array($type, rateb_copy_types(), true)) {
         $copyRows[$type] = $row;
     }
@@ -507,10 +510,13 @@ $csrf = e(csrf_token());
             <label><input type="radio" name="voice" value="<?= e($choice['id']) ?>"<?= $choice['id'] === ($speech === 'ar' ? 'noura' : 'hannah') ? ' checked' : '' ?>><span><?= e($choice['label']) ?></span></label>
           <?php endforeach; ?>
         </div>
-        <p class="muted"><?= $arabic ? '١) اضغط الاسم لتسمعه. ٢) ثم اضغط الزر ليولّد RATEB صوت الحملة بهذا الاختيار.' : '1) Press a name to hear it. 2) Then press the button so RATEB generates the campaign voice with that choice.' ?></p>
+        <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة. ٢) RATEB يختار الكلام من نصوص الحملة، ثم يسجّله بهذا الصوت.' : '1) Choose a voice and hear the sample. 2) RATEB picks the words from the campaign, then records them in that voice.' ?></p>
         <button class="primary" type="submit"><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
         <audio id="voice-preview" class="voice-preview" controls preload="none"></audio>
       </form>
+    <?php endif; ?>
+    <?php if ($voiceScript !== ''): ?>
+      <p class="notice"><?= $arabic ? 'الكلام الذي اختاره RATEB من الحملة:' : 'The words RATEB picked from the campaign:' ?> <?= e($voiceScript) ?></p>
     <?php endif; ?>
     <?php if ($campaignVoices): ?>
       <?php foreach ($campaignVoices as $item): ?>
