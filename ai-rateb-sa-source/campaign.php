@@ -130,7 +130,7 @@ $stages = [
     'images' => ['no' => '04', 'state' => $campaignImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
     'voice' => ['no' => '05', 'state' => $campaignVoices !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
     'video' => ['no' => '06', 'state' => $campaignVideos !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
-    'ready' => ['no' => '07', 'state' => 'next'],
+    'ready' => ['no' => '07', 'state' => $doneUnits >= 6 ? 'open' : 'next'],
 ];
 $stageNames = $arabic
     ? ['idea' => 'الفكرة', 'strategy' => 'الاستراتيجية', 'copy' => 'النص', 'images' => 'الصور', 'voice' => 'الصوت', 'video' => 'الفيديو', 'ready' => 'الحملة الجاهزة']
@@ -573,7 +573,11 @@ $csrf = e(csrf_token());
   </section>
   <section class="panel" id="ready" data-panel="ready">
     <h2 data-i18n="stage_ready"><?= $arabic ? 'الحملة الجاهزة' : 'Ready campaign' ?></h2>
-    <p class="empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
+    <?php if ($doneUnits >= 6): ?>
+      <p class="empty" data-i18n="stage_ready_done"><?= $arabic ? 'المراحل السابقة مكتملة. تجميع الحملة الجاهزة هو الخطوة التالية، ولم يُجهَّز بعد.' : 'The earlier stages are complete. Assembling the ready campaign is the next step, and it is not built yet.' ?></p>
+    <?php else: ?>
+      <p class="empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
+    <?php endif; ?>
   </section>
 </main>
 <dialog class="demo-viewer" id="demo-viewer">
@@ -583,6 +587,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act15"></script>
+<script src="/public/assets/js/app.js?v=act16"></script>
 </body>
 </html>
