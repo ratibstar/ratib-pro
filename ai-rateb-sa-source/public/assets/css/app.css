@@ -442,7 +442,8 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .generated-images img{width:100%;border-radius:16px;display:block}
 .generated-images .image-preview{display:block;width:100%;padding:0;border:0;background:transparent;cursor:zoom-in}
 .attach-image{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:0 0 18px}
-.media-card audio,.media-card video,.card-voice{width:100%;display:block;margin-top:8px}
+.media-card audio,.card-voice{width:100%;display:block;margin-top:8px}
+#video .media-card video,#ready video{width:50%;max-width:50%;height:auto;display:block;margin-top:8px;border-radius:16px;background:#111}
 .build-stages .is-done span{color:rgba(255,255,255,.8)}
 .edit-campaign{margin-top:18px}
 .edit-campaign summary{cursor:pointer;font-weight:800}
