@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 function rateb_vision_provider(): ?string
 {
-    return null;
+    $name = trim((string) getenv('RATEB_VISION_PROVIDER'));
+    return $name !== '' ? $name : null;
 }
 
 function rateb_vision_analyze(string $bytes, string $mime): ?array

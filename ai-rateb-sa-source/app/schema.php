@@ -212,6 +212,24 @@ function ensure_campaign_schema(PDO $pdo): void
     if (filter_var($ownerEmail, FILTER_VALIDATE_EMAIL)) {
         $pdo->prepare("UPDATE users SET role = 'owner' WHERE email = ? AND role <> 'owner'")->execute([$ownerEmail]);
     }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS video_jobs (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        campaign_id BIGINT UNSIGNED NOT NULL,
+        user_id BIGINT UNSIGNED NOT NULL,
+        status VARCHAR(16) NOT NULL,
+        provider VARCHAR(32) NOT NULL,
+        storyboard MEDIUMTEXT NOT NULL,
+        output_media_id BIGINT UNSIGNED NULL,
+        usage_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        error_code VARCHAR(64) NOT NULL DEFAULT '',
+        watermark TINYINT(1) NOT NULL DEFAULT 0,
+        approval_status VARCHAR(16) NOT NULL DEFAULT 'draft',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY campaign_user (campaign_id, user_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 }
 
 function campaign_status_values(): array

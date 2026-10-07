@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/app/bootstrap.php';
 require_once __DIR__ . '/app/plans.php';
+require_once __DIR__ . '/app/video/engine.php';
 require_login();
 
 $id = (int) ($_GET['id'] ?? 0);
@@ -121,8 +122,10 @@ $channels = trim((string) ($brief['channels'] ?? ''));
 $tone = trim((string) ($brief['brand_tone'] ?? ''));
 $ideaDone = $product !== '' || $idea !== '';
 $videoMax = 40;
+$videoJob = rateb_video_latest_job(db(), $id, $userId);
+$approvedVideo = rateb_video_approved(db(), $id, $userId);
 $readyDone = in_array((string) ($campaign['status'] ?? ''), ['ready', 'completed'], true);
-$priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($campaignVideos !== [] ? 1 : 0);
+$priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($approvedVideo ? 1 : 0);
 $doneUnits = $priorDone + ($readyDone ? 1 : 0);
 $progress = (int) round($doneUnits * 100 / 7);
 $stages = [
@@ -131,7 +134,7 @@ $stages = [
     'copy' => ['no' => '03', 'state' => $copyApproved ? 'done' : ($copyStarted ? 'progress' : ($strategyApproved ? 'open' : 'next'))],
     'images' => ['no' => '04', 'state' => $campaignImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
     'voice' => ['no' => '05', 'state' => $campaignVoices !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
-    'video' => ['no' => '06', 'state' => $campaignVideos !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
+    'video' => ['no' => '06', 'state' => $approvedVideo ? 'done' : (($videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true)) || ($videoJob && (string) $videoJob['status'] === 'completed') ? 'progress' : ($campaignImages !== [] ? 'open' : 'next'))],
     'ready' => ['no' => '07', 'state' => $readyDone ? 'done' : ($priorDone >= 6 ? 'open' : 'next')],
 ];
 $stageNames = $arabic
@@ -188,7 +191,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act17">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act18">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -540,7 +543,36 @@ $csrf = e(csrf_token());
   </section>
   <section class="panel" id="video" data-panel="video">
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
-    <p class="muted" data-i18n="video_no_provider"><?= $arabic ? 'أرفق فيديو بأي مدة. إذا كان أطول من ٤٠ ثانية يختصره RATEB.' : 'Attach a video of any length. If it is longer than 40 seconds, RATEB shortens it.' ?></p>
+    <?php if ($approvedVideo): ?>
+      <p class="badge"><?= $arabic ? 'الفيديو معتمد' : 'Video approved' ?></p>
+    <?php endif; ?>
+    <form id="videoGenerate" method="post" action="/app/ai/video.php" data-video-generate="1" data-campaign="<?= $id ?>"<?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ' data-running="1"' : '' ?>>
+      <input type="hidden" name="csrf" value="<?= $csrf ?>">
+      <input type="hidden" name="campaign_id" value="<?= $id ?>">
+      <button class="primary" type="submit"><?= $videoJob && (string) $videoJob['status'] === 'completed' ? ($arabic ? 'إعادة التوليد' : 'Regenerate') : ($arabic ? 'إنشاء الفيديو' : 'Create video') ?></button>
+    </form>
+    <p class="notice stage-status" id="video-gen-status" hidden></p>
+    <?php if ($videoJob && (string) $videoJob['status'] === 'failed'): ?>
+      <p class="notice is-error"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></p>
+    <?php endif; ?>
+    <?php if ($videoJob && (string) $videoJob['status'] === 'completed' && (int) $videoJob['output_media_id'] > 0): ?>
+      <?php $sceneCount = count(json_decode((string) $videoJob['storyboard'], true) ?: []); ?>
+      <article class="media-card">
+        <p><?= $arabic ? 'معاينة الفيديو' : 'Preview Video' ?></p>
+        <p class="muted"><?= e((string) ($sceneCount * 5)) ?>s · 9:16 · <?= (string) $videoJob['approval_status'] === 'approved' ? ($arabic ? 'معتمد' : 'Approved') : ($arabic ? 'بانتظار الاعتماد' : 'Waiting for approval') ?></p>
+        <video controls playsinline src="/app/media/file.php?id=<?= (int) $videoJob['output_media_id'] ?>"></video>
+        <?php if ((string) $videoJob['approval_status'] !== 'approved'): ?>
+          <form method="post" action="/app/ai/video-approve.php">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
+            <input type="hidden" name="campaign_id" value="<?= $id ?>">
+            <input type="hidden" name="job_id" value="<?= (int) $videoJob['id'] ?>">
+            <button class="primary" type="submit"><?= $arabic ? 'اعتماد الفيديو' : 'Approve Video' ?></button>
+          </form>
+        <?php endif; ?>
+      </article>
+    <?php endif; ?>
+    <h3><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></h3>
+    <p class="muted"><?= $arabic ? 'الملف المرفوع مرجع فقط، وليس فيديو RATEB.' : 'An uploaded file is reference media, not a RATEB video.' ?></p>
     <?php if ($campaignImages !== [] && $campaignVideos === []): ?>
       <form class="attach-image" method="post" action="/app/media/upload.php?campaign_id=<?= $id ?>&panel=video" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
@@ -600,9 +632,11 @@ $csrf = e(csrf_token());
       <?php foreach ($campaignVoices as $item): ?>
         <audio controls src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></audio>
       <?php endforeach; ?>
-      <?php foreach ($campaignVideos as $item): ?>
-        <video controls playsinline src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
-      <?php endforeach; ?>
+      <?php if ($approvedVideo): ?>
+        <video controls playsinline src="/app/media/file.php?id=<?= (int) $approvedVideo['output_media_id'] ?>"></video>
+      <?php else: ?>
+        <p class="empty"><?= $arabic ? 'الحملة الجاهزة تستخدم الفيديو المعتمد فقط.' : 'The ready campaign uses the approved video only.' ?></p>
+      <?php endif; ?>
       <?php if (!$readyDone): ?>
         <form method="post" action="/app/campaign/ready.php">
           <input type="hidden" name="csrf" value="<?= $csrf ?>">
@@ -623,6 +657,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act16"></script>
+<script src="/public/assets/js/app.js?v=act18"></script>
 </body>
 </html>

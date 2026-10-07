@@ -1071,6 +1071,49 @@
     });
   });
 
+  var videoGenerate = document.getElementById('videoGenerate');
+  if (videoGenerate) {
+    var videoStatus = document.getElementById('video-gen-status');
+    var videoBusy = language === 'ar' ? 'جاري إنشاء الفيديو...' : 'Creating the video...';
+    var watchVideo = function () {
+      fetch('/app/ai/video-status.php?campaign_id=' + encodeURIComponent(videoGenerate.getAttribute('data-campaign') || ''), { credentials: 'same-origin' })
+        .then(function (response) { return response.json(); })
+        .then(function (payload) {
+          if (!payload || payload.status === 'queued' || payload.status === 'processing') {
+            if (videoStatus) {
+              videoStatus.hidden = false;
+              videoStatus.textContent = videoBusy;
+            }
+            window.setTimeout(watchVideo, 4000);
+            return;
+          }
+          if (payload.status === 'completed' || payload.status === 'failed') location.reload();
+        })
+        .catch(function () { window.setTimeout(watchVideo, 4000); });
+    };
+    videoGenerate.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (videoStatus) {
+        videoStatus.hidden = false;
+        videoStatus.className = 'notice stage-status';
+        videoStatus.textContent = videoBusy;
+      }
+      fetch(videoGenerate.action, { method: 'POST', body: new FormData(videoGenerate), credentials: 'same-origin' })
+        .then(function (response) { return response.json(); })
+        .then(function (payload) {
+          if (!payload || !payload.ok) {
+            if (videoStatus) videoStatus.textContent = (payload && payload.error) || videoBusy;
+            return;
+          }
+          watchVideo();
+        })
+        .catch(function () {
+          if (videoStatus) videoStatus.textContent = language === 'ar' ? 'تعذر إنشاء الفيديو.' : 'The video could not be generated.';
+        });
+    });
+    if (videoGenerate.getAttribute('data-running') === '1') watchVideo();
+  }
+
   var variationForm = document.getElementById('variationForm');
   if (variationForm) {
     variationForm.onsubmit = async function (event) {

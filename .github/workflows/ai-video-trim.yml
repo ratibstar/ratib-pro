@@ -1,0 +1,63 @@
+name: AI video engine
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ship:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 12
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+      DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Upload video engine
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "-----BEGIN" not in key:
+              raise SystemExit("SSH key missing")
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          PY
+          ROOT=/home/admin/domains/ai.rateb.sa
+          SSH="ssh -i $HOME/.ssh/ai_key -p $DEPLOY_SSH_PORT -o StrictHostKeyChecking=accept-new"
+          SCP="scp -i $HOME/.ssh/ai_key -P $DEPLOY_SSH_PORT -o StrictHostKeyChecking=accept-new"
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "mkdir -p $ROOT/app/video"
+          $SCP ai-rateb-sa-source/campaign.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/campaign.php"
+          $SCP ai-rateb-sa-source/app/schema.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/schema.php"
+          $SCP ai-rateb-sa-source/app/vision.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/vision.php"
+          $SCP ai-rateb-sa-source/app/video/provider.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/video/provider.php"
+          $SCP ai-rateb-sa-source/app/video/engine.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/video/engine.php"
+          $SCP ai-rateb-sa-source/app/ai/video.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/ai/video.php"
+          $SCP ai-rateb-sa-source/app/ai/video-status.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/ai/video-status.php"
+          $SCP ai-rateb-sa-source/app/ai/video-approve.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/ai/video-approve.php"
+          $SCP ai-rateb-sa-source/app/campaign/ready.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/campaign/ready.php"
+          $SCP ai-rateb-sa-source/public/assets/js/app.js "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/public/assets/js/app.js"
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "php -l $ROOT/app/video/provider.php && php -l $ROOT/app/video/engine.php && php -l $ROOT/app/ai/video.php && php -l $ROOT/campaign.php"
+          TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(6))')
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "cat > $ROOT/oc-$TOKEN.php" << 'PHP'
+          <?php
+          foreach (['/campaign.php','/app/schema.php','/app/vision.php','/app/video/provider.php','/app/video/engine.php','/app/ai/video.php','/app/ai/video-status.php','/app/ai/video-approve.php','/app/campaign/ready.php'] as $file) {
+              if (function_exists('opcache_invalidate')) opcache_invalidate(__DIR__ . $file, true);
+          }
+          echo 'OPCACHE=ok';
+          PHP
+          curl -fsS "https://ai.rateb.sa/oc-$TOKEN.php"
+          echo
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "rm -f $ROOT/oc-$TOKEN.php"
