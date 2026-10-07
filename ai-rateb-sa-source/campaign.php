@@ -262,7 +262,7 @@ $csrf = e(csrf_token());
             <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
         <?php elseif ($key === 'voice' && $campaignImages !== []): ?>
-          <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm" data-i18n="<?= $campaignVoices !== [] ? 'another_voice' : 'start_voice' ?>"><?= $campaignVoices !== [] ? ($arabic ? 'صوت آخر' : 'Another voice') : ($arabic ? 'ابدأ الصوت' : 'Start Voice') ?></button>
+          <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm"><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
           <?php if ($campaignVoices): ?>
             <audio class="card-voice" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $campaignVoices[0]['id'] ?>"<?= (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
           <?php endif; ?>
@@ -507,9 +507,9 @@ $csrf = e(csrf_token());
             <label><input type="radio" name="voice" value="<?= e($choice['id']) ?>"<?= $choice['id'] === ($speech === 'ar' ? 'noura' : 'hannah') ? ' checked' : '' ?>><span><?= e($choice['label']) ?></span></label>
           <?php endforeach; ?>
         </div>
+        <p class="muted"><?= $arabic ? '١) اضغط الاسم لتسمعه. ٢) ثم اضغط الزر ليولّد RATEB صوت الحملة بهذا الاختيار.' : '1) Press a name to hear it. 2) Then press the button so RATEB generates the campaign voice with that choice.' ?></p>
+        <button class="primary" type="submit"><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
         <audio id="voice-preview" class="voice-preview" controls preload="none"></audio>
-        <p class="muted"><?= $arabic ? 'اضغط الاسم لتسمع العينة، ثم ابدأ التسجيل.' : 'Press a name to hear a sample, then start the recording.' ?></p>
-        <button class="primary" type="submit"><?= $campaignVoices !== [] ? ($arabic ? 'صوت آخر' : 'Another voice') : ($arabic ? 'ابدأ الصوت' : 'Start Voice') ?></button>
       </form>
     <?php endif; ?>
     <?php if ($campaignVoices): ?>
