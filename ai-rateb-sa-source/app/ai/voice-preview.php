@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/sawtak.php';
-require_login();
 
 $id = (string) ($_GET['voice'] ?? '');
 $voice = rateb_sawtak_find($id);

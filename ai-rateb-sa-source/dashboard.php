@@ -43,7 +43,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=ink1">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act20">
 </head>
 <body class="studio page-dash">
 <header class="topbar">
@@ -102,11 +102,16 @@ foreach ($campaigns as $row) {
       <article class="sample-card demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-story.mp4"><img src="/public/assets/demo/demo-story.jpg" alt=""><span class="mini-play"></span><span data-i18n="video_story">Vertical story</span></article>
     </div>
     <h3 data-i18n="sample_voices">Voices</h3>
-    <div class="voice-row">
-      <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-calm.mp3"><span class="mini-play"></span><b data-i18n="voice_calm">Calm voice</b></article>
-      <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-warm.mp3"><span class="mini-play"></span><b data-i18n="voice_warm">Warm voice</b></article>
-      <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-clear.mp3"><span class="mini-play"></span><b data-i18n="voice_clear">Clear voice</b></article>
-      <article class="voice-card demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-deep.mp3"><span class="mini-play"></span><b data-i18n="voice_deep">Deep voice</b></article>
+    <div class="voice-library" data-voice-library>
+      <div class="voice-filters">
+        <input type="search" data-voice-search placeholder="Search by name">
+        <select data-voice-dialect><option value="">All dialects</option></select>
+        <select data-voice-gender><option value="">All genders</option></select>
+        <select data-voice-use><option value="">All uses</option></select>
+      </div>
+      <p class="muted" data-voice-note></p>
+      <div class="voice-picks" data-voice-picks></div>
+      <audio data-voice-player controls preload="none"></audio>
     </div>
   </section>
 
@@ -207,6 +212,6 @@ foreach ($campaigns as $row) {
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=del1"></script>
+<script src="/public/assets/js/app.js?v=act20"></script>
 </body>
 </html>

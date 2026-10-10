@@ -220,7 +220,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=idea2">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act20">
 </head>
 <body class="studio page-new">
 <header class="top">
@@ -432,6 +432,20 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
   </section>
 <?php endif; ?>
 </main>
-<script src="/public/assets/js/app.js?v=idea2"></script>
+<section class="wrap idea-shell">
+  <div class="voice-library" data-voice-library>
+    <h2>الأصوات</h2>
+    <div class="voice-filters">
+      <input type="search" data-voice-search placeholder="ابحث بالاسم">
+      <select data-voice-dialect><option value="">كل اللهجات</option></select>
+      <select data-voice-gender><option value="">كل الأنواع</option></select>
+      <select data-voice-use><option value="">كل الاستخدامات</option></select>
+    </div>
+    <p class="muted" data-voice-note></p>
+    <div class="voice-picks" data-voice-picks></div>
+    <audio data-voice-player controls preload="none"></audio>
+  </div>
+</section>
+<script src="/public/assets/js/app.js?v=act20"></script>
 </body>
 </html>

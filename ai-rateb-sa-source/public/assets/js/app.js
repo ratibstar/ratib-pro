@@ -1025,74 +1025,88 @@
         }
       }
     };
-    document.getElementById('voice-picks').addEventListener('click', function (event) {
-      var label = event.target.closest('label');
-      var input = label ? label.querySelector('input[name="voice"]') : null;
-      var player = document.getElementById('voice-preview');
-      if (!input || !player) return;
-      player.src = '/app/ai/voice-preview.php?voice=' + encodeURIComponent(input.value);
-      player.play().catch(function () {});
-    });
-    var voiceCatalog = [];
-    var dialectSelect = document.getElementById('voice-dialect');
-    var genderSelect = document.getElementById('voice-gender');
-    var useSelect = document.getElementById('voice-use');
-    var searchInput = document.getElementById('voice-search');
-    var picks = document.getElementById('voice-picks');
-    var note = document.getElementById('voice-catalog-note');
-    var fill = function (select, values) {
-      values.forEach(function (value) {
-        var option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        select.appendChild(option);
-      });
-    };
-    var drawVoices = function () {
-      var q = (searchInput.value || '').trim().toLowerCase();
-      picks.textContent = '';
-      voiceCatalog.filter(function (voice) {
-        if (dialectSelect.value && voice.dialect !== dialectSelect.value) return false;
-        if (genderSelect.value && voice.gender !== genderSelect.value) return false;
-        if (useSelect.value && voice.use_case !== useSelect.value) return false;
-        if (q && String(voice.name || '').toLowerCase().indexOf(q) === -1) return false;
-        return true;
-      }).forEach(function (voice) {
-        var label = document.createElement('label');
-        var input = document.createElement('input');
-        input.type = 'radio';
-        input.name = 'voice';
-        input.value = voice.id;
-        input.required = true;
-        var text = document.createElement('span');
-        text.textContent = voice.name || voice.id;
-        label.appendChild(input);
-        label.appendChild(text);
-        picks.appendChild(label);
-      });
-    };
-    fetch('/app/ai/voices.php', { credentials: 'same-origin' }).then(function (response) { return response.json(); }).then(function (payload) {
-      if (!payload || !payload.ok) {
-        if (note) note.textContent = (payload && payload.error) || note.textContent;
-        return;
-      }
-      voiceCatalog = payload.voices || [];
-      var dialects = {}, genders = {}, uses = {};
-      voiceCatalog.forEach(function (voice) {
-        if (voice.dialect) dialects[voice.dialect] = true;
-        if (voice.gender) genders[voice.gender] = true;
-        if (voice.use_case) uses[voice.use_case] = true;
-      });
-      fill(dialectSelect, Object.keys(dialects).sort());
-      fill(genderSelect, Object.keys(genders).sort());
-      fill(useSelect, Object.keys(uses).sort());
-      drawVoices();
-    }).catch(function () {
-      if (note) note.textContent = language === 'ar' ? 'تعذر تحميل كتالوج الأصوات.' : 'The voice catalog could not be loaded.';
-    });
-    [dialectSelect, genderSelect, useSelect].forEach(function (select) { select.addEventListener('change', drawVoices); });
-    searchInput.addEventListener('input', drawVoices);
   }
+  document.querySelectorAll('[data-voice-library]').forEach(function (library) {
+      library.addEventListener('click', function (event) {
+        var label = event.target.closest('label,button');
+        var input = label ? label.querySelector('[data-voice-id]') : null;
+        var player = library.querySelector('[data-voice-player]');
+        if (!input || !player) return;
+        player.src = '/app/ai/voice-preview.php?voice=' + encodeURIComponent(input.getAttribute('data-voice-id') || input.value);
+        player.play().catch(function () {});
+      });
+    });
+    var libraries = document.querySelectorAll('[data-voice-library]');
+    if (libraries.length) {
+      fetch('/app/ai/voices.php', { credentials: 'same-origin' }).then(function (response) { return response.json(); }).then(function (payload) {
+        libraries.forEach(function (library) {
+          var note = library.querySelector('[data-voice-note]');
+          var picks = library.querySelector('[data-voice-picks]');
+          var dialectSelect = library.querySelector('[data-voice-dialect]');
+          var genderSelect = library.querySelector('[data-voice-gender]');
+          var useSelect = library.querySelector('[data-voice-use]');
+          var searchInput = library.querySelector('[data-voice-search]');
+          if (searchInput) searchInput.placeholder = language === 'ar' ? 'ابحث بالاسم' : 'Search by name';
+          if (!payload || !payload.ok) {
+            if (note) note.textContent = (payload && payload.error) || (language === 'ar' ? 'تعذر تحميل كتالوج الأصوات.' : 'The voice catalog could not be loaded.');
+            return;
+          }
+          var voices = payload.voices || [];
+          var fill = function (select, values) {
+            values.forEach(function (value) {
+              var option = document.createElement('option');
+              option.value = value;
+              option.textContent = value;
+              select.appendChild(option);
+            });
+          };
+          var dialects = {}, genders = {}, uses = {};
+          voices.forEach(function (voice) {
+            if (voice.dialect) dialects[voice.dialect] = true;
+            if (voice.gender) genders[voice.gender] = true;
+            if (voice.use_case) uses[voice.use_case] = true;
+          });
+          fill(dialectSelect, Object.keys(dialects).sort());
+          fill(genderSelect, Object.keys(genders).sort());
+          fill(useSelect, Object.keys(uses).sort());
+          var draw = function () {
+            var q = (searchInput.value || '').trim().toLowerCase();
+            picks.textContent = '';
+            voices.filter(function (voice) {
+              if (dialectSelect.value && voice.dialect !== dialectSelect.value) return false;
+              if (genderSelect.value && voice.gender !== genderSelect.value) return false;
+              if (useSelect.value && voice.use_case !== useSelect.value) return false;
+              if (q && String(voice.name || '').toLowerCase().indexOf(q) === -1) return false;
+              return true;
+            }).forEach(function (voice) {
+              var label = document.createElement(library.getAttribute('data-voice-choose') === '1' ? 'label' : 'button');
+              label.type = library.getAttribute('data-voice-choose') === '1' ? '' : 'button';
+              var input = document.createElement('input');
+              input.type = library.getAttribute('data-voice-choose') === '1' ? 'radio' : 'hidden';
+              input.name = 'voice';
+              input.value = voice.id;
+              input.setAttribute('data-voice-id', voice.id);
+              var text = document.createElement('span');
+              var bits = [voice.name || voice.id];
+              if (voice.dialect) bits.push(voice.dialect);
+              if (voice.gender) bits.push(voice.gender);
+              text.textContent = bits.join(' · ');
+              label.appendChild(input);
+              label.appendChild(text);
+              picks.appendChild(label);
+            });
+          };
+          [dialectSelect, genderSelect, useSelect].forEach(function (select) { select.addEventListener('change', draw); });
+          searchInput.addEventListener('input', draw);
+          draw();
+        });
+      }).catch(function () {
+        libraries.forEach(function (library) {
+          var note = library.querySelector('[data-voice-note]');
+          if (note) note.textContent = language === 'ar' ? 'تعذر تحميل كتالوج الأصوات.' : 'The voice catalog could not be loaded.';
+        });
+      });
+    }
 
   document.querySelectorAll('form[data-video-upload]').forEach(function (form) {
     form.addEventListener('submit', function (event) {
