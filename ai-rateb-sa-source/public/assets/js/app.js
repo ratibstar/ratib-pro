@@ -1032,8 +1032,26 @@
         var input = label ? label.querySelector('[data-voice-id]') : null;
         var player = library.querySelector('[data-voice-player]');
         if (!input || !player) return;
-        player.src = '/app/ai/voice-preview.php?voice=' + encodeURIComponent(input.getAttribute('data-voice-id') || input.value);
-        player.play().catch(function () {});
+        var note = library.querySelector('[data-voice-note]');
+        var id = input.getAttribute('data-voice-id') || input.value;
+        fetch('/app/ai/voice-preview.php?voice=' + encodeURIComponent(id)).then(function (response) {
+          if (!response.ok) {
+            player.removeAttribute('src');
+            player.load();
+            if (note) note.textContent = language === 'ar' ? 'لا توجد عينة منشورة لهذا الصوت.' : 'This voice has no published sample.';
+            return null;
+          }
+          return response.blob();
+        }).then(function (blob) {
+          if (!blob) return;
+          if (note) note.textContent = '';
+          if (player._sample) URL.revokeObjectURL(player._sample);
+          player._sample = URL.createObjectURL(blob);
+          player.src = player._sample;
+          player.play().catch(function () {});
+        }).catch(function () {
+          if (note) note.textContent = language === 'ar' ? 'تعذر تشغيل العينة.' : 'The sample could not be played.';
+        });
       });
     });
     var libraries = document.querySelectorAll('[data-voice-library]');

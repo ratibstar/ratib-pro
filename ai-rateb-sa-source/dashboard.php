@@ -43,7 +43,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act23">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act24">
 </head>
 <body class="studio page-dash">
 <header class="topbar">
@@ -211,6 +211,6 @@ foreach ($campaigns as $row) {
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act23"></script>
+<script src="/public/assets/js/app.js?v=act24"></script>
 </body>
 </html>

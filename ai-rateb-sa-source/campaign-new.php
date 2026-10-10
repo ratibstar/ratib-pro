@@ -220,7 +220,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act23">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act24">
 </head>
 <body class="studio page-new">
 <header class="top">
@@ -445,6 +445,6 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
     <audio data-voice-player controls preload="none"></audio>
   </div>
 </section>
-<script src="/public/assets/js/app.js?v=act23"></script>
+<script src="/public/assets/js/app.js?v=act24"></script>
 </body>
 </html>
