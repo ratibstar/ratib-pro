@@ -1,0 +1,90 @@
+name: AI Sawtak key
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ship:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 12
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+      DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+      SAWTAK_API_KEY: ${{ secrets.SAWTAK_API_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Upload Sawtak preview
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "-----BEGIN" not in key:
+              raise SystemExit("SSH key missing")
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          if len(os.environ.get("SAWTAK_API_KEY", "")) < 10:
+              raise SystemExit("Sawtak key missing")
+          PY
+          ROOT=/home/admin/domains/ai.rateb.sa
+          SCP="scp -i $HOME/.ssh/ai_key -P $DEPLOY_SSH_PORT -o StrictHostKeyChecking=accept-new"
+          SSH="ssh -i $HOME/.ssh/ai_key -p $DEPLOY_SSH_PORT -o StrictHostKeyChecking=accept-new"
+          $SCP ai-rateb-sa-source/public/assets/js/app.js "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/public/assets/js/app.js"
+          $SCP ai-rateb-sa-source/app/ai/voice-preview.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/ai/voice-preview.php"
+          $SCP ai-rateb-sa-source/index.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/index.php"
+          $SCP ai-rateb-sa-source/dashboard.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/dashboard.php"
+          $SCP ai-rateb-sa-source/campaign.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/campaign.php"
+          $SCP ai-rateb-sa-source/campaign-new.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/campaign-new.php"
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "cat > /tmp/set-sawtak.php" << 'PHP'
+          <?php
+          $ini = (string) file_get_contents('/home/admin/domains/ai.rateb.sa/.user.ini');
+          if (!preg_match('/auto_prepend_file\s*=\s*"?([^"\r\n]+)/', $ini, $match)) {
+              fwrite(STDERR, "NO_PREPEND\n");
+              exit(1);
+          }
+          $path = trim($match[1]);
+          if ($path === '' || $path[0] !== '/') {
+              $path = '/home/admin/domains/ai.rateb.sa/' . ltrim($path, '/');
+          }
+          $key = trim((string) stream_get_contents(STDIN));
+          if ($key === '') {
+              exit(2);
+          }
+          $body = (string) file_get_contents($path);
+          $body = preg_replace("/putenv\\('SAWTAK_API_KEY=.*?'\\);\\n?/", '', $body);
+          file_put_contents($path, "putenv('SAWTAK_API_KEY=" . $key . "');\n" . $body);
+          echo "SET\n";
+          PHP
+          printf '%s' "$SAWTAK_API_KEY" | $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "php /tmp/set-sawtak.php; rm -f /tmp/set-sawtak.php"
+          TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(6))')
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "cat > $ROOT/oc-$TOKEN.php" << 'PHP'
+          <?php
+          foreach (['/index.php','/dashboard.php','/campaign.php','/campaign-new.php','/app/ai/voice-preview.php','/app/ai/voices.php','/app/ai/sawtak.php'] as $file) {
+              if (function_exists('opcache_invalidate')) opcache_invalidate(__DIR__ . $file, true);
+          }
+          $prepend = '';
+          $ini = (string) @file_get_contents(__DIR__ . '/.user.ini');
+          if (preg_match('/auto_prepend_file\s*=\s*"?([^"\r\n]+)/', $ini, $match)) {
+              $prepend = trim($match[1]);
+              if ($prepend !== '' && $prepend[0] !== '/') $prepend = __DIR__ . '/' . ltrim($prepend, '/');
+              if (function_exists('opcache_invalidate')) opcache_invalidate($prepend, true);
+          }
+          echo 'OPCACHE=ok';
+          PHP
+          curl -fsS "https://ai.rateb.sa/oc-$TOKEN.php"
+          echo
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "rm -f $ROOT/oc-$TOKEN.php"
+          curl -fsS "https://ai.rateb.sa/" | grep -F "app.js?v=act26"
+          curl -fsS "https://ai.rateb.sa/app/ai/voices.php" | grep -F "saudi-najdi"
