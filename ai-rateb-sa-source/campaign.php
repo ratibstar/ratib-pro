@@ -126,7 +126,13 @@ $videoJob = rateb_video_latest_job(db(), $id, $userId);
 $approvedVideo = rateb_video_approved(db(), $id, $userId);
 $readyDone = in_array((string) ($campaign['status'] ?? ''), ['ready', 'completed'], true);
 $priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($approvedVideo ? 1 : 0);
-$doneUnits = $priorDone + ($readyDone ? 1 : 0);
+if ($readyDone && !$approvedVideo) {
+    db()->prepare("UPDATE campaigns SET status = 'in_progress', updated_at = NOW() WHERE id = ? AND user_id = ? AND status IN ('ready', 'completed')")->execute([$id, $userId]);
+    $readyDone = false;
+    $status = 'in_progress';
+    $campaign['status'] = 'in_progress';
+}
+$doneUnits = $priorDone + ($readyDone && $priorDone >= 6 ? 1 : 0);
 $progress = (int) round($doneUnits * 100 / 7);
 $stages = [
     'idea' => ['no' => '01', 'state' => $ideaDone ? 'done' : 'open'],
@@ -135,7 +141,7 @@ $stages = [
     'images' => ['no' => '04', 'state' => $campaignImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
     'voice' => ['no' => '05', 'state' => $campaignVoices !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
     'video' => ['no' => '06', 'state' => $approvedVideo ? 'done' : (($videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true)) || ($videoJob && (string) $videoJob['status'] === 'completed') ? 'progress' : ($campaignImages !== [] ? 'open' : 'next'))],
-    'ready' => ['no' => '07', 'state' => $readyDone ? 'done' : ($priorDone >= 6 ? 'open' : 'next')],
+    'ready' => ['no' => '07', 'state' => ($readyDone && $priorDone >= 6) ? 'done' : ($priorDone >= 6 ? 'open' : 'next')],
 ];
 $stageNames = $arabic
     ? ['idea' => 'الفكرة', 'strategy' => 'الاستراتيجية', 'copy' => 'النص', 'images' => 'الصور', 'voice' => 'الصوت', 'video' => 'الفيديو', 'ready' => 'الحملة الجاهزة']
