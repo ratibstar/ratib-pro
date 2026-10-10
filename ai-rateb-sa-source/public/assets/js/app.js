@@ -1047,6 +1047,12 @@
           var useSelect = library.querySelector('[data-voice-use]');
           var searchInput = library.querySelector('[data-voice-search]');
           if (searchInput) searchInput.placeholder = language === 'ar' ? 'ابحث بالاسم' : 'Search by name';
+          var labels = language === 'ar'
+            ? ['كل اللهجات', 'كل الأنواع', 'كل الاستخدامات']
+            : ['All dialects', 'All genders', 'All uses'];
+          [dialectSelect, genderSelect, useSelect].forEach(function (select, index) {
+            if (select && select.options[0]) select.options[0].textContent = labels[index];
+          });
           if (!payload || !payload.ok) {
             if (note) note.textContent = (payload && payload.error) || (language === 'ar' ? 'تعذر تحميل كتالوج الأصوات.' : 'The voice catalog could not be loaded.');
             return;
@@ -1088,7 +1094,7 @@
               input.setAttribute('data-voice-id', voice.id);
               var text = document.createElement('span');
               var bits = [voice.name || voice.id];
-              if (voice.dialect) bits.push(voice.dialect);
+              if (voice.dialect && voice.dialect.indexOf('<') === -1) bits.push(voice.dialect);
               if (voice.gender) bits.push(voice.gender);
               text.textContent = bits.join(' · ');
               label.appendChild(input);

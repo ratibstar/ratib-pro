@@ -446,6 +446,6 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
     <audio data-voice-player controls preload="none"></audio>
   </div>
 </section>
-<script src="/public/assets/js/app.js?v=act20"></script>
+<script src="/public/assets/js/app.js?v=act21"></script>
 </body>
 </html>

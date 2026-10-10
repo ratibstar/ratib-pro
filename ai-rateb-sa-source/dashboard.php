@@ -212,6 +212,6 @@ foreach ($campaigns as $row) {
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act20"></script>
+<script src="/public/assets/js/app.js?v=act21"></script>
 </body>
 </html>
