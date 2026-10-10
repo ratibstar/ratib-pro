@@ -100,11 +100,28 @@ function rateb_sawtak_cache_path(): string
     return rtrim($root, '/\\') . '/sawtak-voices.json';
 }
 
+function rateb_sawtak_public_catalog(): array
+{
+    $path = __DIR__ . '/sawtak-public.json';
+    if (!is_file($path)) {
+        return [];
+    }
+    $rows = json_decode((string) file_get_contents($path), true);
+    return is_array($rows) ? $rows : [];
+}
+
 /** @return array{ok:bool,code:string,voices:array<int,array<string,mixed>>,pages:int,complete:bool} */
 function rateb_sawtak_catalog(bool $refresh = false): array
 {
     if (!rateb_sawtak_configured()) {
-        return ['ok' => false, 'code' => 'not_configured', 'voices' => [], 'pages' => 0, 'complete' => false];
+        $voices = rateb_sawtak_public_catalog();
+        return [
+            'ok' => $voices !== [],
+            'code' => $voices === [] ? 'not_configured' : '',
+            'voices' => $voices,
+            'pages' => 1,
+            'complete' => $voices !== [],
+        ];
     }
     $path = rateb_sawtak_cache_path();
     if (!$refresh && is_file($path) && filemtime($path) > time() - 3600) {

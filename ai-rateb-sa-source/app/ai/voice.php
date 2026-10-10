@@ -30,16 +30,6 @@ if ($script === '') {
 
 $textCfg = require __DIR__ . '/../../config/ai.php';
 $sawtakKey = trim((string) getenv('SAWTAK_API_KEY'));
-if ($sawtakKey === '') {
-    http_response_code(503);
-    echo json_encode(['error' => ui_language() === 'ar' ? 'كتالوج الأصوات غير مُعد. أضف SAWTAK_API_KEY على الخادم.' : 'The voice catalog is not configured. Set SAWTAK_API_KEY on the server.', 'code' => 'not_configured'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-$chosen = $textCfg['api_key'] ? rateb_voice_choose($textCfg, $script, $lang) : '';
-$spoken = $chosen !== '' ? $chosen : (function_exists('mb_substr') ? trim(mb_substr($script, 0, 180)) : trim(substr($script, 0, 180)));
-$script = $spoken;
-
 $wanted = (string) ($_POST['voice'] ?? '');
 $selected = rateb_sawtak_find($wanted);
 if ($selected === null || (string) ($selected['status'] ?? '') !== 'ready') {
@@ -47,6 +37,15 @@ if ($selected === null || (string) ($selected['status'] ?? '') !== 'ready') {
     echo json_encode(['error' => ui_language() === 'ar' ? 'اختر صوتاً جاهزاً من الكتالوج.' : 'Choose a ready voice from the catalog.', 'code' => 'invalid'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+if ($sawtakKey === '') {
+    http_response_code(503);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'توليد الكلام يحتاج مفتاح Sawtak على الخادم. المعاينة تعمل بدون توليد.' : 'Speech generation needs the Sawtak key on the server. Preview works without generating speech.', 'code' => 'not_configured'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+$chosen = $textCfg['api_key'] ? rateb_voice_choose($textCfg, $script, $lang) : '';
+$spoken = $chosen !== '' ? $chosen : (function_exists('mb_substr') ? trim(mb_substr($script, 0, 180)) : trim(substr($script, 0, 180)));
+$script = $spoken;
 
 $gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'voice');
 if (!$gate['ok']) {
