@@ -567,18 +567,16 @@ $csrf = e(csrf_token());
     <?php endif; ?>
     <h3><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></h3>
     <p class="muted"><?= $arabic ? 'الملف المرفوع مرجع فقط، وليس فيديو RATEB.' : 'An uploaded file is reference media, not a RATEB video.' ?></p>
-    <?php if ($campaignImages !== [] && $campaignVideos === []): ?>
-      <form class="attach-image" method="post" action="/app/media/upload.php?campaign_id=<?= $id ?>&panel=video" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
-        <input type="hidden" name="csrf" value="<?= $csrf ?>">
-        <input type="hidden" name="campaign_id" value="<?= $id ?>">
-        <input type="hidden" name="panel" value="video">
-        <label>
-          <span data-i18n="attach_video"><?= $arabic ? 'أرفق فيديو' : 'Attach a video' ?></span>
-          <input type="file" name="file" accept="video/*" required>
-        </label>
-        <button class="primary" type="submit" data-i18n="attach_video_button"><?= $arabic ? 'أرفق الفيديو' : 'Attach video' ?></button>
-      </form>
-    <?php endif; ?>
+    <form class="attach-image" method="post" action="/app/media/upload.php?campaign_id=<?= $id ?>&panel=video" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
+      <input type="hidden" name="csrf" value="<?= $csrf ?>">
+      <input type="hidden" name="campaign_id" value="<?= $id ?>">
+      <input type="hidden" name="panel" value="video">
+      <label>
+        <span data-i18n="attach_video"><?= $arabic ? 'اختر ملف فيديو' : 'Choose a video file' ?></span>
+        <input type="file" name="file" accept="video/*" required>
+      </label>
+      <button class="primary" type="submit" data-i18n="attach_video_button"><?= $campaignVideos === [] ? ($arabic ? 'رفع فيديو' : 'Upload video') : ($arabic ? 'استبدال الفيديو المرفوع' : 'Replace uploaded video') ?></button>
+    </form>
     <?php $mediaError = (string) ($_GET['media_error'] ?? ''); ?>
     <?php if ($mediaError === 'video_trim'): ?>
       <p class="notice is-error"><?= $arabic ? 'تعذر قراءة الفيديو واختصاره. جرّب ملفاً آخر.' : 'The video could not be read and shortened. Try another file.' ?></p>
