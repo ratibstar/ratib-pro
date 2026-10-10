@@ -1066,9 +1066,13 @@
               select.appendChild(option);
             });
           };
+          var placeOf = function (voice) {
+            return String(voice.dialect || '').replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '').replace(/\s+/g, ' ').trim();
+          };
           var dialects = {}, genders = {}, uses = {};
           voices.forEach(function (voice) {
-            if (voice.dialect) dialects[voice.dialect] = true;
+            var place = placeOf(voice);
+            if (place) dialects[place] = true;
             if (voice.gender) genders[voice.gender] = true;
             if (voice.use_case) uses[voice.use_case] = true;
           });
@@ -1079,7 +1083,7 @@
             var q = (searchInput.value || '').trim().toLowerCase();
             picks.textContent = '';
             voices.filter(function (voice) {
-              if (dialectSelect.value && voice.dialect !== dialectSelect.value) return false;
+              if (dialectSelect.value && placeOf(voice) !== dialectSelect.value) return false;
               if (genderSelect.value && voice.gender !== genderSelect.value) return false;
               if (useSelect.value && voice.use_case !== useSelect.value) return false;
               if (q && String(voice.name || '').toLowerCase().indexOf(q) === -1) return false;
@@ -1092,13 +1096,14 @@
               input.name = 'voice';
               input.value = voice.id;
               input.setAttribute('data-voice-id', voice.id);
-              var text = document.createElement('span');
-              var bits = [voice.name || voice.id];
-              if (voice.dialect && voice.dialect.indexOf('<') === -1) bits.push(voice.dialect);
-              if (voice.gender) bits.push(voice.gender);
-              text.textContent = bits.join(' · ');
+              var name = document.createElement('bdi');
+              name.textContent = voice.name || voice.id;
+              var place = document.createElement('bdi');
+              place.className = 'voice-place';
+              place.textContent = placeOf(voice);
               label.appendChild(input);
-              label.appendChild(text);
+              label.appendChild(name);
+              if (place.textContent) label.appendChild(place);
               picks.appendChild(label);
             });
           };

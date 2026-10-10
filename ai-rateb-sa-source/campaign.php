@@ -191,7 +191,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act20">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act22">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -652,6 +652,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act21"></script>
+<script src="/public/assets/js/app.js?v=act22"></script>
 </body>
 </html>
