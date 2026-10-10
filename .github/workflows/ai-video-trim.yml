@@ -63,8 +63,14 @@ jobs:
               exit(2);
           }
           $body = (string) file_get_contents($path);
-          $body = preg_replace("/putenv\\('SAWTAK_API_KEY=.*?'\\);\\n?/", '', $body);
-          file_put_contents($path, "putenv('SAWTAK_API_KEY=" . $key . "');\n" . $body);
+          $body = preg_replace("/putenv\\('SAWTAK_API_KEY=.*?'\\);\\r?\\n?/", '', $body);
+          $line = "putenv('SAWTAK_API_KEY=" . $key . "');";
+          if (preg_match('/^\\s*<\\?php/', $body)) {
+              $body = preg_replace('/^\\s*<\\?php/', "<?php\n" . $line, $body, 1);
+          } else {
+              $body = "<?php\n" . $line . "\n?>\n" . $body;
+          }
+          file_put_contents($path, $body);
           echo "SET\n";
           PHP
           printf '%s' "$SAWTAK_API_KEY" | $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "php /tmp/set-sawtak.php; rm -f /tmp/set-sawtak.php"
@@ -87,4 +93,12 @@ jobs:
           echo
           $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "rm -f $ROOT/oc-$TOKEN.php"
           curl -fsS "https://ai.rateb.sa/" | grep -F "app.js?v=act26"
-          curl -fsS "https://ai.rateb.sa/app/ai/voices.php" | grep -F "saudi-najdi"
+          python3 - << 'PY'
+          import urllib.request
+          body = urllib.request.urlopen("https://ai.rateb.sa/app/ai/voices.php", timeout=90).read().decode("utf-8", "replace")
+          if body.lstrip().startswith("putenv") or "sk_ar_" in body:
+              raise SystemExit("key still public")
+          if "saudi-najdi" not in body:
+              raise SystemExit("live catalog missing")
+          print("CATALOG_OK")
+          PY
