@@ -191,7 +191,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act24">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act25">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -512,7 +512,7 @@ $csrf = e(csrf_token());
         <div class="voice-picks" data-voice-picks></div>
         <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة العامة. ٢) RATEB يختار الكلام من نصوص الحملة، ثم يسجّله بهذا الصوت.' : '1) Choose a voice and play its public sample. 2) RATEB picks the words from the campaign, then records them in that voice.' ?></p>
         <button class="primary" type="submit"><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
-        <audio data-voice-player class="voice-preview" controls preload="none"></audio>
+        <audio data-voice-player class="voice-preview" controls preload="none" hidden></audio>
       </form>
     <?php if ($voiceScript !== ''): ?>
       <p class="notice"><?= $arabic ? 'الكلام الذي اختاره RATEB من الحملة:' : 'The words RATEB picked from the campaign:' ?> <?= e($voiceScript) ?></p>
@@ -651,6 +651,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act24"></script>
+<script src="/public/assets/js/app.js?v=act25"></script>
 </body>
 </html>

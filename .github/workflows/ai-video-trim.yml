@@ -1,0 +1,59 @@
+name: AI hide empty preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ship:
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 12
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+      DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Upload preview behavior
+        run: |
+          set -euo pipefail
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "")
+          if "-----BEGIN" not in key:
+              raise SystemExit("SSH key missing")
+          if "\\n" in key and "\n" not in key.split("-----BEGIN", 1)[1][:30]:
+              key = key.replace("\\n", "\n")
+          path = Path.home() / ".ssh"
+          path.mkdir(mode=0o700, exist_ok=True)
+          file = path / "ai_key"
+          file.write_text(key if key.endswith("\n") else key + "\n", encoding="utf-8")
+          file.chmod(0o600)
+          PY
+          ROOT=/home/admin/domains/ai.rateb.sa
+          SCP="scp -i $HOME/.ssh/ai_key -P $DEPLOY_SSH_PORT -o StrictHostKeyChecking=accept-new"
+          SSH="ssh -i $HOME/.ssh/ai_key -p $DEPLOY_SSH_PORT -o StrictHostKeyChecking=accept-new"
+          $SCP ai-rateb-sa-source/public/assets/js/app.js "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/public/assets/js/app.js"
+          $SCP ai-rateb-sa-source/app/ai/sawtak.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/app/ai/sawtak.php"
+          $SCP ai-rateb-sa-source/index.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/index.php"
+          $SCP ai-rateb-sa-source/dashboard.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/dashboard.php"
+          $SCP ai-rateb-sa-source/campaign.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/campaign.php"
+          $SCP ai-rateb-sa-source/campaign-new.php "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST:$ROOT/campaign-new.php"
+          TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(6))')
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "cat > $ROOT/oc-$TOKEN.php" << 'PHP'
+          <?php
+          foreach (['/index.php','/dashboard.php','/campaign.php','/campaign-new.php','/app/ai/sawtak.php','/app/ai/voices.php'] as $file) {
+              if (function_exists('opcache_invalidate')) opcache_invalidate(__DIR__ . $file, true);
+          }
+          echo 'OPCACHE=ok';
+          PHP
+          curl -fsS "https://ai.rateb.sa/oc-$TOKEN.php"
+          echo
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "rm -f $ROOT/oc-$TOKEN.php"
+          curl -fsS "https://ai.rateb.sa/" | grep -F "app.js?v=act25"
+          curl -fsS "https://ai.rateb.sa/app/ai/voices.php" | grep -F '"preview_url":null'

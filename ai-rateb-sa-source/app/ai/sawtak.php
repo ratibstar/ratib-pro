@@ -115,6 +115,12 @@ function rateb_sawtak_catalog(bool $refresh = false): array
 {
     if (!rateb_sawtak_configured()) {
         $voices = rateb_sawtak_public_catalog();
+        foreach ($voices as &$voice) {
+            if (is_array($voice)) {
+                $voice['preview_url'] = null;
+            }
+        }
+        unset($voice);
         return [
             'ok' => $voices !== [],
             'code' => $voices === [] ? 'not_configured' : '',

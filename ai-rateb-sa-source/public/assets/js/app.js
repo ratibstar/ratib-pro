@@ -1033,11 +1033,16 @@
         var player = library.querySelector('[data-voice-player]');
         if (!input || !player) return;
         var note = library.querySelector('[data-voice-note]');
-        var id = input.getAttribute('data-voice-id') || input.value;
-        fetch('/app/ai/voice-preview.php?voice=' + encodeURIComponent(id)).then(function (response) {
-          if (!response.ok) {
-            player.removeAttribute('src');
-            player.load();
+        var voice = (library._voices || []).find(function (item) { return item.id === (input.getAttribute('data-voice-id') || input.value); });
+        if (!voice || !voice.preview_url) {
+          player.hidden = true;
+          player.removeAttribute('src');
+          if (note) note.textContent = language === 'ar' ? 'لا توجد عينة منشورة لهذا الصوت.' : 'This voice has no published sample.';
+          return;
+        }
+        fetch('/app/ai/voice-preview.php?voice=' + encodeURIComponent(voice.id)).then(function (response) {
+          if (!response.ok || !String(response.headers.get('content-type') || '').includes('audio')) {
+            player.hidden = true;
             if (note) note.textContent = language === 'ar' ? 'لا توجد عينة منشورة لهذا الصوت.' : 'This voice has no published sample.';
             return null;
           }
@@ -1047,9 +1052,11 @@
           if (note) note.textContent = '';
           if (player._sample) URL.revokeObjectURL(player._sample);
           player._sample = URL.createObjectURL(blob);
+          player.hidden = false;
           player.src = player._sample;
           player.play().catch(function () {});
         }).catch(function () {
+          player.hidden = true;
           if (note) note.textContent = language === 'ar' ? 'تعذر تشغيل العينة.' : 'The sample could not be played.';
         });
       });
@@ -1071,6 +1078,7 @@
             return;
           }
           var voices = payload.voices || [];
+          library._voices = voices;
           var countryNames = { SD: 'السودان', JO: 'الأردن', PS: 'فلسطين', TN: 'تونس', IQ: 'العراق', OM: 'عُمان', SA: 'السعودية', EG: 'مصر', YE: 'اليمن', SY: 'سوريا', KW: 'الكويت', BH: 'البحرين', QA: 'قطر', AE: 'الإمارات', LB: 'لبنان', LY: 'ليبيا', MA: 'المغرب', DZ: 'الجزائر', MSA: 'العربية الفصحى' };
           var dialectNames = { Darfur: 'دارفور', Mafraq: 'المفرق', Tunisian: 'تونسية', Tunis: 'تونس', Hebron: 'الخليل', Mosul: 'الموصل', Muscat: 'مسقط', Yemeni: 'يمنية', Gaza: 'غزة', Najdi: 'نجدية', Cairo: 'القاهرة', Maan: 'معان', Hijazi: 'حجازية', Kuwaiti: 'كويتية', 'Modern Standard Arabic': 'فصحى', Saudi: 'سعودية', Tihami: 'تهامية', Idlib: 'إدلب', Bahraini: 'بحرينية', Karak: 'الكرك', Irbid: 'إربد', Galilee: 'الجليل', Sudanese: 'سودانية', Qatari: 'قطرية', Emirati: 'إماراتية', Khartoum: 'الخرطوم', Syrian: 'سورية', Sanaa: 'صنعاء', 'Central Sudan': 'وسط السودان', Taiz: 'تعز', Aleppo: 'حلب', 'Port Said': 'بورسعيد', Amman: 'عمّان', Palestinian: 'فلسطينية', 'Northern Syria': 'شمال سوريا', Jordanian: 'أردنية', 'Southern Tunisia': 'جنوب تونس', 'Southern Lebanon': 'جنوب لبنان', Nablus: 'نابلس', Quneitra: 'القنيطرة', Moroccan: 'مغربية', Iraqi: 'عراقية', Zarqa: 'الزرقاء', 'Northern Jordan': 'شمال الأردن', Omani: 'عُمانية', 'Eastern Saudi Arabia': 'الشرقية', 'Northern Yemen': 'شمال اليمن', Suwayda: 'السويداء', Homs: 'حمص', Hauran: 'حوران', Tripoli: 'طرابلس', Jazira: 'الجزيرة', Balqa: 'البلقاء', Aden: 'عدن', Asiri: 'عسيرية', Baghdad: 'بغداد', Ajloun: 'عجلون', 'Inland Oman': 'داخلية عُمان', Libyan: 'ليبية', Beheira: 'البحيرة', Qassim: 'القصيم', Misrata: 'مصراتة', Fayoum: 'الفيوم', Beirut: 'بيروت', Egyptian: 'مصرية', Najran: 'نجران', Hail: 'حائل', Ghor: 'الغور', 'Abu Dhabi': 'أبوظبي', Sharjah: 'الشارقة', 'Southern Saudi Arabia': 'جنوب السعودية', Jawf: 'الجوف', 'Al Ain': 'العين', Yafai: 'يافع', Barqa: 'برقة', Socotra: 'سقطرى', 'Northern Palestine': 'شمال فلسطين', 'West Bank': 'الضفة', Casablanca: 'الدار البيضاء', Kairouan: 'القيروان', Sfax: 'صفاقس', 'Coastal Tunisia': 'الساحل التونسي', Oran: 'وهران', 'Saharan Algeria': 'صحراء الجزائر', Algerian: 'جزائرية', Algiers: 'الجزائر العاصمة', 'Inland Tunisia': 'داخلية تونس', 'Northern Morocco': 'شمال المغرب', 'Southern Palestine': 'جنوب فلسطين', Rabat: 'الرباط', Dubai: 'دبي', 'Central Palestine': 'وسط فلسطين', Alexandria: 'الإسكندرية', Manama: 'المنامة' };
           var splitPlace = function (voice) {
