@@ -191,7 +191,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act18">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act19">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -501,21 +501,18 @@ $csrf = e(csrf_token());
   <section class="panel" id="voice" data-panel="voice">
     <h2 data-i18n="stage_voice"><?= $arabic ? 'الصوت' : 'Voice' ?></h2>
     <?php if ($campaignImages !== []): ?>
-      <?php $speech = rateb_output_language(db(), $campaign)['speech'] === 'en' ? 'en' : 'ar'; $voiceChoices = rateb_voice_choices($speech); ?>
       <form id="voiceForm" data-status="stage-status">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
         <input type="hidden" name="campaign_id" value="<?= $id ?>">
-        <div class="voice-picks">
-          <h3><?= $arabic ? 'رجال' : 'Men' ?></h3>
-          <?php foreach ($voiceChoices as $choice): if ($choice['gender'] !== 'm') continue; ?>
-            <label><input type="radio" name="voice" value="<?= e($choice['id']) ?>"<?= $choice['id'] === ($speech === 'ar' ? 'noura' : 'hannah') ? ' checked' : '' ?>><span><?= e($choice['label']) ?></span></label>
-          <?php endforeach; ?>
-          <h3><?= $arabic ? 'نساء' : 'Women' ?></h3>
-          <?php foreach ($voiceChoices as $choice): if ($choice['gender'] !== 'f') continue; ?>
-            <label><input type="radio" name="voice" value="<?= e($choice['id']) ?>"<?= $choice['id'] === ($speech === 'ar' ? 'noura' : 'hannah') ? ' checked' : '' ?>><span><?= e($choice['label']) ?></span></label>
-          <?php endforeach; ?>
+        <div class="voice-filters">
+          <input type="search" id="voice-search" placeholder="<?= $arabic ? 'ابحث بالاسم' : 'Search by name' ?>">
+          <select id="voice-dialect"><option value=""><?= $arabic ? 'كل اللهجات' : 'All dialects' ?></option></select>
+          <select id="voice-gender"><option value=""><?= $arabic ? 'كل الأنواع' : 'All genders' ?></option></select>
+          <select id="voice-use"><option value=""><?= $arabic ? 'كل الاستخدامات' : 'All uses' ?></option></select>
         </div>
-        <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة. ٢) RATEB يختار الكلام من نصوص الحملة، ثم يسجّله بهذا الصوت.' : '1) Choose a voice and hear the sample. 2) RATEB picks the words from the campaign, then records them in that voice.' ?></p>
+        <p class="muted" id="voice-catalog-note"><?= $arabic ? 'الكتالوج يعرض ما يرجعه المزوّد. لا توجد لغة أو منطقة منفصلة في البيانات.' : 'The catalog shows what the provider returns. It has no separate language or region field.' ?></p>
+        <div class="voice-picks" id="voice-picks"></div>
+        <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة العامة. ٢) RATEB يختار الكلام من نصوص الحملة، ثم يسجّله بهذا الصوت.' : '1) Choose a voice and play its public sample. 2) RATEB picks the words from the campaign, then records them in that voice.' ?></p>
         <button class="primary" type="submit"><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
         <audio id="voice-preview" class="voice-preview" controls preload="none"></audio>
       </form>
@@ -657,6 +654,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act18"></script>
+<script src="/public/assets/js/app.js?v=act19"></script>
 </body>
 </html>

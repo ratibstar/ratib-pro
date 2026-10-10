@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../media/library.php';
 require_once __DIR__ . '/../plans.php';
+require_once __DIR__ . '/sawtak.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 
@@ -27,16 +28,25 @@ if ($script === '') {
     exit;
 }
 
-$cfg = require __DIR__ . '/../../config/ai.php';
-if (!$cfg['api_key']) {
+$textCfg = require __DIR__ . '/../../config/ai.php';
+$sawtakKey = trim((string) getenv('SAWTAK_API_KEY'));
+if ($sawtakKey === '') {
     http_response_code(503);
-    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'كتالوج الأصوات غير مُعد. أضف SAWTAK_API_KEY على الخادم.' : 'The voice catalog is not configured. Set SAWTAK_API_KEY on the server.', 'code' => 'not_configured'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$chosen = rateb_voice_choose($cfg, $script, $lang);
+$chosen = $textCfg['api_key'] ? rateb_voice_choose($textCfg, $script, $lang) : '';
 $spoken = $chosen !== '' ? $chosen : (function_exists('mb_substr') ? trim(mb_substr($script, 0, 180)) : trim(substr($script, 0, 180)));
-$script = $lang === 'en' ? '[excited] [fast paced] ' . $spoken : $spoken;
+$script = $spoken;
+
+$wanted = (string) ($_POST['voice'] ?? '');
+$selected = rateb_sawtak_find($wanted);
+if ($selected === null || (string) ($selected['status'] ?? '') !== 'ready') {
+    http_response_code(422);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'اختر صوتاً جاهزاً من الكتالوج.' : 'Choose a ready voice from the catalog.', 'code' => 'invalid'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 $gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'voice');
 if (!$gate['ok']) {
@@ -44,33 +54,17 @@ if (!$gate['ok']) {
 }
 session_write_close();
 
-$base = rtrim((string) $cfg['base_url'], '/');
-$choices = rateb_voice_choices($lang);
-$wanted = (string) ($_POST['voice'] ?? '');
-$voice = $lang === 'ar' ? 'noura' : 'hannah';
-foreach ($choices as $choice) {
-    if ($choice['id'] === $wanted) {
-        $voice = $wanted;
-        break;
-    }
-}
-if ($lang === 'ar') {
-    $model = 'canopylabs/orpheus-arabic-saudi';
-} else {
-    $model = 'canopylabs/orpheus-v1-english';
-}
-
 $payload = json_encode([
-    'model' => $model,
+    'model' => 'arabic-tts-1',
     'input' => $script,
-    'voice' => $voice,
+    'voice' => (string) $selected['id'],
     'response_format' => 'wav',
 ], JSON_UNESCAPED_UNICODE);
-$ch = curl_init($base . '/audio/speech');
+$ch = curl_init('https://api.sawtakarabi.ai/v1/audio/speech');
 curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $sawtakKey],
     CURLOPT_POSTFIELDS => $payload,
     CURLOPT_TIMEOUT => 55,
     CURLOPT_CONNECTTIMEOUT => 8,
