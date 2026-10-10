@@ -48,4 +48,4 @@ jobs:
           curl -fsS "https://ai.rateb.sa/oc-$TOKEN.php"
           echo
           $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "rm -f $ROOT/oc-$TOKEN.php"
-          curl -fsS "https://ai.rateb.sa/campaign.php" | grep -F "رفع فيديو"
+          $SSH "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "grep -F 'رفع فيديو' $ROOT/campaign.php"
