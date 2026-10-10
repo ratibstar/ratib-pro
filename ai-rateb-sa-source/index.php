@@ -14,7 +14,7 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=act22">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=act23">
 </head>
 <body class="studio home">
 <header class="home-bar">
@@ -89,10 +89,9 @@ if (isset($_SESSION['user_id'])) {
         <h3 data-i18n="sample_voices">Voices</h3>
         <div class="voice-library" data-voice-library>
           <div class="voice-filters">
-            <input type="search" data-voice-search placeholder="Search by name">
-            <select data-voice-dialect><option value="">All dialects</option></select>
-            <select data-voice-gender><option value="">All genders</option></select>
-            <select data-voice-use><option value="">All uses</option></select>
+            <input type="search" data-voice-search placeholder="ابحث بالاسم">
+            <select data-voice-country><option value="">اختر الدولة</option></select>
+            <select data-voice-dialect disabled><option value="">اختر اللهجة</option></select>
           </div>
           <p class="muted" data-voice-note></p>
           <div class="voice-picks" data-voice-picks></div>
@@ -223,6 +222,6 @@ if (isset($_SESSION['user_id'])) {
     </form>
     <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act22"></script>
+<script src="/public/assets/js/app.js?v=act23"></script>
 </body>
 </html>

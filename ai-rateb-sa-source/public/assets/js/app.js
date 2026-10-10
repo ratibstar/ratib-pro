@@ -1042,50 +1042,72 @@
         libraries.forEach(function (library) {
           var note = library.querySelector('[data-voice-note]');
           var picks = library.querySelector('[data-voice-picks]');
+          var countrySelect = library.querySelector('[data-voice-country]');
           var dialectSelect = library.querySelector('[data-voice-dialect]');
-          var genderSelect = library.querySelector('[data-voice-gender]');
-          var useSelect = library.querySelector('[data-voice-use]');
           var searchInput = library.querySelector('[data-voice-search]');
           if (searchInput) searchInput.placeholder = language === 'ar' ? 'ابحث بالاسم' : 'Search by name';
-          var labels = language === 'ar'
-            ? ['كل اللهجات', 'كل الأنواع', 'كل الاستخدامات']
-            : ['All dialects', 'All genders', 'All uses'];
-          [dialectSelect, genderSelect, useSelect].forEach(function (select, index) {
-            if (select && select.options[0]) select.options[0].textContent = labels[index];
-          });
+          if (countrySelect && countrySelect.options[0]) countrySelect.options[0].textContent = language === 'ar' ? 'اختر الدولة' : 'Choose a country';
+          if (dialectSelect && dialectSelect.options[0]) dialectSelect.options[0].textContent = language === 'ar' ? 'اختر اللهجة' : 'Choose a dialect';
           if (!payload || !payload.ok) {
             if (note) note.textContent = (payload && payload.error) || (language === 'ar' ? 'تعذر تحميل كتالوج الأصوات.' : 'The voice catalog could not be loaded.');
             return;
           }
           var voices = payload.voices || [];
-          var fill = function (select, values) {
-            values.forEach(function (value) {
-              var option = document.createElement('option');
-              option.value = value;
-              option.textContent = value;
-              select.appendChild(option);
-            });
+          var countryNames = { SD: 'السودان', JO: 'الأردن', PS: 'فلسطين', TN: 'تونس', IQ: 'العراق', OM: 'عُمان', SA: 'السعودية', EG: 'مصر', YE: 'اليمن', SY: 'سوريا', KW: 'الكويت', BH: 'البحرين', QA: 'قطر', AE: 'الإمارات', LB: 'لبنان', LY: 'ليبيا', MA: 'المغرب', DZ: 'الجزائر', MSA: 'العربية الفصحى' };
+          var dialectNames = { Darfur: 'دارفور', Mafraq: 'المفرق', Tunisian: 'تونسية', Tunis: 'تونس', Hebron: 'الخليل', Mosul: 'الموصل', Muscat: 'مسقط', Yemeni: 'يمنية', Gaza: 'غزة', Najdi: 'نجدية', Cairo: 'القاهرة', Maan: 'معان', Hijazi: 'حجازية', Kuwaiti: 'كويتية', 'Modern Standard Arabic': 'فصحى', Saudi: 'سعودية', Tihami: 'تهامية', Idlib: 'إدلب', Bahraini: 'بحرينية', Karak: 'الكرك', Irbid: 'إربد', Galilee: 'الجليل', Sudanese: 'سودانية', Qatari: 'قطرية', Emirati: 'إماراتية', Khartoum: 'الخرطوم', Syrian: 'سورية', Sanaa: 'صنعاء', 'Central Sudan': 'وسط السودان', Taiz: 'تعز', Aleppo: 'حلب', 'Port Said': 'بورسعيد', Amman: 'عمّان', Palestinian: 'فلسطينية', 'Northern Syria': 'شمال سوريا', Jordanian: 'أردنية', 'Southern Tunisia': 'جنوب تونس', 'Southern Lebanon': 'جنوب لبنان', Nablus: 'نابلس', Quneitra: 'القنيطرة', Moroccan: 'مغربية', Iraqi: 'عراقية', Zarqa: 'الزرقاء', 'Northern Jordan': 'شمال الأردن', Omani: 'عُمانية', 'Eastern Saudi Arabia': 'الشرقية', 'Northern Yemen': 'شمال اليمن', Suwayda: 'السويداء', Homs: 'حمص', Hauran: 'حوران', Tripoli: 'طرابلس', Jazira: 'الجزيرة', Balqa: 'البلقاء', Aden: 'عدن', Asiri: 'عسيرية', Baghdad: 'بغداد', Ajloun: 'عجلون', 'Inland Oman': 'داخلية عُمان', Libyan: 'ليبية', Beheira: 'البحيرة', Qassim: 'القصيم', Misrata: 'مصراتة', Fayoum: 'الفيوم', Beirut: 'بيروت', Egyptian: 'مصرية', Najran: 'نجران', Hail: 'حائل', Ghor: 'الغور', 'Abu Dhabi': 'أبوظبي', Sharjah: 'الشارقة', 'Southern Saudi Arabia': 'جنوب السعودية', Jawf: 'الجوف', 'Al Ain': 'العين', Yafai: 'يافع', Barqa: 'برقة', Socotra: 'سقطرى', 'Northern Palestine': 'شمال فلسطين', 'West Bank': 'الضفة', Casablanca: 'الدار البيضاء', Kairouan: 'القيروان', Sfax: 'صفاقس', 'Coastal Tunisia': 'الساحل التونسي', Oran: 'وهران', 'Saharan Algeria': 'صحراء الجزائر', Algerian: 'جزائرية', Algiers: 'الجزائر العاصمة', 'Inland Tunisia': 'داخلية تونس', 'Northern Morocco': 'شمال المغرب', 'Southern Palestine': 'جنوب فلسطين', Rabat: 'الرباط', Dubai: 'دبي', 'Central Palestine': 'وسط فلسطين', Alexandria: 'الإسكندرية', Manama: 'المنامة' };
+          var splitPlace = function (voice) {
+            var raw = String(voice.dialect || '');
+            var chars = Array.from(raw);
+            var country = '';
+            if (chars.length >= 2 && chars[0] >= '\u{1F1E6}' && chars[0] <= '\u{1F1FF}' && chars[1] >= '\u{1F1E6}' && chars[1] <= '\u{1F1FF}') {
+              country = String.fromCharCode(chars[0].codePointAt(0) - 0x1F1E6 + 65, chars[1].codePointAt(0) - 0x1F1E6 + 65);
+            } else if (raw.indexOf('🌐') !== -1) {
+              country = 'MSA';
+            }
+            var dialect = raw.replace(/[\u{1F1E6}-\u{1F1FF}\u{1F310}]/gu, '').replace(/\s+/g, ' ').trim();
+            return { country: country, dialect: dialect };
           };
-          var placeOf = function (voice) {
-            return String(voice.dialect || '').replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '').replace(/\s+/g, ' ').trim();
-          };
-          var dialects = {}, genders = {}, uses = {};
+          var dialectLabel = function (name) { return language === 'ar' ? (dialectNames[name] || name) : name; };
+          var countryLabel = function (code) { return language === 'ar' ? (countryNames[code] || code) : code; };
+          var countries = {};
           voices.forEach(function (voice) {
-            var place = placeOf(voice);
-            if (place) dialects[place] = true;
-            if (voice.gender) genders[voice.gender] = true;
-            if (voice.use_case) uses[voice.use_case] = true;
+            var place = splitPlace(voice);
+            voice._country = place.country;
+            voice._dialect = place.dialect;
+            if (place.country) countries[place.country] = true;
           });
-          fill(dialectSelect, Object.keys(dialects).sort());
-          fill(genderSelect, Object.keys(genders).sort());
-          fill(useSelect, Object.keys(uses).sort());
+          Object.keys(countries).sort(function (a, b) { return countryLabel(a).localeCompare(countryLabel(b), language === 'ar' ? 'ar' : 'en'); }).forEach(function (code) {
+            var option = document.createElement('option');
+            option.value = code;
+            option.textContent = countryLabel(code);
+            countrySelect.appendChild(option);
+          });
+          var fillDialects = function () {
+            var first = dialectSelect.options[0];
+            dialectSelect.textContent = '';
+            dialectSelect.appendChild(first);
+            var found = {};
+            voices.forEach(function (voice) {
+              if (voice._country === countrySelect.value && voice._dialect) found[voice._dialect] = true;
+            });
+            Object.keys(found).sort(function (a, b) { return dialectLabel(a).localeCompare(dialectLabel(b), language === 'ar' ? 'ar' : 'en'); }).forEach(function (name) {
+              var option = document.createElement('option');
+              option.value = name;
+              option.textContent = dialectLabel(name);
+              dialectSelect.appendChild(option);
+            });
+            dialectSelect.disabled = !countrySelect.value;
+          };
           var draw = function () {
             var q = (searchInput.value || '').trim().toLowerCase();
             picks.textContent = '';
+            if (!countrySelect.value || !dialectSelect.value) {
+              if (note) note.textContent = language === 'ar' ? 'اختر الدولة، ثم اختر اللهجة.' : 'Choose a country, then choose a dialect.';
+              return;
+            }
+            if (note) note.textContent = '';
             voices.filter(function (voice) {
-              if (dialectSelect.value && placeOf(voice) !== dialectSelect.value) return false;
-              if (genderSelect.value && voice.gender !== genderSelect.value) return false;
-              if (useSelect.value && voice.use_case !== useSelect.value) return false;
+              if (voice._country !== countrySelect.value || voice._dialect !== dialectSelect.value) return false;
               if (q && String(voice.name || '').toLowerCase().indexOf(q) === -1) return false;
               return true;
             }).forEach(function (voice) {
@@ -1098,16 +1120,13 @@
               input.setAttribute('data-voice-id', voice.id);
               var name = document.createElement('bdi');
               name.textContent = voice.name || voice.id;
-              var place = document.createElement('bdi');
-              place.className = 'voice-place';
-              place.textContent = placeOf(voice);
               label.appendChild(input);
               label.appendChild(name);
-              if (place.textContent) label.appendChild(place);
               picks.appendChild(label);
             });
           };
-          [dialectSelect, genderSelect, useSelect].forEach(function (select) { select.addEventListener('change', draw); });
+          countrySelect.addEventListener('change', function () { fillDialects(); draw(); });
+          dialectSelect.addEventListener('change', draw);
           searchInput.addEventListener('input', draw);
           draw();
         });

@@ -191,7 +191,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act22">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act23">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -505,9 +505,8 @@ $csrf = e(csrf_token());
         <input type="hidden" name="campaign_id" value="<?= $id ?>">
         <div class="voice-filters">
           <input type="search" data-voice-search placeholder="<?= $arabic ? 'ابحث بالاسم' : 'Search by name' ?>">
-          <select data-voice-dialect><option value=""><?= $arabic ? 'كل اللهجات' : 'All dialects' ?></option></select>
-          <select data-voice-gender><option value=""><?= $arabic ? 'كل الأنواع' : 'All genders' ?></option></select>
-          <select data-voice-use><option value=""><?= $arabic ? 'كل الاستخدامات' : 'All uses' ?></option></select>
+          <select data-voice-country><option value=""><?= $arabic ? 'اختر الدولة' : 'Choose a country' ?></option></select>
+          <select data-voice-dialect disabled><option value=""><?= $arabic ? 'اختر اللهجة' : 'Choose a dialect' ?></option></select>
         </div>
         <p class="muted" data-voice-note><?= $arabic ? 'كل الأصوات العامة من الكتالوج.' : 'Every public voice from the catalog.' ?></p>
         <div class="voice-picks" data-voice-picks></div>
@@ -652,6 +651,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act22"></script>
+<script src="/public/assets/js/app.js?v=act23"></script>
 </body>
 </html>
