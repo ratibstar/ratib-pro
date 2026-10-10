@@ -42,7 +42,7 @@ foreach ($media as $row) {
 $idea = trim((string) ($campaign['product_name'] ?? '') . (string) ($campaign['description'] ?? '')) !== '';
 $approved = db()->prepare("SELECT j.id FROM video_jobs j INNER JOIN campaign_media m ON m.id = j.output_media_id AND m.source = 'ai' AND m.kind = 'video' WHERE j.campaign_id = ? AND j.user_id = ? AND j.approval_status = 'approved' AND j.status = 'completed' LIMIT 1");
 $approved->execute([$campaignId, $userId]);
-if (!$idea || !$strategy || !$copy || empty($kinds['image']) || empty($kinds['audio']) || !$approved->fetch()) {
+if (!$idea || !$strategy || !$copy || empty($kinds['image']) || empty($kinds['audio']) || (!$approved->fetch() && empty($kinds['video']))) {
     header('Location: /campaign.php?id=' . $campaignId . '&ready_error=1#ready');
     exit;
 }

@@ -124,9 +124,10 @@ $ideaDone = $product !== '' || $idea !== '';
 $videoMax = 40;
 $videoJob = rateb_video_latest_job(db(), $id, $userId);
 $approvedVideo = rateb_video_approved(db(), $id, $userId);
+$videoDone = (bool) $approvedVideo || $campaignVideos !== [];
 $readyDone = in_array((string) ($campaign['status'] ?? ''), ['ready', 'completed'], true);
-$priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($approvedVideo ? 1 : 0);
-if ($readyDone && !$approvedVideo) {
+$priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($videoDone ? 1 : 0);
+if ($readyDone && !$videoDone) {
     db()->prepare("UPDATE campaigns SET status = 'in_progress', updated_at = NOW() WHERE id = ? AND user_id = ? AND status IN ('ready', 'completed')")->execute([$id, $userId]);
     $readyDone = false;
     $status = 'in_progress';
@@ -140,7 +141,7 @@ $stages = [
     'copy' => ['no' => '03', 'state' => $copyApproved ? 'done' : ($copyStarted ? 'progress' : ($strategyApproved ? 'open' : 'next'))],
     'images' => ['no' => '04', 'state' => $campaignImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
     'voice' => ['no' => '05', 'state' => $campaignVoices !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
-    'video' => ['no' => '06', 'state' => $approvedVideo ? 'done' : (($videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true)) || ($videoJob && (string) $videoJob['status'] === 'completed') ? 'progress' : ($campaignImages !== [] ? 'open' : 'next'))],
+    'video' => ['no' => '06', 'state' => $videoDone ? 'done' : (($videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true)) || ($videoJob && (string) $videoJob['status'] === 'completed') ? 'progress' : ($campaignImages !== [] ? 'open' : 'next'))],
     'ready' => ['no' => '07', 'state' => ($readyDone && $priorDone >= 6) ? 'done' : ($priorDone >= 6 ? 'open' : 'next')],
 ];
 $stageNames = $arabic
@@ -572,7 +573,7 @@ $csrf = e(csrf_token());
       </article>
     <?php endif; ?>
     <h3><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></h3>
-    <p class="muted"><?= $arabic ? 'الملف المرفوع مرجع فقط، وليس فيديو RATEB.' : 'An uploaded file is reference media, not a RATEB video.' ?></p>
+    <p class="muted"><?= $arabic ? 'الفيديو المرفوع يكمل هذه المرحلة.' : 'An uploaded video completes this stage.' ?></p>
     <form class="attach-image" method="post" action="/app/media/upload.php?campaign_id=<?= $id ?>&panel=video" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
       <input type="hidden" name="csrf" value="<?= $csrf ?>">
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
@@ -633,7 +634,9 @@ $csrf = e(csrf_token());
       <?php if ($approvedVideo): ?>
         <video controls playsinline src="/app/media/file.php?id=<?= (int) $approvedVideo['output_media_id'] ?>"></video>
       <?php else: ?>
-        <p class="empty"><?= $arabic ? 'الحملة الجاهزة تستخدم الفيديو المعتمد فقط.' : 'The ready campaign uses the approved video only.' ?></p>
+        <?php foreach ($campaignVideos as $item): ?>
+          <video controls playsinline src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
+        <?php endforeach; ?>
       <?php endif; ?>
       <?php if (!$readyDone): ?>
         <form method="post" action="/app/campaign/ready.php">
