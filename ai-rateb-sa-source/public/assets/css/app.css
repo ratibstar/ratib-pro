@@ -489,8 +489,8 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 body.page-campaign .progress{display:none}
 body.page-campaign .build-stages{display:flex;gap:6px;overflow:auto;margin:8px 0 18px;padding-bottom:4px}
 body.page-campaign .build-stages li{min-width:0;flex:1 0 92px;gap:4px}
-body.page-campaign .build-stages button.stage-tab{min-height:0;padding:8px 10px;border-radius:12px;background:transparent;border:1px solid var(--border);align-items:flex-start}
-body.page-campaign .build-stages .is-done > button.stage-tab{background:transparent;color:var(--text);border-color:color-mix(in srgb,#0f766e 50%,var(--border))}
+body.page-campaign .build-stages button.stage-tab{min-height:0;padding:8px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--border);align-items:flex-start;box-shadow:0 8px 24px var(--shadow)}
+body.page-campaign .build-stages .is-done > button.stage-tab{background:var(--surface);color:var(--text);border-color:color-mix(in srgb,#0f766e 50%,var(--border))}
 body.page-campaign .build-stages .is-done span,body.page-campaign .build-stages .is-done small{color:var(--muted)}
 body.page-campaign .build-stages .is-progress button.stage-tab,body.page-campaign .build-stages .is-open button.stage-tab{border-color:#6d28d9}
 body.page-campaign .build-stages b{font-size:13px}
