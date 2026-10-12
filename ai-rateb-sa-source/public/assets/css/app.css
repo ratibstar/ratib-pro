@@ -130,8 +130,7 @@ body.home.studio::after{animation:wave-slide 22s linear infinite}
 body.page-dash.studio::before{animation:spin-wash 28s linear infinite}
 body.page-dash.studio::after{animation:wave-rise 18s ease-in-out infinite alternate}
 body.page-campaign.studio::before{animation:pulse-wash 12s ease-in-out infinite}
-body.page-campaign.studio::before,body.page-campaign.studio::after{display:none}
-body.page-campaign.studio{background:var(--bg)}
+body.page-campaign.studio::after{animation:wave-diagonal 20s linear infinite}
 body.page-new.studio::before{animation:color-drift 11s ease-in-out infinite reverse}
 body.page-new.studio::after{animation:wave-slide 13s linear infinite reverse}
 body.page-brand.studio::before{animation:sway-wash 18s ease-in-out infinite}
