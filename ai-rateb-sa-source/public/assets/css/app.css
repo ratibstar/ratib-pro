@@ -130,7 +130,8 @@ body.home.studio::after{animation:wave-slide 22s linear infinite}
 body.page-dash.studio::before{animation:spin-wash 28s linear infinite}
 body.page-dash.studio::after{animation:wave-rise 18s ease-in-out infinite alternate}
 body.page-campaign.studio::before{animation:pulse-wash 12s ease-in-out infinite}
-body.page-campaign.studio::after{animation:wave-diagonal 20s linear infinite}
+body.page-campaign.studio::before{opacity:.35}
+body.page-campaign.studio::after{animation:none;opacity:.18}
 body.page-new.studio::before{animation:color-drift 11s ease-in-out infinite reverse}
 body.page-new.studio::after{animation:wave-slide 13s linear infinite reverse}
 body.page-brand.studio::before{animation:sway-wash 18s ease-in-out infinite}
@@ -435,6 +436,7 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .build-stages button{font:inherit;cursor:pointer;min-height:92px}
 .build-stages span{color:var(--muted);font-weight:800}
 .build-stages .is-done > button.stage-tab{border-color:transparent;background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff}
+.build-stages .is-done > button.stage-tab span::before{content:"✓ ";font-weight:800}
 .build-stages li{display:flex;flex-direction:column;gap:8px}
 .build-stages li button.stage-go{min-height:42px;width:100%;border-radius:12px;padding:10px 12px;align-items:center;justify-content:center;font-weight:800}
 .build-stages li button.stage-go.primary{background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff;border-color:transparent}
@@ -485,3 +487,12 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .voice-picks bdi{unicode-bidi:isolate}
 .voice-place{color:var(--muted);font-size:12px}
 .voice-preview{display:block;width:100%;margin:0 0 12px}
+.ready-review{display:grid;gap:16px}
+.ready-video{display:grid;gap:10px;max-width:720px;margin-inline:auto;width:100%}
+.ready-video video{width:100%;max-height:70vh;border-radius:18px;background:#111;border:1px solid var(--border)}
+.ready-video.is-upload{border:1px dashed var(--border);border-radius:18px;padding:12px}
+.ready-actions{display:flex;flex-wrap:wrap;gap:8px}
+.ready-copy p{font-size:16px;line-height:1.65}
+.ready-audio{display:grid;gap:8px}
+.ready-audio audio,.ready-video audio{width:min(100%,480px)}
+@media (max-width:720px){.ready-video{max-width:none}.top nav{flex-wrap:wrap;justify-content:flex-end}}

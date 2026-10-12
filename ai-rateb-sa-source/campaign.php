@@ -198,7 +198,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act26">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act27">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -278,9 +278,6 @@ $csrf = e(csrf_token());
           </form>
         <?php elseif ($key === 'voice' && $campaignImages !== []): ?>
           <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm"><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
-          <?php if ($campaignVoices): ?>
-            <audio class="card-voice" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $campaignVoices[0]['id'] ?>"<?= (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
-          <?php endif; ?>
         <?php elseif ($key === 'video' && $campaignImages !== [] && $campaignVideos === []): ?>
           <button type="button" class="primary stage-go" data-open="video" data-i18n="attach_video"><?= $arabic ? 'أرفق فيديو' : 'Attach a video' ?></button>
         <?php endif; ?>
@@ -527,7 +524,7 @@ $csrf = e(csrf_token());
     <?php if ($campaignVoices): ?>
       <?php foreach ($campaignVoices as $item): ?>
         <article class="media-card">
-          <audio controls src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></audio>
+          <audio class="<?= $item === $campaignVoices[0] ? 'card-voice' : '' ?>" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"<?= $item === $campaignVoices[0] && (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
           <form method="post" action="/app/media/delete.php">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
@@ -604,13 +601,34 @@ $csrf = e(csrf_token());
       </article>
     <?php endforeach; ?>
   </section>
-  <section class="panel" id="ready" data-panel="ready">
+  <section class="panel ready-review" id="ready" data-panel="ready">
     <h2 data-i18n="stage_ready"><?= $arabic ? 'الحملة الجاهزة' : 'Ready campaign' ?></h2>
     <?php if ($priorDone < 6): ?>
       <p class="empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
     <?php else: ?>
-      <?php if ($readyDone): ?><p class="badge"><?= $arabic ? 'جاهزة' : 'Ready' ?></p><?php endif; ?>
-      <article class="strategy-card">
+      <p class="badge"><?= $readyDone ? ($arabic ? 'جاهزة' : 'Ready') : ($arabic ? 'بانتظار الاعتماد' : 'Waiting for approval') ?></p>
+      <?php $readyVideoId = $approvedVideo ? (int) $approvedVideo['output_media_id'] : 0; ?>
+      <?php if ($readyVideoId > 0): ?>
+        <article class="ready-video">
+          <p class="eyebrow"><?= $arabic ? 'فيديو RATEB' : 'RATEB video' ?></p>
+          <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= $readyVideoId ?>"></video>
+          <p class="ready-actions">
+            <a class="quiet" href="/app/media/file.php?id=<?= $readyVideoId ?>" download><?= $arabic ? 'تنزيل' : 'Download' ?></a>
+            <button type="button" class="quiet" data-open="video"><?= $arabic ? 'إعادة التوليد' : 'Regenerate' ?></button>
+          </p>
+        </article>
+      <?php elseif ($campaignVideos !== []): ?>
+        <article class="ready-video is-upload">
+          <p class="eyebrow"><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></p>
+          <?php foreach ($campaignVideos as $item): ?>
+            <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
+            <p class="ready-actions"><a class="quiet" href="/app/media/file.php?id=<?= (int) $item['id'] ?>" download><?= $arabic ? 'تنزيل' : 'Download' ?></a></p>
+          <?php endforeach; ?>
+        </article>
+      <?php else: ?>
+        <p class="empty"><?= $arabic ? 'لا يوجد فيديو لهذه الحملة.' : 'This campaign has no video.' ?></p>
+      <?php endif; ?>
+      <article class="strategy-card ready-copy">
         <h3><?= e((string) $campaign['title']) ?></h3>
         <?php if ($voiceScript !== ''): ?><p><?= e($voiceScript) ?></p><?php endif; ?>
         <?php foreach (rateb_copy_types() as $type): ?>
@@ -628,15 +646,12 @@ $csrf = e(csrf_token());
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
-      <?php foreach ($campaignVoices as $item): ?>
-        <audio controls src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></audio>
-      <?php endforeach; ?>
-      <?php if ($approvedVideo): ?>
-        <video controls playsinline src="/app/media/file.php?id=<?= (int) $approvedVideo['output_media_id'] ?>"></video>
-      <?php else: ?>
-        <?php foreach ($campaignVideos as $item): ?>
-          <video controls playsinline src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
-        <?php endforeach; ?>
+      <?php if ($campaignVoices): ?>
+        <div class="ready-audio">
+          <?php foreach ($campaignVoices as $item): ?>
+            <audio controls preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></audio>
+          <?php endforeach; ?>
+        </div>
       <?php endif; ?>
       <?php if (!$readyDone): ?>
         <form method="post" action="/app/campaign/ready.php">
