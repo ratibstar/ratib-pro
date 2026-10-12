@@ -198,7 +198,7 @@ $csrf = e(csrf_token());
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=act27">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=act28">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -602,67 +602,73 @@ $csrf = e(csrf_token());
     <?php endforeach; ?>
   </section>
   <section class="panel ready-review" id="ready" data-panel="ready">
-    <h2 data-i18n="stage_ready"><?= $arabic ? 'الحملة الجاهزة' : 'Ready campaign' ?></h2>
+    <h2 data-i18n="stage_ready"><?= $arabic ? 'الاستوديو' : 'Studio' ?></h2>
     <?php if ($priorDone < 6): ?>
-      <p class="empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
+      <p class="empty studio-empty" data-i18n="stage_ready_next"><?= $arabic ? 'الحملة الجاهزة تأتي بعد اكتمال المراحل السابقة.' : 'The ready campaign comes after the earlier stages are complete.' ?></p>
     <?php else: ?>
-      <p class="badge"><?= $readyDone ? ($arabic ? 'جاهزة' : 'Ready') : ($arabic ? 'بانتظار الاعتماد' : 'Waiting for approval') ?></p>
-      <?php $readyVideoId = $approvedVideo ? (int) $approvedVideo['output_media_id'] : 0; ?>
-      <?php if ($readyVideoId > 0): ?>
-        <article class="ready-video">
-          <p class="eyebrow"><?= $arabic ? 'فيديو RATEB' : 'RATEB video' ?></p>
-          <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= $readyVideoId ?>"></video>
-          <p class="ready-actions">
-            <a class="quiet" href="/app/media/file.php?id=<?= $readyVideoId ?>" download><?= $arabic ? 'تنزيل' : 'Download' ?></a>
-            <button type="button" class="quiet" data-open="video"><?= $arabic ? 'إعادة التوليد' : 'Regenerate' ?></button>
-          </p>
-        </article>
-      <?php elseif ($campaignVideos !== []): ?>
-        <article class="ready-video is-upload">
-          <p class="eyebrow"><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></p>
-          <?php foreach ($campaignVideos as $item): ?>
-            <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
-            <p class="ready-actions"><a class="quiet" href="/app/media/file.php?id=<?= (int) $item['id'] ?>" download><?= $arabic ? 'تنزيل' : 'Download' ?></a></p>
-          <?php endforeach; ?>
-        </article>
-      <?php else: ?>
-        <p class="empty"><?= $arabic ? 'لا يوجد فيديو لهذه الحملة.' : 'This campaign has no video.' ?></p>
-      <?php endif; ?>
-      <article class="strategy-card ready-copy">
-        <h3><?= e((string) $campaign['title']) ?></h3>
-        <?php if ($voiceScript !== ''): ?><p><?= e($voiceScript) ?></p><?php endif; ?>
-        <?php foreach (rateb_copy_types() as $type): ?>
-          <?php if (!isset($copyRows[$type]) || (string) $copyRows[$type]['approval_status'] !== 'approved') continue; ?>
-          <h3><?= e($copyLabels[$type] ?? $type) ?></h3>
-          <?php foreach (rateb_field_parts((string) $copyRows[$type]['content']) as $part): ?>
-            <p><?= nl2br(e($part['text'])) ?></p>
-          <?php endforeach; ?>
-        <?php endforeach; ?>
-      </article>
-      <?php if ($campaignImages): ?>
-        <div class="media-grid generated-images">
-          <?php foreach ($campaignImages as $item): ?>
-            <article class="media-card"><img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt=""></article>
-          <?php endforeach; ?>
+      <div class="studio-board">
+        <div class="studio-screen">
+          <p class="badge"><?= $readyDone ? ($arabic ? 'جاهزة' : 'Ready') : ($arabic ? 'بانتظار الاعتماد' : 'Waiting for approval') ?></p>
+          <?php $readyVideoId = $approvedVideo ? (int) $approvedVideo['output_media_id'] : 0; ?>
+          <?php if ($readyVideoId > 0): ?>
+            <article class="ready-video">
+              <p class="eyebrow"><?= $arabic ? 'فيديو RATEB' : 'RATEB video' ?></p>
+              <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= $readyVideoId ?>"></video>
+              <p class="ready-actions">
+                <a class="quiet" href="/app/media/file.php?id=<?= $readyVideoId ?>" download><?= $arabic ? 'تنزيل' : 'Download' ?></a>
+                <button type="button" class="quiet" data-open="video"><?= $arabic ? 'إعادة التوليد' : 'Regenerate' ?></button>
+              </p>
+            </article>
+          <?php elseif ($campaignVideos !== []): ?>
+            <article class="ready-video is-upload">
+              <p class="eyebrow"><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></p>
+              <?php foreach ($campaignVideos as $item): ?>
+                <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
+                <p class="ready-actions"><a class="quiet" href="/app/media/file.php?id=<?= (int) $item['id'] ?>" download><?= $arabic ? 'تنزيل' : 'Download' ?></a></p>
+              <?php endforeach; ?>
+            </article>
+          <?php else: ?>
+            <p class="empty studio-empty"><?= $arabic ? 'لا يوجد فيديو لهذه الحملة.' : 'This campaign has no video.' ?></p>
+          <?php endif; ?>
         </div>
-      <?php endif; ?>
-      <?php if ($campaignVoices): ?>
-        <div class="ready-audio">
-          <?php foreach ($campaignVoices as $item): ?>
-            <audio controls preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></audio>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-      <?php if (!$readyDone): ?>
-        <form method="post" action="/app/campaign/ready.php">
-          <input type="hidden" name="csrf" value="<?= $csrf ?>">
-          <input type="hidden" name="campaign_id" value="<?= $id ?>">
-          <button class="primary" type="submit"><?= $arabic ? 'اعتماد الحملة الجاهزة' : 'Mark the campaign ready' ?></button>
-        </form>
-      <?php endif; ?>
-      <?php if (($_GET['ready_error'] ?? '') === '1'): ?>
-        <p class="notice is-error"><?= $arabic ? 'أكمل النص والصورة والصوت والفيديو أولاً.' : 'Finish the copy, image, voice, and video first.' ?></p>
-      <?php endif; ?>
+        <aside class="studio-notes">
+          <article class="strategy-card ready-copy">
+            <h3><?= e((string) $campaign['title']) ?></h3>
+            <?php if ($voiceScript !== ''): ?><p><?= e($voiceScript) ?></p><?php endif; ?>
+            <?php foreach (rateb_copy_types() as $type): ?>
+              <?php if (!isset($copyRows[$type]) || (string) $copyRows[$type]['approval_status'] !== 'approved') continue; ?>
+              <h3><?= e($copyLabels[$type] ?? $type) ?></h3>
+              <?php foreach (rateb_field_parts((string) $copyRows[$type]['content']) as $part): ?>
+                <p><?= nl2br(e($part['text'])) ?></p>
+              <?php endforeach; ?>
+            <?php endforeach; ?>
+          </article>
+          <?php if ($campaignImages): ?>
+            <div class="studio-stills">
+              <?php foreach ($campaignImages as $item): ?>
+                <img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt="">
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+          <?php if ($campaignVoices): ?>
+            <div class="ready-audio">
+              <?php foreach ($campaignVoices as $item): ?>
+                <audio controls preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></audio>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+          <?php if (!$readyDone): ?>
+            <form method="post" action="/app/campaign/ready.php">
+              <input type="hidden" name="csrf" value="<?= $csrf ?>">
+              <input type="hidden" name="campaign_id" value="<?= $id ?>">
+              <button class="primary" type="submit"><?= $arabic ? 'اعتماد الحملة الجاهزة' : 'Mark the campaign ready' ?></button>
+            </form>
+          <?php endif; ?>
+          <?php if (($_GET['ready_error'] ?? '') === '1'): ?>
+            <p class="notice is-error"><?= $arabic ? 'أكمل النص والصورة والصوت والفيديو أولاً.' : 'Finish the copy, image, voice, and video first.' ?></p>
+          <?php endif; ?>
+        </aside>
+      </div>
     <?php endif; ?>
   </section>
 </main>
