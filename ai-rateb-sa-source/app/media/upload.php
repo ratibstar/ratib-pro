@@ -17,7 +17,18 @@ check_csrf();
 session_write_close();
 
 $campaignId = (int) ($_POST['campaign_id'] ?? 0);
-$kind = media_upload_kind((string) ($_POST['kind'] ?? ''), (string) ($_POST['panel'] ?? $_GET['panel'] ?? ''));
+$kind = (string) ($_POST['kind'] ?? '');
+$panel = (string) ($_POST['panel'] ?? $_GET['panel'] ?? '');
+if (!isset(media_kind_mimes()[$kind])) {
+    if ($panel === 'video') {
+        $kind = 'video';
+    } elseif ($panel === 'images') {
+        $kind = 'image';
+    } elseif ($panel === 'voice') {
+        $kind = 'audio';
+    }
+}
+try {
 $campaign = media_owned_campaign($campaignId);
 if (!isset(media_kind_mimes()[$kind])) {
     media_redirect($campaignId, 'type');
@@ -49,7 +60,6 @@ if (media_reject_active_content($bytes)) {
 }
 $mime = media_detect_mime($bytes, $kind);
 if ($kind === 'video') {
-    require_once __DIR__ . '/../idea.php';
     $existing = db()->prepare('SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ?');
     $existing->execute([$campaignId, (int) $campaign['user_id'], 'video']);
     if ((int) $existing->fetchColumn() >= 1) {
@@ -58,18 +68,8 @@ if ($kind === 'video') {
     if ($mime === null && rateb_looks_like_video($bytes)) {
         $mime = str_starts_with($bytes, "\x1A\x45\xDF\xA3") ? 'video/webm' : 'video/mp4';
     }
-    if ($mime === null) {
+    if ($mime === null || !isset(media_kind_mimes()['video'][$mime])) {
         media_redirect($campaignId, 'type');
-    }
-    $seconds = rateb_video_seconds($bytes, $mime);
-    if ($seconds !== null && $seconds > 40) {
-        set_time_limit(180);
-        $trimmed = rateb_trim_video_file((string) $file['tmp_name']);
-        if ($trimmed === null) {
-            media_redirect($campaignId, 'video_trim');
-        }
-        $bytes = $trimmed;
-        $mime = 'video/mp4';
     }
 } elseif ($mime === null) {
     media_redirect($campaignId, 'type');
@@ -81,6 +81,9 @@ try {
     media_redirect($campaignId, 'upload');
 }
 media_redirect($campaignId);
+} catch (Throwable $error) {
+    media_redirect($campaignId > 0 ? $campaignId : $postedCampaign, 'upload');
+}
 
 function rateb_looks_like_video(string $bytes): bool
 {
@@ -92,49 +95,4 @@ function rateb_looks_like_video(string $bytes): bool
     }
     $mime = strtolower((string) (new finfo(FILEINFO_MIME_TYPE))->buffer($bytes));
     return str_starts_with($mime, 'video/');
-}
-
-function rateb_trim_video_file(string $source): ?string
-{
-    $ffmpeg = '';
-    foreach (['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/home/admin/bin/ffmpeg'] as $path) {
-        if (is_executable($path)) {
-            $ffmpeg = $path;
-            break;
-        }
-    }
-    if ($ffmpeg === '') {
-        return null;
-    }
-    $base = tempnam(sys_get_temp_dir(), 'rv');
-    if ($base === false) {
-        return null;
-    }
-    $target = $base . '.mp4';
-    @unlink($base);
-    $attempts = [
-        [$ffmpeg, '-y', '-i', $source, '-t', '40', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28', '-c:a', 'aac', '-movflags', '+faststart', $target],
-        [$ffmpeg, '-y', '-i', $source, '-t', '40', '-c', 'copy', '-movflags', '+faststart', $target],
-    ];
-    foreach ($attempts as $command) {
-        @unlink($target);
-        $pipes = [];
-        $process = proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
-        if (!is_resource($process)) {
-            continue;
-        }
-        fclose($pipes[0]);
-        stream_get_contents($pipes[1]);
-        stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        $code = proc_close($process);
-        if ($code === 0 && is_file($target) && filesize($target) > 32) {
-            $trimmed = file_get_contents($target);
-            @unlink($target);
-            return $trimmed === false ? null : $trimmed;
-        }
-    }
-    @unlink($target);
-    return null;
 }
