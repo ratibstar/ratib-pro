@@ -17,7 +17,7 @@ check_csrf();
 session_write_close();
 
 $campaignId = (int) ($_POST['campaign_id'] ?? 0);
-$kind = (string) ($_POST['kind'] ?? '');
+$kind = media_upload_kind((string) ($_POST['kind'] ?? ''), (string) ($_POST['panel'] ?? $_GET['panel'] ?? ''));
 $campaign = media_owned_campaign($campaignId);
 if (!isset(media_kind_mimes()[$kind])) {
     media_redirect($campaignId, 'type');
@@ -50,17 +50,20 @@ if (media_reject_active_content($bytes)) {
 $mime = media_detect_mime($bytes, $kind);
 if ($kind === 'video') {
     require_once __DIR__ . '/../idea.php';
-    set_time_limit(180);
     $existing = db()->prepare('SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ?');
     $existing->execute([$campaignId, (int) $campaign['user_id'], 'video']);
     if ((int) $existing->fetchColumn() >= 1) {
         media_redirect($campaignId, 'video_one');
     }
-    if ($mime === null && !rateb_looks_like_video($bytes)) {
+    if ($mime === null && rateb_looks_like_video($bytes)) {
+        $mime = str_starts_with($bytes, "\x1A\x45\xDF\xA3") ? 'video/webm' : 'video/mp4';
+    }
+    if ($mime === null) {
         media_redirect($campaignId, 'type');
     }
-    $seconds = $mime === null ? null : rateb_video_seconds($bytes, $mime);
-    if ($mime === null || $seconds === null || $seconds > 40) {
+    $seconds = rateb_video_seconds($bytes, $mime);
+    if ($seconds !== null && $seconds > 40) {
+        set_time_limit(180);
         $trimmed = rateb_trim_video_file((string) $file['tmp_name']);
         if ($trimmed === null) {
             media_redirect($campaignId, 'video_trim');

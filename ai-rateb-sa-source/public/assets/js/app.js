@@ -1225,29 +1225,13 @@
       event.preventDefault();
       var status = document.getElementById(form.getAttribute('data-status') || '');
       var button = form.querySelector('button[type="submit"]');
-      var max = Number(form.getAttribute('data-max-seconds') || 0);
-      var url = URL.createObjectURL(file);
-      var probe = document.createElement('video');
-      probe.preload = 'metadata';
-      var send = function () {
-        URL.revokeObjectURL(url);
-        if (status) {
-          status.className = 'notice stage-status';
-          status.textContent = dict[language].video_uploading;
-        }
-        if (button) button.disabled = true;
-        form.setAttribute('data-ready', '1');
-        form.submit();
-      };
-      probe.onloadedmetadata = function () {
-        if (max > 0 && isFinite(probe.duration) && probe.duration > max + 1 && status) {
-          status.className = 'notice stage-status';
-          status.textContent = dict[language].video_shortening;
-        }
-        send();
-      };
-      probe.onerror = send;
-      probe.src = url;
+      if (status) {
+        status.className = 'notice stage-status';
+        status.textContent = dict[language].video_uploading;
+      }
+      if (button) button.disabled = true;
+      form.setAttribute('data-ready', '1');
+      form.submit();
     });
   });
 

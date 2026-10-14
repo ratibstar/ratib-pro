@@ -121,6 +121,8 @@ jobs:
             "app/ai/voice.php"
             "app/video/engine.php"
             "public/assets/js/app.js"
+            "app/media/upload.php"
+            "app/media/library.php"
           )
           for rel in "${files[@]}"; do
             local_file="ai-rateb-sa-source/${rel}"

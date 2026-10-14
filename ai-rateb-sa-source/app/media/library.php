@@ -12,6 +12,23 @@ function media_kind_limits(): array
     ];
 }
 
+function media_upload_kind(string $kind, string $panel): string
+{
+    if (isset(media_kind_mimes()[$kind])) {
+        return $kind;
+    }
+    if ($panel === 'video') {
+        return 'video';
+    }
+    if ($panel === 'images') {
+        return 'image';
+    }
+    if ($panel === 'voice') {
+        return 'audio';
+    }
+    return '';
+}
+
 function media_kind_mimes(): array
 {
     return [
