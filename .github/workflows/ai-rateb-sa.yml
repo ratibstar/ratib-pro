@@ -117,6 +117,7 @@ jobs:
           files=(
             "app/plans.php"
             "app/ai/image.php"
+            "app/ai/voice.php"
             "app/video/engine.php"
           )
           for rel in "${files[@]}"; do

@@ -24,27 +24,29 @@ $lang = $decision['speech'] === 'ar' ? 'ar' : 'en';
 $script = rateb_voice_script(db(), (int) $campaign['id'], $lang);
 if ($script === '') {
     http_response_code(409);
-    echo json_encode(['error' => rateb_ui_error('voice_locked'), 'code' => 'voice_locked'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => rateb_ui_error('voice_locked'), 'code' => 'voice_locked', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+$spoken = trim(mb_substr($script, 0, 600));
+if (!rateb_voice_text_is_arabic($spoken)) {
+    http_response_code(422);
+    echo json_encode(['error' => rateb_ui_error('voice_english'), 'code' => 'voice_english', 'state' => 'unavailable'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$textCfg = require __DIR__ . '/../../config/ai.php';
 $sawtakKey = trim((string) getenv('SAWTAK_API_KEY'));
 $wanted = (string) ($_POST['voice'] ?? '');
 $selected = rateb_sawtak_find($wanted);
 if ($selected === null || (string) ($selected['status'] ?? '') !== 'ready') {
     http_response_code(422);
-    echo json_encode(['error' => ui_language() === 'ar' ? 'اختر صوتاً جاهزاً من الكتالوج.' : 'Choose a ready voice from the catalog.', 'code' => 'invalid'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'اختر صوتاً جاهزاً من الكتالوج.' : 'Choose a ready voice from the catalog.', 'code' => 'invalid', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 if ($sawtakKey === '') {
     http_response_code(503);
-    echo json_encode(['error' => ui_language() === 'ar' ? 'توليد الكلام يحتاج مفتاح Sawtak على الخادم. المعاينة تعمل بدون توليد.' : 'Speech generation needs the Sawtak key on the server. Preview works without generating speech.', 'code' => 'not_configured'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'توليد الكلام يحتاج مفتاح Sawtak على الخادم. المعاينة تعمل بدون توليد.' : 'Speech generation needs the Sawtak key on the server. Preview works without generating speech.', 'code' => 'not_configured', 'state' => 'unavailable'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-
-$chosen = $textCfg['api_key'] ? rateb_voice_choose($textCfg, $script, $lang) : '';
-$spoken = $chosen !== '' ? $chosen : (function_exists('mb_substr') ? trim(mb_substr($script, 0, 180)) : trim(substr($script, 0, 180)));
 $script = $spoken;
 
 $gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'voice');
@@ -90,11 +92,11 @@ if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     if ($errorCode === 'model_terms_required') {
         http_response_code(403);
-        echo json_encode(['error' => rateb_ui_error('voice_terms'), 'code' => 'voice_terms'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => rateb_ui_error('voice_terms'), 'code' => 'voice_terms', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     http_response_code(502);
-    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -110,99 +112,19 @@ try {
 } catch (Throwable $error) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     http_response_code(500);
-    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 rateb_usage_finish(db(), (int) $gate['id'], 'completed');
 rateb_store_voice_script((int) $campaign['id'], $spoken);
 
-echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '&play=1#voice'], JSON_UNESCAPED_UNICODE);
-
-function rateb_voice_script(PDO $pdo, int $campaignId, string $speech): string
-{
-    $stmt = $pdo->prepare('SELECT output_type, content FROM campaign_outputs WHERE campaign_id = ? AND approval_status = ? ORDER BY id DESC');
-    $stmt->execute([$campaignId, 'approved']);
-    $pieces = [];
-    foreach ($stmt as $row) {
-        $type = (string) $row['output_type'];
-        if (!isset($pieces[$type])) {
-            $pieces[$type] = (string) $row['content'];
-        }
-    }
-    $script = '';
-    foreach (array_merge(['headline', 'call_to_action', 'short_ad', 'ad_copy'], rateb_copy_types()) as $type) {
-        if (!empty($pieces[$type])) {
-            $line = rateb_voice_plain($pieces[$type], $speech);
-            if ($line === '') {
-                continue;
-            }
-            $script = $script === '' ? $line : $script . ' ' . $line;
-            if (function_exists('mb_strlen') ? mb_strlen($script) >= 500 : strlen($script) >= 500) {
-                break;
-            }
-        }
-    }
-    if (function_exists('mb_substr')) {
-        return trim(mb_substr($script, 0, 600));
-    }
-    return trim(substr($script, 0, 600));
-}
-
-function rateb_voice_choose(array $cfg, string $source, string $speech): string
-{
-    $instruction = $speech === 'ar'
-        ? 'اختر جملة واحدة قصيرة ليقرأها المعلق من نص الحملة فقط. لا تخترع أسعاراً أو وعوداً غير موجودة. أعد JSON بالمفتاح script.'
-        : 'Choose one short spoken line from this campaign text only. Do not invent prices or promises. Return JSON with the key script.';
-    $payload = json_encode([
-        'model' => $cfg['model'],
-        'messages' => [
-            ['role' => 'system', 'content' => 'You are RATEB. Return one JSON object only.'],
-            ['role' => 'user', 'content' => $instruction . "\n" . $source],
-        ],
-        'temperature' => 0.3,
-        'reasoning_effort' => 'low',
-        'max_tokens' => 300,
-        'response_format' => ['type' => 'json_object'],
-    ], JSON_UNESCAPED_UNICODE);
-    $ch = curl_init(rtrim((string) $cfg['base_url'], '/') . '/chat/completions');
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
-        CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_TIMEOUT => 25,
-        CURLOPT_CONNECTTIMEOUT => 8,
-    ]);
-    $raw = curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($raw === false || $code < 200 || $code >= 300) {
-        return '';
-    }
-    $data = json_decode((string) $raw, true);
-    $content = (string) ($data['choices'][0]['message']['content'] ?? '');
-    $result = json_decode($content, true);
-    $line = is_array($result) ? trim((string) ($result['script'] ?? '')) : '';
-    if ($line === '') {
-        return '';
-    }
-    return function_exists('mb_substr') ? trim(mb_substr($line, 0, 180)) : trim(substr($line, 0, 180));
-}
+echo json_encode(['ok' => true, 'state' => 'ready', 'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '&play=1#voice'], JSON_UNESCAPED_UNICODE);
 
 function rateb_store_voice_script(int $campaignId, string $script): void
 {
     $pdo = db();
     $pdo->prepare("DELETE FROM campaign_outputs WHERE campaign_id = ? AND output_type = 'voice_script'")->execute([$campaignId]);
     $pdo->prepare("INSERT INTO campaign_outputs (campaign_id, output_type, content, approval_status) VALUES (?, 'voice_script', ?, 'draft')")->execute([$campaignId, $script]);
-}
-
-function rateb_voice_plain(string $content, string $speech): string
-{
-    $decoded = json_decode($content, true);
-    if (is_array($decoded)) {
-        $content = (string) ($decoded[$speech] ?? $decoded['ar'] ?? $decoded['en'] ?? '');
-    }
-    return trim(preg_replace('/\s+/u', ' ', $content) ?? '');
 }
 
 function rateb_speed_wav(string $audio, float $tempo): ?string
