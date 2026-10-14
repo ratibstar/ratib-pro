@@ -60,6 +60,11 @@ check(!array_key_exists('audience', $partial) || !rateb_value_fits($partial['aud
 $english = $plain;
 $english['channels'] = 'Instagram, Snapchat, TikTok';
 check(!rateb_strategy_valid(rateb_prepare_output($english, 'ar', $keys), 'ar'), 'English-only channel list is still rejected for Arabic');
+$mixed = $plain;
+$mixed['channels'] = 'واتساب و Instagram';
+$mixed['tone'] = 'رسمي';
+check(rateb_output_ready(rateb_prepare_output($mixed, 'ar', $keys), 'ar', $keys), 'Arabic strategy with a channel name is saved');
+check(!rateb_output_ready(rateb_prepare_output($english, 'ar', $keys), 'ar', $keys), 'an English strategy is not saved for an Arabic campaign');
 
 $wrapped = rateb_json_object("Here is the draft:\n```json\n" . json_encode(['positioning' => 'نص'], JSON_UNESCAPED_UNICODE) . "\n```");
 check(is_array($wrapped) && ($wrapped['positioning'] ?? '') === 'نص', 'fenced model JSON is readable');

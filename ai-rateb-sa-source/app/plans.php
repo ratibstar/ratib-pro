@@ -36,6 +36,7 @@ function rateb_ui_error(string $code): string
         'voice_english' => $arabic ? 'توليد الكلام الإنجليزي غير متاح حاليًا. نموذج الكلام الحالي عربي فقط.' : 'English speech is currently unavailable. The current speech model is Arabic only.',
         'voice_terms' => $arabic ? 'نموذج الصوت موجود، لكن شروط استخدامه غير مقبولة لهذا الحساب.' : 'The speech model exists, but its terms are not accepted for this account.',
         'image_timeout' => $arabic ? 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.' : 'Image generation timed out. No new image was saved.',
+        'write_busy' => $arabic ? 'RATEB يكتب الآن.' : 'RATEB is already writing.',
     ];
     return $messages[$code] ?? ($arabic ? 'تعذر تنفيذ الطلب.' : 'The request could not be completed.');
 }
@@ -504,6 +505,42 @@ function rateb_prepare_output(mixed $result, string $resolved, array $keys): mix
         }
     }
     return $result;
+}
+
+function rateb_text_ready(string $text, string $resolved): bool
+{
+    $text = trim($text);
+    if ($text === '' || mb_strlen($text) > 600) {
+        return false;
+    }
+    $arabic = preg_match_all('/\p{Arabic}/u', $text) ?: 0;
+    $latin = preg_match_all('/[A-Za-z]/', $text) ?: 0;
+    if ($resolved === 'ar') {
+        return $arabic >= 2;
+    }
+    if ($resolved === 'en') {
+        $total = $arabic + $latin;
+        return $latin >= 2 && $total > 0 && ($arabic / $total) <= 0.5;
+    }
+    return false;
+}
+
+function rateb_value_ready(mixed $value, string $resolved): bool
+{
+    if ($resolved === 'bilingual') {
+        return rateb_value_fits($value, $resolved);
+    }
+    return is_string($value) && rateb_text_ready($value, $resolved);
+}
+
+function rateb_output_ready(array $data, string $resolved, array $keys): bool
+{
+    foreach ($keys as $key) {
+        if (!rateb_value_ready($data[$key] ?? null, $resolved)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function rateb_value_fits(mixed $value, string $resolved): bool

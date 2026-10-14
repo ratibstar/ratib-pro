@@ -6,6 +6,7 @@ require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/../idea.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
+header('X-Rateb-Generate: 3');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     rateb_fail(405, 'invalid_output');
@@ -122,25 +123,34 @@ if ($stage === 'copy') {
 }
 
 $cfg = rateb_ai_config();
+$lockKey = 'rateb_text_' . $id . '_' . $stage;
+rateb_text_hold($lockKey);
 $gate = rateb_usage_begin(db(), $userId, $id, 'campaign_text');
 if (!$gate['ok']) {
+    rateb_text_release($lockKey);
     rateb_deny((string) $gate['code']);
 }
 $decision = rateb_output_language(db(), $campaign);
 $resolved = (string) $decision['resolved'];
 $facts = rateb_workspace_facts(db(), $campaign, $brief);
-$system = 'You are RATEB. Return one JSON object only. Do not invent prices, budgets, dates, locations, audiences, or channels that are not in the facts. If a fact is missing, say that it was not specified in the requested language.';
+if ($resolved === 'ar') {
+    $system = 'أنت RATEB. أعد كائن JSON واحدًا فقط. كل قيمة جملة أو جملتان بالعربية. لا تخترع سعرًا أو تاريخًا أو مدينة أو جمهورًا أو قناة غير مذكورة في الحقائق. إذا نقصت معلومة فاكتب: لم يُحدد.';
+} elseif ($resolved === 'en') {
+    $system = 'You are RATEB. Return one JSON object only. Each value is one or two short English sentences. Do not invent a price, date, place, audience, or channel that is not in the facts. If a fact is missing, write: Not specified.';
+} else {
+    $system = 'You are RATEB. Return one JSON object only. Each value is an object with ar and en. ar is Arabic only and en is English only. Do not invent a price, date, place, audience, or channel that is not in the facts.';
+}
 
 if ($stage === 'strategy') {
     $shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar and en. ' : 'Each value must be a plain string. ';
     $prompt = "Write one campaign strategy from these facts only. Keep every value to one or two short sentences. Return JSON with English keys: positioning, core_message, audience, channels, tone, creative_direction, call_to_action. " . $shape . $decision['instruction'] . "\nFacts:\n" . $facts;
     $result = rateb_generate_output($cfg, $system, $prompt, $resolved, rateb_strategy_keys());
-    if (!is_array($result) || !rateb_strategy_valid($result, $resolved)) {
+    if (!is_array($result) || !rateb_output_ready($result, $resolved, rateb_strategy_keys())) {
         rateb_usage_finish(db(), (int) $gate['id'], 'failed');
         $bad = [];
         if (is_array($result)) {
             foreach (rateb_strategy_keys() as $key) {
-                if (!rateb_value_fits($result[$key] ?? null, $resolved)) {
+                if (!rateb_value_ready($result[$key] ?? null, $resolved)) {
                     $bad[] = $key;
                 }
             }
@@ -158,6 +168,7 @@ if ($stage === 'strategy') {
         rateb_fail(502, 'ai_failed');
     }
     rateb_usage_finish(db(), (int) $gate['id'], 'completed');
+    rateb_text_release($lockKey);
     echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . $id . '#strategy'], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -168,12 +179,12 @@ $strategy = rateb_strategy_document((string) $strategyRow['content']);
 $shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar and en. ' : 'Each value must be a plain string. ';
 $prompt = 'Write short campaign copy from the approved strategy and the facts. Each value is at most two short sentences. Return JSON with English keys: ' . implode(', ', $keys) . '. ' . $shape . $decision['instruction'] . "\nFacts:\n" . $facts . "\nApproved strategy:\n" . json_encode($strategy, JSON_UNESCAPED_UNICODE);
 $result = rateb_generate_output($cfg, $system, $prompt, $resolved, $keys);
-if (!is_array($result) || !rateb_copy_valid($result, $resolved, $only)) {
+if (!is_array($result) || !rateb_output_ready($result, $resolved, $keys)) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     $bad = [];
     if (is_array($result)) {
         foreach ($keys as $key) {
-            if (!rateb_value_fits($result[$key] ?? null, $resolved)) {
+            if (!rateb_value_ready($result[$key] ?? null, $resolved)) {
                 $bad[] = $key;
             }
         }
@@ -192,11 +203,17 @@ try {
     rateb_fail(502, 'ai_failed');
 }
 rateb_usage_finish(db(), (int) $gate['id'], 'completed');
+rateb_text_release($lockKey);
 echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . $id . '#copy'], JSON_UNESCAPED_UNICODE);
 exit;
 
 function rateb_fail(int $status, string $code, array $extra = []): void
 {
+    if (isset($GLOBALS['rateb_text_lock']) && is_string($GLOBALS['rateb_text_lock'])) {
+        $lockKey = $GLOBALS['rateb_text_lock'];
+        unset($GLOBALS['rateb_text_lock']);
+        rateb_text_release($lockKey);
+    }
     http_response_code($status);
     echo json_encode(['error' => rateb_ui_error($code), 'code' => $code] + $extra, JSON_UNESCAPED_UNICODE);
     exit;
@@ -219,28 +236,30 @@ function rateb_output_row(int $campaignId, string $type): ?array
     return $row ?: null;
 }
 
+function rateb_text_hold(string $lockKey): void
+{
+    $held = (int) ($_SESSION[$lockKey] ?? 0);
+    if ($held > 0 && (time() - $held) < 20) {
+        rateb_fail(429, 'write_busy');
+    }
+    $_SESSION[$lockKey] = time();
+    $GLOBALS['rateb_text_lock'] = $lockKey;
+    session_write_close();
+}
+
+function rateb_text_release(string $lockKey): void
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+    unset($_SESSION[$lockKey]);
+    session_write_close();
+}
+
 function rateb_generate_output(array $cfg, string $system, string $prompt, string $resolved, array $keys): mixed
 {
-    $schema = rateb_output_schema($keys, $resolved);
-    $raw = rateb_model_json($cfg, $system, $prompt, $schema);
-    if ($raw === null) {
-        $raw = rateb_model_json($cfg, $system, $prompt, $schema);
-    }
-    $result = rateb_prepare_output($raw, $resolved, $keys);
-    if (is_array($result) && rateb_output_valid($result, $resolved, $keys)) {
-        return $result;
-    }
-    if (!is_array($raw)) {
-        return $result;
-    }
-    $language = $resolved === 'en'
-        ? 'Write every value in English only.'
-        : ($resolved === 'bilingual'
-            ? 'Each value must be an object with keys ar and en. The ar value is Arabic only. The en value is English only.'
-            : 'Write every value in Arabic only.');
-    $repair = 'Rewrite the draft into one JSON object with exactly these English keys: ' . implode(', ', $keys) . '. ' . $language . ' Keep the draft meaning. Do not add prices, dates, places, audiences, or channels that are not in the draft. If a field was not specified, say that it was not specified.' . "\nDraft:\n" . json_encode($raw, JSON_UNESCAPED_UNICODE);
-    $second = rateb_prepare_output(rateb_model_json($cfg, $system, $repair, $schema), $resolved, $keys);
-    return is_array($second) ? $second : $result;
+    $raw = rateb_model_json($cfg, $system, $prompt, rateb_output_schema($keys, $resolved));
+    return rateb_prepare_output($raw, $resolved, $keys);
 }
 
 function rateb_model_json(array $cfg, string $system, string $prompt, ?array $schema = null): ?array
@@ -265,7 +284,7 @@ function rateb_model_json_once(array $cfg, string $system, string $prompt, ?arra
         ],
         'temperature' => 0.4,
         'reasoning_effort' => 'low',
-        'max_tokens' => 4096,
+        'max_tokens' => 1000,
         'response_format' => is_array($schema)
             ? ['type' => 'json_schema', 'json_schema' => $schema]
             : ['type' => 'json_object'],
@@ -277,7 +296,7 @@ function rateb_model_json_once(array $cfg, string $system, string $prompt, ?arra
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
         CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_TIMEOUT => 22,
+        CURLOPT_TIMEOUT => 15,
         CURLOPT_CONNECTTIMEOUT => 8,
     ]);
     $raw = curl_exec($ch);

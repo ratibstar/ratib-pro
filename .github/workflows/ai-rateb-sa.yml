@@ -138,6 +138,27 @@ jobs:
           done
           echo "DEPLOYED_COMMIT=${GITHUB_SHA}"
           echo "DEPLOYED_TARGET=${TARGET}"
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          Path(os.environ["RUNNER_TEMP"], "opcache-reset.php").write_text(
+              "<?php\n"
+              "if (function_exists('opcache_invalidate')) {\n"
+              "    foreach (['app/plans.php','app/ai/generate.php','app/ai/image.php','app/ai/voice.php','app/video/engine.php'] as $rel) {\n"
+              "        opcache_invalidate(__DIR__ . '/' . $rel, true);\n"
+              "    }\n"
+              "}\n"
+              "echo 'ok';\n",
+              encoding="utf-8",
+          )
+          PY
+          reset_name="opcache-${GITHUB_RUN_ID}.php"
+          scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${RUNNER_TEMP}/opcache-reset.php" "${REMOTE}:${TARGET}/${reset_name}"
+          reset_code="$(curl -sS -o "${RUNNER_TEMP}/opcache-body.txt" -w '%{http_code}' --max-time 15 "https://ai.rateb.sa/${reset_name}" || true)"
+          echo "OPCACHE_HTTP=${reset_code}"
+          echo "OPCACHE_BODY=$(cat "${RUNNER_TEMP}/opcache-body.txt" 2>/dev/null || true)"
+          "${SSH[@]}" "$REMOTE" "rm -f '${TARGET}/${reset_name}'"
           rm -f "$KEY"
 
   generate:
