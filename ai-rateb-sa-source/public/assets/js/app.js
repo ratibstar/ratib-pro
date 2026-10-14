@@ -1239,15 +1239,20 @@
   if (videoGenerate) {
     var videoStatus = document.getElementById('video-gen-status');
     var videoBusy = language === 'ar' ? 'جاري إنشاء الفيديو...' : 'Creating the video...';
+    var showVideoStatus = function (text, failed) {
+      [videoStatus].concat(Array.prototype.slice.call(document.querySelectorAll('[data-video-status]'))).forEach(function (node) {
+        if (!node) return;
+        node.hidden = false;
+        node.className = failed ? 'notice stage-status is-error' : 'notice stage-status';
+        node.textContent = text;
+      });
+    };
     var watchVideo = function () {
       fetch('/app/ai/video-status.php?campaign_id=' + encodeURIComponent(videoGenerate.getAttribute('data-campaign') || ''), { credentials: 'same-origin' })
         .then(function (response) { return response.json(); })
         .then(function (payload) {
           if (!payload || payload.status === 'queued' || payload.status === 'processing') {
-            if (videoStatus) {
-              videoStatus.hidden = false;
-              videoStatus.textContent = videoBusy;
-            }
+            showVideoStatus(videoBusy, false);
             window.setTimeout(watchVideo, 4000);
             return;
           }
@@ -1257,22 +1262,24 @@
     };
     videoGenerate.addEventListener('submit', function (event) {
       event.preventDefault();
-      if (videoStatus) {
-        videoStatus.hidden = false;
-        videoStatus.className = 'notice stage-status';
-        videoStatus.textContent = videoBusy;
-      }
+      showVideoStatus(videoBusy, false);
+      document.querySelectorAll('[form="videoGenerate"], #videoGenerate button').forEach(function (node) {
+        node.disabled = true;
+      });
       fetch(videoGenerate.action, { method: 'POST', body: new FormData(videoGenerate), credentials: 'same-origin' })
         .then(function (response) { return response.json(); })
         .then(function (payload) {
           if (!payload || !payload.ok) {
-            if (videoStatus) videoStatus.textContent = (payload && payload.error) || videoBusy;
+            showVideoStatus((payload && payload.error) || (language === 'ar' ? 'تعذر إنشاء الفيديو.' : 'The video could not be generated.'), true);
+            document.querySelectorAll('[form="videoGenerate"], #videoGenerate button').forEach(function (node) {
+              node.disabled = false;
+            });
             return;
           }
           watchVideo();
         })
         .catch(function () {
-          if (videoStatus) videoStatus.textContent = language === 'ar' ? 'تعذر إنشاء الفيديو.' : 'The video could not be generated.';
+          showVideoStatus(language === 'ar' ? 'تعذر إنشاء الفيديو.' : 'The video could not be generated.', true);
         });
     });
     if (videoGenerate.getAttribute('data-running') === '1') watchVideo();

@@ -71,13 +71,13 @@ $strategyLabels = $arabic
     ];
 $strategyRow = null;
 $copyRows = [];
-$voiceScript = '';
+$storedVoiceScript = '';
 foreach ($outputs as $row) {
     $type = (string) $row['output_type'];
     if ($type === 'strategy' && $strategyRow === null) {
         $strategyRow = $row;
-    } elseif ($type === 'voice_script' && !isset($voiceScript)) {
-        $voiceScript = (string) $row['content'];
+    } elseif ($type === 'voice_script' && $storedVoiceScript === '') {
+        $storedVoiceScript = trim((string) $row['content']);
     } elseif (in_array($type, rateb_copy_types(), true)) {
         $copyRows[$type] = $row;
     }
@@ -97,6 +97,7 @@ $uploadMedia = [];
 $campaignImages = [];
 $campaignVoices = [];
 $campaignVideos = [];
+$uploadedVideos = [];
 foreach ($media as $mediaItem) {
     $kind = (string) $mediaItem['kind'];
     if ($kind === 'image') {
@@ -109,6 +110,9 @@ foreach ($media as $mediaItem) {
     } elseif ($kind === 'video') {
         $videoCount++;
         $campaignVideos[] = $mediaItem;
+        if ((string) $mediaItem['source'] !== 'ai') {
+            $uploadedVideos[] = $mediaItem;
+        }
     } else {
         $uploadMedia[] = $mediaItem;
     }
@@ -124,7 +128,12 @@ $ideaDone = $product !== '' || $idea !== '';
 $videoMax = 40;
 $videoJob = rateb_video_latest_job(db(), $id, $userId);
 $approvedVideo = rateb_video_approved(db(), $id, $userId);
-$videoDone = (bool) $approvedVideo || $campaignVideos !== [];
+$videoConfigured = rateb_video_provider()->configured();
+$videoDone = rateb_video_stage_complete((bool) $approvedVideo, $uploadedVideos !== []);
+$voiceDecision = rateb_output_language(db(), $campaign);
+$approvedVoiceScript = rateb_voice_script(db(), $id, (string) ($voiceDecision['speech'] ?? 'ar') === 'en' ? 'en' : 'ar');
+$voiceEnglishBlocked = $approvedVoiceScript !== '' && !rateb_voice_text_is_arabic($approvedVoiceScript);
+$shownVoiceScript = $storedVoiceScript !== '' ? $storedVoiceScript : $approvedVoiceScript;
 $readyDone = in_array((string) ($campaign['status'] ?? ''), ['ready', 'completed'], true);
 $priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($videoDone ? 1 : 0);
 if ($readyDone && !$videoDone) {
@@ -271,15 +280,15 @@ $csrf = e(csrf_token());
             <button class="primary stage-go" type="submit" data-i18n="start_copy"><?= $arabic ? 'ابدأ كتابة الإعلان' : 'Generate Copy' ?></button>
           </form>
         <?php elseif ($key === 'images' && $copyApproved): ?>
-          <form id="imageForm" class="stage-action" data-status="stage-status">
+          <form id="imageForm" class="stage-action" data-status="stage-status" data-job-ttl="<?= (int) rateb_image_job_ttl() ?>">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
         <?php elseif ($key === 'voice' && $campaignImages !== []): ?>
-          <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm"><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
-        <?php elseif ($key === 'video' && $campaignImages !== [] && $campaignVideos === []): ?>
-          <button type="button" class="primary stage-go" data-open="video" data-i18n="attach_video"><?= $arabic ? 'أرفق فيديو' : 'Attach a video' ?></button>
+          <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm"<?= $voiceEnglishBlocked ? ' disabled' : '' ?>><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
+        <?php elseif ($key === 'video' && $campaignImages !== [] && !$approvedVideo): ?>
+          <button class="primary stage-go" type="submit" form="videoGenerate"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ($arabic ? 'جاري إنشاء الفيديو...' : 'Creating the video...') : ($arabic ? 'إنشاء فيديو RATEB' : 'Create the RATEB video') ?></button>
         <?php endif; ?>
       </li>
     <?php endforeach; ?>
@@ -514,12 +523,21 @@ $csrf = e(csrf_token());
         </div>
         <p class="muted" data-voice-note><?= $arabic ? 'كل الأصوات العامة من الكتالوج.' : 'Every public voice from the catalog.' ?></p>
         <div class="voice-picks" data-voice-picks></div>
-        <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة العامة. ٢) RATEB يختار الكلام من نصوص الحملة، ثم يسجّله بهذا الصوت.' : '1) Choose a voice and play its public sample. 2) RATEB picks the words from the campaign, then records them in that voice.' ?></p>
-        <button class="primary" type="submit"><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
+        <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة العامة. ٢) RATEB يقرأ الكلام المعتمد بهذا الصوت.' : '1) Choose a voice and play its public sample. 2) RATEB reads the approved words in that voice.' ?></p>
+        <?php if ($voiceEnglishBlocked): ?>
+          <p class="notice is-error"><?= e(rateb_ui_error('voice_english')) ?></p>
+        <?php endif; ?>
+        <?php if ($approvedVoiceScript !== ''): ?>
+          <p class="notice"><?= $arabic ? 'الكلام المعتمد الذي سيُقرأ:' : 'The approved words that will be spoken:' ?> <?= e($approvedVoiceScript) ?></p>
+        <?php endif; ?>
+        <?php if ($storedVoiceScript !== '' && $storedVoiceScript !== $approvedVoiceScript): ?>
+          <p class="muted"><?= $arabic ? 'آخر تسجيل محفوظ:' : 'Last saved recording:' ?> <?= e($storedVoiceScript) ?></p>
+        <?php endif; ?>
+        <button class="primary" type="submit"<?= $voiceEnglishBlocked ? ' disabled' : '' ?>><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
         <audio data-voice-player class="voice-preview" controls preload="none" hidden></audio>
       </form>
-    <?php if ($voiceScript !== ''): ?>
-      <p class="notice"><?= $arabic ? 'الكلام الذي اختاره RATEB من الحملة:' : 'The words RATEB picked from the campaign:' ?> <?= e($voiceScript) ?></p>
+    <?php if ($storedVoiceScript !== '' && $approvedVoiceScript === ''): ?>
+      <p class="notice"><?= $arabic ? 'آخر تسجيل محفوظ:' : 'Last saved recording:' ?> <?= e($storedVoiceScript) ?></p>
     <?php endif; ?>
     <?php if ($campaignVoices): ?>
       <?php foreach ($campaignVoices as $item): ?>
@@ -544,10 +562,15 @@ $csrf = e(csrf_token());
     <?php if ($approvedVideo): ?>
       <p class="badge"><?= $arabic ? 'الفيديو معتمد' : 'Video approved' ?></p>
     <?php endif; ?>
+    <?php if (!$videoConfigured): ?>
+      <p class="notice is-error"><?= e(rateb_video_message('not_configured', $arabic)) ?></p>
+    <?php elseif (!$videoJob || (string) $videoJob['status'] !== 'failed'): ?>
+      <p class="muted"><?= $arabic ? 'مزود الفيديو مُعد. لا يُعد الفيديو المولَّد مكتملاً إلا بعد أن ينتهي المزوّد وتعتمده.' : 'The video provider is configured. A generated video is complete only after the provider finishes and you approve it.' ?></p>
+    <?php endif; ?>
     <form id="videoGenerate" method="post" action="/app/ai/video.php" data-video-generate="1" data-campaign="<?= $id ?>"<?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ' data-running="1"' : '' ?>>
       <input type="hidden" name="csrf" value="<?= $csrf ?>">
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
-      <button class="primary" type="submit"><?= $videoJob && (string) $videoJob['status'] === 'completed' ? ($arabic ? 'إعادة التوليد' : 'Regenerate') : ($arabic ? 'إنشاء الفيديو' : 'Create video') ?></button>
+      <button class="primary" type="submit"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && (string) $videoJob['status'] === 'completed' ? ($arabic ? 'إعادة التوليد' : 'Regenerate') : ($arabic ? 'إنشاء الفيديو' : 'Create video') ?></button>
     </form>
     <p class="notice stage-status" id="video-gen-status" hidden></p>
     <?php if ($videoJob && (string) $videoJob['status'] === 'failed'): ?>
@@ -574,12 +597,13 @@ $csrf = e(csrf_token());
     <form class="attach-image" method="post" action="/app/media/upload.php?campaign_id=<?= $id ?>&panel=video" enctype="multipart/form-data" data-video-upload="1" data-max-seconds="<?= $videoMax ?>" data-status="stage-status">
       <input type="hidden" name="csrf" value="<?= $csrf ?>">
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
+      <input type="hidden" name="kind" value="video">
       <input type="hidden" name="panel" value="video">
       <label>
         <span data-i18n="attach_video"><?= $arabic ? 'اختر ملف فيديو' : 'Choose a video file' ?></span>
         <input type="file" name="file" accept="video/*" required>
       </label>
-      <button class="primary" type="submit" data-i18n="attach_video_button"><?= $campaignVideos === [] ? ($arabic ? 'رفع فيديو' : 'Upload video') : ($arabic ? 'استبدال الفيديو المرفوع' : 'Replace uploaded video') ?></button>
+      <button class="primary" type="submit" data-i18n="attach_video_button"><?= $uploadedVideos === [] ? ($arabic ? 'رفع فيديو' : 'Upload video') : ($arabic ? 'استبدال الفيديو المرفوع' : 'Replace uploaded video') ?></button>
     </form>
     <?php $mediaError = (string) ($_GET['media_error'] ?? ''); ?>
     <?php if ($mediaError === 'video_trim'): ?>
@@ -589,7 +613,7 @@ $csrf = e(csrf_token());
     <?php elseif ($mediaError !== ''): ?>
       <p class="notice is-error"><?= e($arabic ? 'تعذر إرفاق الفيديو.' : 'The video could not be attached.') ?></p>
     <?php endif; ?>
-    <?php foreach ($campaignVideos as $item): ?>
+    <?php foreach ($uploadedVideos as $item): ?>
       <article class="media-card">
         <video controls playsinline src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
         <form method="post" action="/app/media/delete.php">
@@ -619,13 +643,21 @@ $csrf = e(csrf_token());
                 <button type="button" class="quiet" data-open="video"><?= $arabic ? 'إعادة التوليد' : 'Regenerate' ?></button>
               </p>
             </article>
-          <?php elseif ($campaignVideos !== []): ?>
+          <?php elseif ($uploadedVideos !== []): ?>
             <article class="ready-video is-upload">
               <p class="eyebrow"><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></p>
-              <?php foreach ($campaignVideos as $item): ?>
+              <p class="muted"><?= $arabic ? 'هذا ملفك كما رفعته. إنشاء فيديو RATEB يركّب الصورة والصوت المعتمد في ملف جديد.' : 'This is the file you uploaded. Creating the RATEB video builds a new file from the approved image and voice.' ?></p>
+              <?php foreach ($uploadedVideos as $item): ?>
                 <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
-                <p class="ready-actions"><a class="quiet" href="/app/media/file.php?id=<?= (int) $item['id'] ?>" download><?= $arabic ? 'تنزيل' : 'Download' ?></a></p>
+                <p class="ready-actions">
+                  <button class="primary" type="submit" form="videoGenerate"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ($arabic ? 'جاري إنشاء الفيديو...' : 'Creating the video...') : ($arabic ? 'إنشاء فيديو RATEB' : 'Create the RATEB video') ?></button>
+                  <a class="quiet" href="/app/media/file.php?id=<?= (int) $item['id'] ?>" download><?= $arabic ? 'تنزيل الملف المرفوع' : 'Download the uploaded file' ?></a>
+                </p>
               <?php endforeach; ?>
+              <?php if ($videoJob && (string) $videoJob['status'] === 'failed'): ?>
+                <p class="notice is-error"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></p>
+              <?php endif; ?>
+              <p class="notice stage-status" data-video-status hidden></p>
             </article>
           <?php else: ?>
             <p class="empty studio-empty"><?= $arabic ? 'لا يوجد فيديو لهذه الحملة.' : 'This campaign has no video.' ?></p>
@@ -634,7 +666,7 @@ $csrf = e(csrf_token());
         <aside class="studio-notes">
           <article class="strategy-card ready-copy">
             <h3><?= e((string) $campaign['title']) ?></h3>
-            <?php if ($voiceScript !== ''): ?><p><?= e($voiceScript) ?></p><?php endif; ?>
+            <?php if ($shownVoiceScript !== ''): ?><p><?= e($shownVoiceScript) ?></p><?php endif; ?>
             <?php foreach (rateb_copy_types() as $type): ?>
               <?php if (!isset($copyRows[$type]) || (string) $copyRows[$type]['approval_status'] !== 'approved') continue; ?>
               <h3><?= e($copyLabels[$type] ?? $type) ?></h3>
@@ -679,6 +711,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act26"></script>
+<script src="/public/assets/js/app.js?v=act28"></script>
 </body>
 </html>
