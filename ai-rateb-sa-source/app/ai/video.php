@@ -30,7 +30,8 @@ foreach ($outputs as $row) {
 }
 $images = db()->prepare("SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = 'image' ORDER BY (source = 'ai') DESC, id DESC");
 $images->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
-$result = rateb_video_start(db(), $campaign, $strategy ?: [], $copy, $images->fetchAll());
+$seconds = (int) ($_POST['seconds'] ?? 5);
+$result = rateb_video_start(db(), $campaign, $strategy ?: [], $copy, $images->fetchAll(), $seconds);
 $payload = [
     'ok' => $result['ok'],
     'job_id' => $result['job_id'],

@@ -14,6 +14,19 @@ function rateb_video_clip_seconds(): int
     return 5;
 }
 
+/** @return array<int,int> */
+function rateb_video_clips(int $seconds): array
+{
+    return match ($seconds) {
+        5 => [5],
+        10 => [10],
+        15 => [10, 5],
+        20 => [10, 10],
+        30 => [10, 10, 10],
+        default => [],
+    };
+}
+
 function rateb_video_copy_text(string $content, string $prefer = 'ar'): string
 {
     $content = trim($content);
@@ -49,14 +62,10 @@ function rateb_video_copy_parts(array $rows, string $prefer = 'ar'): array
 /** @param array<int,array<string,mixed>> $images @param array<string,mixed> $brand */
 function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar'): array
 {
-    $clip = rateb_video_clip_seconds();
-    $target = min(40, max(0, $planSeconds));
-    $count = intdiv($target, $clip);
-    if ($count < 1 || $images === []) {
+    $clips = rateb_video_clips($planSeconds);
+    if ($clips === [] || $images === []) {
         return [];
     }
-    $count = min($count, 8, count($images) > 0 ? max($count, 1) : 0);
-    $count = min($count, 8);
     $motions = [
         'subtle camera push-in, premium commercial lighting, product identity unchanged, no text',
         'slow lateral camera movement, gentle parallax, product identity unchanged, no text',
@@ -74,7 +83,7 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
     }
     $purpose = mb_substr($purpose, 0, 180);
     $scenes = [];
-    for ($i = 0; $i < $count; $i++) {
+    foreach ($clips as $i => $clip) {
         $image = $images[$i % count($images)];
         $motion = $motions[$i % count($motions)];
         $scenes[] = [
@@ -190,7 +199,7 @@ function rateb_video_approved(PDO $pdo, int $campaignId, int $userId): ?array
 }
 
 /** @return array{ok:bool,code:string,job_id:int} */
-function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array $copyRows, array $images): array
+function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array $copyRows, array $images, int $seconds = 5): array
 {
     $provider = rateb_video_provider();
     if (!$provider->configured()) {
@@ -217,6 +226,10 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
         return ['ok' => true, 'code' => '', 'job_id' => (int) $active['id']];
     }
     $plan = rateb_user_plan($pdo, (int) $campaign['user_id']);
+    $durationCode = rateb_video_duration_code($plan, $seconds);
+    if ($durationCode !== '') {
+        return ['ok' => false, 'code' => $durationCode, 'job_id' => 0];
+    }
     $strategy = rateb_strategy_document((string) $strategyRow['content']) ?? [];
     $brand = [];
     $brandStmt = $pdo->prepare('SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
@@ -227,11 +240,14 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     }
     $prefer = (string) (rateb_output_language($pdo, $campaign)['speech'] ?? 'ar') === 'en' ? 'en' : 'ar';
     $parts = rateb_video_copy_parts($copyRows, $prefer);
-    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, (int) $plan['video_max_seconds'], $brand, $prefer);
+    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, $brand, $prefer);
     if ($scenes === []) {
-        return ['ok' => false, 'code' => 'video_too_long', 'job_id' => 0];
+        return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
     }
-    $seconds = count($scenes) * rateb_video_clip_seconds();
+    $seconds = 0;
+    foreach ($scenes as $scene) {
+        $seconds += (int) $scene['duration'];
+    }
     $gate = rateb_usage_begin($pdo, (int) $campaign['user_id'], (int) $campaign['id'], 'video', $seconds);
     if (!$gate['ok']) {
         return ['ok' => false, 'code' => (string) $gate['code'], 'job_id' => 0];
@@ -436,6 +452,8 @@ function rateb_video_message(string $code, bool $arabic): string
         'plan_limit' => 'استنفدت حد الفيديو في خطتك.',
         'plan_inactive' => 'الخطة غير متاحة.',
         'video_too_long' => 'مدة خطتك لا تكفي لمشهد الفيديو.',
+        'video_paid' => '١٥ و٢٠ و٣٠ ثانية متاحة في الباقات المدفوعة.',
+        'video_free_used' => 'استخدمت الفيديوين المجانيين لهذا الشهر.',
         'storage' => 'تعذر حفظ الفيديو.',
         'watermark' => 'تعذر إضافة علامة RATEB AI على الفيديو.',
     ];
@@ -454,6 +472,8 @@ function rateb_video_message(string $code, bool $arabic): string
         'plan_limit' => 'The video limit for your plan has been reached.',
         'plan_inactive' => 'The plan is not available.',
         'video_too_long' => 'Your plan duration is too short for a video scene.',
+        'video_paid' => '15, 20, and 30 seconds are available on paid plans.',
+        'video_free_used' => 'The two free videos for this month have been used.',
         'storage' => 'The video could not be saved.',
         'watermark' => 'The RATEB AI mark could not be applied to the video.',
     ];

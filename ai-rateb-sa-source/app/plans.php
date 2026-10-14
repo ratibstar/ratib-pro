@@ -95,6 +95,37 @@ function rateb_user_plan(PDO $pdo, int $userId): array
     }
 }
 
+function rateb_video_is_free(array $plan): bool
+{
+    return (string) ($plan['code'] ?? '') === 'free' || (float) ($plan['price_sar'] ?? 1) <= 0;
+}
+
+function rateb_video_duration_code(array $plan, int $seconds): string
+{
+    if (!in_array($seconds, [5, 10, 15, 20, 30], true)) {
+        return 'invalid';
+    }
+    $max = rateb_video_is_free($plan) ? 10 : (int) ($plan['video_max_seconds'] ?? 0);
+    if ($seconds <= $max) {
+        return '';
+    }
+    return $seconds >= 15 ? 'video_paid' : 'video_too_long';
+}
+
+/** @return array<int,array{seconds:int,enabled:bool,paid:bool}> */
+function rateb_video_duration_options(array $plan): array
+{
+    $options = [];
+    foreach ([5, 10, 15, 20, 30] as $seconds) {
+        $options[] = [
+            'seconds' => $seconds,
+            'enabled' => rateb_video_duration_code($plan, $seconds) === '',
+            'paid' => $seconds >= 15,
+        ];
+    }
+    return $options;
+}
+
 function rateb_usage_count(PDO $pdo, int $userId, string $operation): int
 {
     $stmt = $pdo->prepare("SELECT COALESCE(SUM(units), 0) FROM usage_events
@@ -117,19 +148,22 @@ function rateb_usage_begin(PDO $pdo, int $userId, ?int $campaignId, string $oper
             $pdo->rollBack();
             return ['ok' => false, 'code' => 'plan_inactive', 'id' => 0];
         }
-        if ($operation === 'video' && $seconds !== null && $seconds > (int) $plan['video_max_seconds']) {
-            $pdo->rollBack();
-            return ['ok' => false, 'code' => 'video_too_long', 'id' => 0];
+        if ($operation === 'video' && $seconds !== null) {
+            $durationCode = rateb_video_duration_code($plan, $seconds);
+            if ($durationCode !== '') {
+                $pdo->rollBack();
+                return ['ok' => false, 'code' => $durationCode, 'id' => 0];
+            }
         }
         $limit = null;
         if ($operation === 'image') {
             $limit = (int) $plan['image_limit'];
         } elseif ($operation === 'video') {
-            $limit = (int) $plan['video_limit'];
+            $limit = rateb_video_is_free($plan) ? 2 : (int) $plan['video_limit'];
         }
         if ($limit !== null && rateb_usage_count($pdo, $userId, $operation) >= $limit) {
             $pdo->rollBack();
-            return ['ok' => false, 'code' => 'plan_limit', 'id' => 0];
+            return ['ok' => false, 'code' => ($operation === 'video' && rateb_video_is_free($plan)) ? 'video_free_used' : 'plan_limit', 'id' => 0];
         }
         $insert = $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, seconds, status) VALUES (?, ?, ?, 1, ?, \'reserved\')');
         $insert->execute([$userId, $campaignId, $operation, $seconds]);

@@ -126,6 +126,8 @@ $channels = trim((string) ($brief['channels'] ?? ''));
 $tone = trim((string) ($brief['brand_tone'] ?? ''));
 $ideaDone = $product !== '' || $idea !== '';
 $videoMax = 40;
+$videoPlan = rateb_user_plan(db(), $userId);
+$videoDurations = rateb_video_duration_options($videoPlan);
 $videoJob = rateb_video_latest_job(db(), $id, $userId);
 $approvedVideo = rateb_video_approved(db(), $id, $userId);
 $videoConfigured = rateb_video_provider()->configured();
@@ -198,6 +200,16 @@ if ($imageCount > 0 || $videoCount > 0) {
     }
 }
 $csrf = e(csrf_token());
+function rateb_campaign_duration_select(array $options, bool $arabic): void
+{
+    echo '<label class="video-length"><span>' . ($arabic ? 'مدة الفيديو' : 'Video length') . '</span><select data-video-seconds>';
+    foreach ($options as $option) {
+        $seconds = (int) $option['seconds'];
+        $label = $seconds . ($arabic ? ' ثانية' : ' seconds') . (!empty($option['paid']) ? ($arabic ? ' · مدفوعة' : ' · Paid') : ($arabic ? ' · مجانية' : ' · Free'));
+        echo '<option value="' . $seconds . '"' . (empty($option['enabled']) ? ' disabled' : '') . ($seconds === 5 ? ' selected' : '') . '>' . e($label) . '</option>';
+    }
+    echo '</select></label>';
+}
 ?>
 <!doctype html>
 <html lang="<?= $arabic ? 'ar' : 'en' ?>" dir="<?= $arabic ? 'rtl' : 'ltr' ?>" data-theme="light">
@@ -570,6 +582,9 @@ $csrf = e(csrf_token());
     <form id="videoGenerate" method="post" action="/app/ai/video.php" data-video-generate="1" data-campaign="<?= $id ?>"<?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ' data-running="1"' : '' ?>>
       <input type="hidden" name="csrf" value="<?= $csrf ?>">
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
+      <input type="hidden" name="seconds" id="video-seconds" value="5">
+      <?php rateb_campaign_duration_select($videoDurations, $arabic); ?>
+      <p class="muted"><?= $arabic ? '٥ و١٠ ثوانٍ مجاناً لفيديوين في الشهر. ١٥ و٢٠ و٣٠ ثانية في الباقات المدفوعة.' : '5 and 10 seconds are free for two videos a month. 15, 20, and 30 seconds are on paid plans.' ?></p>
       <button class="primary" type="submit"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && (string) $videoJob['status'] === 'completed' ? ($arabic ? 'إعادة التوليد' : 'Regenerate') : ($arabic ? 'إنشاء الفيديو' : 'Create video') ?></button>
     </form>
     <p class="notice stage-status" id="video-gen-status" hidden></p>
@@ -577,10 +592,10 @@ $csrf = e(csrf_token());
       <p class="notice is-error"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></p>
     <?php endif; ?>
     <?php if ($videoJob && (string) $videoJob['status'] === 'completed' && (int) $videoJob['output_media_id'] > 0): ?>
-      <?php $sceneCount = count(json_decode((string) $videoJob['storyboard'], true) ?: []); ?>
       <article class="media-card">
         <p><?= $arabic ? 'معاينة الفيديو' : 'Preview Video' ?></p>
-        <p class="muted"><?= e((string) ($sceneCount * 5)) ?>s · 9:16 · <?= (string) $videoJob['approval_status'] === 'approved' ? ($arabic ? 'معتمد' : 'Approved') : ($arabic ? 'بانتظار الاعتماد' : 'Waiting for approval') ?></p>
+        <?php $sceneSeconds = 0; foreach (json_decode((string) $videoJob['storyboard'], true) ?: [] as $scene) { $sceneSeconds += (int) ($scene['duration'] ?? 0); } ?>
+        <p class="muted"><?= e((string) $sceneSeconds) ?>s · 9:16 · <?= (string) $videoJob['approval_status'] === 'approved' ? ($arabic ? 'معتمد' : 'Approved') : ($arabic ? 'بانتظار الاعتماد' : 'Waiting for approval') ?></p>
         <video controls playsinline src="/app/media/file.php?id=<?= (int) $videoJob['output_media_id'] ?>"></video>
         <?php if ((string) $videoJob['approval_status'] !== 'approved'): ?>
           <form method="post" action="/app/ai/video-approve.php">
@@ -647,6 +662,8 @@ $csrf = e(csrf_token());
             <article class="ready-video is-upload">
               <p class="eyebrow"><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></p>
               <p class="muted"><?= $arabic ? 'هذا ملفك كما رفعته. إنشاء فيديو RATEB يركّب الصورة والصوت المعتمد في ملف جديد.' : 'This is the file you uploaded. Creating the RATEB video builds a new file from the approved image and voice.' ?></p>
+              <?php rateb_campaign_duration_select($videoDurations, $arabic); ?>
+              <p class="muted"><?= $arabic ? '٥ و١٠ ثوانٍ مجاناً لفيديوين في الشهر. ١٥ و٢٠ و٣٠ ثانية في الباقات المدفوعة.' : '5 and 10 seconds are free for two videos a month. 15, 20, and 30 seconds are on paid plans.' ?></p>
               <?php foreach ($uploadedVideos as $item): ?>
                 <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
                 <p class="ready-actions">
@@ -711,6 +728,6 @@ $csrf = e(csrf_token());
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act28"></script>
+<script src="/public/assets/js/app.js?v=act29"></script>
 </body>
 </html>

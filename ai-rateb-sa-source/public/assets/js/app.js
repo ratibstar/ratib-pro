@@ -1235,6 +1235,15 @@
     });
   });
 
+    var videoSeconds = document.getElementById('video-seconds');
+  document.querySelectorAll('[data-video-seconds]').forEach(function (select) {
+    select.addEventListener('change', function () {
+      if (videoSeconds && !select.options[select.selectedIndex].disabled) videoSeconds.value = select.value;
+      document.querySelectorAll('[data-video-seconds]').forEach(function (other) {
+        if (other !== select) other.value = select.value;
+      });
+    });
+  });
   var videoGenerate = document.getElementById('videoGenerate');
   if (videoGenerate) {
     var videoStatus = document.getElementById('video-gen-status');
