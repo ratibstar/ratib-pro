@@ -2,6 +2,16 @@ name: RATEB AI Campaign
 
 on:
   workflow_dispatch:
+    inputs:
+      task:
+        description: "deploy uploads the application files. verify checks secrets. generate calls the live text provider."
+        required: true
+        default: deploy
+        type: choice
+        options:
+          - deploy
+          - verify
+          - generate
 
 permissions:
   contents: read
@@ -13,6 +23,7 @@ concurrency:
 jobs:
   verify:
     name: Verify ai.rateb.sa wiring
+    if: github.event.inputs.task == 'verify'
     runs-on: ubuntu-latest
     environment: ai.rateb.sa
     timeout-minutes: 5
@@ -46,8 +57,90 @@ jobs:
           fi
           echo "RATEB_AI_API_KEY_REQUIRED=present"
 
+  deploy:
+    name: Upload ai.rateb.sa application fixes
+    if: github.event.inputs.task == 'deploy'
+    runs-on: ubuntu-latest
+    environment: ai.rateb.sa
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Upload plans, image, and video engine
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
+            echo "::error::DEPLOY_SSH_HOST, DEPLOY_SSH_USER, and DEPLOY_SSH_PRIVATE_KEY must be set in the ai.rateb.sa environment"
+            exit 1
+          fi
+          python3 - << 'PY'
+          import os, stat, tempfile
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "").strip()
+          if not key:
+              raise SystemExit("missing deploy key")
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          fd, path = tempfile.mkstemp(prefix="ai-deploy-", suffix=".pem")
+          os.close(fd)
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key)
+              if not key.endswith("\n"):
+                  handle.write("\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          open(os.path.join(os.environ["RUNNER_TEMP"], "ai-deploy-key-path"), "w", encoding="utf-8").write(path)
+          PY
+          KEY="$(cat "${RUNNER_TEMP}/ai-deploy-key-path")"
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          SSH=(ssh -i "$KEY" -p "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          INDICATED="/home/admin/domains/ai.rateb.sa"
+          TARGET=""
+          for candidate in "$INDICATED" "${INDICATED}/public_html" "${INDICATED}/private_html"; do
+            if "${SSH[@]}" "$REMOTE" "test -f '${candidate}/app/plans.php'"; then
+              TARGET="$candidate"
+              break
+            fi
+          done
+          if [ -z "$TARGET" ]; then
+            echo "::error::app/plans.php was not found in the indicated domain directory or its public_html or private_html child"
+            rm -f "$KEY"
+            exit 1
+          fi
+          echo "COMMIT=${GITHUB_SHA}"
+          echo "TARGET=${TARGET}"
+          files=(
+            "app/plans.php"
+            "app/ai/image.php"
+            "app/video/engine.php"
+          )
+          for rel in "${files[@]}"; do
+            local_file="ai-rateb-sa-source/${rel}"
+            local_sum="$(sha256sum "$local_file" | awk '{print $1}')"
+            scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+              "$local_file" "${REMOTE}:${TARGET}/${rel}"
+            remote_sum="$("${SSH[@]}" "$REMOTE" "php -r \"echo hash_file('sha256', '${TARGET}/${rel}');\"")"
+            echo "FILE=${rel}"
+            echo "LOCAL_SHA256=${local_sum}"
+            echo "REMOTE_SHA256=${remote_sum}"
+            if [ "$local_sum" != "$remote_sum" ]; then
+              echo "::error::Checksum mismatch for ${rel}"
+              rm -f "$KEY"
+              exit 1
+            fi
+          done
+          echo "DEPLOYED_COMMIT=${GITHUB_SHA}"
+          echo "DEPLOYED_TARGET=${TARGET}"
+          rm -f "$KEY"
+
   generate:
     name: Production campaign generation
+    if: github.event.inputs.task == 'generate'
     runs-on: ubuntu-latest
     environment: ai.rateb.sa
     timeout-minutes: 10

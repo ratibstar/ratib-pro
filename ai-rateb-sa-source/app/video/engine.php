@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/provider.php';
+require_once __DIR__ . '/../plans.php';
 
 function rateb_video_ratio(): string
 {
@@ -13,8 +14,40 @@ function rateb_video_clip_seconds(): int
     return 5;
 }
 
-/** @param array<int,array<string,mixed>> $images */
-function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds): array
+function rateb_video_copy_text(string $content, string $prefer = 'ar'): string
+{
+    $content = trim($content);
+    if ($content !== '' && ($content[0] === '{' || $content[0] === '[')) {
+        json_decode($content, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return '';
+        }
+    }
+    $plain = trim(preg_replace('/\s+/u', ' ', rateb_prompt_plain($content, $prefer)) ?? '');
+    if ($plain === '' || $plain[0] === '{' || $plain[0] === '[') {
+        return '';
+    }
+    return mb_substr($plain, 0, 180);
+}
+
+/** @param array<int,array<string,mixed>> $rows */
+function rateb_video_copy_parts(array $rows, string $prefer = 'ar'): array
+{
+    $parts = [];
+    foreach ($rows as $row) {
+        if (!is_array($row) || (string) ($row['approval_status'] ?? '') !== 'approved') {
+            continue;
+        }
+        $line = rateb_video_copy_text((string) ($row['content'] ?? ''), $prefer);
+        if ($line !== '') {
+            $parts[] = $line;
+        }
+    }
+    return $parts;
+}
+
+/** @param array<int,array<string,mixed>> $images @param array<string,mixed> $brand */
+function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar'): array
 {
     $clip = rateb_video_clip_seconds();
     $target = min(40, max(0, $planSeconds));
@@ -30,20 +63,30 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
         'controlled product reveal, cinematic light movement, product identity unchanged, no text',
         'realistic environmental motion, steady premium camera, product identity unchanged, no logos changing, no text',
     ];
-    $purpose = trim((string) ($strategy['creative_direction'] ?? $strategy['core_message'] ?? ''));
-    if ($purpose === '' && $copyParts !== []) {
-        $purpose = (string) $copyParts[0];
+    $prefer = $prefer === 'en' ? 'en' : 'ar';
+    $copyLine = rateb_video_copy_text((string) ($copyParts[0] ?? ''), $prefer);
+    $purpose = rateb_prompt_plain($strategy['creative_direction'] ?? '', $prefer);
+    if ($purpose === '') {
+        $purpose = rateb_prompt_plain($strategy['core_message'] ?? '', $prefer);
+    }
+    if ($purpose === '') {
+        $purpose = $copyLine;
     }
     $purpose = mb_substr($purpose, 0, 180);
     $scenes = [];
     for ($i = 0; $i < $count; $i++) {
         $image = $images[$i % count($images)];
+        $motion = $motions[$i % count($motions)];
         $scenes[] = [
             'purpose' => $purpose,
             'image_id' => (int) $image['id'],
             'duration' => $clip,
-            'motion' => $motions[$i % count($motions)],
-            'prompt' => $motions[$i % count($motions)],
+            'motion' => $motion,
+            'prompt' => rateb_visual_prompt(
+                array_merge([$motion], rateb_visual_lines($campaign, $strategy, $copyLine, $brand, $prefer)),
+                'No written text and no logo.',
+                400
+            ),
             'task_id' => '',
             'status' => 'queued',
             'url' => '',
@@ -110,11 +153,10 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
         return ['ok' => false, 'code' => 'missing_copy', 'job_id' => 0];
     }
     $approvedCopy = false;
-    $parts = [];
     foreach ($copyRows as $row) {
         if ((string) ($row['approval_status'] ?? '') === 'approved') {
             $approvedCopy = true;
-            $parts[] = mb_substr(trim((string) $row['content']), 0, 180);
+            break;
         }
     }
     if (!$approvedCopy) {
@@ -129,7 +171,16 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     }
     $plan = rateb_user_plan($pdo, (int) $campaign['user_id']);
     $strategy = rateb_strategy_document((string) $strategyRow['content']) ?? [];
-    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, (int) $plan['video_max_seconds']);
+    $brand = [];
+    $brandStmt = $pdo->prepare('SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
+    $brandStmt->execute([(int) $campaign['user_id']]);
+    $brandRow = $brandStmt->fetch();
+    if ($brandRow) {
+        $brand = $brandRow;
+    }
+    $prefer = (string) (rateb_output_language($pdo, $campaign)['speech'] ?? 'ar') === 'en' ? 'en' : 'ar';
+    $parts = rateb_video_copy_parts($copyRows, $prefer);
+    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, (int) $plan['video_max_seconds'], $brand, $prefer);
     if ($scenes === []) {
         return ['ok' => false, 'code' => 'video_too_long', 'job_id' => 0];
     }

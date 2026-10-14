@@ -23,35 +23,30 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
 
 set_time_limit(45);
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
-$jobId = (string) ($_POST['job_id'] ?? '');
-if ($jobId === '' && isset($_SESSION['ai_image_jobs']) && is_array($_SESSION['ai_image_jobs'])) {
-    foreach ($_SESSION['ai_image_jobs'] as $existingId => $saved) {
-        if (is_array($saved) && (int) ($saved['campaign_id'] ?? 0) === (int) $campaign['id'] && time() - (int) ($saved['created'] ?? 0) < 180) {
-            $jobId = (string) $existingId;
-            break;
+$now = time();
+$userId = (int) $_SESSION['user_id'];
+$campaignId = (int) $campaign['id'];
+$postedJobId = strtolower(trim((string) ($_POST['job_id'] ?? '')));
+try {
+    $decision = rateb_image_jobs_transaction($userId, static function (array $jobs) use ($userId, $campaignId, $postedJobId, $now): array {
+        $decision = rateb_image_jobs_decide(ai_image_jobs_include_session($jobs, $userId), $userId, $campaignId, $postedJobId, $now);
+        foreach ($decision['finish'] as $usageId) {
+            rateb_usage_finish(db(), (int) $usageId, 'failed');
         }
+        return ['jobs' => $decision['jobs'], 'result' => $decision];
+    });
+} catch (RuntimeException $error) {
+    if ($error->getMessage() !== 'image_job_store') {
+        throw $error;
     }
+    http_response_code(503);
+    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
-if ($jobId !== '') {
-    if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
-        http_response_code(422);
-        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-    $saved = $_SESSION['ai_image_jobs'][$jobId] ?? null;
-    if (!is_array($saved) || (int) ($saved['campaign_id'] ?? 0) !== (int) $campaign['id']) {
-        http_response_code(404);
-        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-    if (time() - (int) ($saved['created'] ?? 0) > 900) {
-        unset($_SESSION['ai_image_jobs'][$jobId]);
-        http_response_code(504);
-        echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-    ai_horde_finish_job($campaign, $jobId);
+if (!is_array($decision)) {
+    $decision = ['action' => 'reject', 'code' => 'image_provider'];
 }
+ai_image_dispatch($campaign, $decision, $postedJobId, $now);
 
 $prompt = ai_campaign_image_prompt($campaign);
 if (function_exists('mb_substr')) {
@@ -64,9 +59,53 @@ if ($prompt === '') {
     echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-$gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'image');
-if (!$gate['ok']) {
-    rateb_deny((string) $gate['code']);
+$reservedId = 0;
+try {
+    $decision = rateb_image_jobs_transaction($userId, static function (array $jobs) use ($userId, $campaignId, $postedJobId, $now, &$reservedId): array {
+        $decision = rateb_image_jobs_decide(ai_image_jobs_include_session($jobs, $userId), $userId, $campaignId, $postedJobId, $now);
+        foreach ($decision['finish'] as $usageId) {
+            rateb_usage_finish(db(), (int) $usageId, 'failed');
+        }
+        if (!rateb_image_job_allows_new_reservation($decision)) {
+            return ['jobs' => $decision['jobs'], 'result' => $decision];
+        }
+        $gate = rateb_usage_begin(db(), $userId, $campaignId, 'image');
+        if (!$gate['ok']) {
+            $decision['action'] = 'denied';
+            $decision['code'] = (string) $gate['code'];
+            return ['jobs' => $decision['jobs'], 'result' => $decision];
+        }
+        $decision = rateb_image_jobs_claim($decision['jobs'], $userId, $campaignId, $postedJobId, $now, (int) $gate['id']);
+        if (!rateb_image_job_allows_new_reservation($decision)) {
+            rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+            return ['jobs' => $decision['jobs'], 'result' => $decision];
+        }
+        $reservedId = (int) $gate['id'];
+        return ['jobs' => $decision['jobs'], 'result' => $decision];
+    });
+} catch (RuntimeException $error) {
+    if ($error->getMessage() !== 'image_job_store') {
+        throw $error;
+    }
+    if ($reservedId > 0) {
+        rateb_usage_finish(db(), $reservedId, 'failed');
+    }
+    http_response_code(503);
+    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+if (!is_array($decision)) {
+    $decision = ['action' => 'reject', 'code' => 'image_provider'];
+}
+if ((string) ($decision['action'] ?? '') === 'denied') {
+    rateb_deny((string) ($decision['code'] ?? 'plan_inactive'));
+}
+ai_image_dispatch($campaign, $decision, $postedJobId, $now);
+$usageId = (int) ($decision['usage_id'] ?? 0);
+if ($usageId < 1 || !rateb_image_job_allows_new_reservation($decision)) {
+    http_response_code(503);
+    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image');
@@ -81,7 +120,7 @@ if (is_array($modelList)) {
     }
 }
 if ($models['http'] !== 200 || $workers < 1) {
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(503);
     echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -98,45 +137,134 @@ $payload = json_encode([
 
 $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);
 if ($submit['http'] !== 202) {
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    ai_image_release($userId, '', $usageId, 'failed');
     ai_horde_fail($submit['http'], $submit['body']);
 }
 $job = json_decode($submit['body'], true);
-$jobId = is_array($job) ? (string) ($job['id'] ?? '') : '';
+$jobId = is_array($job) ? strtolower((string) ($job['id'] ?? '')) : '';
 if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(502);
     echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+$record = rateb_image_job_record($jobId, $userId, $campaignId, $usageId, $now, 'pending');
+try {
+    rateb_image_jobs_transaction($userId, static function (array $jobs) use ($record): array {
+        return ['jobs' => rateb_image_jobs_attach($jobs, $record), 'result' => null];
+    });
+} catch (RuntimeException $error) {
+    if ($error->getMessage() !== 'image_job_store') {
+        throw $error;
+    }
+    ai_image_bind($record);
+    ai_image_pending($jobId);
+}
+ai_image_bind($record);
 if (!isset($_SESSION['ai_image_jobs']) || !is_array($_SESSION['ai_image_jobs'])) {
     $_SESSION['ai_image_jobs'] = [];
 }
-$_SESSION['ai_image_jobs'][$jobId] = [
-    'campaign_id' => (int) $campaign['id'],
-    'created' => time(),
-    'usage_id' => (int) $gate['id'],
-];
-if (count($_SESSION['ai_image_jobs']) > 3) {
-    $_SESSION['ai_image_jobs'] = array_slice($_SESSION['ai_image_jobs'], -3, null, true);
+$_SESSION['ai_image_jobs'] = rateb_image_session_trim($_SESSION['ai_image_jobs'], 3);
+ai_image_pending($jobId);
+
+function ai_image_jobs_include_session(array $jobs, int $userId): array
+{
+    $session = $_SESSION['ai_image_jobs'] ?? [];
+    if (!is_array($session)) {
+        return $jobs;
+    }
+    foreach ($session as $jobId => $saved) {
+        if (!is_array($saved)) {
+            continue;
+        }
+        $record = rateb_image_job_record((string) $jobId, $userId, (int) ($saved['campaign_id'] ?? 0), (int) ($saved['usage_id'] ?? 0), (int) ($saved['created'] ?? 0));
+        if ($record['job_id'] === '' || $record['usage_id'] < 1 || isset($jobs[$record['job_id']])) {
+            continue;
+        }
+        $jobs[$record['job_id']] = $record;
+    }
+    return $jobs;
 }
-echo json_encode(['pending' => true, 'job_id' => $jobId], JSON_UNESCAPED_UNICODE);
+
+function ai_image_bind(array $job): void
+{
+    $jobId = (string) ($job['job_id'] ?? '');
+    if ($jobId === '') {
+        return;
+    }
+    if (!isset($_SESSION['ai_image_jobs']) || !is_array($_SESSION['ai_image_jobs'])) {
+        $_SESSION['ai_image_jobs'] = [];
+    }
+    $_SESSION['ai_image_jobs'][$jobId] = [
+        'campaign_id' => (int) ($job['campaign_id'] ?? 0),
+        'created' => (int) ($job['created'] ?? 0),
+        'usage_id' => (int) ($job['usage_id'] ?? 0),
+    ];
+}
+
+function ai_image_release(int $userId, string $jobId, int $usageId, string $status): void
+{
+    if ($usageId > 0) {
+        rateb_usage_finish(db(), $usageId, $status);
+    }
+    if ($jobId !== '') {
+        unset($_SESSION['ai_image_jobs'][$jobId]);
+    }
+    if ($userId < 1) {
+        return;
+    }
+    rateb_image_jobs_transaction($userId, static function (array $jobs) use ($jobId, $usageId): array {
+        return ['jobs' => rateb_image_jobs_remove($jobs, $jobId, $usageId), 'result' => null];
+    });
+}
+
+/** @param array<string,mixed> $decision */
+function ai_image_dispatch(array $campaign, array $decision, string $postedJobId, int $now): void
+{
+    $action = (string) ($decision['action'] ?? '');
+    if ($action === 'begin' || $action === 'denied') {
+        return;
+    }
+    if ($action === 'resume' && is_array($decision['job'] ?? null)) {
+        ai_image_bind($decision['job']);
+        ai_horde_finish_job($campaign, (string) $decision['job']['job_id']);
+    }
+    if ($action === 'wait') {
+        $created = (int) (is_array($decision['job'] ?? null) ? ($decision['job']['created'] ?? $now) : $now);
+        echo json_encode([
+            'pending' => true,
+            'state' => 'pending',
+            'job_id' => '',
+            'wait' => 3,
+            'expires_at' => $created + rateb_image_job_ttl(),
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if ($action === 'expire') {
+        http_response_code(504);
+        echo json_encode(['error' => rateb_ui_error('image_timeout'), 'code' => 'image_timeout', 'state' => 'timeout'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    http_response_code(preg_match('/^[a-f0-9-]{36}$/', $postedJobId) === 1 ? 404 : 422);
+    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 function ai_horde_finish_job(array $campaign, string $jobId): void
 {
+    $userId = (int) ($_SESSION['user_id'] ?? 0);
+    $usageId = (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0);
     $check = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/check/' . rawurlencode($jobId));
     $state = json_decode($check['body'], true);
     if (is_array($state) && !empty($state['faulted'])) {
-        rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
-        unset($_SESSION['ai_image_jobs'][$jobId]);
+        ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(502);
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     if (!is_array($state) || empty($state['done'])) {
         $wait = is_array($state) ? (int) ($state['wait_time'] ?? 0) : 0;
-        echo json_encode(['pending' => true, 'job_id' => $jobId, 'wait' => $wait], JSON_UNESCAPED_UNICODE);
-        exit;
+        ai_image_pending($jobId, $wait);
     }
 
     $status = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/status/' . rawurlencode($jobId));
@@ -149,8 +277,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     }
     $host = strtolower((string) parse_url($imageUrl, PHP_URL_HOST));
     if (parse_url($imageUrl, PHP_URL_SCHEME) !== 'https' || !str_ends_with($host, '.r2.cloudflarestorage.com')) {
-        rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
-        unset($_SESSION['ai_image_jobs'][$jobId]);
+        ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(502);
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
@@ -159,18 +286,15 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     $download = ai_horde_request('GET', $imageUrl);
     $finalHost = strtolower((string) parse_url($download['effective'], PHP_URL_HOST));
     if ($download['http'] !== 200 || !str_ends_with($finalHost, '.r2.cloudflarestorage.com')) {
-        rateb_usage_finish(db(), (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0), 'failed');
-        unset($_SESSION['ai_image_jobs'][$jobId]);
+        ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(502);
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     $bytes = $download['body'];
     $mime = ai_image_mime($bytes);
-    $usageId = (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0);
     if ($mime === null || strlen($bytes) < 32 || strlen($bytes) > media_max_bytes('image')) {
-        rateb_usage_finish(db(), $usageId, 'failed');
-        unset($_SESSION['ai_image_jobs'][$jobId]);
+        ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(502);
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
@@ -181,8 +305,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
             $bytes = $marked['bytes'];
             $mime = $marked['mime'];
         } catch (Throwable $error) {
-            rateb_usage_finish(db(), $usageId, 'failed');
-            unset($_SESSION['ai_image_jobs'][$jobId]);
+            ai_image_release($userId, $jobId, $usageId, 'failed');
             rateb_deny('watermark');
         }
     }
@@ -195,10 +318,10 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         echo json_encode(['error' => 'Could not save the image file.']);
         exit;
     }
-    rateb_usage_finish(db(), $usageId, 'completed');
-    unset($_SESSION['ai_image_jobs'][$jobId]);
+    ai_image_release($userId, $jobId, $usageId, 'completed');
     echo json_encode([
         'ok' => true,
+        'state' => 'ready',
         'model' => $modelName,
         'mime' => $mime,
         'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
@@ -228,20 +351,49 @@ function ai_campaign_image_prompt(array $campaign): string
         echo json_encode(['error' => rateb_ui_error('image_locked'), 'code' => 'image_locked'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $headline = trim((string) reset($copy));
-    $product = trim((string) ($campaign['product_name'] ?? ''));
-    $prompt = trim('Advertising photograph, no written text. ' . $product . '. ' . $headline);
-    if (function_exists('mb_substr')) {
-        $prompt = mb_substr($prompt, 0, 400);
-    } else {
-        $prompt = substr($prompt, 0, 400);
+    $document = rateb_strategy_document($strategy) ?? [];
+    $prefer = (string) (rateb_output_language(db(), $campaign)['speech'] ?? 'ar');
+    $copyLine = '';
+    foreach (array_merge(['headline'], rateb_copy_types()) as $type) {
+        if (empty($copy[$type])) {
+            continue;
+        }
+        $copyLine = rateb_prompt_plain($copy[$type], $prefer);
+        if ($copyLine !== '') {
+            break;
+        }
     }
+    $brand = [];
+    $brandStmt = db()->prepare('SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
+    $brandStmt->execute([(int) ($campaign['user_id'] ?? 0)]);
+    $brandRow = $brandStmt->fetch();
+    if ($brandRow) {
+        $brand = $brandRow;
+    }
+    $prompt = rateb_visual_prompt(
+        array_merge(['Advertising photograph'], rateb_visual_lines($campaign, $document, $copyLine, $brand, $prefer)),
+        'No written text and no logo.',
+        400
+    );
     if (trim($prompt) === '') {
         http_response_code(422);
         echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     return trim($prompt);
+}
+
+function ai_image_pending(string $jobId, int $wait = 0): void
+{
+    $created = (int) ($_SESSION['ai_image_jobs'][$jobId]['created'] ?? time());
+    echo json_encode([
+        'pending' => true,
+        'state' => 'pending',
+        'job_id' => $jobId,
+        'wait' => $wait,
+        'expires_at' => $created + rateb_image_job_ttl(),
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 function ai_horde_request(string $method, string $url, ?string $body = null): array

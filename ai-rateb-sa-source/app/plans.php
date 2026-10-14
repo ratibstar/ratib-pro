@@ -33,7 +33,9 @@ function rateb_ui_error(string $code): string
         'image_workers' => $arabic ? 'مزود الصور غير متاح الآن. حاول بعد قليل.' : 'The image provider is not available right now. Try again shortly.',
         'voice_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصوت.' : 'Approve the copy first, then start the voice.',
         'voice_provider' => $arabic ? 'تعذر توليد الصوت. حاول مرة أخرى.' : 'The voice could not be generated. Try again.',
+        'voice_english' => $arabic ? 'توليد الكلام الإنجليزي غير متاح حاليًا. نموذج الكلام الحالي عربي فقط.' : 'English speech is currently unavailable. The current speech model is Arabic only.',
         'voice_terms' => $arabic ? 'نموذج الصوت موجود، لكن شروط استخدامه غير مقبولة لهذا الحساب.' : 'The speech model exists, but its terms are not accepted for this account.',
+        'image_timeout' => $arabic ? 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.' : 'Image generation timed out. No new image was saved.',
     ];
     return $messages[$code] ?? ($arabic ? 'تعذر تنفيذ الطلب.' : 'The request could not be completed.');
 }
@@ -476,4 +478,490 @@ function rateb_workspace_facts(PDO $pdo, array $campaign, array $brief): string
         }
     }
     return $lines === [] ? 'No facts were provided.' : implode("\n", $lines);
+}
+
+function rateb_image_job_ttl(): int
+{
+    return 900;
+}
+
+function rateb_image_job_active(int $createdAt, int $now): bool
+{
+    return $createdAt > 0 && $now >= $createdAt && ($now - $createdAt) <= rateb_image_job_ttl();
+}
+
+function rateb_video_stage_complete(bool $approvedGenerated, bool $uploaded): bool
+{
+    return $approvedGenerated || $uploaded;
+}
+
+function rateb_prompt_plain(mixed $value, string $prefer = 'ar'): string
+{
+    if (is_array($value)) {
+        $prefer = $prefer === 'en' ? 'en' : 'ar';
+        $primary = trim((string) ($value[$prefer] ?? ''));
+        if ($primary !== '') {
+            return $primary;
+        }
+        return trim((string) ($value[$prefer === 'ar' ? 'en' : 'ar'] ?? ''));
+    }
+    $text = trim((string) $value);
+    if ($text === '') {
+        return '';
+    }
+    $decoded = json_decode($text, true);
+    if (is_array($decoded)) {
+        return rateb_prompt_plain($decoded, $prefer);
+    }
+    return $text;
+}
+
+function rateb_brand_visual_lines(array $brand): array
+{
+    if ($brand === []) {
+        return [];
+    }
+    $lines = [];
+    $name = trim((string) ($brand['brand_name'] ?? ''));
+    if ($name !== '') {
+        $lines[] = 'Brand: ' . $name;
+    }
+    $tone = trim((string) ($brand['tone'] ?? ''));
+    if ($tone !== '') {
+        $lines[] = 'Tone: ' . $tone;
+    }
+    $primary = strtolower(trim((string) ($brand['primary_color'] ?? '')));
+    $secondary = strtolower(trim((string) ($brand['secondary_color'] ?? '')));
+    if (preg_match('/^#[0-9a-f]{6}$/', $primary) === 1 && preg_match('/^#[0-9a-f]{6}$/', $secondary) === 1) {
+        $lines[] = 'Palette: ' . $primary . ' ' . $secondary;
+    }
+    return $lines;
+}
+
+function rateb_clip_prompt_line(string $line, int $limit = 90): string
+{
+    $line = trim(preg_replace('/\s+/u', ' ', $line) ?? '');
+    if (mb_strlen($line) <= $limit) {
+        return $line;
+    }
+    return rtrim(mb_substr($line, 0, $limit));
+}
+
+function rateb_visual_lines(array $campaign, array $strategy, string $copyLine, array $brand, string $prefer): array
+{
+    $lines = [];
+    $product = trim((string) ($campaign['product_name'] ?? ''));
+    if ($product !== '') {
+        $lines[] = rateb_clip_prompt_line('Product: ' . $product);
+    }
+    $direction = rateb_prompt_plain($strategy['creative_direction'] ?? '', $prefer);
+    if ($direction !== '') {
+        $lines[] = rateb_clip_prompt_line('Creative direction: ' . $direction);
+    }
+    $message = rateb_prompt_plain($strategy['core_message'] ?? '', $prefer);
+    if ($message !== '') {
+        $lines[] = rateb_clip_prompt_line('Message: ' . $message);
+    }
+    $copyLine = trim($copyLine);
+    if ($copyLine !== '') {
+        $lines[] = rateb_clip_prompt_line('Copy: ' . $copyLine);
+    }
+    foreach (rateb_brand_visual_lines($brand) as $line) {
+        $lines[] = rateb_clip_prompt_line($line);
+    }
+    return $lines;
+}
+
+function rateb_visual_prompt(array $lines, string $constraint, int $limit = 400): string
+{
+    $constraint = trim(preg_replace('/\s+/u', ' ', $constraint) ?? '');
+    $kept = [];
+    $used = $constraint === '' ? 0 : mb_strlen($constraint);
+    foreach ($lines as $line) {
+        $line = trim(preg_replace('/\s+/u', ' ', (string) $line) ?? '');
+        if ($line === '') {
+            continue;
+        }
+        $extra = mb_strlen($line) + (($kept === [] && $constraint === '') ? 0 : 2);
+        if ($used + $extra > $limit) {
+            break;
+        }
+        $kept[] = $line;
+        $used += $extra;
+    }
+    $text = implode('. ', $kept);
+    if ($constraint !== '') {
+        $text = $text === '' ? $constraint : $text . '. ' . $constraint;
+    }
+    if (mb_strlen($text) > $limit) {
+        $text = rtrim(mb_substr($text, 0, $limit));
+    }
+    return trim($text);
+}
+
+function rateb_voice_text_is_arabic(string $script): bool
+{
+    return rateb_text_fits($script, 'ar');
+}
+
+function rateb_voice_plain(string $content, string $speech): string
+{
+    $decoded = json_decode($content, true);
+    if (is_array($decoded)) {
+        $content = (string) ($decoded[$speech] ?? $decoded['ar'] ?? $decoded['en'] ?? '');
+    }
+    return trim(preg_replace('/\s+/u', ' ', $content) ?? '');
+}
+
+function rateb_voice_script_from_rows(array $rows, string $speech): string
+{
+    $pieces = [];
+    foreach ($rows as $row) {
+        if (!is_array($row) || (string) ($row['approval_status'] ?? '') !== 'approved') {
+            continue;
+        }
+        $type = (string) ($row['output_type'] ?? '');
+        if (!isset($pieces[$type])) {
+            $pieces[$type] = (string) ($row['content'] ?? '');
+        }
+    }
+    $script = '';
+    $types = [];
+    foreach (array_merge(['headline', 'call_to_action', 'short_ad', 'ad_copy'], rateb_copy_types()) as $type) {
+        $types[$type] = true;
+    }
+    foreach (array_keys($types) as $type) {
+        if (empty($pieces[$type])) {
+            continue;
+        }
+        $line = rateb_voice_plain($pieces[$type], $speech);
+        if ($line === '') {
+            continue;
+        }
+        $script = $script === '' ? $line : $script . ' ' . $line;
+        if (mb_strlen($script) >= 500) {
+            break;
+        }
+    }
+    return trim(mb_substr($script, 0, 600));
+}
+
+function rateb_voice_script(PDO $pdo, int $campaignId, string $speech): string
+{
+    $stmt = $pdo->prepare('SELECT output_type, content, approval_status FROM campaign_outputs WHERE campaign_id = ? AND approval_status = ? ORDER BY id DESC');
+    $stmt->execute([$campaignId, 'approved']);
+    return rateb_voice_script_from_rows($stmt->fetchAll(), $speech);
+}
+
+function rateb_image_job_submit_grace(): int
+{
+    return 60;
+}
+
+function rateb_image_job_directory(): string
+{
+    $override = getenv('RATEB_IMAGE_JOB_DIR');
+    if (is_string($override) && $override !== '') {
+        return $override;
+    }
+    if (defined('MEDIA_ROOT') && (string) MEDIA_ROOT !== '') {
+        return rtrim((string) MEDIA_ROOT, '/\\') . DIRECTORY_SEPARATOR . 'image-jobs';
+    }
+    return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rateb-image-jobs';
+}
+
+/** @param array<string,mixed> $job */
+function rateb_image_job_normalize(array $job): array
+{
+    $phase = (string) ($job['phase'] ?? 'pending');
+    return [
+        'job_id' => strtolower(trim((string) ($job['job_id'] ?? ''))),
+        'user_id' => (int) ($job['user_id'] ?? 0),
+        'campaign_id' => (int) ($job['campaign_id'] ?? 0),
+        'usage_id' => (int) ($job['usage_id'] ?? 0),
+        'created' => (int) ($job['created'] ?? 0),
+        'phase' => $phase === 'submitting' ? 'submitting' : 'pending',
+    ];
+}
+
+/** @param array<string,mixed> $job */
+function rateb_image_job_key(array $job): string
+{
+    $jobId = (string) ($job['job_id'] ?? '');
+    if (preg_match('/^[a-f0-9-]{36}$/', $jobId) === 1) {
+        return $jobId;
+    }
+    return 'usage-' . (int) ($job['usage_id'] ?? 0);
+}
+
+function rateb_image_job_record(string $jobId, int $userId, int $campaignId, int $usageId, int $created, string $phase = 'pending'): array
+{
+    return rateb_image_job_normalize([
+        'job_id' => $jobId,
+        'user_id' => $userId,
+        'campaign_id' => $campaignId,
+        'usage_id' => $usageId,
+        'created' => $created,
+        'phase' => $phase,
+    ]);
+}
+
+/** @param array<string,array<string,mixed>> $jobs */
+function rateb_image_jobs_encode(array $jobs): string
+{
+    $list = [];
+    foreach ($jobs as $job) {
+        if (is_array($job)) {
+            $list[] = rateb_image_job_normalize($job);
+        }
+    }
+    $encoded = json_encode(['jobs' => $list], JSON_UNESCAPED_UNICODE);
+    if ($encoded === false) {
+        throw new RuntimeException('image_job_store');
+    }
+    return $encoded;
+}
+
+/** @return array<string,array<string,mixed>> */
+function rateb_image_jobs_decode(string $raw): array
+{
+    if (trim($raw) === '') {
+        return [];
+    }
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded) || !isset($decoded['jobs']) || !is_array($decoded['jobs'])) {
+        throw new RuntimeException('image_job_store');
+    }
+    $jobs = [];
+    foreach ($decoded['jobs'] as $job) {
+        if (!is_array($job)) {
+            continue;
+        }
+        $job = rateb_image_job_normalize($job);
+        if ($job['usage_id'] < 1 && $job['job_id'] === '') {
+            continue;
+        }
+        $jobs[rateb_image_job_key($job)] = $job;
+    }
+    return $jobs;
+}
+
+/** @param array<string,array<string,mixed>> $jobs */
+function rateb_image_jobs_attach(array $jobs, array $job): array
+{
+    $job = rateb_image_job_normalize($job);
+    if ($job['phase'] === 'pending' && $job['job_id'] !== '') {
+        foreach ($jobs as $key => $existing) {
+            if (!is_array($existing)) {
+                unset($jobs[$key]);
+                continue;
+            }
+            $existing = rateb_image_job_normalize($existing);
+            if ($existing['phase'] === 'submitting' && $existing['campaign_id'] === $job['campaign_id'] && $existing['user_id'] === $job['user_id']) {
+                unset($jobs[$key]);
+            }
+        }
+    }
+    $jobs[rateb_image_job_key($job)] = $job;
+    return $jobs;
+}
+
+/** @param array<string,array<string,mixed>> $jobs */
+function rateb_image_jobs_remove(array $jobs, string $jobId, int $usageId): array
+{
+    $jobId = strtolower(trim($jobId));
+    foreach ($jobs as $key => $job) {
+        if (!is_array($job)) {
+            unset($jobs[$key]);
+            continue;
+        }
+        $job = rateb_image_job_normalize($job);
+        $sameJob = $jobId !== '' && $job['job_id'] === $jobId;
+        $sameUsage = $usageId > 0 && $job['usage_id'] === $usageId && ($jobId === '' || $job['job_id'] === $jobId);
+        if ($sameJob || $sameUsage) {
+            unset($jobs[$key]);
+        }
+    }
+    return $jobs;
+}
+
+/** @param array<string,array<string,mixed>> $jobs */
+function rateb_image_session_trim(array $jobs, int $limit = 3): array
+{
+    if ($limit < 1 || count($jobs) <= $limit) {
+        return $jobs;
+    }
+    uasort($jobs, static function (array $left, array $right): int {
+        return ((int) ($left['created'] ?? 0)) <=> ((int) ($right['created'] ?? 0));
+    });
+    return array_slice($jobs, -$limit, null, true);
+}
+
+/**
+ * @param array<string,array<string,mixed>> $jobs
+ * @return array{action:string,job:?array,finish:array<int,int>,jobs:array<string,array<string,mixed>>,code:string,usage_id:int}
+ */
+function rateb_image_jobs_decide(array $jobs, int $userId, int $campaignId, string $postedJobId, int $now): array
+{
+    $postedJobId = strtolower(trim($postedJobId));
+    $kept = [];
+    $finish = [];
+    $active = [];
+    $claim = null;
+    $matched = null;
+    foreach ($jobs as $job) {
+        if (!is_array($job)) {
+            continue;
+        }
+        $job = rateb_image_job_normalize($job);
+        if ($job['user_id'] !== $userId) {
+            $kept[rateb_image_job_key($job)] = $job;
+            continue;
+        }
+        if ($postedJobId !== '' && $job['job_id'] === $postedJobId && $job['campaign_id'] === $campaignId) {
+            $matched = $job;
+        }
+        $expired = !rateb_image_job_active($job['created'], $now);
+        $submitStale = $job['phase'] === 'submitting' && ($now - $job['created']) > rateb_image_job_submit_grace();
+        if ($expired || $submitStale) {
+            if ($job['usage_id'] > 0) {
+                $finish[] = $job['usage_id'];
+            }
+            continue;
+        }
+        $kept[rateb_image_job_key($job)] = $job;
+        if ($job['campaign_id'] !== $campaignId) {
+            continue;
+        }
+        if ($job['phase'] === 'submitting' || $job['job_id'] === '') {
+            if ($claim === null || $job['created'] >= $claim['created']) {
+                $claim = $job;
+            }
+            continue;
+        }
+        $active[] = $job;
+    }
+    $finish = array_values(array_unique($finish));
+    $newest = null;
+    foreach ($active as $job) {
+        if ($newest === null || $job['created'] >= $newest['created']) {
+            $newest = $job;
+        }
+    }
+    $result = [
+        'action' => 'begin',
+        'job' => null,
+        'finish' => $finish,
+        'jobs' => $kept,
+        'code' => '',
+        'usage_id' => 0,
+    ];
+    if ($postedJobId !== '') {
+        if (preg_match('/^[a-f0-9-]{36}$/', $postedJobId) !== 1) {
+            $result['action'] = 'reject';
+            $result['code'] = 'image_provider';
+            return $result;
+        }
+        if ($matched !== null && isset($kept[rateb_image_job_key($matched)]) && $matched['job_id'] !== '') {
+            $result['action'] = 'resume';
+            $result['job'] = $kept[rateb_image_job_key($matched)];
+            $result['usage_id'] = (int) $result['job']['usage_id'];
+            return $result;
+        }
+        if ($matched !== null) {
+            $result['action'] = 'expire';
+            $result['code'] = 'image_timeout';
+            return $result;
+        }
+    }
+    if ($newest !== null) {
+        $result['action'] = 'resume';
+        $result['job'] = $newest;
+        $result['usage_id'] = (int) $newest['usage_id'];
+        return $result;
+    }
+    if ($claim !== null) {
+        $result['action'] = 'wait';
+        $result['job'] = $claim;
+        $result['usage_id'] = (int) $claim['usage_id'];
+        return $result;
+    }
+    if ($postedJobId !== '') {
+        $result['action'] = 'reject';
+        $result['code'] = 'image_provider';
+        return $result;
+    }
+    return $result;
+}
+
+/** @param array{action?:string} $decision */
+function rateb_image_job_allows_new_reservation(array $decision): bool
+{
+    return (string) ($decision['action'] ?? '') === 'begin';
+}
+
+/**
+ * Attach a reservation only when decide() still allows a new one.
+ *
+ * @param array<string,array<string,mixed>> $jobs
+ * @return array{action:string,job:?array,finish:array<int,int>,jobs:array<string,array<string,mixed>>,code:string,usage_id:int}
+ */
+function rateb_image_jobs_claim(array $jobs, int $userId, int $campaignId, string $postedJobId, int $now, int $usageId): array
+{
+    $decision = rateb_image_jobs_decide($jobs, $userId, $campaignId, $postedJobId, $now);
+    if ($decision['action'] !== 'begin' || $usageId < 1) {
+        return $decision;
+    }
+    $decision['usage_id'] = $usageId;
+    $decision['jobs'] = rateb_image_jobs_attach(
+        $decision['jobs'],
+        rateb_image_job_record('', $userId, $campaignId, $usageId, $now, 'submitting')
+    );
+    return $decision;
+}
+
+function rateb_image_jobs_transaction(int $userId, callable $change): mixed
+{
+    if ($userId < 1) {
+        throw new RuntimeException('image_job_store');
+    }
+    $dir = rateb_image_job_directory();
+    if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
+        throw new RuntimeException('image_job_store');
+    }
+    $path = $dir . DIRECTORY_SEPARATOR . 'user-' . $userId . '.json';
+    $handle = fopen($path, 'c+');
+    if ($handle === false) {
+        throw new RuntimeException('image_job_store');
+    }
+    try {
+        if (!flock($handle, LOCK_EX)) {
+            throw new RuntimeException('image_job_store');
+        }
+        @chmod($path, 0600);
+        rewind($handle);
+        $raw = stream_get_contents($handle);
+        if ($raw === false) {
+            throw new RuntimeException('image_job_store');
+        }
+        $jobs = rateb_image_jobs_decode($raw);
+        $packed = $change($jobs);
+        if (!is_array($packed) || !isset($packed['jobs']) || !is_array($packed['jobs'])) {
+            throw new RuntimeException('image_job_store');
+        }
+        $encoded = rateb_image_jobs_encode($packed['jobs']);
+        rewind($handle);
+        if (!ftruncate($handle, 0)) {
+            throw new RuntimeException('image_job_store');
+        }
+        $written = fwrite($handle, $encoded);
+        if ($written === false || $written !== strlen($encoded)) {
+            throw new RuntimeException('image_job_store');
+        }
+        fflush($handle);
+        return $packed['result'] ?? null;
+    } finally {
+        flock($handle, LOCK_UN);
+        fclose($handle);
+    }
 }
