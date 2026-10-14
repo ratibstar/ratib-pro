@@ -120,6 +120,7 @@ jobs:
             "app/ai/image.php"
             "app/ai/voice.php"
             "app/video/engine.php"
+            "app/video/provider.php"
             "public/assets/js/app.js"
             "app/media/upload.php"
             "app/media/library.php"
@@ -148,7 +149,7 @@ jobs:
           Path(os.environ["RUNNER_TEMP"], "opcache-reset.php").write_text(
               "<?php\n"
               "if (function_exists('opcache_invalidate')) {\n"
-              "    foreach (['app/plans.php','app/ai/generate.php','app/ai/image.php','app/ai/voice.php','app/video/engine.php','app/media/upload.php','app/media/library.php','campaign.php'] as $rel) {\n"
+              "    foreach (['app/plans.php','app/ai/generate.php','app/ai/image.php','app/ai/voice.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php'] as $rel) {\n"
               "        opcache_invalidate(__DIR__ . '/' . $rel, true);\n"
               "    }\n"
               "}\n"

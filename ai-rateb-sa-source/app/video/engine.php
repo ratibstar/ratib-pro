@@ -102,25 +102,72 @@ function rateb_video_image_data_uri(array $row): string
     if (!is_string($bytes) || $bytes === '') {
         throw new RuntimeException('missing_image');
     }
-    if (strlen($bytes) > 1500000 && function_exists('imagecreatefromstring')) {
-        $image = @imagecreatefromstring($bytes);
-        if ($image !== false) {
-            $width = imagesx($image);
-            $height = imagesy($image);
-            $scale = min(1, 720 / max(1, $width), 1280 / max(1, $height));
-            $nw = max(1, (int) ($width * $scale));
-            $nh = max(1, (int) ($height * $scale));
-            $canvas = imagecreatetruecolor($nw, $nh);
-            imagecopyresampled($canvas, $image, 0, 0, 0, 0, $nw, $nh, $width, $height);
-            ob_start();
-            imagejpeg($canvas, null, 82);
-            $bytes = (string) ob_get_clean();
-            imagedestroy($canvas);
-            imagedestroy($image);
-        }
+    $jpeg = rateb_video_prompt_jpeg($bytes);
+    if (is_string($jpeg)) {
+        return 'data:image/jpeg;base64,' . base64_encode($jpeg);
     }
-    $mime = str_starts_with($bytes, "\xFF\xD8") ? 'image/jpeg' : (string) $row['mime'];
-    return 'data:' . $mime . ';base64,' . base64_encode($bytes);
+    $mime = match (true) {
+        str_starts_with($bytes, "\xFF\xD8") => 'image/jpeg',
+        str_starts_with($bytes, "\x89PNG") => 'image/png',
+        str_starts_with($bytes, 'RIFF') && substr($bytes, 8, 4) === 'WEBP' => 'image/webp',
+        default => '',
+    };
+    $uri = $mime === '' ? '' : 'data:' . $mime . ';base64,' . base64_encode($bytes);
+    if ($uri === '' || strlen($uri) > 5000000) {
+        throw new RuntimeException('rejected_image');
+    }
+    return $uri;
+}
+
+function rateb_video_prompt_jpeg(string $bytes): ?string
+{
+    if (!function_exists('imagecreatefromstring')) {
+        return null;
+    }
+    $image = @imagecreatefromstring($bytes);
+    if ($image === false) {
+        return null;
+    }
+    $width = imagesx($image);
+    $height = imagesy($image);
+    if ($width < 1 || $height < 1) {
+        imagedestroy($image);
+        return null;
+    }
+    $canvasW = 720;
+    $canvasH = 1280;
+    $scale = min($canvasW / $width, $canvasH / $height);
+    $nw = max(1, (int) round($width * $scale));
+    $nh = max(1, (int) round($height * $scale));
+    $canvas = imagecreatetruecolor($canvasW, $canvasH);
+    $fill = imagecolorallocate($canvas, 12, 12, 16);
+    imagefill($canvas, 0, 0, $fill);
+    imagecopyresampled(
+        $canvas,
+        $image,
+        (int) (($canvasW - $nw) / 2),
+        (int) (($canvasH - $nh) / 2),
+        0,
+        0,
+        $nw,
+        $nh,
+        $width,
+        $height
+    );
+    imagedestroy($image);
+    $quality = 85;
+    $jpeg = '';
+    do {
+        ob_start();
+        imagejpeg($canvas, null, $quality);
+        $jpeg = (string) ob_get_clean();
+        $quality -= 10;
+    } while (strlen($jpeg) > 3000000 && $quality >= 45);
+    imagedestroy($canvas);
+    if ($jpeg === '' || !str_starts_with($jpeg, "\xFF\xD8") || strlen($jpeg) > 3300000) {
+        return null;
+    }
+    return $jpeg;
 }
 
 function rateb_video_latest_job(PDO $pdo, int $campaignId, int $userId): ?array
@@ -306,7 +353,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
         $job['error_code'] = '';
         return $job;
     } catch (RuntimeException $error) {
-        $code = in_array($error->getMessage(), ['not_configured', 'auth', 'rejected', 'timeout', 'provider', 'invalid', 'missing_image', 'storage', 'watermark'], true)
+        $code = in_array($error->getMessage(), ['not_configured', 'auth', 'rejected', 'rejected_image', 'rejected_model', 'rejected_credit', 'timeout', 'provider', 'invalid', 'missing_image', 'storage', 'watermark'], true)
             ? $error->getMessage()
             : 'provider';
         rateb_video_fail($pdo, $job, $code);
@@ -378,6 +425,9 @@ function rateb_video_message(string $code, bool $arabic): string
         'not_configured' => 'توليد الفيديو غير مُعد على الخادم.',
         'auth' => 'تعذر التحقق من مزوّد الفيديو.',
         'rejected' => 'رفض المزوّد إنشاء الفيديو.',
+        'rejected_image' => 'المزوّد رفض الصورة. استخدم صورة JPEG أو PNG أوضح.',
+        'rejected_model' => 'موديل الفيديو غير متاح عند المزوّد.',
+        'rejected_credit' => 'رصيد مزوّد الفيديو غير كافٍ.',
         'timeout' => 'انتهت مهلة إنشاء الفيديو.',
         'provider' => 'تعذر إنشاء الفيديو.',
         'invalid' => 'مدخلات الفيديو غير صالحة.',
@@ -393,6 +443,9 @@ function rateb_video_message(string $code, bool $arabic): string
         'not_configured' => 'Video generation is not configured.',
         'auth' => 'The video provider could not be authenticated.',
         'rejected' => 'The provider rejected the video.',
+        'rejected_image' => 'The provider rejected the image. Use a clearer JPEG or PNG.',
+        'rejected_model' => 'The video model is not available from the provider.',
+        'rejected_credit' => 'The video provider has no remaining credit.',
         'timeout' => 'Video generation timed out.',
         'provider' => 'The video could not be generated.',
         'invalid' => 'The video input is invalid.',
