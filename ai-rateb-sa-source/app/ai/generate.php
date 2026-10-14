@@ -134,7 +134,7 @@ $system = 'You are RATEB. Return one JSON object only. Do not invent prices, bud
 if ($stage === 'strategy') {
     $shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar and en. ' : 'Each value must be a plain string. ';
     $prompt = "Write one campaign strategy from these facts only. Keep every value to one or two short sentences. Return JSON with English keys: positioning, core_message, audience, channels, tone, creative_direction, call_to_action. " . $shape . $decision['instruction'] . "\nFacts:\n" . $facts;
-    $result = rateb_prepare_result(rateb_model_json($cfg, $system, $prompt), $resolved, rateb_strategy_keys());
+    $result = rateb_generate_output($cfg, $system, $prompt, $resolved, rateb_strategy_keys());
     if (!is_array($result) || !rateb_strategy_valid($result, $resolved)) {
         rateb_usage_finish(db(), (int) $gate['id'], 'failed');
         $bad = [];
@@ -145,7 +145,7 @@ if ($stage === 'strategy') {
                 }
             }
         }
-        rateb_fail(502, is_array($result) ? 'invalid_output' : 'ai_failed', ['fields' => $bad]);
+        rateb_fail(is_array($result) ? 422 : 502, is_array($result) ? 'invalid_output' : 'ai_failed', ['fields' => $bad]);
     }
     $clean = [];
     foreach (rateb_strategy_keys() as $key) {
@@ -167,7 +167,7 @@ $keys = $only !== '' ? [$only] : rateb_copy_types();
 $strategy = rateb_strategy_document((string) $strategyRow['content']);
 $shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar and en. ' : 'Each value must be a plain string. ';
 $prompt = 'Write short campaign copy from the approved strategy and the facts. Each value is at most two short sentences. Return JSON with English keys: ' . implode(', ', $keys) . '. ' . $shape . $decision['instruction'] . "\nFacts:\n" . $facts . "\nApproved strategy:\n" . json_encode($strategy, JSON_UNESCAPED_UNICODE);
-$result = rateb_prepare_result(rateb_model_json($cfg, $system, $prompt), $resolved, $keys);
+$result = rateb_generate_output($cfg, $system, $prompt, $resolved, $keys);
 if (!is_array($result) || !rateb_copy_valid($result, $resolved, $only)) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     $bad = [];
@@ -178,7 +178,7 @@ if (!is_array($result) || !rateb_copy_valid($result, $resolved, $only)) {
             }
         }
     }
-    rateb_fail(502, is_array($result) ? 'invalid_output' : 'ai_failed', ['fields' => $bad]);
+    rateb_fail(is_array($result) ? 422 : 502, is_array($result) ? 'invalid_output' : 'ai_failed', ['fields' => $bad]);
 }
 $rows = [];
 foreach ($keys as $key) {
@@ -194,65 +194,6 @@ try {
 rateb_usage_finish(db(), (int) $gate['id'], 'completed');
 echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . $id . '#copy'], JSON_UNESCAPED_UNICODE);
 exit;
-
-function rateb_prepare_result(mixed $result, string $resolved, array $keys): mixed
-{
-    if (!is_array($result)) {
-        return $result;
-    }
-    $present = 0;
-    foreach ($keys as $key) {
-        if (array_key_exists($key, $result)) {
-            $present++;
-        }
-    }
-    if ($present === 0) {
-        foreach ($result as $value) {
-            if (!is_array($value)) {
-                continue;
-            }
-            $inner = 0;
-            foreach ($keys as $key) {
-                if (array_key_exists($key, $value)) {
-                    $inner++;
-                }
-            }
-            if ($inner > $present) {
-                $result = $value;
-                $present = $inner;
-            }
-        }
-    }
-    $aliases = [
-        'positioning' => ['التموضع', 'position'],
-        'core_message' => ['الرسالة', 'message'],
-        'audience' => ['الجمهور'],
-        'channels' => ['القنوات'],
-        'tone' => ['النبرة'],
-        'creative_direction' => ['الاتجاه', 'direction'],
-        'call_to_action' => ['الدعوة', 'cta'],
-        'headline' => ['العنوان'],
-        'ad_copy' => ['النص'],
-        'short_ad' => ['الإعلان'],
-        'social_posts' => ['المنشورات'],
-        'whatsapp' => ['واتساب'],
-        'product_description' => ['الوصف'],
-    ];
-    foreach ($keys as $key) {
-        if (!array_key_exists($key, $result)) {
-            foreach ($aliases[$key] ?? [] as $alias) {
-                if (array_key_exists($alias, $result)) {
-                    $result[$key] = $result[$alias];
-                    break;
-                }
-            }
-        }
-        if (array_key_exists($key, $result)) {
-            $result[$key] = rateb_coerce_output($result[$key], $resolved);
-        }
-    }
-    return $result;
-}
 
 function rateb_fail(int $status, string $code, array $extra = []): void
 {
@@ -278,9 +219,45 @@ function rateb_output_row(int $campaignId, string $type): ?array
     return $row ?: null;
 }
 
-function rateb_model_json(array $cfg, string $system, string $prompt): ?array
+function rateb_generate_output(array $cfg, string $system, string $prompt, string $resolved, array $keys): mixed
 {
-    $payload = json_encode([
+    $schema = rateb_output_schema($keys, $resolved);
+    $raw = rateb_model_json($cfg, $system, $prompt, $schema);
+    if ($raw === null) {
+        $raw = rateb_model_json($cfg, $system, $prompt, $schema);
+    }
+    $result = rateb_prepare_output($raw, $resolved, $keys);
+    if (is_array($result) && rateb_output_valid($result, $resolved, $keys)) {
+        return $result;
+    }
+    if (!is_array($raw)) {
+        return $result;
+    }
+    $language = $resolved === 'en'
+        ? 'Write every value in English only.'
+        : ($resolved === 'bilingual'
+            ? 'Each value must be an object with keys ar and en. The ar value is Arabic only. The en value is English only.'
+            : 'Write every value in Arabic only.');
+    $repair = 'Rewrite the draft into one JSON object with exactly these English keys: ' . implode(', ', $keys) . '. ' . $language . ' Keep the draft meaning. Do not add prices, dates, places, audiences, or channels that are not in the draft. If a field was not specified, say that it was not specified.' . "\nDraft:\n" . json_encode($raw, JSON_UNESCAPED_UNICODE);
+    $second = rateb_prepare_output(rateb_model_json($cfg, $system, $repair, $schema), $resolved, $keys);
+    return is_array($second) ? $second : $result;
+}
+
+function rateb_model_json(array $cfg, string $system, string $prompt, ?array $schema = null): ?array
+{
+    static $skipSchema = false;
+    $useSchema = is_array($schema) && !$skipSchema;
+    $attempt = rateb_model_json_once($cfg, $system, $prompt, $useSchema ? $schema : null);
+    if ($attempt['status'] === 400 && $useSchema) {
+        $skipSchema = true;
+        $attempt = rateb_model_json_once($cfg, $system, $prompt, null);
+    }
+    return $attempt['json'];
+}
+
+function rateb_model_json_once(array $cfg, string $system, string $prompt, ?array $schema): array
+{
+    $body = [
         'model' => $cfg['model'],
         'messages' => [
             ['role' => 'system', 'content' => $system],
@@ -288,16 +265,19 @@ function rateb_model_json(array $cfg, string $system, string $prompt): ?array
         ],
         'temperature' => 0.4,
         'reasoning_effort' => 'low',
-        'max_tokens' => 2000,
-        'response_format' => ['type' => 'json_object'],
-    ], JSON_UNESCAPED_UNICODE);
+        'max_tokens' => 4096,
+        'response_format' => is_array($schema)
+            ? ['type' => 'json_schema', 'json_schema' => $schema]
+            : ['type' => 'json_object'],
+    ];
+    $payload = json_encode($body, JSON_UNESCAPED_UNICODE);
     $ch = curl_init(rtrim((string) $cfg['base_url'], '/') . '/chat/completions');
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
         CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_TIMEOUT => 35,
+        CURLOPT_TIMEOUT => 22,
         CURLOPT_CONNECTTIMEOUT => 8,
     ]);
     $raw = curl_exec($ch);
@@ -305,18 +285,18 @@ function rateb_model_json(array $cfg, string $system, string $prompt): ?array
     $err = curl_error($ch);
     curl_close($ch);
     if ($err || $code < 200 || $code >= 300) {
-        return null;
+        return ['status' => $code, 'json' => null];
     }
     $data = json_decode((string) $raw, true);
-    $content = (string) ($data['choices'][0]['message']['content'] ?? '');
-    $result = json_decode($content, true);
-    if (!is_array($result) && preg_match('/```(?:json)?\s*(\{.*\})\s*```/s', $content, $fenced) === 1) {
-        $result = json_decode($fenced[1], true);
+    if (!is_array($data)) {
+        return ['status' => $code, 'json' => null];
     }
-    if (!is_array($result) && preg_match('/(\{.*\})/s', $content, $braced) === 1) {
-        $result = json_decode($braced[1], true);
+    $message = $data['choices'][0]['message'] ?? [];
+    $result = rateb_json_object((string) ($message['content'] ?? ''));
+    if (!is_array($result)) {
+        $result = rateb_json_object((string) ($message['reasoning'] ?? ''));
     }
-    return is_array($result) ? $result : null;
+    return ['status' => $code, 'json' => is_array($result) ? $result : null];
 }
 
 function rateb_replace_outputs(int $campaignId, array $rows): void

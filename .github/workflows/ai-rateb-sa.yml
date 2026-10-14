@@ -116,6 +116,7 @@ jobs:
           echo "TARGET=${TARGET}"
           files=(
             "app/plans.php"
+            "app/ai/generate.php"
             "app/ai/image.php"
             "app/ai/voice.php"
             "app/video/engine.php"

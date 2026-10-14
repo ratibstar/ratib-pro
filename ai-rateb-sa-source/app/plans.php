@@ -325,27 +325,35 @@ function rateb_text_fits(string $text, string $resolved): bool
 
 function rateb_coerce_output(mixed $value, string $resolved): mixed
 {
-    if ($resolved === 'bilingual') {
-        if (is_array($value)) {
-            $arabic = $value['ar'] ?? $value['arabic'] ?? $value['Arabic'] ?? '';
-            $english = $value['en'] ?? $value['english'] ?? $value['English'] ?? '';
-            if (is_string($arabic) || is_string($english)) {
-                return ['ar' => trim((string) $arabic), 'en' => trim((string) $english)];
-            }
-        }
-        return $value;
+    $languageKeys = $resolved === 'bilingual' && is_array($value) && (
+        array_key_exists('ar', $value) || array_key_exists('en', $value)
+        || array_key_exists('arabic', $value) || array_key_exists('english', $value)
+        || array_key_exists('Arabic', $value) || array_key_exists('English', $value)
+    );
+    if ($languageKeys) {
+        $arabic = $value['ar'] ?? $value['arabic'] ?? $value['Arabic'] ?? '';
+        $english = $value['en'] ?? $value['english'] ?? $value['English'] ?? '';
+        return ['ar' => trim((string) $arabic), 'en' => trim((string) $english)];
     }
     if (is_string($value)) {
         return trim($value);
     }
-    if (is_array($value) && isset($value[$resolved]) && is_string($value[$resolved])) {
+    if (is_array($value) && $resolved !== 'bilingual' && isset($value[$resolved]) && is_string($value[$resolved])) {
         return trim($value[$resolved]);
+    }
+    if (is_array($value) && !array_is_list($value)) {
+        foreach (['value', 'text', 'content'] as $inner) {
+            if (isset($value[$inner]) && is_string($value[$inner]) && trim($value[$inner]) !== '') {
+                return trim($value[$inner]);
+            }
+        }
     }
     if (is_array($value) && array_is_list($value)) {
         $parts = [];
         foreach ($value as $item) {
-            if (is_string($item) && trim($item) !== '') {
-                $parts[] = trim($item);
+            $text = is_string($item) ? trim($item) : rateb_coerce_output($item, $resolved === 'bilingual' ? 'ar' : $resolved);
+            if (is_string($text) && $text !== '') {
+                $parts[] = $text;
             }
         }
         if ($parts !== []) {
@@ -353,6 +361,149 @@ function rateb_coerce_output(mixed $value, string $resolved): mixed
         }
     }
     return $value;
+}
+
+function rateb_output_schema(array $keys, string $resolved): array
+{
+    $value = $resolved === 'bilingual'
+        ? [
+            'type' => 'object',
+            'additionalProperties' => false,
+            'required' => ['ar', 'en'],
+            'properties' => [
+                'ar' => ['type' => 'string'],
+                'en' => ['type' => 'string'],
+            ],
+        ]
+        : ['type' => 'string'];
+    $properties = [];
+    foreach ($keys as $key) {
+        $properties[$key] = $value;
+    }
+    return [
+        'name' => 'campaign_output',
+        'strict' => true,
+        'schema' => [
+            'type' => 'object',
+            'additionalProperties' => false,
+            'required' => array_values($keys),
+            'properties' => $properties,
+        ],
+    ];
+}
+
+function rateb_json_object(string $content): ?array
+{
+    $content = trim($content);
+    if ($content === '') {
+        return null;
+    }
+    $result = json_decode($content, true);
+    if (is_array($result)) {
+        return $result;
+    }
+    if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/s', $content, $fenced) === 1) {
+        $result = json_decode($fenced[1], true);
+        if (is_array($result)) {
+            return $result;
+        }
+    }
+    if (preg_match('/(\{.*\})/s', $content, $braced) === 1) {
+        $result = json_decode($braced[1], true);
+        if (is_array($result)) {
+            return $result;
+        }
+    }
+    return null;
+}
+
+function rateb_output_key(string $name, array $keys): ?string
+{
+    $known = array_fill_keys($keys, true);
+    if (isset($known[$name])) {
+        return $name;
+    }
+    $snake = strtolower((string) preg_replace('/([a-z0-9])([A-Z])/', '$1_$2', str_replace(['-', ' '], '_', trim($name))));
+    if (isset($known[$snake])) {
+        return $snake;
+    }
+    $compact = strtolower((string) preg_replace('/[^A-Za-z0-9]+/', '', $name));
+    foreach ($keys as $key) {
+        if (str_replace('_', '', $key) === $compact) {
+            return $key;
+        }
+    }
+    return null;
+}
+
+function rateb_prepare_output(mixed $result, string $resolved, array $keys): mixed
+{
+    if (!is_array($result)) {
+        return $result;
+    }
+    $aliases = [
+        'positioning' => ['التموضع', 'position'],
+        'core_message' => ['الرسالة', 'message'],
+        'audience' => ['الجمهور'],
+        'channels' => ['القنوات'],
+        'tone' => ['النبرة'],
+        'creative_direction' => ['الاتجاه', 'direction'],
+        'call_to_action' => ['الدعوة', 'cta'],
+        'headline' => ['العنوان'],
+        'ad_copy' => ['النص'],
+        'short_ad' => ['الإعلان'],
+        'social_posts' => ['المنشورات'],
+        'whatsapp' => ['واتساب'],
+        'product_description' => ['الوصف'],
+    ];
+    $canon = static function (array $input) use ($keys, $aliases): array {
+        $copy = $input;
+        foreach ($input as $name => $value) {
+            $key = rateb_output_key((string) $name, $keys);
+            if ($key !== null && !array_key_exists($key, $copy)) {
+                $copy[$key] = $value;
+            }
+        }
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $copy)) {
+                continue;
+            }
+            foreach ($aliases[$key] ?? [] as $alias) {
+                if (array_key_exists($alias, $copy)) {
+                    $copy[$key] = $copy[$alias];
+                    break;
+                }
+            }
+        }
+        return $copy;
+    };
+    $result = $canon($result);
+    $present = 0;
+    foreach ($keys as $key) {
+        if (array_key_exists($key, $result)) {
+            $present++;
+        }
+    }
+    if ($present < count($keys)) {
+        foreach ($result as $value) {
+            if (!is_array($value) || array_is_list($value)) {
+                continue;
+            }
+            $inner = $canon($value);
+            foreach ($keys as $key) {
+                if (!array_key_exists($key, $result) && array_key_exists($key, $inner)) {
+                    $result[$key] = $inner[$key];
+                    $present++;
+                }
+            }
+        }
+    }
+    foreach ($keys as $key) {
+        if (array_key_exists($key, $result)) {
+            $result[$key] = rateb_coerce_output($result[$key], $resolved);
+        }
+    }
+    return $result;
 }
 
 function rateb_value_fits(mixed $value, string $resolved): bool
@@ -373,9 +524,9 @@ function rateb_value_fits(mixed $value, string $resolved): bool
     return is_string($value) && rateb_text_fits($value, $resolved);
 }
 
-function rateb_strategy_valid(array $data, string $resolved): bool
+function rateb_output_valid(array $data, string $resolved, array $keys): bool
 {
-    foreach (rateb_strategy_keys() as $key) {
+    foreach ($keys as $key) {
         if (!rateb_value_fits($data[$key] ?? null, $resolved)) {
             return false;
         }
@@ -383,15 +534,15 @@ function rateb_strategy_valid(array $data, string $resolved): bool
     return true;
 }
 
+function rateb_strategy_valid(array $data, string $resolved): bool
+{
+    return rateb_output_valid($data, $resolved, rateb_strategy_keys());
+}
+
 function rateb_copy_valid(array $data, string $resolved, string $only = ''): bool
 {
     $keys = $only !== '' ? [$only] : rateb_copy_types();
-    foreach ($keys as $key) {
-        if (!rateb_value_fits($data[$key] ?? null, $resolved)) {
-            return false;
-        }
-    }
-    return true;
+    return rateb_output_valid($data, $resolved, $keys);
 }
 
 function rateb_normalize_value(mixed $value, string $resolved): mixed
