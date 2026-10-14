@@ -284,7 +284,7 @@ function rateb_model_json_once(array $cfg, string $system, string $prompt, ?arra
         ],
         'temperature' => 0.4,
         'reasoning_effort' => 'low',
-        'max_tokens' => 1000,
+        'max_tokens' => 1600,
         'response_format' => is_array($schema)
             ? ['type' => 'json_schema', 'json_schema' => $schema]
             : ['type' => 'json_object'],
@@ -296,7 +296,7 @@ function rateb_model_json_once(array $cfg, string $system, string $prompt, ?arra
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
         CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_TIMEOUT => 15,
+        CURLOPT_TIMEOUT => 18,
         CURLOPT_CONNECTTIMEOUT => 8,
     ]);
     $raw = curl_exec($ch);

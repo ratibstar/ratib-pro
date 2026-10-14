@@ -181,6 +181,8 @@
       attach_failed: 'The image could not be attached. Use a JPG, PNG, or WEBP file within the size limit.',
       preview_image: 'Image preview',
       image_queued: 'Image generation is still queued on the free provider. Try again.',
+      image_timeout: 'Image generation timed out. No new image was saved.',
+      image_failed: 'The image could not be generated.',
       video_provider_required: 'AI video generation requires a video provider. No free video API is available, and the current Groq credential has no video model.',
       upload_image: 'Upload image',
       upload_video: 'Upload video',
@@ -191,6 +193,7 @@
       start_voice: 'Start Voice',
       another_voice: 'Another voice',
       voice_provider: 'The voice could not be generated. Try again.',
+      voice_saved: 'The voice was saved.',
       voice_empty: 'The voice reads the approved copy. Start from the Voice card.',
       voice_need_images: 'Finish the images first, then start the voice.',
       attach_video: 'Attach a video',
@@ -544,6 +547,8 @@
       attach_failed: 'تعذر إرفاق الصورة. استخدم JPG أو PNG أو WEBP بحجم مناسب.',
       preview_image: 'معاينة الصورة',
       image_queued: 'توليد الصورة ما زال في الانتظار لدى المزود المجاني. حاول مرة أخرى.',
+      image_timeout: 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.',
+      image_failed: 'تعذر توليد الصورة.',
       video_provider_required: 'توليد الفيديو بالذكاء الاصطناعي يحتاج مزود فيديو. لا توجد واجهة فيديو مجانية، وبيانات Groq الحالية لا تتضمن نموذج فيديو.',
       upload_image: 'رفع صورة',
       upload_video: 'رفع فيديو',
@@ -554,6 +559,7 @@
       start_voice: 'ابدأ الصوت',
       another_voice: 'صوت آخر',
       voice_provider: 'تعذر توليد الصوت. حاول مرة أخرى.',
+      voice_saved: 'تم حفظ الصوت.',
       voice_empty: 'الصوت يُقرأ من النص المعتمد. ابدأ من بطاقة الصوت.',
       voice_need_images: 'أكمل الصور أولًا، ثم ابدأ الصوت.',
       attach_video: 'أرفق فيديو',
@@ -912,6 +918,8 @@
   if (imageForm) {
     imageForm.onsubmit = async function (event) {
       event.preventDefault();
+      if (imageForm.getAttribute('data-running') === '1') return;
+      imageForm.setAttribute('data-running', '1');
       var status = document.getElementById(imageForm.getAttribute('data-status') || 'image-status');
       var button = imageForm.querySelector('button');
       if (button) {
@@ -922,25 +930,36 @@
         status.className = 'notice stage-status';
         status.textContent = dict[language].generating_image;
       }
+      var ttl = Number(imageForm.getAttribute('data-job-ttl') || 900);
+      var deadline = Date.now() + (ttl * 1000);
+      var jobId = '';
       try {
         var imagesTab = document.querySelector('[data-tab="images"]');
         if (imagesTab) imagesTab.click();
-        var started = Date.now();
-        var payload = await requestImage(imageForm, '');
-        var waits = 0;
+        var payload = { pending: true };
         while (payload.pending) {
-          if (Date.now() - started > 70000 || waits >= 12) throw new Error(dict[language].image_queued);
-          if (status) status.textContent = dict[language].generating_image;
+          if (Date.now() > deadline + 20000) {
+            var timedOut = new Error(dict[language].image_timeout);
+            timedOut.code = 'image_timeout';
+            throw timedOut;
+          }
+          payload = await requestImage(imageForm, jobId);
+          if (payload.job_id) jobId = payload.job_id;
+          if (payload.expires_at) deadline = Number(payload.expires_at) * 1000;
+          if (!payload.pending) break;
+          if (status) {
+            status.className = 'notice stage-status';
+            status.textContent = dict[language].generating_image;
+          }
           await new Promise(function (resolve) { setTimeout(resolve, 3000); });
-          payload = await requestImage(imageForm, payload.job_id);
-          waits += 1;
         }
-        if (!payload.ok) throw new Error(payload.error || 'Image generation failed');
+        if (!payload.ok) throw new Error(payload.error || dict[language].image_failed);
         location.href = payload.redirect;
       } catch (error) {
+        imageForm.removeAttribute('data-running');
         if (status) {
           status.className = 'notice is-error stage-status';
-          status.textContent = error.message;
+          status.textContent = error.code === 'image_timeout' ? (dict[language].image_timeout) : (error.message || dict[language].image_failed);
         }
         if (button) {
           button.disabled = false;
@@ -958,12 +977,28 @@
     try {
       var response = await fetch('/app/ai/image.php', { method: 'POST', body: body, signal: controller.signal });
       clearTimeout(timer);
-      var payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || dict[language].image_queued);
+      var payload = {};
+      try {
+        payload = await response.json();
+      } catch (parseError) {
+        payload = {};
+      }
+      if (!response.ok) {
+        var failed = new Error(payload.error || (payload.code === 'image_timeout' ? dict[language].image_timeout : dict[language].image_failed));
+        failed.code = payload.code || '';
+        throw failed;
+      }
       return payload;
     } catch (error) {
       clearTimeout(timer);
-      if (error.name === 'AbortError') throw new Error(dict[language].image_queued);
+      if (error.name === 'AbortError' && jobId) {
+        return { pending: true, state: 'pending', job_id: jobId };
+      }
+      if (error.name === 'AbortError') {
+        var waiting = new Error(dict[language].image_queued);
+        waiting.code = 'image_queued';
+        throw waiting;
+      }
       throw error;
     }
   }
@@ -1015,13 +1050,24 @@
         } catch (parseError) {
           throw new Error(dict[language].voice_provider || 'Voice generation failed');
         }
-        if (!response.ok) throw new Error(payload.error || dict[language].voice_provider || 'Voice generation failed');
-        if (payload.redirect) location.href = payload.redirect;
-      } catch (error) {
-        if (stopped) return;
+        if (!response.ok || !payload.ok) throw new Error(payload.error || dict[language].voice_provider || 'Voice generation failed');
+        stopped = true;
+        clearInterval(watch);
         if (status) {
           status.className = 'notice stage-status';
-          status.textContent = dict[language].generating_voice;
+          status.textContent = dict[language].voice_saved;
+        }
+        if (payload.redirect) location.href = payload.redirect;
+      } catch (error) {
+        stopped = true;
+        clearInterval(watch);
+        if (status) {
+          status.className = 'notice is-error stage-status';
+          status.textContent = error.message || dict[language].voice_provider;
+        }
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('is-busy');
         }
       }
     };
