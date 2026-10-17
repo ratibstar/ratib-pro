@@ -1525,6 +1525,8 @@
         var data = new FormData();
         data.append('csrf_token', csrf ? csrf.value : '');
         data.append('credential', response.credential || '');
+        var nextField = authModal.querySelector('input[name="next"]');
+        data.append('next', nextField ? nextField.value : '/dashboard.php');
         var error = authModal.querySelector('form:not([hidden]) [data-auth-error]');
         fetch('/app/auth/google.php', { method: 'POST', body: data, credentials: 'same-origin' })
           .then(function (res) { return res.json(); })
@@ -1568,6 +1570,10 @@
     var opener = event.target.closest('[data-auth]');
     if (opener) {
       event.preventDefault();
+      var next = opener.getAttribute('data-next') || '/dashboard.php';
+      document.querySelectorAll('#auth-modal input[name="next"]').forEach(function (node) {
+        node.value = next;
+      });
       showAuth(opener.getAttribute('data-auth'));
     }
   });
@@ -1583,7 +1589,8 @@
         var kind = provider.getAttribute('data-provider');
         var clientId = authModal.getAttribute('data-google-client') || '';
         if (kind === 'github') {
-          window.location.href = '/app/auth/github.php';
+          var githubNext = authModal.querySelector('input[name="next"]');
+          window.location.href = '/app/auth/github.php?next=' + encodeURIComponent(githubNext ? githubNext.value : '/dashboard.php');
           return;
         }
         if (kind === 'google' && clientId && window.google && google.accounts) {

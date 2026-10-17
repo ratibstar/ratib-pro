@@ -21,9 +21,9 @@ if (isset($_SESSION['user_id'])) {
 <body class="studio home">
 <header class="home-bar">
     <nav class="home-nav">
-        <a href="/dashboard.php" data-i18n="dashboard">Dashboard</a>
-        <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
-        <a href="/brand.php" data-i18n="brand_kit">Brand kit</a>
+        <a href="/dashboard.php" data-auth="login" data-next="/dashboard.php" data-i18n="dashboard">Dashboard</a>
+        <a href="/campaign-new.php" data-auth="login" data-next="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
+        <a href="/brand.php" data-auth="login" data-next="/brand.php" data-i18n="brand_kit">Brand kit</a>
         <a href="#workflow" data-i18n="nav_how">How it works</a>
         <a href="#samples" data-i18n="nav_samples">Examples</a>
         <a href="#create" data-i18n="nav_create">What it creates</a>
@@ -237,6 +237,7 @@ if (isset($_SESSION['user_id'])) {
     <form class="auth-card" id="auth-login" action="/login.php" method="post">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="auth_modal" value="1">
+        <input type="hidden" name="next" value="/dashboard.php">
         <h2 data-i18n="welcome_back">Welcome back</h2>
         <p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p>
         <p class="alert" data-auth-error hidden></p>
@@ -256,6 +257,7 @@ if (isset($_SESSION['user_id'])) {
     <form class="auth-card" id="auth-register" action="/register.php" method="post" hidden>
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="auth_modal" value="1">
+        <input type="hidden" name="next" value="/dashboard.php">
         <h2 data-i18n="create_title">Create your account</h2>
         <p class="muted" data-i18n="register_lead">Start creating AI-powered marketing campaigns.</p>
         <p class="alert" data-auth-error hidden></p>
@@ -275,6 +277,6 @@ if (isset($_SESSION['user_id'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav30"></script>
+<script src="/public/assets/js/app.js?v=nav31"></script>
 </body>
 </html>

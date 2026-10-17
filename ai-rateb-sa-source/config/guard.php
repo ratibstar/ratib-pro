@@ -30,6 +30,12 @@ function check_csrf(): void
     verify_csrf();
 }
 
+function rateb_safe_next(string $next): string
+{
+    $allowed = ['/dashboard.php', '/campaign-new.php', '/brand.php'];
+    return in_array($next, $allowed, true) ? $next : '/dashboard.php';
+}
+
 function require_login(): void
 {
     if (empty($_SESSION['user_id'])) {

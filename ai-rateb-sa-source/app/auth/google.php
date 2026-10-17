@@ -74,4 +74,4 @@ if ($existing) {
 
 session_regenerate_id(true);
 $_SESSION['user_id'] = $userId;
-echo json_encode(['ok' => true, 'redirect' => '/dashboard.php']);
+echo json_encode(['ok' => true, 'redirect' => rateb_safe_next((string) ($_POST['next'] ?? ''))]);

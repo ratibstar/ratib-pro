@@ -32,7 +32,7 @@ function rateb_github_user(PDO $pdo, string $email, string $name): void
     }
     session_regenerate_id(true);
     $_SESSION['user_id'] = $userId;
-    header('Location: /dashboard.php');
+    header('Location: ' . rateb_safe_next((string) ($_SESSION['auth_next'] ?? '')));
     exit;
 }
 
@@ -43,6 +43,7 @@ if ($code === '') {
         echo 'GitHub client secret is not configured on the server.';
         exit;
     }
+    $_SESSION['auth_next'] = rateb_safe_next((string) ($_GET['next'] ?? ''));
     $state = bin2hex(random_bytes(16));
     $_SESSION['github_oauth_state'] = $state;
     $url = 'https://github.com/login/oauth/authorize?' . http_build_query([

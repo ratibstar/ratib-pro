@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true);
             if ($authModal) {
                 header('Content-Type: application/json');
-                echo json_encode(['ok' => true, 'redirect' => '/dashboard.php']);
+                echo json_encode(['ok' => true, 'redirect' => rateb_safe_next((string) ($_POST['next'] ?? ''))]);
                 exit;
             }
             header('Location: /dashboard.php');
