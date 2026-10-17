@@ -2,12 +2,23 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
-require_login();
 
 const BRAND_ROOT = '/home/admin/.brand-kits';
 
 function brand_owned(): array
 {
+    if (empty($_SESSION['user_id'])) {
+        return [
+            'brand_name' => '',
+            'logo_stored' => null,
+            'logo_mime' => null,
+            'primary_color' => '#0f766e',
+            'secondary_color' => '#111827',
+            'preferred_language' => 'en',
+            'tone' => '',
+            'contact' => '',
+        ];
+    }
     $stmt = db()->prepare('SELECT * FROM brand_kits WHERE user_id = ?');
     $stmt->execute([$_SESSION['user_id']]);
     $row = $stmt->fetch();

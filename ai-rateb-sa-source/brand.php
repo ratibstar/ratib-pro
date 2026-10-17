@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/app/brand/library.php';
-require_login();
 $brand = brand_owned();
 $error = (string) ($_GET['brand_error'] ?? '');
 if (!in_array($error, ['size', 'type', 'upload'], true)) {

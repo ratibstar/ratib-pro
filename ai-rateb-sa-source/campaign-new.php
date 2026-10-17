@@ -4,9 +4,7 @@ require_once __DIR__ . '/app/plans.php';
 require_once __DIR__ . '/app/media/library.php';
 require_once __DIR__ . '/app/vision.php';
 require_once __DIR__ . '/app/idea.php';
-require_login();
-
-$userId = (int) $_SESSION['user_id'];
+$userId = (int) ($_SESSION['user_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['draft'])) {
     $path = rateb_draft_path($userId, (string) $_GET['draft']);
@@ -29,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['draft'])) {
 
 $draft = is_array($_SESSION['campaign_draft'] ?? null) ? $_SESSION['campaign_draft'] : [];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($userId > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     check_csrf();
     $step = (string) ($_POST['step'] ?? '');
     if ($step === 'understand') {

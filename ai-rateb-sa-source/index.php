@@ -21,6 +21,9 @@ if (isset($_SESSION['user_id'])) {
 <body class="studio home">
 <header class="home-bar">
     <nav class="home-nav">
+        <a href="/dashboard.php" data-i18n="dashboard">Dashboard</a>
+        <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
+        <a href="/brand.php" data-i18n="brand_kit">Brand kit</a>
         <a href="#workflow" data-i18n="nav_how">How it works</a>
         <a href="#samples" data-i18n="nav_samples">Examples</a>
         <a href="#create" data-i18n="nav_create">What it creates</a>

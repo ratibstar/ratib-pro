@@ -140,6 +140,7 @@ jobs:
             "config/google.php"
             "config/github.php"
             "config/guard.php"
+            "app/brand/library.php"
           )
           for rel in "${files[@]}"; do
             local_file="ai-rateb-sa-source/${rel}"

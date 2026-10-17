@@ -1,15 +1,15 @@
 <?php
 require __DIR__ . '/config/bootstrap.php';
-require_login();
 
 $user = current_user($pdo);
-if (!$user) {
-    header('Location: /logout.php');
-    exit;
-}
+$campaigns = [];
+if ($user) {
 $stmt = $pdo->prepare('SELECT id, title, product_name, status, created_at FROM campaigns WHERE user_id = ? ORDER BY id DESC LIMIT 20');
 $stmt->execute([$user['id']]);
 $campaigns = $stmt->fetchAll();
+} else {
+    $user = ['id' => 0, 'name' => ''];
+}
 $covers = [];
 if ($campaigns) {
     $ids = [];
