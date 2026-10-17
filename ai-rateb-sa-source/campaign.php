@@ -219,7 +219,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav17">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav18">
 </head>
 <body class="studio page-campaign">
 <header class="top">
