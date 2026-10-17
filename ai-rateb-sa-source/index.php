@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/config/session.php';
 require __DIR__ . '/config/guard.php';
+require __DIR__ . '/app/nav.php';
 $googleClient = (string) ((require __DIR__ . '/config/google.php')['client_id'] ?? '');
 
 if (isset($_SESSION['user_id'])) {
@@ -16,26 +17,10 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav33">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav34">
 </head>
 <body class="studio home">
-<header class="home-bar">
-    <nav class="home-nav">
-        <a href="/dashboard.php" data-i18n="dashboard">Dashboard</a>
-        <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
-        <a href="/brand.php" data-i18n="brand_kit">Brand kit</a>
-        <a href="#workflow" data-i18n="nav_how">How it works</a>
-        <a href="#samples" data-i18n="nav_samples">Examples</a>
-        <a href="#create" data-i18n="nav_create">What it creates</a>
-    </nav>
-    <a class="logo" href="/">RATEB <span>AI</span></a>
-    <div class="edge-auth">
-        <button type="button" id="lang" class="icon">AR</button>
-        <button type="button" id="theme" class="icon">☾</button>
-        <button type="button" class="login" data-auth="login" data-i18n="login">Login</button>
-        <button type="button" class="register" data-auth="register" data-i18n="create_account">Create Account</button>
-    </div>
-</header>
+<?php rateb_site_header('', false, true); ?>
 <main>
     <section class="landing-hero">
         <div class="landing-copy">

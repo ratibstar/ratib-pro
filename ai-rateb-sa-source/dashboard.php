@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/config/bootstrap.php';
+require __DIR__ . '/app/nav.php';
 
 $user = current_user($pdo);
 $campaigns = [];
@@ -43,22 +44,10 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav23">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav34">
 </head>
 <body class="studio page-dash">
-<header class="topbar">
-  <nav>
-    <a class="is-here" href="/dashboard.php" data-i18n="dashboard">Dashboard</a>
-    <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
-    <a href="/brand.php" data-i18n="brand_kit">Brand kit</a>
-  </nav>
-  <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
-  <div class="bar-side">
-    <a class="bar-logout" href="/logout.php" data-i18n="logout">Logout</a>
-    <button type="button" id="lang" class="icon">AR</button>
-    <button type="button" id="theme" class="icon">☾</button>
-  </div>
-</header>
+<?php rateb_site_header('/dashboard.php', !empty($_SESSION['user_id'])); ?>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>
     <p class="muted" data-i18n="campaign_deleted">Campaign deleted.</p>
@@ -70,7 +59,7 @@ foreach ($campaigns as $row) {
       <p class="eyebrow" data-i18n="workspace">AI CAMPAIGN WORKSPACE</p>
       <h1 data-i18n="studio_headline">Turn your idea into a complete marketing campaign with AI</h1>
       <p class="studio-lead" data-i18n="studio_lead">Strategy, ad copy, social posts, images, Saudi Arabic voice, and a content plan — in one creative studio.</p>
-      <p class="studio-hello"><span data-i18n="welcome">Welcome</span>, <?= e($user['name']) ?></p>
+      <?php if ($user['name'] !== ''): ?><p class="studio-hello"><span data-i18n="welcome">Welcome</span>, <?= e($user['name']) ?></p><?php endif; ?>
       <a class="button studio-cta" href="/campaign-new.php" data-i18n="studio_cta">Start a new campaign</a>
     </div>
     <div>

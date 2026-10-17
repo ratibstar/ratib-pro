@@ -4,6 +4,7 @@ require_once __DIR__ . '/app/plans.php';
 require_once __DIR__ . '/app/media/library.php';
 require_once __DIR__ . '/app/vision.php';
 require_once __DIR__ . '/app/idea.php';
+require_once __DIR__ . '/app/nav.php';
 $userId = (int) ($_SESSION['user_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['draft'])) {
@@ -218,22 +219,10 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav23">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav34">
 </head>
 <body class="studio page-new">
-<header class="top">
-  <nav>
-    <a href="/dashboard.php" data-i18n="dashboard"><?= $arabic ? 'لوحة التحكم' : 'Dashboard' ?></a>
-    <a class="is-here" href="/campaign-new.php" data-i18n="new_campaign"><?= $arabic ? 'حملة جديدة' : 'New Campaign' ?></a>
-    <a href="/brand.php" data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></a>
-  </nav>
-  <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
-  <div class="bar-side">
-    <a class="bar-logout" href="/logout.php" data-i18n="logout"><?= $arabic ? 'تسجيل الخروج' : 'Logout' ?></a>
-    <button type="button" id="lang" class="icon"><?= $arabic ? 'EN' : 'AR' ?></button>
-    <button type="button" id="theme" class="icon">☾</button>
-  </div>
-</header>
+<?php rateb_site_header('/campaign-new.php', $userId > 0); ?>
 <main class="wrap idea-shell">
 <?php if ($view === 'reading'): ?>
   <section class="card idea-card" id="reading-flow">
