@@ -16,14 +16,11 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav32">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav33">
 </head>
 <body class="studio home">
 <header class="home-bar">
     <nav class="home-nav">
-        <button type="button" data-auth="login" data-next="/dashboard.php" data-i18n="dashboard">Dashboard</button>
-        <button type="button" data-auth="login" data-next="/campaign-new.php" data-i18n="new_campaign">New Campaign</button>
-        <button type="button" data-auth="login" data-next="/brand.php" data-i18n="brand_kit">Brand kit</button>
         <a href="#workflow" data-i18n="nav_how">How it works</a>
         <a href="#samples" data-i18n="nav_samples">Examples</a>
         <a href="#create" data-i18n="nav_create">What it creates</a>
@@ -277,6 +274,6 @@ if (isset($_SESSION['user_id'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav32"></script>
+<script src="/public/assets/js/app.js?v=nav33"></script>
 </body>
 </html>
