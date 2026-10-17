@@ -17,13 +17,14 @@ if (!in_array($error, ['size', 'type', 'upload'], true)) {
 <title>RATEB AI — Brand kit</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav20">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav21">
 </head>
 <body class="studio page-brand">
 <header class="top">
   <nav>
     <a href="/dashboard.php" data-i18n="dashboard">Dashboard</a>
     <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
+    <a class="is-here" href="/brand.php" data-i18n="brand_kit">Brand kit</a>
   </nav>
   <div class="bar-side">
     <a class="bar-logout" href="/logout.php" data-i18n="logout">Logout</a>

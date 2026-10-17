@@ -220,12 +220,14 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav20">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav21">
 </head>
 <body class="studio page-new">
 <header class="top">
   <nav>
     <a href="/dashboard.php" data-i18n="dashboard"><?= $arabic ? 'لوحة التحكم' : 'Dashboard' ?></a>
+    <a class="is-here" href="/campaign-new.php" data-i18n="new_campaign"><?= $arabic ? 'حملة جديدة' : 'New Campaign' ?></a>
+    <a href="/brand.php" data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></a>
   </nav>
   <div class="bar-side">
     <a class="bar-logout" href="/logout.php" data-i18n="logout"><?= $arabic ? 'تسجيل الخروج' : 'Logout' ?></a>

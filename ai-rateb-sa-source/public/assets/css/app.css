@@ -248,7 +248,7 @@ body.studio .auth-shell{background:transparent}
 body.studio .auth-card{border-radius:28px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:0 24px 60px var(--shadow)}
 body.studio .auth-card .brand{display:inline-block;margin-bottom:18px;text-decoration:none}
 body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
-.home-bar{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:minmax(160px,1fr) auto minmax(160px,1fr);align-items:center;gap:28px;width:100%;margin:0;padding:18px 72px}
+.home-bar{position:sticky;top:0;z-index:6;display:flex;align-items:center;justify-content:space-between;gap:28px;width:100%;margin:0;padding:18px 72px}
 .edge-tools,.edge-auth,.bar-side{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .edge-tools{justify-self:start}
 .edge-auth{justify-self:end}
