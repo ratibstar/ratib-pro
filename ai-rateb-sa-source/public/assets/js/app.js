@@ -1576,6 +1576,10 @@
         var error = form ? form.querySelector('[data-auth-error]') : null;
         var kind = provider.getAttribute('data-provider');
         var clientId = authModal.getAttribute('data-google-client') || '';
+        if (kind === 'github') {
+          window.location.href = '/app/auth/github.php';
+          return;
+        }
         if (kind === 'google' && clientId && window.google && google.accounts) {
           paintGoogle();
           google.accounts.id.prompt();

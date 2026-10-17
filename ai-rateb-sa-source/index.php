@@ -269,6 +269,6 @@ if (isset($_SESSION['user_id'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav26"></script>
+<script src="/public/assets/js/app.js?v=nav28"></script>
 </body>
 </html>
