@@ -154,14 +154,14 @@ jobs:
           done
           if [ -n "${RATEB_GOOGLE_CLIENT_ID:-}" ]; then
             python3 - << 'PY'
-import os
-from pathlib import Path
-cid = os.environ.get("RATEB_GOOGLE_CLIENT_ID", "").replace("\\", "\\\\").replace("'", "\\'")
-Path(os.environ["RUNNER_TEMP"], "google-client.php").write_text(
-    "<?php\ndeclare(strict_types=1);\nreturn ['client_id' => '" + cid + "'];\n",
-    encoding="utf-8",
-)
-PY
+          import os
+          from pathlib import Path
+          cid = os.environ.get("RATEB_GOOGLE_CLIENT_ID", "").replace("\\", "\\\\").replace("'", "\\'")
+          Path(os.environ["RUNNER_TEMP"], "google-client.php").write_text(
+              "<?php\ndeclare(strict_types=1);\nreturn ['client_id' => '" + cid + "'];\n",
+              encoding="utf-8",
+          )
+          PY
             scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
               "${RUNNER_TEMP}/google-client.php" "${REMOTE}:${TARGET}/config/google.php"
             echo "GOOGLE_CLIENT=written"
