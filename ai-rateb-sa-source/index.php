@@ -16,10 +16,15 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav27">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav29">
 </head>
 <body class="studio home">
 <header class="home-bar">
+    <nav class="home-nav">
+        <a href="#workflow" data-i18n="nav_how">How it works</a>
+        <a href="#samples" data-i18n="nav_samples">Examples</a>
+        <a href="#create" data-i18n="nav_create">What it creates</a>
+    </nav>
     <a class="logo" href="/">RATEB <span>AI</span></a>
     <div class="edge-auth">
         <button type="button" id="lang" class="icon">AR</button>
@@ -267,6 +272,6 @@ if (isset($_SESSION['user_id'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav28"></script>
+<script src="/public/assets/js/app.js?v=nav29"></script>
 </body>
 </html>
