@@ -275,7 +275,9 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .social-auth{display:grid;gap:10px;margin:14px 0 4px}
 .social-btn{display:grid;grid-template-columns:28px 1fr 28px;align-items:center;width:100%;min-height:46px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
 .social-btn span:nth-child(2){text-align:center}
-.social-mark{font-weight:800;font-size:16px}
+.social-mark{display:grid;place-items:center;width:22px;height:22px}
+.social-mark svg{width:20px;height:20px;display:block}
+.social-btn[data-provider=github] .social-mark,.social-btn[data-provider=apple] .social-mark{color:var(--text)}
 .auth-modal button[type=submit]{width:100%;margin-top:12px;border-radius:999px}
 .auth-or{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--muted);font-size:13px;font-weight:700}
 .auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--border)}

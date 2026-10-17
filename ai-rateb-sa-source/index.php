@@ -16,7 +16,7 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav26">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav27">
 </head>
 <body class="studio home">
 <header class="home-bar">
@@ -233,9 +233,9 @@ if (isset($_SESSION['user_id'])) {
         <p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p>
         <p class="alert" data-auth-error hidden></p>
         <div class="social-auth">
-            <button type="button" class="social-btn" data-provider="google"><span class="social-mark" aria-hidden="true">G</span><span data-i18n="continue_google">Continue with Google</span><span></span></button>
-            <button type="button" class="social-btn" data-provider="github"><span class="social-mark" aria-hidden="true">⌂</span><span data-i18n="continue_github">Continue with GitHub</span><span></span></button>
-            <button type="button" class="social-btn" data-provider="apple"><span class="social-mark" aria-hidden="true"></span><span data-i18n="continue_apple">Continue with Apple</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="google"><span class="social-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.2 6.1 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12 24 12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.2 6.1 29.4 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.6-5.2l-6.3-5.3C29.3 35.1 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.2-3.5 5.7-6.6 7.1l6.3 5.3C37.4 38.4 44 33 44 24c0-1.2-.1-2.3-.4-3.5z"/></svg></span><span data-i18n="continue_google">Continue with Google</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="github"><span class="social-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.5 2 2 6.6 2 12.2c0 4.5 2.9 8.3 6.9 9.6.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.4-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.4 9.4 0 0 1 5 0c2-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5 4-1.3 6.9-5.1 6.9-9.6C22 6.6 17.5 2 12 2z"/></svg></span><span data-i18n="continue_github">Continue with GitHub</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="apple"><span class="social-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-.1 2.9-2.3c.7-1 1.2-2.1 1.5-3.2-3.9-1.5-3.8-5.5-2.8-6.2zM14.7 6.5c.6-.8 1.1-1.9.9-3-.9 0-2 .6-2.6 1.4-.6.7-1.1 1.8-.9 2.9 1 .1 2-.5 2.6-1.3z"/></svg></span><span data-i18n="continue_apple">Continue with Apple</span><span></span></button>
         </div>
         <p class="auth-or" data-i18n="auth_or">or</p>
         <label data-i18n="email">Email</label>
@@ -253,9 +253,9 @@ if (isset($_SESSION['user_id'])) {
         <p class="muted" data-i18n="register_lead">Start creating AI-powered marketing campaigns.</p>
         <p class="alert" data-auth-error hidden></p>
         <div class="social-auth">
-            <button type="button" class="social-btn" data-provider="google"><span class="social-mark" aria-hidden="true">G</span><span data-i18n="continue_google">Continue with Google</span><span></span></button>
-            <button type="button" class="social-btn" data-provider="github"><span class="social-mark" aria-hidden="true">⌂</span><span data-i18n="continue_github">Continue with GitHub</span><span></span></button>
-            <button type="button" class="social-btn" data-provider="apple"><span class="social-mark" aria-hidden="true"></span><span data-i18n="continue_apple">Continue with Apple</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="google"><span class="social-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.2 6.1 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12 24 12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.2 6.1 29.4 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.6-5.2l-6.3-5.3C29.3 35.1 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.2-3.5 5.7-6.6 7.1l6.3 5.3C37.4 38.4 44 33 44 24c0-1.2-.1-2.3-.4-3.5z"/></svg></span><span data-i18n="continue_google">Continue with Google</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="github"><span class="social-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.5 2 2 6.6 2 12.2c0 4.5 2.9 8.3 6.9 9.6.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.4-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.4 9.4 0 0 1 5 0c2-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5 4-1.3 6.9-5.1 6.9-9.6C22 6.6 17.5 2 12 2z"/></svg></span><span data-i18n="continue_github">Continue with GitHub</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="apple"><span class="social-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-.1 2.9-2.3c.7-1 1.2-2.1 1.5-3.2-3.9-1.5-3.8-5.5-2.8-6.2zM14.7 6.5c.6-.8 1.1-1.9.9-3-.9 0-2 .6-2.6 1.4-.6.7-1.1 1.8-.9 2.9 1 .1 2-.5 2.6-1.3z"/></svg></span><span data-i18n="continue_apple">Continue with Apple</span><span></span></button>
         </div>
         <p class="auth-or" data-i18n="auth_or">or</p>
         <label data-i18n="name">Name</label>
