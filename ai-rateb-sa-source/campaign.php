@@ -219,7 +219,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav21">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav22">
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -228,11 +228,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <a href="/campaign-new.php" data-i18n="new_campaign"><?= $arabic ? 'حملة جديدة' : 'New campaign' ?></a>
     <a href="/brand.php" data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></a>
   </nav>
+  <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
   <div class="bar-side">
     <a class="bar-logout" href="/logout.php" data-i18n="logout"><?= $arabic ? 'خروج' : 'Logout' ?></a>
-    <button type="button" id="lang" class="icon"><?= $arabic ? 'English' : 'عربي' ?></button>
+    <button type="button" id="lang" class="icon"><?= $arabic ? 'EN' : 'AR' ?></button>
     <button type="button" id="theme" class="icon">☾</button>
-    <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
   </div>
 </header>
 <main class="wrap workspace">
@@ -730,6 +730,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act29"></script>
+<script src="/public/assets/js/app.js?v=nav22"></script>
 </body>
 </html>

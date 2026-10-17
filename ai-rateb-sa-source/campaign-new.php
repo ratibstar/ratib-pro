@@ -220,7 +220,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav21">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav22">
 </head>
 <body class="studio page-new">
 <header class="top">
@@ -229,11 +229,11 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
     <a class="is-here" href="/campaign-new.php" data-i18n="new_campaign"><?= $arabic ? 'حملة جديدة' : 'New Campaign' ?></a>
     <a href="/brand.php" data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></a>
   </nav>
+  <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
   <div class="bar-side">
     <a class="bar-logout" href="/logout.php" data-i18n="logout"><?= $arabic ? 'تسجيل الخروج' : 'Logout' ?></a>
-    <button type="button" id="lang" class="icon"><?= $arabic ? 'English' : 'عربي' ?></button>
+    <button type="button" id="lang" class="icon"><?= $arabic ? 'EN' : 'AR' ?></button>
     <button type="button" id="theme" class="icon">☾</button>
-    <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
   </div>
 </header>
 <main class="wrap idea-shell">
@@ -449,6 +449,6 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
     <audio data-voice-player controls preload="none" hidden></audio>
   </div>
 </section>
-<script src="/public/assets/js/app.js?v=act26"></script>
+<script src="/public/assets/js/app.js?v=nav22"></script>
 </body>
 </html>

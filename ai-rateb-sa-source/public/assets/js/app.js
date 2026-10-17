@@ -774,7 +774,7 @@
     root.lang = language;
     root.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.cookie = 'rateb_ui_lang=' + language + ';path=/;SameSite=Lax';
-    if (langButton) langButton.textContent = language === 'ar' ? 'English' : 'عربي';
+    if (langButton) langButton.textContent = language === 'ar' ? 'EN' : 'AR';
     localStorage.setItem('rateb-lang', language);
     document.querySelectorAll('input[name="lang"]').forEach(function (node) {
       node.value = language;

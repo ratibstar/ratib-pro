@@ -43,7 +43,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav21">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav22">
 </head>
 <body class="studio page-dash">
 <header class="topbar">
@@ -52,11 +52,11 @@ foreach ($campaigns as $row) {
     <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
     <a href="/brand.php" data-i18n="brand_kit">Brand kit</a>
   </nav>
+  <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
   <div class="bar-side">
     <a class="bar-logout" href="/logout.php" data-i18n="logout">Logout</a>
-    <button type="button" id="lang" class="icon">عربي</button>
+    <button type="button" id="lang" class="icon">AR</button>
     <button type="button" id="theme" class="icon">☾</button>
-    <div class="brand">RATEB <span>AI</span></div>
   </div>
 </header>
 <main class="container studio-page">
@@ -213,6 +213,6 @@ foreach ($campaigns as $row) {
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act26"></script>
+<script src="/public/assets/js/app.js?v=nav22"></script>
 </body>
 </html>

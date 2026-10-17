@@ -14,13 +14,13 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav21">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav22">
 </head>
 <body class="studio home">
 <header class="home-bar">
     <a class="logo" href="/">RATEB <span>AI</span></a>
     <div class="edge-auth">
-        <button type="button" id="lang" class="icon">عربي</button>
+        <button type="button" id="lang" class="icon">AR</button>
         <button type="button" id="theme" class="icon">☾</button>
         <a class="login" href="/login.php" data-i18n="login">Login</a>
         <a class="register" href="/register.php" data-i18n="create_account">Create Account</a>
@@ -222,6 +222,6 @@ if (isset($_SESSION['user_id'])) {
     </form>
     <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=act26"></script>
+<script src="/public/assets/js/app.js?v=nav22"></script>
 </body>
 </html>

@@ -150,13 +150,16 @@ body.page-register.studio::after{animation:wave-rise 12s linear infinite}
 @keyframes sway-wash{0%{transform:translate3d(-8%,-6%,0) scale(1.2)}50%{transform:translate3d(10%,8%,0) scale(1.42)}100%{transform:translate3d(-6%,10%,0) scale(1.16)}}
 body.studio .card,body.studio .panel,body.studio .kpi,body.studio .studio-stat,body.studio .flow-board li,body.studio .mock-screen,body.studio .auth-card,body.studio fieldset,body.studio .result,body.studio .media-card,body.studio .media-uploads form,body.studio .sample-card,body.studio .showcase-card,body.studio .campaign-tile,body.studio .tabs{background-color:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(8px)}
 body.studio .top,body.studio .topbar,body.studio .home-bar{background:color-mix(in srgb,var(--surface) 42%,transparent);backdrop-filter:blur(18px);border-bottom:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
-body.studio .topbar,body.studio .top{height:auto;min-height:84px;padding:18px 72px;gap:32px;flex-wrap:wrap}
+body.studio .topbar,body.studio .top{height:auto;min-height:84px;padding:18px 72px;gap:24px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center}
+body.studio .topbar nav,body.studio .top nav{justify-self:start}
+body.studio .topbar .brand,body.studio .top .brand{justify-self:center;grid-column:2}
+body.studio .bar-side{justify-self:end;grid-column:3;margin-inline-start:0}
 body.studio .topbar .brand,body.studio .top .brand{font-size:20px;letter-spacing:-.04em}
 body.studio .topbar nav,body.studio .top nav{gap:4px;padding:5px;border-radius:999px;background:color-mix(in srgb,var(--surface) 78%,transparent);border:1px solid color-mix(in srgb,var(--border) 90%,transparent);box-shadow:0 12px 32px rgba(76,29,149,.1);font-size:15.5px}
 body.studio .topbar nav a,body.studio .top nav a{font-weight:700;color:var(--muted);padding:9px 14px;border-radius:999px;transition:background .18s ease,color .18s ease}
 body.studio .topbar nav a:hover,body.studio .top nav a:hover{color:var(--text);background:color-mix(in srgb,var(--accent) 14%,transparent)}
 body.studio .topbar nav a.is-here,body.studio .top nav a.is-here{color:#fff;background:linear-gradient(90deg,#6d28d9,#0f766e)}
-body.studio .topbar nav .icon,body.studio .top nav .icon,body.studio .bar-side .icon,body.studio .edge-tools .icon{width:38px;height:38px;padding:0;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:800;box-shadow:none;flex:0 0 auto}
+body.studio .topbar nav .icon,body.studio .top nav .icon,body.studio .bar-side .icon,body.studio .edge-tools .icon,body.studio .edge-auth .icon{min-width:42px;height:38px;padding:0 8px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:800;box-shadow:none;flex:0 0 auto}
 body.studio .brand span{background:linear-gradient(90deg,#6d28d9,#0f766e);-webkit-background-clip:text;background-clip:text;color:transparent}
 body.studio .container,body.studio .wrap{width:min(1180px,92%)}
 body.studio .wrap{max-width:1180px}
@@ -248,7 +251,9 @@ body.studio .auth-shell{background:transparent}
 body.studio .auth-card{border-radius:28px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:0 24px 60px var(--shadow)}
 body.studio .auth-card .brand{display:inline-block;margin-bottom:18px;text-decoration:none}
 body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
-.home-bar{position:sticky;top:0;z-index:6;display:flex;align-items:center;justify-content:space-between;gap:28px;width:100%;margin:0;padding:18px 72px}
+.home-bar{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:24px;width:100%;margin:0;padding:18px 72px}
+.home-bar .logo{grid-column:2;justify-self:center}
+.home-bar .edge-auth{grid-column:3;justify-self:end}
 .edge-tools,.edge-auth,.bar-side{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .edge-tools{justify-self:start}
 .edge-auth{justify-self:end}
