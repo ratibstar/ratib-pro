@@ -251,10 +251,10 @@ body.studio .auth-shell{background:transparent}
 body.studio .auth-card{border-radius:28px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:0 24px 60px var(--shadow)}
 body.studio .auth-card .brand{display:inline-block;margin-bottom:18px;text-decoration:none}
 body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
-.home-bar,.site-bar{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:24px;width:100%;margin:0;padding:16px 48px}
+.home-bar,.site-bar{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;width:100%;margin:0;padding:14px 36px}
 .home-bar .logo,.site-bar .logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:34px;z-index:1}
-.site-nav{grid-column:1;justify-self:start;display:flex;align-items:center;flex-wrap:wrap;gap:4px;max-width:46%;padding:6px;border-radius:999px;background:color-mix(in srgb,var(--surface) 72%,transparent);border:1px solid color-mix(in srgb,#fff 28%,transparent);box-shadow:0 10px 28px rgba(28,16,64,.16)}
-.site-nav a{color:#fff;text-decoration:none;font-weight:800;font-size:14px;padding:8px 12px;border-radius:999px}
+.site-nav{grid-column:1;justify-self:start;display:flex;align-items:center;flex-wrap:nowrap;gap:2px;min-width:0}
+.site-nav a{color:#fff;text-decoration:none;font-weight:800;font-size:15px;padding:8px 11px;border-radius:999px;white-space:nowrap}
 .site-nav a:hover{background:rgba(255,255,255,.14)}
 .site-nav a.is-here{background:linear-gradient(90deg,#6d28d9,#0f766e)}
 .site-bar .edge-auth .login,.site-bar .edge-auth .register{text-decoration:none;border-radius:999px;padding:10px 16px;font-weight:800}

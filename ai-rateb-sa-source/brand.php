@@ -17,7 +17,7 @@ if (!in_array($error, ['size', 'type', 'upload'], true)) {
 <title>RATEB AI — Brand kit</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav34">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav35">
 </head>
 <body class="studio page-brand">
 <?php rateb_site_header('/brand.php', !empty($_SESSION['user_id'])); ?>
@@ -51,6 +51,7 @@ if (!in_array($error, ['size', 'type', 'upload'], true)) {
     </form>
   </section>
 </main>
-<script src="/public/assets/js/app.js"></script>
+<?php rateb_auth_dialog('/brand.php'); ?>
+<script src="/public/assets/js/app.js?v=nav35"></script>
 </body>
 </html>

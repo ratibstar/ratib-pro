@@ -219,7 +219,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav34">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav35">
 </head>
 <body class="studio page-new">
 <?php rateb_site_header('/campaign-new.php', $userId > 0); ?>
@@ -436,6 +436,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
     <audio data-voice-player controls preload="none" hidden></audio>
   </div>
 </section>
-<script src="/public/assets/js/app.js?v=nav22"></script>
+<?php rateb_auth_dialog('/campaign-new.php'); ?>
+<script src="/public/assets/js/app.js?v=nav35"></script>
 </body>
 </html>

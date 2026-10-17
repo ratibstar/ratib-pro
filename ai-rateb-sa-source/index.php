@@ -17,7 +17,7 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav34">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav35">
 </head>
 <body class="studio home">
 <?php rateb_site_header('', false, true); ?>
