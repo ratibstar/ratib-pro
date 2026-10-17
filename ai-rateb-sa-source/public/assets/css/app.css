@@ -14,7 +14,7 @@
 @media(max-width:700px){.assign-form{display:block}}
 
 a{color:inherit}
-.topbar{height:70px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 36px;position:sticky;top:0;z-index:5;gap:28px}
+.topbar{height:70px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 72px;position:sticky;top:0;z-index:5;gap:32px}
 .topbar nav{display:flex;align-items:center;gap:16px;font-size:16px}
 .topbar nav a{text-decoration:none;color:var(--muted)}
 .container{width:min(1100px,90%);margin:45px auto}
@@ -150,7 +150,7 @@ body.page-register.studio::after{animation:wave-rise 12s linear infinite}
 @keyframes sway-wash{0%{transform:translate3d(-8%,-6%,0) scale(1.2)}50%{transform:translate3d(10%,8%,0) scale(1.42)}100%{transform:translate3d(-6%,10%,0) scale(1.16)}}
 body.studio .card,body.studio .panel,body.studio .kpi,body.studio .studio-stat,body.studio .flow-board li,body.studio .mock-screen,body.studio .auth-card,body.studio fieldset,body.studio .result,body.studio .media-card,body.studio .media-uploads form,body.studio .sample-card,body.studio .showcase-card,body.studio .campaign-tile,body.studio .tabs{background-color:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(8px)}
 body.studio .top,body.studio .topbar,body.studio .home-bar{background:color-mix(in srgb,var(--surface) 42%,transparent);backdrop-filter:blur(18px);border-bottom:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
-body.studio .topbar,body.studio .top{height:auto;min-height:78px;padding:16px 36px;gap:28px;flex-wrap:wrap}
+body.studio .topbar,body.studio .top{height:auto;min-height:84px;padding:18px 72px;gap:32px;flex-wrap:wrap}
 body.studio .topbar .brand,body.studio .top .brand{font-size:20px;letter-spacing:-.04em}
 body.studio .topbar nav,body.studio .top nav{gap:4px;padding:5px;border-radius:999px;background:color-mix(in srgb,var(--surface) 78%,transparent);border:1px solid color-mix(in srgb,var(--border) 90%,transparent);box-shadow:0 12px 32px rgba(76,29,149,.1);font-size:15.5px}
 body.studio .topbar nav a,body.studio .top nav a{font-weight:700;color:var(--muted);padding:9px 14px;border-radius:999px;transition:background .18s ease,color .18s ease}
@@ -248,7 +248,7 @@ body.studio .auth-shell{background:transparent}
 body.studio .auth-card{border-radius:28px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:0 24px 60px var(--shadow)}
 body.studio .auth-card .brand{display:inline-block;margin-bottom:18px;text-decoration:none}
 body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
-.home-bar{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:minmax(160px,1fr) auto minmax(160px,1fr);align-items:center;gap:24px;width:100%;margin:0;padding:16px 36px}
+.home-bar{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:minmax(160px,1fr) auto minmax(160px,1fr);align-items:center;gap:28px;width:100%;margin:0;padding:18px 72px}
 .edge-tools,.edge-auth,.bar-side{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .edge-tools{justify-self:start}
 .edge-auth{justify-self:end}
