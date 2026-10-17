@@ -16,7 +16,7 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav25">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav26">
 </head>
 <body class="studio home">
 <header class="home-bar">
@@ -232,10 +232,12 @@ if (isset($_SESSION['user_id'])) {
         <h2 data-i18n="welcome_back">Welcome back</h2>
         <p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p>
         <p class="alert" data-auth-error hidden></p>
-        <?php if ($googleClient !== ''): ?>
-        <div class="google-btn"></div>
+        <div class="social-auth">
+            <button type="button" class="social-btn" data-provider="google"><span class="social-mark" aria-hidden="true">G</span><span data-i18n="continue_google">Continue with Google</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="github"><span class="social-mark" aria-hidden="true">⌂</span><span data-i18n="continue_github">Continue with GitHub</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="apple"><span class="social-mark" aria-hidden="true"></span><span data-i18n="continue_apple">Continue with Apple</span><span></span></button>
+        </div>
         <p class="auth-or" data-i18n="auth_or">or</p>
-        <?php endif; ?>
         <label data-i18n="email">Email</label>
         <input type="email" name="email" required autocomplete="email">
         <label data-i18n="password">Password</label>
@@ -250,10 +252,12 @@ if (isset($_SESSION['user_id'])) {
         <h2 data-i18n="create_title">Create your account</h2>
         <p class="muted" data-i18n="register_lead">Start creating AI-powered marketing campaigns.</p>
         <p class="alert" data-auth-error hidden></p>
-        <?php if ($googleClient !== ''): ?>
-        <div class="google-btn"></div>
+        <div class="social-auth">
+            <button type="button" class="social-btn" data-provider="google"><span class="social-mark" aria-hidden="true">G</span><span data-i18n="continue_google">Continue with Google</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="github"><span class="social-mark" aria-hidden="true">⌂</span><span data-i18n="continue_github">Continue with GitHub</span><span></span></button>
+            <button type="button" class="social-btn" data-provider="apple"><span class="social-mark" aria-hidden="true"></span><span data-i18n="continue_apple">Continue with Apple</span><span></span></button>
+        </div>
         <p class="auth-or" data-i18n="auth_or">or</p>
-        <?php endif; ?>
         <label data-i18n="name">Name</label>
         <input name="name" required autocomplete="name">
         <label data-i18n="email">Email</label>
@@ -265,6 +269,6 @@ if (isset($_SESSION['user_id'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav25"></script>
+<script src="/public/assets/js/app.js?v=nav26"></script>
 </body>
 </html>

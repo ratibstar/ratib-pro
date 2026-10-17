@@ -116,6 +116,10 @@
       password: 'Password',
       login_button: 'Login',
       auth_or: 'or',
+      continue_google: 'Continue with Google',
+      continue_github: 'Continue with GitHub',
+      continue_apple: 'Continue with Apple',
+      provider_soon: 'This sign-in option is not connected yet.',
       google_failed: 'Google sign-in could not be completed.',
       no_account: "Don't have an account?",
       create_one: 'Create one',
@@ -484,6 +488,10 @@
       password: 'كلمة المرور',
       login_button: 'تسجيل الدخول',
       auth_or: 'أو',
+      continue_google: 'المتابعة عبر قوقل',
+      continue_github: 'المتابعة عبر GitHub',
+      continue_apple: 'المتابعة عبر Apple',
+      provider_soon: 'خيار الدخول هذا غير مربوط بعد.',
       google_failed: 'تعذر إكمال الدخول عبر قوقل.',
       no_account: 'ليس لديك حساب؟',
       create_one: 'أنشئ حساباً',
@@ -1533,17 +1541,6 @@
           });
       }
     });
-    authModal.querySelectorAll('.google-btn').forEach(function (slot) {
-      slot.innerHTML = '';
-      google.accounts.id.renderButton(slot, {
-        type: 'standard',
-        theme: 'outline',
-        size: 'large',
-        shape: 'pill',
-        text: 'continue_with',
-        width: 360
-      });
-    });
   }
   if (authModal && authModal.getAttribute('data-google-client')) {
     window.addEventListener('load', paintGoogle);
@@ -1572,6 +1569,26 @@
     var closer = authModal.querySelector('[data-auth-close]');
     if (closer) closer.addEventListener('click', function () { authModal.close(); });
     authModal.addEventListener('click', function (event) {
+      var provider = event.target.closest('[data-provider]');
+      if (provider) {
+        event.preventDefault();
+        var form = provider.closest('form');
+        var error = form ? form.querySelector('[data-auth-error]') : null;
+        var kind = provider.getAttribute('data-provider');
+        var clientId = authModal.getAttribute('data-google-client') || '';
+        if (kind === 'google' && clientId && window.google && google.accounts) {
+          paintGoogle();
+          google.accounts.id.prompt();
+          return;
+        }
+        if (error) {
+          error.hidden = false;
+          error.textContent = kind === 'google'
+            ? (dict[language].google_failed || '')
+            : (dict[language].provider_soon || '');
+        }
+        return;
+      }
       if (event.target === authModal) authModal.close();
     });
     authModal.querySelectorAll('form').forEach(function (form) {
