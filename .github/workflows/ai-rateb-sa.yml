@@ -123,9 +123,13 @@ jobs:
             "app/video/engine.php"
             "app/video/provider.php"
             "public/assets/js/app.js"
+            "public/assets/css/app.css"
             "app/media/upload.php"
             "app/media/library.php"
             "campaign.php"
+            "dashboard.php"
+            "campaign-new.php"
+            "brand.php"
           )
           for rel in "${files[@]}"; do
             local_file="ai-rateb-sa-source/${rel}"
