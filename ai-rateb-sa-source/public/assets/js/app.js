@@ -115,6 +115,8 @@
       email: 'Email',
       password: 'Password',
       login_button: 'Login',
+      auth_or: 'or',
+      google_failed: 'Google sign-in could not be completed.',
       no_account: "Don't have an account?",
       create_one: 'Create one',
       forgot_password: 'Forgot password?',
@@ -481,6 +483,8 @@
       email: 'البريد الإلكتروني',
       password: 'كلمة المرور',
       login_button: 'تسجيل الدخول',
+      auth_or: 'أو',
+      google_failed: 'تعذر إكمال الدخول عبر قوقل.',
       no_account: 'ليس لديك حساب؟',
       create_one: 'أنشئ حساباً',
       forgot_password: 'نسيت كلمة المرور؟',
@@ -1496,6 +1500,54 @@
   }
 
   var authModal = document.getElementById('auth-modal');
+  function paintGoogle() {
+    if (!authModal || !window.google || !google.accounts || !google.accounts.id) return;
+    var clientId = authModal.getAttribute('data-google-client') || '';
+    if (!clientId) return;
+    var csrf = authModal.querySelector('input[name="csrf_token"]');
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: function (response) {
+        var data = new FormData();
+        data.append('csrf_token', csrf ? csrf.value : '');
+        data.append('credential', response.credential || '');
+        var error = authModal.querySelector('form:not([hidden]) [data-auth-error]');
+        fetch('/app/auth/google.php', { method: 'POST', body: data, credentials: 'same-origin' })
+          .then(function (res) { return res.json(); })
+          .then(function (payload) {
+            if (payload && payload.ok && payload.redirect) {
+              window.location.href = payload.redirect;
+              return;
+            }
+            var key = (payload && payload.error) || 'google_failed';
+            if (error) {
+              error.hidden = false;
+              error.textContent = (dict[language] && dict[language][key]) || key;
+            }
+          })
+          .catch(function () {
+            if (error) {
+              error.hidden = false;
+              error.textContent = dict[language].google_failed || 'Google sign-in could not be completed.';
+            }
+          });
+      }
+    });
+    authModal.querySelectorAll('.google-btn').forEach(function (slot) {
+      slot.innerHTML = '';
+      google.accounts.id.renderButton(slot, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'continue_with',
+        width: 360
+      });
+    });
+  }
+  if (authModal && authModal.getAttribute('data-google-client')) {
+    window.addEventListener('load', paintGoogle);
+  }
   function showAuth(which) {
     if (!authModal) return;
     var loginForm = document.getElementById('auth-login');

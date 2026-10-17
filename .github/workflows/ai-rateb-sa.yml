@@ -73,6 +73,7 @@ jobs:
           DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
           DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+          RATEB_GOOGLE_CLIENT_ID: ${{ secrets.RATEB_GOOGLE_CLIENT_ID }}
         run: |
           set -euo pipefail
           if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
@@ -133,6 +134,8 @@ jobs:
             "index.php"
             "app/auth/login.php"
             "app/auth/register.php"
+            "app/auth/google.php"
+            "config/google.php"
           )
           for rel in "${files[@]}"; do
             local_file="ai-rateb-sa-source/${rel}"
@@ -149,6 +152,22 @@ jobs:
               exit 1
             fi
           done
+          if [ -n "${RATEB_GOOGLE_CLIENT_ID:-}" ]; then
+            python3 - << 'PY'
+import os
+from pathlib import Path
+cid = os.environ.get("RATEB_GOOGLE_CLIENT_ID", "").replace("\\", "\\\\").replace("'", "\\'")
+Path(os.environ["RUNNER_TEMP"], "google-client.php").write_text(
+    "<?php\ndeclare(strict_types=1);\nreturn ['client_id' => '" + cid + "'];\n",
+    encoding="utf-8",
+)
+PY
+            scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+              "${RUNNER_TEMP}/google-client.php" "${REMOTE}:${TARGET}/config/google.php"
+            echo "GOOGLE_CLIENT=written"
+          else
+            echo "GOOGLE_CLIENT=not_set"
+          fi
           echo "DEPLOYED_COMMIT=${GITHUB_SHA}"
           echo "DEPLOYED_TARGET=${TARGET}"
           python3 - << 'PY'

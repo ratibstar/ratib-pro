@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/config/session.php';
 require __DIR__ . '/config/guard.php';
+$googleClient = (string) ((require __DIR__ . '/config/google.php')['client_id'] ?? '');
 
 if (isset($_SESSION['user_id'])) {
     header('Location: /dashboard.php');
@@ -15,7 +16,7 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav24">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav25">
 </head>
 <body class="studio home">
 <header class="home-bar">
@@ -223,7 +224,7 @@ if (isset($_SESSION['user_id'])) {
     </form>
     <div id="demo-stage"></div>
 </dialog>
-<dialog class="auth-modal" id="auth-modal">
+<dialog class="auth-modal" id="auth-modal" data-google-client="<?= e($googleClient) ?>">
     <button type="button" class="auth-x" data-auth-close aria-label="Close">×</button>
     <form class="auth-card" id="auth-login" action="/login.php" method="post">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
@@ -231,6 +232,10 @@ if (isset($_SESSION['user_id'])) {
         <h2 data-i18n="welcome_back">Welcome back</h2>
         <p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p>
         <p class="alert" data-auth-error hidden></p>
+        <?php if ($googleClient !== ''): ?>
+        <div class="google-btn"></div>
+        <p class="auth-or" data-i18n="auth_or">or</p>
+        <?php endif; ?>
         <label data-i18n="email">Email</label>
         <input type="email" name="email" required autocomplete="email">
         <label data-i18n="password">Password</label>
@@ -245,6 +250,10 @@ if (isset($_SESSION['user_id'])) {
         <h2 data-i18n="create_title">Create your account</h2>
         <p class="muted" data-i18n="register_lead">Start creating AI-powered marketing campaigns.</p>
         <p class="alert" data-auth-error hidden></p>
+        <?php if ($googleClient !== ''): ?>
+        <div class="google-btn"></div>
+        <p class="auth-or" data-i18n="auth_or">or</p>
+        <?php endif; ?>
         <label data-i18n="name">Name</label>
         <input name="name" required autocomplete="name">
         <label data-i18n="email">Email</label>
@@ -255,6 +264,7 @@ if (isset($_SESSION['user_id'])) {
         <p class="footer-link"><span data-i18n="have_account">Already have an account?</span> <button type="button" data-auth="login" data-i18n="login">Login</button></p>
     </form>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav24"></script>
+<?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
+<script src="/public/assets/js/app.js?v=nav25"></script>
 </body>
 </html>

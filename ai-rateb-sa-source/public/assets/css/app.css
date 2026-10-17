@@ -272,6 +272,9 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .auth-modal h2{margin:0 0 8px}
 .auth-x{position:absolute;top:12px;inset-inline-end:12px;width:36px;height:36px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:22px;line-height:1}
 .auth-modal .footer-link button{display:inline;width:auto;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-weight:800;cursor:pointer}
+.google-btn{display:flex;justify-content:center;min-height:44px}
+.auth-or{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--muted);font-size:13px;font-weight:700}
+.auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--border)}
 .home-bar .register{background:var(--accent);color:#fff}
 [dir=rtl] body.home .actions{flex-direction:row}
 body.home main{width:min(1180px,92%);margin:0 auto 48px}
