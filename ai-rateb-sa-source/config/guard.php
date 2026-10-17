@@ -39,7 +39,8 @@ function rateb_safe_next(string $next): string
 function require_login(): void
 {
     if (empty($_SESSION['user_id'])) {
-        header('Location: /login.php');
+        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/dashboard.php'), PHP_URL_PATH);
+        header('Location: /?auth=login&next=' . rawurlencode(rateb_safe_next($path)));
         exit;
     }
 }

@@ -1566,6 +1566,14 @@
     if (typeof authModal.showModal === 'function' && !authModal.open) authModal.showModal();
     apply();
   }
+  var authParams = new URLSearchParams(location.search);
+  if (authModal && authParams.get('auth') === 'login') {
+    var requested = authParams.get('next') || '/dashboard.php';
+    document.querySelectorAll('#auth-modal input[name="next"]').forEach(function (node) {
+      node.value = requested;
+    });
+    showAuth('login');
+  }
   document.addEventListener('click', function (event) {
     var opener = event.target.closest('[data-auth]');
     if (opener) {

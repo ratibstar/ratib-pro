@@ -254,8 +254,8 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .home-bar{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:24px;width:100%;margin:0;padding:18px 72px}
 .home-bar .logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:34px;z-index:1}
 .home-nav{grid-column:1;justify-self:start;display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0;max-width:42%}
-.home-nav a{color:#fff;text-decoration:none;font-weight:800;font-size:15px;padding:8px 12px;border-radius:999px}
-.home-nav a:hover{background:rgba(255,255,255,.14)}
+.home-nav a,.home-nav button{color:#fff;text-decoration:none;font:inherit;font-weight:800;font-size:15px;padding:8px 12px;border:0;border-radius:999px;background:transparent;cursor:pointer}
+.home-nav a:hover,.home-nav button:hover{background:rgba(255,255,255,.14)}
 .home-bar .edge-auth{grid-column:3;justify-self:end}
 .edge-tools,.edge-auth,.bar-side{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .edge-tools{justify-self:start}
