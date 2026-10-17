@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/config/session.php';
+require __DIR__ . '/config/guard.php';
 
 if (isset($_SESSION['user_id'])) {
     header('Location: /dashboard.php');
@@ -14,7 +15,7 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav23">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav24">
 </head>
 <body class="studio home">
 <header class="home-bar">
@@ -22,8 +23,8 @@ if (isset($_SESSION['user_id'])) {
     <div class="edge-auth">
         <button type="button" id="lang" class="icon">AR</button>
         <button type="button" id="theme" class="icon">☾</button>
-        <a class="login" href="/login.php" data-i18n="login">Login</a>
-        <a class="register" href="/register.php" data-i18n="create_account">Create Account</a>
+        <button type="button" class="login" data-auth="login" data-i18n="login">Login</button>
+        <button type="button" class="register" data-auth="register" data-i18n="create_account">Create Account</button>
     </div>
 </header>
 <main>
@@ -33,7 +34,7 @@ if (isset($_SESSION['user_id'])) {
             <h1 data-i18n="studio_headline">Turn your idea into a complete marketing campaign with AI</h1>
             <p class="studio-lead" data-i18n="studio_lead">Strategy, ad copy, social posts, images, Saudi Arabic voice, and a content plan — in one creative studio.</p>
             <div class="landing-actions">
-                <a class="button studio-cta" href="/register.php" data-i18n="studio_cta">Start a new campaign</a>
+                <button type="button" class="button studio-cta" data-auth="register" data-i18n="studio_cta">Start a new campaign</button>
                 <a class="button quiet" href="#workflow" data-i18n="home_how">See how it works</a>
             </div>
         </div>
@@ -212,7 +213,7 @@ if (isset($_SESSION['user_id'])) {
 
     <section class="landing-close">
         <h2 data-i18n="studio_headline">Turn your idea into a complete marketing campaign with AI</h2>
-        <a class="button studio-cta" href="/register.php" data-i18n="studio_cta">Start a new campaign</a>
+        <button type="button" class="button studio-cta" data-auth="register" data-i18n="studio_cta">Start a new campaign</button>
     </section>
 </main>
 <dialog class="demo-viewer" id="demo-viewer">
@@ -222,6 +223,38 @@ if (isset($_SESSION['user_id'])) {
     </form>
     <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav22"></script>
+<dialog class="auth-modal" id="auth-modal">
+    <button type="button" class="auth-x" data-auth-close aria-label="Close">×</button>
+    <form class="auth-card" id="auth-login" action="/login.php" method="post">
+        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+        <input type="hidden" name="auth_modal" value="1">
+        <h2 data-i18n="welcome_back">Welcome back</h2>
+        <p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p>
+        <p class="alert" data-auth-error hidden></p>
+        <label data-i18n="email">Email</label>
+        <input type="email" name="email" required autocomplete="email">
+        <label data-i18n="password">Password</label>
+        <input type="password" name="password" required autocomplete="current-password">
+        <button type="submit" data-i18n="login_button">Login</button>
+        <p class="footer-link"><a href="/forgot-password.php" data-i18n="forgot_password">Forgot password?</a></p>
+        <p class="footer-link"><span data-i18n="no_account">Don't have an account?</span> <button type="button" data-auth="register" data-i18n="create_one">Create one</button></p>
+    </form>
+    <form class="auth-card" id="auth-register" action="/register.php" method="post" hidden>
+        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+        <input type="hidden" name="auth_modal" value="1">
+        <h2 data-i18n="create_title">Create your account</h2>
+        <p class="muted" data-i18n="register_lead">Start creating AI-powered marketing campaigns.</p>
+        <p class="alert" data-auth-error hidden></p>
+        <label data-i18n="name">Name</label>
+        <input name="name" required autocomplete="name">
+        <label data-i18n="email">Email</label>
+        <input type="email" name="email" required autocomplete="email">
+        <label data-i18n="password">Password</label>
+        <input type="password" name="password" minlength="8" required autocomplete="new-password">
+        <button type="submit" data-i18n="create_button">Create Account</button>
+        <p class="footer-link"><span data-i18n="have_account">Already have an account?</span> <button type="button" data-auth="login" data-i18n="login">Login</button></p>
+    </form>
+</dialog>
+<script src="/public/assets/js/app.js?v=nav24"></script>
 </body>
 </html>

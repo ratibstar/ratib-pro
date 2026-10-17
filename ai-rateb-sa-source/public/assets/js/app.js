@@ -1494,4 +1494,68 @@
       xhr.send(data);
     });
   }
+
+  var authModal = document.getElementById('auth-modal');
+  function showAuth(which) {
+    if (!authModal) return;
+    var loginForm = document.getElementById('auth-login');
+    var registerForm = document.getElementById('auth-register');
+    if (loginForm) loginForm.hidden = which !== 'login';
+    if (registerForm) registerForm.hidden = which !== 'register';
+    authModal.querySelectorAll('[data-auth-error]').forEach(function (node) {
+      node.hidden = true;
+      node.textContent = '';
+    });
+    if (typeof authModal.showModal === 'function' && !authModal.open) authModal.showModal();
+    apply();
+  }
+  document.addEventListener('click', function (event) {
+    var opener = event.target.closest('[data-auth]');
+    if (opener) {
+      event.preventDefault();
+      showAuth(opener.getAttribute('data-auth'));
+    }
+  });
+  if (authModal) {
+    var closer = authModal.querySelector('[data-auth-close]');
+    if (closer) closer.addEventListener('click', function () { authModal.close(); });
+    authModal.addEventListener('click', function (event) {
+      if (event.target === authModal) authModal.close();
+    });
+    authModal.querySelectorAll('form').forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var error = form.querySelector('[data-auth-error]');
+        var button = form.querySelector('button[type="submit"]');
+        if (button) button.disabled = true;
+        fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' }
+        }).then(function (response) {
+          return response.json().then(function (payload) {
+            return { payload: payload };
+          });
+        }).then(function (result) {
+          if (result.payload && result.payload.ok && result.payload.redirect) {
+            window.location.href = result.payload.redirect;
+            return;
+          }
+          var key = (result.payload && result.payload.error) || 'invalid_login';
+          if (error) {
+            error.hidden = false;
+            error.textContent = (dict[language] && dict[language][key]) || key;
+          }
+        }).catch(function () {
+          if (error) {
+            error.hidden = false;
+            error.textContent = dict[language].invalid_login || 'Invalid email or password.';
+          }
+        }).finally(function () {
+          if (button) button.disabled = false;
+        });
+      });
+    });
+  }
 })();

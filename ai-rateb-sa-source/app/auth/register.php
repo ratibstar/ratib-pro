@@ -11,8 +11,20 @@ $message = '';
 $oldName = '';
 $oldEmail = '';
 
+$authModal = ($_POST['auth_modal'] ?? '') === '1';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verify_csrf();
+    $token = (string) ($_POST['csrf_token'] ?? $_POST['csrf'] ?? '');
+    $expected = (string) ($_SESSION['csrf_token'] ?? $_SESSION['csrf'] ?? '');
+    if ($expected === '' || !hash_equals($expected, $token)) {
+        if ($authModal) {
+            http_response_code(419);
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'register_invalid']);
+            exit;
+        }
+        verify_csrf();
+    }
 
     $oldName = trim($_POST['name'] ?? '');
     $oldEmail = strtolower(trim($_POST['email'] ?? ''));
@@ -37,9 +49,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             rateb_user_plan($pdo, $newUserId);
             $_SESSION['user_id'] = $newUserId;
             session_regenerate_id(true);
+            if ($authModal) {
+                header('Content-Type: application/json');
+                echo json_encode(['ok' => true, 'redirect' => '/dashboard.php']);
+                exit;
+            }
             header('Location: /dashboard.php');
             exit;
         }
+    }
+    if ($authModal && $message !== '') {
+        http_response_code(422);
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => false, 'error' => $message]);
+        exit;
     }
 }
 ?>

@@ -9,8 +9,20 @@ if (!empty($_SESSION['user_id'])) {
 $message = '';
 $email = '';
 
+$authModal = ($_POST['auth_modal'] ?? '') === '1';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verify_csrf();
+    $token = (string) ($_POST['csrf_token'] ?? $_POST['csrf'] ?? '');
+    $expected = (string) ($_SESSION['csrf_token'] ?? $_SESSION['csrf'] ?? '');
+    if ($expected === '' || !hash_equals($expected, $token)) {
+        if ($authModal) {
+            http_response_code(419);
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'invalid_login']);
+            exit;
+        }
+        verify_csrf();
+    }
 
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
@@ -21,9 +33,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$user || !password_verify($password, $user['password_hash'])) {
         $message = 'invalid_login';
+        if ($authModal) {
+            http_response_code(422);
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => $message]);
+            exit;
+        }
     } else {
         session_regenerate_id(true);
         $_SESSION['user_id'] = (int)$user['id'];
+        if ($authModal) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'redirect' => '/dashboard.php']);
+            exit;
+        }
         header('Location: /dashboard.php');
         exit;
     }

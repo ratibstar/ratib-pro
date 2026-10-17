@@ -131,6 +131,8 @@ jobs:
             "campaign-new.php"
             "brand.php"
             "index.php"
+            "app/auth/login.php"
+            "app/auth/register.php"
           )
           for rel in "${files[@]}"; do
             local_file="ai-rateb-sa-source/${rel}"

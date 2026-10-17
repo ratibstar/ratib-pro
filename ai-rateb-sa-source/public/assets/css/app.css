@@ -264,7 +264,14 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .home-bar .logo span{background:linear-gradient(90deg,#6d28d9,#0f766e);-webkit-background-clip:text;background-clip:text;color:transparent}
 .home-bar .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .home-bar .login,.home-bar .register{text-decoration:none;border-radius:999px;padding:10px 16px;font-weight:800}
-.home-bar .login{color:var(--text)}
+.home-bar .login{color:var(--text);background:transparent;border:0;font:inherit;font-weight:800;cursor:pointer}
+.home-bar .register{border:0;font:inherit;font-weight:800;cursor:pointer}
+.auth-modal{position:relative;width:min(440px,calc(100% - 32px));border:0;border-radius:28px;padding:32px 24px 22px;background:var(--surface);color:var(--text);box-shadow:0 24px 60px rgba(28,20,51,.28)}
+.auth-modal::backdrop{background:rgba(20,12,40,.55);backdrop-filter:blur(6px)}
+.auth-modal .auth-card{margin:0;padding:0;border:0;box-shadow:none;background:transparent}
+.auth-modal h2{margin:0 0 8px}
+.auth-x{position:absolute;top:12px;inset-inline-end:12px;width:36px;height:36px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:22px;line-height:1}
+.auth-modal .footer-link button{display:inline;width:auto;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-weight:800;cursor:pointer}
 .home-bar .register{background:var(--accent);color:#fff}
 [dir=rtl] body.home .actions{flex-direction:row}
 body.home main{width:min(1180px,92%);margin:0 auto 48px}
