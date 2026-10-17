@@ -219,19 +219,21 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav18">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav19">
 </head>
 <body class="studio page-campaign">
 <header class="top">
-  <a class="brand" href="/dashboard.php">RATEB AI</a>
   <nav>
     <a href="/dashboard.php" data-i18n="dashboard"><?= $arabic ? 'لوحة التحكم' : 'Dashboard' ?></a>
     <a href="/campaign-new.php" data-i18n="new_campaign"><?= $arabic ? 'حملة جديدة' : 'New campaign' ?></a>
     <a href="/brand.php" data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></a>
-    <a href="/logout.php" data-i18n="logout"><?= $arabic ? 'خروج' : 'Logout' ?></a>
+  </nav>
+  <div class="bar-side">
+    <a class="bar-logout" href="/logout.php" data-i18n="logout"><?= $arabic ? 'خروج' : 'Logout' ?></a>
     <button type="button" id="lang" class="icon"><?= $arabic ? 'English' : 'عربي' ?></button>
     <button type="button" id="theme" class="icon">☾</button>
-  </nav>
+    <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
+  </div>
 </header>
 <main class="wrap workspace">
   <section class="workspace-top">

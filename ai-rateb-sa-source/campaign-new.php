@@ -220,17 +220,19 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav18">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav19">
 </head>
 <body class="studio page-new">
 <header class="top">
-  <a class="brand" href="/dashboard.php">RATEB AI</a>
   <nav>
     <a href="/dashboard.php" data-i18n="dashboard"><?= $arabic ? 'لوحة التحكم' : 'Dashboard' ?></a>
-    <a href="/logout.php" data-i18n="logout"><?= $arabic ? 'تسجيل الخروج' : 'Logout' ?></a>
+  </nav>
+  <div class="bar-side">
+    <a class="bar-logout" href="/logout.php" data-i18n="logout"><?= $arabic ? 'تسجيل الخروج' : 'Logout' ?></a>
     <button type="button" id="lang" class="icon"><?= $arabic ? 'English' : 'عربي' ?></button>
     <button type="button" id="theme" class="icon">☾</button>
-  </nav>
+    <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
+  </div>
 </header>
 <main class="wrap idea-shell">
 <?php if ($view === 'reading'): ?>

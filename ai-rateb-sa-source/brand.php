@@ -17,18 +17,20 @@ if (!in_array($error, ['size', 'type', 'upload'], true)) {
 <title>RATEB AI — Brand kit</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav18">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav19">
 </head>
 <body class="studio page-brand">
 <header class="top">
-  <a class="brand" href="/dashboard.php">RATEB AI</a>
   <nav>
     <a href="/dashboard.php" data-i18n="dashboard">Dashboard</a>
     <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
-    <a href="/logout.php" data-i18n="logout">Logout</a>
+  </nav>
+  <div class="bar-side">
+    <a class="bar-logout" href="/logout.php" data-i18n="logout">Logout</a>
     <button type="button" id="lang" class="icon">عربي</button>
     <button type="button" id="theme" class="icon">☾</button>
-  </nav>
+    <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
+  </div>
 </header>
 <main class="wrap">
   <section class="panel">

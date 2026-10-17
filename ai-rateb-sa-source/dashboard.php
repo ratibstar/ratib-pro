@@ -43,19 +43,21 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav18">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav19">
 </head>
 <body class="studio page-dash">
 <header class="topbar">
-  <div class="brand">RATEB <span>AI</span></div>
   <nav>
     <a class="is-here" href="/dashboard.php" data-i18n="dashboard">Dashboard</a>
     <a href="/campaign-new.php" data-i18n="new_campaign">New Campaign</a>
     <a href="/brand.php" data-i18n="brand_kit">Brand kit</a>
-    <a href="/logout.php" data-i18n="logout">Logout</a>
+  </nav>
+  <div class="bar-side">
+    <a class="bar-logout" href="/logout.php" data-i18n="logout">Logout</a>
     <button type="button" id="lang" class="icon">عربي</button>
     <button type="button" id="theme" class="icon">☾</button>
-  </nav>
+    <div class="brand">RATEB <span>AI</span></div>
+  </div>
 </header>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>

@@ -130,6 +130,7 @@ jobs:
             "dashboard.php"
             "campaign-new.php"
             "brand.php"
+            "index.php"
           )
           for rel in "${files[@]}"; do
             local_file="ai-rateb-sa-source/${rel}"
