@@ -27,5 +27,5 @@ echo json_encode([
     'media_id' => (int) ($job['output_media_id'] ?? 0),
     'seconds' => $seconds,
     'format' => '9:16',
-    'error' => (string) $job['error_code'] === '' ? '' : rateb_video_message((string) $job['error_code'], $arabic),
+    'error' => in_array((string) $job['error_code'], ['', 'package'], true) ? '' : rateb_video_message((string) $job['error_code'], $arabic),
 ], JSON_UNESCAPED_UNICODE);

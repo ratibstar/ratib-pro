@@ -153,7 +153,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
                 <ul>
                     <li data-i18n="plan_free_text">Text modules</li>
                     <li data-i18n="plan_free_image">Square images 1:1</li>
-                    <li><span class="badge" data-i18n="plan_upgrade">Saudi voice included; storyboard requires an upgrade</span></li>
+                    <li><span class="badge" data-i18n="plan_upgrade">Saudi voice and two short videos a month included</span></li>
                 </ul>
                 <button type="button" class="button" data-auth="register" data-i18n="plan_cta">Subscribe now</button>
             </article>
@@ -302,6 +302,6 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=price9"></script>
+<script src="/public/assets/js/app.js?v=price11"></script>
 </body>
 </html>

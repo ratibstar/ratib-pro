@@ -128,6 +128,7 @@ jobs:
             "app/ai/image.php"
             "app/ai/voice.php"
             "app/ai/video.php"
+            "app/ai/video-status.php"
             "app/video/engine.php"
             "app/video/provider.php"
             "public/assets/js/app.js"
@@ -235,7 +236,7 @@ jobs:
           Path(os.environ["RUNNER_TEMP"], "opcache-reset.php").write_text(
               "<?php\n"
               "if (function_exists('opcache_invalidate')) {\n"
-              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/voice.php','app/ai/video.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php'] as $rel) {\n"
+              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/voice.php','app/ai/video.php','app/ai/video-status.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php'] as $rel) {\n"
               "        opcache_invalidate(__DIR__ . '/' . $rel, true);\n"
               "    }\n"
               "}\n"

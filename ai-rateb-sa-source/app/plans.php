@@ -155,10 +155,6 @@ function rateb_check_and_deduct_credits(int $userId, string $featureType, ?int $
     if ($userId < 1 || $cost < 1) {
         return false;
     }
-    $package = rateb_account_credits(db(), $userId)['package_type'];
-    if ($package === 'free' && $featureType === 'video_storyboard') {
-        return false;
-    }
     $pdo = db();
     $pdo->beginTransaction();
     try {
@@ -205,8 +201,7 @@ function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId
 
 function rateb_feature_locked(int $userId, string $featureType): bool
 {
-    return $featureType === 'video_storyboard'
-        && rateb_account_credits(db(), $userId)['package_type'] === 'free';
+    return false;
 }
 
 function rateb_credit_stop(int $userId = 0, string $featureType = ''): void
