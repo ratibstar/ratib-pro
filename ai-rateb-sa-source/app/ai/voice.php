@@ -27,7 +27,21 @@ if ($script === '') {
     echo json_encode(['error' => rateb_ui_error('voice_locked'), 'code' => 'voice_locked', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-$spoken = trim(mb_substr($script, 0, 600));
+$tone = (string) ($_POST['tone'] ?? 'corporate');
+if (!in_array($tone, ['enthusiastic', 'corporate', 'soft'], true)) {
+    $tone = 'corporate';
+}
+$toneLead = match ($tone) {
+    'enthusiastic' => 'قلها بحماس تفاعلي. ',
+    'soft' => 'قلها بنبرة هادئة ولطيفة. ',
+    default => '',
+};
+$tempo = match ($tone) {
+    'enthusiastic' => 1.12,
+    'soft' => 0.96,
+    default => 1.0,
+};
+$spoken = trim(mb_substr($toneLead . $script, 0, 600));
 if (!rateb_voice_text_is_arabic($spoken)) {
     http_response_code(422);
     echo json_encode(['error' => rateb_ui_error('voice_english'), 'code' => 'voice_english', 'state' => 'unavailable'], JSON_UNESCAPED_UNICODE);
@@ -75,15 +89,15 @@ $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 if ($audio !== false && $http >= 200 && $http < 300 && substr((string) $audio, 0, 4) === 'RIFF') {
     try {
-        $faster = rateb_speed_wav((string) $audio, 1.08);
+        $faster = rateb_speed_wav((string) $audio, $tempo);
         if ($faster === null) {
-            $faster = rateb_wav_faster((string) $audio, 1.08);
+            $faster = rateb_wav_faster((string) $audio, $tempo);
         }
         if ($faster !== null) {
             $audio = $faster;
         }
     } catch (Throwable $error) {
-        $audio = rateb_wav_faster((string) $audio, 1.08) ?? $audio;
+        $audio = rateb_wav_faster((string) $audio, $tempo) ?? $audio;
     }
 }
 if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {

@@ -48,7 +48,17 @@ if (!is_array($decision)) {
 }
 ai_image_dispatch($campaign, $decision, $postedJobId, $now);
 
+$ratio = (string) ($_POST['ratio'] ?? '1:1');
+$ratioSize = match ($ratio) {
+    '4:5' => [512, 640],
+    '9:16' => [576, 1024],
+    default => [512, 512],
+};
+if (!in_array($ratio, ['1:1', '4:5', '9:16'], true)) {
+    $ratio = '1:1';
+}
 $prompt = ai_campaign_image_prompt($campaign);
+$prompt = 'ratio ' . $ratio . '. ' . $prompt;
 if (function_exists('mb_substr')) {
     $prompt = mb_substr($prompt, 0, 400);
 } else {
@@ -128,7 +138,7 @@ if ($models['http'] !== 200 || $workers < 1) {
 
 $payload = json_encode([
     'prompt' => $prompt,
-    'params' => ['width' => 512, 'height' => 512, 'steps' => 15, 'n' => 1],
+    'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
     'nsfw' => false,
     'censor_nsfw' => true,
     'r2' => true,
@@ -311,7 +321,8 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     }
 
     try {
-        media_store_bytes($campaign, 'image', 'ai', 'ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
+        $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
+        media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
     } catch (Throwable $error) {
         rateb_usage_finish(db(), $usageId, 'failed');
         http_response_code(500);

@@ -298,6 +298,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
           <form id="imageForm" class="stage-action" data-status="stage-status" data-job-ttl="<?= (int) rateb_image_job_ttl() ?>">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
+            <select name="ratio">
+              <option value="1:1"><?= $arabic ? '1:1 مربع للمنشورات' : '1:1 square post' ?></option>
+              <option value="4:5"><?= $arabic ? '4:5 عمودي لإنستغرام' : '4:5 Instagram portrait' ?></option>
+              <option value="9:16"><?= $arabic ? '9:16 ستوري وسناب' : '9:16 story' ?></option>
+            </select>
             <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
         <?php elseif ($key === 'voice' && $campaignImages !== []): ?>
@@ -554,6 +559,9 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <button type="button" class="image-preview" data-kind="image" data-src="/app/media/file.php?id=<?= (int) $item['id'] ?>">
               <img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt="">
             </button>
+            <?php if (preg_match('/ratio-(1x1|4x5|9x16)/', (string) ($item['original_name'] ?? ''), $ratioMatch)): ?>
+              <p class="badge"><?= e(str_replace('x', ':', $ratioMatch[1])) ?></p>
+            <?php endif; ?>
             <form method="post" action="/app/media/delete.php">
               <input type="hidden" name="csrf" value="<?= $csrf ?>">
               <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
@@ -581,6 +589,14 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         </div>
         <p class="muted" data-voice-note><?= $arabic ? 'كل الأصوات العامة من الكتالوج.' : 'Every public voice from the catalog.' ?></p>
         <div class="voice-picks" data-voice-picks></div>
+        <label class="goal-pick">
+          <span><?= $arabic ? 'نبرة الصوت' : 'Voice tone' ?></span>
+          <select name="tone">
+            <option value="enthusiastic"><?= $arabic ? 'حماسي للإعلانات' : 'Enthusiastic' ?></option>
+            <option value="corporate" selected><?= $arabic ? 'رسمي للشركات' : 'Corporate' ?></option>
+            <option value="soft"><?= $arabic ? 'هادئ ولطيف' : 'Soft' ?></option>
+          </select>
+        </label>
         <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة العامة. ٢) RATEB يقرأ الكلام المعتمد بهذا الصوت.' : '1) Choose a voice and play its public sample. 2) RATEB reads the approved words in that voice.' ?></p>
         <?php if ($voiceEnglishBlocked): ?>
           <p class="notice is-error"><?= e(rateb_ui_error('voice_english')) ?></p>
@@ -619,6 +635,35 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
     <?php if ($approvedVideo): ?>
       <p class="badge"><?= $arabic ? 'الفيديو معتمد' : 'Video approved' ?></p>
+    <?php endif; ?>
+    <?php
+      $board = [];
+      if ($videoJob && trim((string) ($videoJob['storyboard'] ?? '')) !== '') {
+          $decodedBoard = json_decode((string) $videoJob['storyboard'], true);
+          if (is_array($decodedBoard)) {
+              $board = $decodedBoard;
+          }
+      }
+      if ($board === [] && $campaignImages !== []) {
+          $boardLines = [];
+          foreach (['social_posts', 'ad_copy'] as $copyType) {
+              if (isset($copyRows[$copyType])) {
+                  $boardLines[] = (string) $copyRows[$copyType]['content'];
+              }
+          }
+          $board = rateb_video_storyboard($campaign, is_array($strategyDoc) ? $strategyDoc : [], $boardLines, $campaignImages, 10, [], $arabic ? 'ar' : 'en');
+      }
+    ?>
+    <?php if ($board !== []): ?>
+      <div class="social-tabs">
+        <?php foreach ($board as $scene): ?>
+          <article class="social-card">
+            <span class="badge"><?= $arabic ? 'مشهد' : 'Scene' ?> <?= (int) ($scene['scene'] ?? 0) ?> · <?= (int) ($scene['duration'] ?? 0) ?>s<?= isset($scene['ratio']) ? ' · ' . e((string) $scene['ratio']) : '' ?></span>
+            <p><strong><?= $arabic ? 'الصورة' : 'Visual' ?></strong> <?= e((string) ($scene['visual'] ?? $scene['prompt'] ?? '')) ?></p>
+            <p><strong><?= $arabic ? 'التعليق' : 'Voiceover' ?></strong> <?= e((string) ($scene['voiceover'] ?? '')) ?></p>
+          </article>
+        <?php endforeach; ?>
+      </div>
     <?php endif; ?>
     <?php if (!$videoConfigured): ?>
       <p class="notice is-error"><?= e(rateb_video_message('not_configured', $arabic)) ?></p>

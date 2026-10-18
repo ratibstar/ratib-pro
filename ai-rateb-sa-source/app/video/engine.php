@@ -36,11 +36,36 @@ function rateb_video_copy_text(string $content, string $prefer = 'ar'): string
             return '';
         }
     }
+    $decoded = json_decode($content, true);
+    if (is_array($decoded)) {
+        $picked = (string) ($decoded['instagram'] ?? $decoded['snapchat'] ?? $decoded['x'] ?? '');
+        if ($picked !== '') {
+            $content = $picked;
+        }
+    }
     $plain = trim(preg_replace('/\s+/u', ' ', rateb_prompt_plain($content, $prefer)) ?? '');
     if ($plain === '' || $plain[0] === '{' || $plain[0] === '[') {
         return '';
     }
-    return mb_substr($plain, 0, 180);
+    return mb_substr($plain, 0, 600);
+}
+
+function rateb_video_split_lines(string $text, int $count): array
+{
+    $text = trim($text);
+    if ($count < 1) {
+        return [];
+    }
+    $bits = preg_split('/(?<=[.!?؟])\s+/u', $text) ?: [];
+    $bits = array_values(array_filter(array_map('trim', $bits), static fn (string $bit): bool => $bit !== ''));
+    if ($bits === []) {
+        $bits = [$text !== '' ? $text : ''];
+    }
+    $lines = [];
+    for ($i = 0; $i < $count; $i++) {
+        $lines[] = $bits[$i] ?? $bits[count($bits) - 1];
+    }
+    return $lines;
 }
 
 /** @param array<int,array<string,mixed>> $rows */
@@ -82,20 +107,33 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
         $purpose = $copyLine;
     }
     $purpose = mb_substr($purpose, 0, 180);
+    $voiceLines = rateb_video_split_lines($copyLine !== '' ? $copyLine : $purpose, count($clips));
+    $ratio = '1:1';
+    foreach ($images as $imageRow) {
+        if (str_contains((string) ($imageRow['original_name'] ?? ''), '9x16')) {
+            $ratio = '9:16';
+            break;
+        }
+    }
     $scenes = [];
     foreach ($clips as $i => $clip) {
         $image = $images[$i % count($images)];
         $motion = $motions[$i % count($motions)];
+        $visual = rateb_visual_prompt(
+            array_merge([$motion], rateb_visual_lines($campaign, $strategy, $copyLine, $brand, $prefer)),
+            'No written text and no logo.',
+            400
+        );
         $scenes[] = [
+            'scene' => $i + 1,
+            'visual' => $visual,
+            'voiceover' => $voiceLines[$i] ?? $purpose,
             'purpose' => $purpose,
             'image_id' => (int) $image['id'],
             'duration' => $clip,
+            'ratio' => $ratio,
             'motion' => $motion,
-            'prompt' => rateb_visual_prompt(
-                array_merge([$motion], rateb_visual_lines($campaign, $strategy, $copyLine, $brand, $prefer)),
-                'No written text and no logo.',
-                400
-            ),
+            'prompt' => $visual,
             'task_id' => '',
             'status' => 'queued',
             'url' => '',
