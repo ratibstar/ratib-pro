@@ -156,6 +156,7 @@ jobs:
           for rel in "${files[@]}"; do
             local_file="ai-rateb-sa-source/${rel}"
             local_sum="$(sha256sum "$local_file" | awk '{print $1}')"
+            "${SSH[@]}" "$REMOTE" "mkdir -p '${TARGET}/$(dirname "$rel")'"
             scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
               "$local_file" "${REMOTE}:${TARGET}/${rel}"
             remote_sum="$("${SSH[@]}" "$REMOTE" "php -r \"echo hash_file('sha256', '${TARGET}/${rel}');\"")"
