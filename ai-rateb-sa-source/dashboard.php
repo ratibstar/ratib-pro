@@ -44,7 +44,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav35">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=lib1">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard.php', !empty($_SESSION['user_id'])); ?>
@@ -73,6 +73,62 @@ foreach ($campaigns as $row) {
         <li class="flow-step" data-i18n="flow_ready">Ready campaign</li>
       </ol>
     </div>
+  </section>
+
+  <section class="studio-block" id="library">
+    <div class="section-head">
+      <h2 data-i18n="your_campaigns">Your campaigns</h2>
+      <a class="button quiet" href="/campaign-new.php" data-i18n="new_campaign_button">+ New Campaign</a>
+    </div>
+    <?php if (($_GET['copy_error'] ?? '') === '1'): ?>
+      <p class="alert" data-i18n="copy_failed">The campaign could not be copied.</p>
+    <?php endif; ?>
+    <?php if (!$campaigns): ?>
+      <div class="empty studio-empty">
+        <h3 data-i18n="no_campaigns">No campaigns yet</h3>
+        <p class="muted" data-i18n="no_campaigns_lead">Create your first campaign to get started.</p>
+        <a class="button studio-cta" href="/campaign-new.php" data-i18n="create_campaign">Create Campaign</a>
+      </div>
+    <?php else: ?>
+      <div class="campaign-board">
+        <?php foreach ($campaigns as $campaign): ?>
+          <?php
+          $campaignId = (int) $campaign['id'];
+          $statusKey = in_array((string) $campaign['status'], campaign_status_values(), true) ? (string) $campaign['status'] : 'draft';
+          $tone = ($campaignId % 4) + 1;
+          $initial = function_exists('mb_substr') ? mb_substr((string) $campaign['title'], 0, 1, 'UTF-8') : substr((string) $campaign['title'], 0, 1);
+          ?>
+          <article class="campaign-tile">
+            <a class="campaign-cover tone-<?= $tone ?>" href="/campaign.php?id=<?= $campaignId ?>">
+              <?php if (isset($covers[$campaignId])): ?>
+                <img src="/app/media/file.php?id=<?= (int) $covers[$campaignId] ?>" alt="">
+              <?php else: ?>
+                <span class="cover-initial"><?= e($initial) ?></span>
+              <?php endif; ?>
+            </a>
+            <div class="campaign-tile-body">
+              <span class="badge status-<?= e($statusKey) ?>" data-i18n="status_<?= e($statusKey) ?>"><?= e($statusKey) ?></span>
+              <h3><a href="/campaign.php?id=<?= $campaignId ?>"><?= e($campaign['title']) ?></a></h3>
+              <p><?= e($campaign['product_name']) ?></p>
+              <time><?= e(substr((string) $campaign['created_at'], 0, 10)) ?></time>
+              <div class="tile-actions">
+                <a class="quiet" href="/campaign.php?id=<?= $campaignId ?>" data-i18n="open_campaign">Open</a>
+                <form method="post" action="/campaign-copy.php">
+                  <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                  <input type="hidden" name="campaign_id" value="<?= $campaignId ?>">
+                  <button type="submit" class="quiet" data-i18n="duplicate_campaign">Duplicate</button>
+                </form>
+                <form method="post" action="/campaign-delete.php" onsubmit="return confirm(document.documentElement.lang==='ar'?'حذف هذه الحملة نهائياً؟':'Delete this campaign permanently?')">
+                  <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                  <input type="hidden" name="campaign_id" value="<?= $campaignId ?>">
+                  <button type="submit" class="quiet danger-text" data-i18n="delete">Delete</button>
+                </form>
+              </div>
+            </div>
+          </article>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
   </section>
 
   <section class="home-section" id="samples">
@@ -155,45 +211,6 @@ foreach ($campaigns as $row) {
     </div>
   </section>
 
-  <section class="studio-block">
-    <div class="section-head">
-      <h2 data-i18n="your_campaigns">Your campaigns</h2>
-      <a class="button quiet" href="/campaign-new.php" data-i18n="new_campaign_button">+ New Campaign</a>
-    </div>
-    <?php if (!$campaigns): ?>
-      <div class="empty studio-empty">
-        <h3 data-i18n="no_campaigns">No campaigns yet</h3>
-        <p class="muted" data-i18n="no_campaigns_lead">Create your first campaign to get started.</p>
-        <a class="button studio-cta" href="/campaign-new.php" data-i18n="create_campaign">Create Campaign</a>
-      </div>
-    <?php else: ?>
-      <div class="campaign-board">
-        <?php foreach ($campaigns as $campaign): ?>
-          <?php
-          $campaignId = (int) $campaign['id'];
-          $statusKey = in_array((string) $campaign['status'], campaign_status_values(), true) ? (string) $campaign['status'] : 'draft';
-          $tone = ($campaignId % 4) + 1;
-          $initial = function_exists('mb_substr') ? mb_substr((string) $campaign['title'], 0, 1, 'UTF-8') : substr((string) $campaign['title'], 0, 1);
-          ?>
-          <a class="campaign-tile" href="/campaign.php?id=<?= $campaignId ?>">
-            <div class="campaign-cover tone-<?= $tone ?>">
-              <?php if (isset($covers[$campaignId])): ?>
-                <img src="/app/media/file.php?id=<?= (int) $covers[$campaignId] ?>" alt="">
-              <?php else: ?>
-                <span class="cover-initial"><?= e($initial) ?></span>
-              <?php endif; ?>
-            </div>
-            <div class="campaign-tile-body">
-              <span class="badge status-<?= e($statusKey) ?>" data-i18n="status_<?= e($statusKey) ?>"><?= e($campaign['status']) ?></span>
-              <h3><?= e($campaign['title']) ?></h3>
-              <p><?= e($campaign['product_name']) ?></p>
-              <time><?= e($campaign['created_at']) ?></time>
-            </div>
-          </a>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-  </section>
 </main>
 <dialog class="demo-viewer" id="demo-viewer">
   <form method="dialog" class="demo-bar">
@@ -203,6 +220,6 @@ foreach ($campaigns as $row) {
   <div id="demo-stage"></div>
 </dialog>
 <?php rateb_auth_dialog('/dashboard.php'); ?>
-<script src="/public/assets/js/app.js?v=nav35"></script>
+<script src="/public/assets/js/app.js?v=lib1"></script>
 </body>
 </html>
