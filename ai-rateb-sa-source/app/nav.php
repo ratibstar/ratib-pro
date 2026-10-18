@@ -9,6 +9,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
         ['/brand.php', 'brand_kit', 'Brand kit'],
         ['/#workflow', 'nav_how', 'How it works'],
         ['/#samples', 'nav_samples', 'Examples'],
+        ['/#pricing', 'nav_pricing', 'Pricing'],
         ['/#create', 'nav_create', 'What it creates'],
     ];
     echo '<header class="site-bar">';
