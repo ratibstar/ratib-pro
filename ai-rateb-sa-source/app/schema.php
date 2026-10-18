@@ -90,6 +90,15 @@ function ensure_campaign_schema(PDO $pdo): void
     if (!isset($userColumns['role'])) {
         $pdo->exec("ALTER TABLE users ADD COLUMN role VARCHAR(32) NOT NULL DEFAULT 'user'");
     }
+    if (!isset($userColumns['package_type'])) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN package_type VARCHAR(32) NOT NULL DEFAULT 'free'");
+    }
+    if (!isset($userColumns['credits_balance'])) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN credits_balance INT NOT NULL DEFAULT 50");
+    }
+    if (!isset($userColumns['subscription_expires_at'])) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN subscription_expires_at DATETIME NULL");
+    }
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS plans (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -137,6 +146,16 @@ function ensure_campaign_schema(PDO $pdo): void
         KEY user_operation (user_id, operation, status, created_at),
         KEY campaign_id (campaign_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $usageColumns = [];
+    foreach ($pdo->query('SHOW COLUMNS FROM usage_events') as $row) {
+        $usageColumns[(string) $row['Field']] = true;
+    }
+    if (!isset($usageColumns['event_type'])) {
+        $pdo->exec('ALTER TABLE usage_events ADD COLUMN event_type VARCHAR(32) NULL');
+    }
+    if (!isset($usageColumns['credits_deducted'])) {
+        $pdo->exec('ALTER TABLE usage_events ADD COLUMN credits_deducted INT NOT NULL DEFAULT 0');
+    }
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS campaign_briefs (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

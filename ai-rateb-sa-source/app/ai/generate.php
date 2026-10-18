@@ -134,6 +134,11 @@ if (!$gate['ok']) {
     rateb_text_release($lockKey);
     rateb_deny((string) $gate['code']);
 }
+$fullText = $stage === 'strategy' || ($stage === 'copy' && trim((string) ($_POST['output_type'] ?? '')) === '');
+if ($fullText && !rateb_check_and_deduct_credits($userId, 'text_campaign', $id)) {
+    rateb_text_release($lockKey);
+    rateb_credit_stop();
+}
 $decision = rateb_output_language(db(), $campaign);
 $resolved = (string) $decision['resolved'];
 $facts = rateb_workspace_facts(db(), $campaign, $brief);

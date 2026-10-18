@@ -126,6 +126,79 @@ function rateb_video_duration_options(array $plan): array
     return $options;
 }
 
+function rateb_get_feature_cost(string $type): int
+{
+    return match ($type) {
+        'text_campaign' => 5,
+        'ai_image' => 10,
+        'saudi_voice' => 15,
+        'video_storyboard' => 20,
+        default => 0,
+    };
+}
+
+function rateb_account_credits(PDO $pdo, int $userId): array
+{
+    $stmt = $pdo->prepare('SELECT package_type, credits_balance, subscription_expires_at FROM users WHERE id = ?');
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch() ?: [];
+    return [
+        'package_type' => (string) ($row['package_type'] ?? 'free'),
+        'credits_balance' => (int) ($row['credits_balance'] ?? 0),
+        'subscription_expires_at' => $row['subscription_expires_at'] ?? null,
+    ];
+}
+
+function rateb_check_and_deduct_credits(int $userId, string $featureType, ?int $campaignId = null): bool
+{
+    $cost = rateb_get_feature_cost($featureType);
+    if ($userId < 1 || $cost < 1) {
+        return false;
+    }
+    $package = rateb_account_credits(db(), $userId)['package_type'];
+    if ($package === 'free' && in_array($featureType, ['saudi_voice', 'video_storyboard'], true)) {
+        return false;
+    }
+    $pdo = db();
+    $pdo->beginTransaction();
+    try {
+        $update = $pdo->prepare('UPDATE users SET credits_balance = credits_balance - ? WHERE id = ? AND credits_balance >= ?');
+        $update->execute([$cost, $userId, $cost]);
+        if ($update->rowCount() !== 1) {
+            $pdo->rollBack();
+            return false;
+        }
+        $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, \'completed\', ?, ?)')
+            ->execute([$userId, $campaignId, $featureType, $featureType, $cost]);
+        $pdo->commit();
+        return true;
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
+}
+
+function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId = null): void
+{
+    $cost = rateb_get_feature_cost($featureType);
+    if ($userId < 1 || $cost < 1) {
+        return;
+    }
+    $pdo = db();
+    $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$cost, $userId]);
+    $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, \'completed\', ?, 0)')
+        ->execute([$userId, $campaignId, $featureType . '_refund', $featureType . '_refund']);
+}
+
+function rateb_credit_stop(): void
+{
+    http_response_code(402);
+    echo json_encode(['error' => 'رصيد النقاط غير كافٍ، يرجى ترقية الباقة', 'code' => 'credits'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 function rateb_usage_count(PDO $pdo, int $userId, string $operation): int
 {
     $stmt = $pdo->prepare("SELECT COALESCE(SUM(units), 0) FROM usage_events

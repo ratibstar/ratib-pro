@@ -152,7 +152,14 @@ if ($submit['http'] !== 202) {
 }
 $job = json_decode($submit['body'], true);
 $jobId = is_array($job) ? strtolower((string) ($job['id'] ?? '')) : '';
+if ($postedJobId === '' && !rateb_check_and_deduct_credits($userId, 'ai_image', $campaignId)) {
+    ai_image_release($userId, '', $usageId, 'failed');
+    rateb_credit_stop();
+}
 if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
+    if ($postedJobId === '') {
+        rateb_refund_credits($userId, 'ai_image', $campaignId);
+    }
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(502);
     echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);

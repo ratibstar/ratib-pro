@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/config/bootstrap.php';
+require_once __DIR__ . '/app/plans.php';
 require __DIR__ . '/app/nav.php';
 
 $user = current_user($pdo);
@@ -48,6 +49,9 @@ foreach ($campaigns as $row) {
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard.php', !empty($_SESSION['user_id'])); ?>
+<?php if (!empty($_SESSION['user_id'])): $wallet = rateb_account_credits($pdo, (int) $_SESSION['user_id']); ?>
+<p class="muted" style="margin:12px 36px">الباقة: <?= e($wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
+<?php endif; ?>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>
     <p class="muted" data-i18n="campaign_deleted">Campaign deleted.</p>

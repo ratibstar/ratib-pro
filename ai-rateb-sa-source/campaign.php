@@ -200,6 +200,8 @@ if ($imageCount > 0 || $videoCount > 0) {
     }
 }
 $csrf = e(csrf_token());
+$wallet = rateb_account_credits(db(), $userId);
+$freeTier = $wallet['package_type'] === 'free';
 function rateb_campaign_duration_select(array $options, bool $arabic): void
 {
     echo '<label class="video-length"><span>' . ($arabic ? 'مدة الفيديو' : 'Video length') . '</span><select data-video-seconds>';
@@ -236,6 +238,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <button type="button" id="theme" class="icon">☾</button>
   </div>
 </header>
+<p class="muted" style="margin:12px 36px"><?= $arabic ? 'الباقة' : 'Package' ?>: <?= e($wallet['package_type']) ?> · <?= $arabic ? 'الرصيد' : 'Credits' ?>: <?= (int) $wallet['credits_balance'] ?></p>
 <main class="wrap workspace">
   <section class="workspace-top">
     <p class="eyebrow" data-i18n="campaign_workspace"><?= $arabic ? 'مساحة الحملة' : 'Campaign workspace' ?></p>
@@ -579,6 +582,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </section>
   <section class="panel" id="voice" data-panel="voice">
     <h2 data-i18n="stage_voice"><?= $arabic ? 'الصوت' : 'Voice' ?></h2>
+    <?php if ($freeTier): ?><p class="badge">ترقية الباقة لفتح الميزة</p><?php endif; ?>
     <form id="voiceForm" data-status="stage-status" data-voice-library data-voice-choose="1">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
         <input type="hidden" name="campaign_id" value="<?= $id ?>">
@@ -633,6 +637,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </section>
   <section class="panel" id="video" data-panel="video">
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
+    <?php if ($freeTier): ?><p class="badge">ترقية الباقة لفتح الميزة</p><?php endif; ?>
     <?php if ($approvedVideo): ?>
       <p class="badge"><?= $arabic ? 'الفيديو معتمد' : 'Video approved' ?></p>
     <?php endif; ?>
