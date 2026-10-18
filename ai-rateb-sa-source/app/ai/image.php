@@ -419,7 +419,13 @@ function ai_horde_request(string $method, string $url, ?string $body = null): ar
     $ch = curl_init($url);
     $headers = ['Accept: application/json, image/webp, image/jpeg, image/png', 'Client-Agent: rateb-ai-campaign:1.0:ai.rateb.sa'];
     if (strtolower((string) parse_url($url, PHP_URL_HOST)) === 'aihorde.net') {
-        $headers[] = 'apikey: 0000000000';
+        $ai = require __DIR__ . '/../../config/ai.php';
+        $hordeKey = trim((string) ($ai['horde_api_key'] ?? ''));
+        if ($hordeKey === '') {
+            curl_close($ch);
+            return ['http' => 503, 'body' => '', 'effective' => $url];
+        }
+        $headers[] = 'apikey: ' . $hordeKey;
     }
     if ($method === 'POST') {
         $headers[] = 'Content-Type: application/json';

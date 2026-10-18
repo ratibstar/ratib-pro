@@ -156,6 +156,16 @@ function ensure_campaign_schema(PDO $pdo): void
     if (!isset($usageColumns['credits_deducted'])) {
         $pdo->exec('ALTER TABLE usage_events ADD COLUMN credits_deducted INT NOT NULL DEFAULT 0');
     }
+    $pdo->exec("CREATE TABLE IF NOT EXISTS payment_receipts (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        moyasar_id VARCHAR(64) NOT NULL,
+        user_id BIGINT UNSIGNED NOT NULL,
+        package_type VARCHAR(32) NOT NULL,
+        amount INT UNSIGNED NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY moyasar_id (moyasar_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS campaign_briefs (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

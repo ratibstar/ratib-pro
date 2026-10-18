@@ -226,8 +226,8 @@ $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باق�
     <p class="muted">الرصيد المتبقي: <?= (int) $wallet['credits_balance'] ?></p>
     <div class="price-grid">
       <article class="price-card"><p class="eyebrow">الباقة التجريبية</p><p class="price-amount"><b>0</b></p><a class="button" href="/?pricing=1#pricing">ترقية الباقة</a></article>
-      <article class="price-card is-featured"><p class="eyebrow">باقة الانطلاق</p><p class="price-amount"><b>99</b></p><a class="button" href="/?pricing=1#pricing">ترقية الباقة</a></article>
-      <article class="price-card"><p class="eyebrow">الباقة الاحترافية</p><p class="price-amount"><b>249</b></p><a class="button" href="/?pricing=1#pricing">ترقية الباقة</a></article>
+      <article class="price-card is-featured"><p class="eyebrow">باقة الانطلاق</p><p class="price-amount"><b>99</b></p><a class="button" href="/app/payment/checkout.php?package=starter">ترقية الباقة</a></article>
+      <article class="price-card"><p class="eyebrow">الباقة الاحترافية</p><p class="price-amount"><b>249</b></p><a class="button" href="/app/payment/checkout.php?package=pro">ترقية الباقة</a></article>
     </div>
   </div>
 </dialog>

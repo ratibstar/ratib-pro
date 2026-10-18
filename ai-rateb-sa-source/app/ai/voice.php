@@ -48,7 +48,8 @@ if (!rateb_voice_text_is_arabic($spoken)) {
     exit;
 }
 
-$sawtakKey = trim((string) getenv('SAWTAK_API_KEY'));
+$ai = require __DIR__ . '/../../config/ai.php';
+$sawtakKey = trim((string) ($ai['sawtak_api_key'] ?? ''));
 $wanted = (string) ($_POST['voice'] ?? '');
 $selected = rateb_sawtak_find($wanted);
 if ($selected === null || (string) ($selected['status'] ?? '') !== 'ready') {

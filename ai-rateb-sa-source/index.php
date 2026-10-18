@@ -166,7 +166,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
                     <li data-i18n="plan_starter_ratios">Flexible image ratios</li>
                     <li data-i18n="plan_starter_voice">3 voice tones</li>
                 </ul>
-                <button type="button" class="button studio-cta" data-auth="register" data-i18n="plan_cta">Subscribe now</button>
+                <?php if ($loggedIn): ?><a class="button studio-cta" href="/app/payment/checkout.php?package=starter" data-i18n="plan_cta">Subscribe now</a><?php else: ?><button type="button" class="button studio-cta" data-auth="register" data-i18n="plan_cta">Subscribe now</button><?php endif; ?>
             </article>
             <article class="price-card">
                 <p class="eyebrow" data-i18n="plan_pro">Pro</p>
@@ -177,7 +177,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
                     <li data-i18n="plan_pro_board">Full structured storyboard</li>
                     <li data-i18n="plan_pro_priority">Priority generation</li>
                 </ul>
-                <button type="button" class="button" data-auth="register" data-i18n="plan_cta">Subscribe now</button>
+                <?php if ($loggedIn): ?><a class="button" href="/app/payment/checkout.php?package=pro" data-i18n="plan_cta">Subscribe now</a><?php else: ?><button type="button" class="button" data-auth="register" data-i18n="plan_cta">Subscribe now</button><?php endif; ?>
             </article>
         </div>
     </section>

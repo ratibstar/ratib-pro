@@ -420,7 +420,6 @@ function rateb_model_json_once(array $cfg, string $system, string $prompt, ?arra
             ['role' => 'user', 'content' => $prompt],
         ],
         'temperature' => 0.4,
-        'reasoning_effort' => 'low',
         'max_tokens' => 1600,
         'response_format' => is_array($schema)
             ? ['type' => 'json_schema', 'json_schema' => $schema]
