@@ -45,13 +45,15 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=lib1">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=price3">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard.php', !empty($_SESSION['user_id'])); ?>
-<?php if (!empty($_SESSION['user_id'])): $wallet = rateb_account_credits($pdo, (int) $_SESSION['user_id']); ?>
-<p class="muted" style="margin:12px 36px">الباقة: <?= e($wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
-<?php endif; ?>
+<?php
+$wallet = !empty($_SESSION['user_id']) ? rateb_account_credits($pdo, (int) $_SESSION['user_id']) : ['package_type' => 'free', 'credits_balance' => 0];
+$planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باقة الانطلاق', 'pro' => 'الباقة الاحترافية'];
+?>
+<p class="muted" style="margin:12px 36px">الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>
     <p class="muted" data-i18n="campaign_deleted">Campaign deleted.</p>
@@ -216,6 +218,19 @@ foreach ($campaigns as $row) {
   </section>
 
 </main>
+<dialog class="auth-modal" id="pricingModal">
+  <button type="button" class="auth-x" data-pricing-close aria-label="Close">×</button>
+  <div class="auth-card">
+    <h2>باقتك</h2>
+    <p><?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?></p>
+    <p class="muted">الرصيد المتبقي: <?= (int) $wallet['credits_balance'] ?></p>
+    <div class="price-grid">
+      <article class="price-card"><p class="eyebrow">الباقة التجريبية</p><p class="price-amount"><b>0</b></p><a class="button" href="/?pricing=1#pricing">ترقية الباقة</a></article>
+      <article class="price-card is-featured"><p class="eyebrow">باقة الانطلاق</p><p class="price-amount"><b>99</b></p><a class="button" href="/?pricing=1#pricing">ترقية الباقة</a></article>
+      <article class="price-card"><p class="eyebrow">الباقة الاحترافية</p><p class="price-amount"><b>249</b></p><a class="button" href="/?pricing=1#pricing">ترقية الباقة</a></article>
+    </div>
+  </div>
+</dialog>
 <dialog class="demo-viewer" id="demo-viewer">
   <form method="dialog" class="demo-bar">
     <p data-i18n="demo_example">Example</p>
@@ -224,6 +239,21 @@ foreach ($campaigns as $row) {
   <div id="demo-stage"></div>
 </dialog>
 <?php rateb_auth_dialog('/dashboard.php'); ?>
-<script src="/public/assets/js/app.js?v=lib1"></script>
+<style>#pricingModal{width:min(920px,calc(100% - 32px))}</style>
+<script>
+document.querySelectorAll('[data-pricing-open]').forEach(function (node) {
+  node.addEventListener('click', function () {
+    var modal = document.getElementById('pricingModal');
+    if (modal && modal.showModal) modal.showModal();
+  });
+});
+document.querySelectorAll('[data-pricing-close]').forEach(function (node) {
+  node.addEventListener('click', function () {
+    var modal = document.getElementById('pricingModal');
+    if (modal) modal.close();
+  });
+});
+</script>
+<script src="/public/assets/js/app.js?v=price3"></script>
 </body>
 </html>

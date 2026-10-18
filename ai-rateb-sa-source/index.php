@@ -4,7 +4,8 @@ require __DIR__ . '/config/guard.php';
 require __DIR__ . '/app/nav.php';
 $googleClient = (string) ((require __DIR__ . '/config/google.php')['client_id'] ?? '');
 
-if (isset($_SESSION['user_id'])) {
+$loggedIn = isset($_SESSION['user_id']);
+if ($loggedIn && !isset($_GET['pricing'])) {
     header('Location: /dashboard.php');
     exit;
 }
@@ -17,10 +18,10 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=price2">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=price3">
 </head>
 <body class="studio home">
-<?php rateb_site_header('', false, true); ?>
+<?php rateb_site_header('', $loggedIn, !$loggedIn); ?>
 <main>
     <section class="landing-hero">
         <div class="landing-copy">

@@ -9,13 +9,17 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
         ['/brand.php', 'brand_kit', 'Brand kit'],
         ['/#workflow', 'nav_how', 'How it works'],
         ['/#samples', 'nav_samples', 'Examples'],
-        ['/#pricing', 'nav_pricing', 'Pricing'],
+        ['/?pricing=1#pricing', 'nav_pricing', 'Pricing'],
         ['/#create', 'nav_create', 'What it creates'],
     ];
     echo '<header class="site-bar">';
     echo '<nav class="site-nav">';
     foreach ($items as $item) {
         $class = $item[0] === $here ? ' class="is-here"' : '';
+        if ($loggedIn && $here === '/dashboard.php' && $item[1] === 'nav_pricing') {
+            echo '<button type="button" data-pricing-open data-i18n="nav_pricing">Pricing</button>';
+            continue;
+        }
         echo '<a' . $class . ' href="' . e($item[0]) . '" data-i18n="' . e($item[1]) . '">' . e($item[2]) . '</a>';
     }
     echo '</nav>';
