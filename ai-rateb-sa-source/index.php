@@ -17,7 +17,7 @@ if (isset($_SESSION['user_id'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav35">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=price1">
 </head>
 <body class="studio home">
 <?php rateb_site_header('', false, true); ?>
@@ -142,6 +142,45 @@ if (isset($_SESSION['user_id'])) {
         </div>
     </section>
 
+    <section class="home-section" id="pricing">
+        <div class="section-head"><h2 data-i18n="pricing_title">Plans</h2></div>
+        <div class="price-grid">
+            <article class="price-card">
+                <p class="eyebrow" data-i18n="plan_free">Free trial</p>
+                <p class="price-amount"><b>0</b> <span>SAR</span></p>
+                <p data-i18n="plan_free_credits">50 welcoming credits</p>
+                <ul>
+                    <li data-i18n="plan_free_text">Text modules</li>
+                    <li data-i18n="plan_free_image">Square images 1:1</li>
+                    <li><span class="badge" data-i18n="plan_upgrade">Sawtak and storyboard require an upgrade</span></li>
+                </ul>
+                <button type="button" class="button" data-auth="register" data-i18n="plan_cta">Subscribe now</button>
+            </article>
+            <article class="price-card is-featured">
+                <p class="eyebrow" data-i18n="plan_starter">Starter</p>
+                <p class="price-amount"><b>99</b> <span data-i18n="plan_month">SAR / month</span></p>
+                <p data-i18n="plan_starter_credits">500 credits</p>
+                <ul>
+                    <li data-i18n="plan_starter_platforms">All platforms unlocked</li>
+                    <li data-i18n="plan_starter_ratios">Flexible image ratios</li>
+                    <li data-i18n="plan_starter_voice">3 voice tones</li>
+                </ul>
+                <button type="button" class="button studio-cta" data-auth="register" data-i18n="plan_cta">Subscribe now</button>
+            </article>
+            <article class="price-card">
+                <p class="eyebrow" data-i18n="plan_pro">Pro</p>
+                <p class="price-amount"><b>249</b> <span data-i18n="plan_month">SAR / month</span></p>
+                <p data-i18n="plan_pro_credits">2500 credits</p>
+                <ul>
+                    <li data-i18n="plan_pro_text">Unlimited text variations</li>
+                    <li data-i18n="plan_pro_board">Full structured storyboard</li>
+                    <li data-i18n="plan_pro_priority">Priority generation</li>
+                </ul>
+                <button type="button" class="button" data-auth="register" data-i18n="plan_cta">Subscribe now</button>
+            </article>
+        </div>
+    </section>
+
     <section class="home-section" id="gallery">
         <div class="section-head">
             <div>
@@ -262,6 +301,6 @@ if (isset($_SESSION['user_id'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav33"></script>
+<script src="/public/assets/js/app.js?v=price1"></script>
 </body>
 </html>
