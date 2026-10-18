@@ -170,6 +170,16 @@ function ensure_campaign_schema(PDO $pdo): void
         $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, 'text_campaign_repair', 1, 'completed', 'text_campaign_repair', ?)")
             ->execute([(int) $row['user_id'], (int) $row['campaign_id'], -$back]);
     }
+    $testOwner = (int) ($pdo->query('SELECT user_id FROM campaigns WHERE id = 72')->fetchColumn() ?: 0);
+    if ($testOwner > 0) {
+        $granted = $pdo->prepare("SELECT 1 FROM usage_events WHERE user_id = ? AND operation = 'test_credit_grant' LIMIT 1");
+        $granted->execute([$testOwner]);
+        if (!$granted->fetchColumn()) {
+            $pdo->prepare('UPDATE users SET credits_balance = credits_balance + 200 WHERE id = ?')->execute([$testOwner]);
+            $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, NULL, 'test_credit_grant', 1, 'completed', 'test_credit_grant', -200)")
+                ->execute([$testOwner]);
+        }
+    }
     $pdo->exec("CREATE TABLE IF NOT EXISTS payment_receipts (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         moyasar_id VARCHAR(64) NOT NULL,
