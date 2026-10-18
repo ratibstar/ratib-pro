@@ -916,7 +916,7 @@
         status.textContent = dict[language][busyKey] || dict[language].generating;
       }
       var controller = new AbortController();
-      var timer = setTimeout(function () { controller.abort(); }, 45000);
+      var timer = setTimeout(function () { controller.abort(); }, 100000);
       try {
         var response = await fetch('/app/ai/generate.php', { method: 'POST', body: new FormData(form), signal: controller.signal });
         clearTimeout(timer);
@@ -929,6 +929,23 @@
         location.href = payload.redirect || location.href;
       } catch (error) {
         clearTimeout(timer);
+        if (error.name === 'AbortError') {
+          var idInput = form.querySelector('[name="campaign_id"]');
+          var stageInput = form.querySelector('[name="stage"]');
+          var watchId = idInput ? idInput.value : '';
+          var watchStage = stageInput ? stageInput.value : '';
+          for (var attempt = 0; attempt < 8; attempt++) {
+            await new Promise(function (resolve) { setTimeout(resolve, 4000); });
+            try {
+              var watch = await fetch('/app/ai/generate.php?campaign_id=' + encodeURIComponent(watchId) + '&stage=' + encodeURIComponent(watchStage));
+              var watched = await watch.json();
+              if (watched.ready) {
+                location.reload();
+                return;
+              }
+            } catch (watchError) {}
+          }
+        }
         if (status) {
           status.className = 'notice is-error stage-status';
           var failText = error.name === 'AbortError' ? dict[language].write_slow : error.message;

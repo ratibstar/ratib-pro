@@ -8,6 +8,37 @@ require_login();
 header('Content-Type: application/json; charset=utf-8');
 header('X-Rateb-Generate: 3');
 
+ignore_user_abort(true);
+set_time_limit(120);
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $watchId = (int) ($_GET['campaign_id'] ?? 0);
+    $watchStage = (string) ($_GET['stage'] ?? '');
+    $watchUser = (int) $_SESSION['user_id'];
+    $watch = db()->prepare('SELECT id FROM campaigns WHERE id = ? AND user_id = ?');
+    $watch->execute([$watchId, $watchUser]);
+    if (!$watch->fetch()) {
+        http_response_code(404);
+        echo json_encode(['ready' => false], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $ready = false;
+    if ($watchStage === 'strategy') {
+        $row = rateb_output_row($watchId, 'strategy');
+        $ready = $row && trim((string) $row['content']) !== '';
+    } elseif ($watchStage === 'copy') {
+        foreach (rateb_copy_types() as $type) {
+            $row = rateb_output_row($watchId, $type);
+            if ($row && trim((string) $row['content']) !== '') {
+                $ready = true;
+                break;
+            }
+        }
+    }
+    echo json_encode(['ready' => $ready], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     rateb_fail(405, 'invalid_output');
 }
@@ -135,9 +166,13 @@ if (!$gate['ok']) {
     rateb_deny((string) $gate['code']);
 }
 $fullText = $stage === 'strategy' || ($stage === 'copy' && trim((string) ($_POST['output_type'] ?? '')) === '');
+$charged = false;
 if ($fullText && !rateb_check_and_deduct_credits($userId, 'text_campaign', $id)) {
     rateb_text_release($lockKey);
     rateb_credit_stop();
+}
+if ($fullText) {
+    $charged = true;
 }
 $decision = rateb_output_language(db(), $campaign);
 $resolved = (string) $decision['resolved'];
@@ -165,6 +200,9 @@ if ($stage === 'strategy') {
                 }
             }
         }
+        if ($charged) {
+            rateb_refund_credits($userId, 'text_campaign', $id);
+        }
         rateb_fail(is_array($result) ? 422 : 502, is_array($result) ? 'invalid_output' : 'ai_failed', ['fields' => $bad]);
     }
     $clean = [];
@@ -175,6 +213,9 @@ if ($stage === 'strategy') {
         rateb_replace_outputs($id, ['strategy' => json_encode($clean, JSON_UNESCAPED_UNICODE)]);
     } catch (Throwable $error) {
         rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+        if ($charged) {
+            rateb_refund_credits($userId, 'text_campaign', $id);
+        }
         rateb_fail(502, 'ai_failed');
     }
     rateb_usage_finish(db(), (int) $gate['id'], 'completed');
@@ -190,6 +231,9 @@ $keys = $platformOnly !== '' ? [] : ($only !== '' ? [$only] : rateb_copy_types()
 if ($keys === [] && $platformOnly === '') {
     rateb_text_release($lockKey);
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    if ($charged) {
+        rateb_refund_credits($userId, 'text_campaign', $id);
+    }
     rateb_fail(400, 'invalid_output');
 }
 $wantSocial = $platformOnly !== '' || in_array('social_posts', $keys, true);
@@ -226,10 +270,16 @@ if ($stringKeys !== [] && (!is_array($result) || !rateb_output_ready($result, $r
             }
         }
     }
+    if ($charged) {
+        rateb_refund_credits($userId, 'text_campaign', $id);
+    }
     rateb_fail(is_array($result) ? 422 : 502, is_array($result) ? 'invalid_output' : 'ai_failed', ['fields' => $bad]);
 }
 if ($wantSocial && !is_array($result)) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    if ($charged) {
+        rateb_refund_credits($userId, 'text_campaign', $id);
+    }
     rateb_fail(502, 'ai_failed');
 }
 $rows = [];
@@ -241,6 +291,9 @@ if ($wantSocial) {
     $fresh = rateb_social_pack(is_array($result['social_posts'] ?? null) ? $result['social_posts'] : $result, $platformOnly);
     if ($fresh === []) {
         rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+        if ($charged) {
+            rateb_refund_credits($userId, 'text_campaign', $id);
+        }
         rateb_fail(422, 'invalid_output', ['fields' => ['social_posts']]);
     }
     $existing = [];
@@ -257,6 +310,9 @@ try {
     rateb_replace_outputs($id, $rows);
 } catch (Throwable $error) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    if ($charged) {
+        rateb_refund_credits($userId, 'text_campaign', $id);
+    }
     rateb_fail(502, 'ai_failed');
 }
 rateb_usage_finish(db(), (int) $gate['id'], 'completed');
@@ -420,7 +476,7 @@ function rateb_model_json_once(array $cfg, string $system, string $prompt, ?arra
             ['role' => 'user', 'content' => $prompt],
         ],
         'temperature' => 0.4,
-        'max_tokens' => 1600,
+        'max_tokens' => 2400,
         'response_format' => is_array($schema)
             ? ['type' => 'json_schema', 'json_schema' => $schema]
             : ['type' => 'json_object'],
@@ -432,7 +488,7 @@ function rateb_model_json_once(array $cfg, string $system, string $prompt, ?arra
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
         CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_TIMEOUT => 18,
+        CURLOPT_TIMEOUT => 55,
         CURLOPT_CONNECTTIMEOUT => 8,
     ]);
     $raw = curl_exec($ch);

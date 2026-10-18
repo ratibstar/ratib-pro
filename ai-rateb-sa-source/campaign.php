@@ -824,6 +824,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=price5"></script>
+<script src="/public/assets/js/app.js?v=price6"></script>
 </body>
 </html>
