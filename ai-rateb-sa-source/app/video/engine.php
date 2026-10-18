@@ -309,12 +309,16 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
 
 function rateb_video_fail(PDO $pdo, array $job, string $code): void
 {
-    $pdo->prepare("UPDATE video_jobs SET status = 'failed', error_code = ? WHERE id = ? AND user_id = ?")->execute([
+    $update = $pdo->prepare("UPDATE video_jobs SET status = 'failed', error_code = ? WHERE id = ? AND user_id = ? AND status <> 'failed'");
+    $update->execute([
         $code,
         (int) $job['id'],
         (int) $job['user_id'],
     ]);
     rateb_usage_finish($pdo, (int) $job['usage_id'], 'failed');
+    if ($update->rowCount() === 1) {
+        rateb_refund_credits((int) $job['user_id'], 'video_storyboard', (int) ($job['campaign_id'] ?? 0) ?: null);
+    }
 }
 
 function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
