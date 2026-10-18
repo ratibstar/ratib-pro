@@ -955,7 +955,13 @@
           failed.code = payload.code || '';
           throw failed;
         }
-        location.href = payload.redirect || location.href;
+        var target = new URL(payload.redirect || location.href, location.href);
+        if (target.pathname === location.pathname && target.search === location.search) {
+          if (target.hash) history.replaceState(null, '', target.hash);
+          location.reload();
+        } else {
+          location.href = target.href;
+        }
       } catch (error) {
         clearTimeout(timer);
         clearInterval(poll);
