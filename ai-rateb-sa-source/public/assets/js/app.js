@@ -917,9 +917,38 @@
       }
       var controller = new AbortController();
       var timer = setTimeout(function () { controller.abort(); }, 100000);
+      var watchToken = String(Date.now());
+      var body = new FormData(form);
+      body.append('watch', watchToken);
+      var idInput = form.querySelector('[name="campaign_id"]');
+      var stageInput = form.querySelector('[name="stage"]');
+      var watchId = idInput ? idInput.value : '';
+      var watchStage = stageInput ? stageInput.value : '';
+      var finished = false;
+      var poll = setInterval(function () {
+        if (finished || !watchStage) return;
+        fetch('/app/ai/generate.php?campaign_id=' + encodeURIComponent(watchId) + '&stage=' + encodeURIComponent(watchStage) + '&watch=' + encodeURIComponent(watchToken))
+          .then(function (watch) { return watch.json(); })
+          .then(function (watched) {
+            if (finished) return;
+            if (watched.ready) {
+              finished = true;
+              clearInterval(poll);
+              location.reload();
+            } else if (watched.failed) {
+              finished = true;
+              clearInterval(poll);
+              controller.abort();
+            }
+          })
+          .catch(function () {});
+      }, 2000);
       try {
-        var response = await fetch('/app/ai/generate.php', { method: 'POST', body: new FormData(form), signal: controller.signal });
+        var response = await fetch('/app/ai/generate.php', { method: 'POST', body: body, signal: controller.signal });
         clearTimeout(timer);
+        clearInterval(poll);
+        if (finished) return;
+        finished = true;
         var payload = await response.json();
         if (!response.ok) {
           var failed = new Error(payload.error || dict[language].ai_failed || 'Request failed');
@@ -929,23 +958,19 @@
         location.href = payload.redirect || location.href;
       } catch (error) {
         clearTimeout(timer);
-        if (error.name === 'AbortError') {
-          var idInput = form.querySelector('[name="campaign_id"]');
-          var stageInput = form.querySelector('[name="stage"]');
-          var watchId = idInput ? idInput.value : '';
-          var watchStage = stageInput ? stageInput.value : '';
-          for (var attempt = 0; attempt < 8; attempt++) {
-            await new Promise(function (resolve) { setTimeout(resolve, 4000); });
-            try {
-              var watch = await fetch('/app/ai/generate.php?campaign_id=' + encodeURIComponent(watchId) + '&stage=' + encodeURIComponent(watchStage));
-              var watched = await watch.json();
-              if (watched.ready) {
-                location.reload();
-                return;
-              }
-            } catch (watchError) {}
+        clearInterval(poll);
+        if (finished && error.name === 'AbortError') {
+          if (status) {
+            status.className = 'notice is-error stage-status';
+            status.textContent = dict[language].ai_failed || error.message;
           }
+          if (button) {
+            button.disabled = false;
+            button.classList.remove('is-busy');
+          }
+          return;
         }
+        finished = true;
         if (status) {
           status.className = 'notice is-error stage-status';
           var failText = error.name === 'AbortError' ? dict[language].write_slow : error.message;

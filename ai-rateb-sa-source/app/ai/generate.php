@@ -22,20 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         echo json_encode(['ready' => false], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $ready = false;
-    if ($watchStage === 'strategy') {
-        $row = rateb_output_row($watchId, 'strategy');
-        $ready = $row && trim((string) $row['content']) !== '';
-    } elseif ($watchStage === 'copy') {
-        foreach (rateb_copy_types() as $type) {
-            $row = rateb_output_row($watchId, $type);
-            if ($row && trim((string) $row['content']) !== '') {
-                $ready = true;
-                break;
-            }
-        }
-    }
-    echo json_encode(['ready' => $ready], JSON_UNESCAPED_UNICODE);
+    $watchToken = preg_replace('/[^a-zA-Z0-9]/', '', (string) ($_GET['watch'] ?? '')) ?? '';
+    $jobKey = $watchToken !== '' ? ('rateb_job_' . $watchId . '_' . $watchStage . '_' . $watchToken) : '';
+    $state = $jobKey !== '' ? (string) ($_SESSION[$jobKey] ?? '') : '';
+    session_write_close();
+    echo json_encode(['ready' => $state === 'done', 'failed' => $state === 'fail'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -158,17 +149,24 @@ if ($stage === 'copy') {
 }
 
 $cfg = rateb_ai_config();
+$watchToken = preg_replace('/[^a-zA-Z0-9]/', '', (string) ($_POST['watch'] ?? '')) ?? '';
+$GLOBALS['rateb_job_key'] = $watchToken !== '' ? ('rateb_job_' . $id . '_' . $stage . '_' . $watchToken) : '';
+if ($GLOBALS['rateb_job_key'] !== '') {
+    $_SESSION[$GLOBALS['rateb_job_key']] = 'run';
+}
 $lockKey = 'rateb_text_' . $id . '_' . $stage;
 rateb_text_hold($lockKey);
 $gate = rateb_usage_begin(db(), $userId, $id, 'campaign_text');
 if (!$gate['ok']) {
     rateb_text_release($lockKey);
+    rateb_job_mark('fail');
     rateb_deny((string) $gate['code']);
 }
 $fullText = $stage === 'strategy' || ($stage === 'copy' && trim((string) ($_POST['output_type'] ?? '')) === '');
 $charged = false;
 if ($fullText && !rateb_check_and_deduct_credits($userId, 'text_campaign', $id)) {
     rateb_text_release($lockKey);
+    rateb_job_mark('fail');
     rateb_credit_stop();
 }
 if ($fullText) {
@@ -219,6 +217,7 @@ if ($stage === 'strategy') {
         rateb_fail(502, 'ai_failed');
     }
     rateb_usage_finish(db(), (int) $gate['id'], 'completed');
+    rateb_job_mark('done');
     rateb_text_release($lockKey);
     echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . $id . '#strategy'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -316,6 +315,7 @@ try {
     rateb_fail(502, 'ai_failed');
 }
 rateb_usage_finish(db(), (int) $gate['id'], 'completed');
+rateb_job_mark('done');
 rateb_text_release($lockKey);
 echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . $id . '#copy'], JSON_UNESCAPED_UNICODE);
 exit;
@@ -400,8 +400,22 @@ function rateb_social_pack(array $input, string $only): array
     return $pack;
 }
 
+function rateb_job_mark(string $state): void
+{
+    $key = (string) ($GLOBALS['rateb_job_key'] ?? '');
+    if ($key === '') {
+        return;
+    }
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+    $_SESSION[$key] = $state;
+    session_write_close();
+}
+
 function rateb_fail(int $status, string $code, array $extra = []): void
 {
+    rateb_job_mark('fail');
     if (isset($GLOBALS['rateb_text_lock']) && is_string($GLOBALS['rateb_text_lock'])) {
         $lockKey = $GLOBALS['rateb_text_lock'];
         unset($GLOBALS['rateb_text_lock']);
@@ -451,7 +465,7 @@ function rateb_text_release(string $lockKey): void
 
 function rateb_generate_output(array $cfg, string $system, string $prompt, string $resolved, array $keys): mixed
 {
-    $raw = rateb_model_json($cfg, $system, $prompt, rateb_output_schema($keys, $resolved));
+    $raw = rateb_model_json($cfg, $system, $prompt, null);
     return rateb_prepare_output($raw, $resolved, $keys);
 }
 
