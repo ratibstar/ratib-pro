@@ -921,13 +921,26 @@
         var response = await fetch('/app/ai/generate.php', { method: 'POST', body: new FormData(form), signal: controller.signal });
         clearTimeout(timer);
         var payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || dict[language].ai_failed || 'Request failed');
+        if (!response.ok) {
+          var failed = new Error(payload.error || dict[language].ai_failed || 'Request failed');
+          failed.code = payload.code || '';
+          throw failed;
+        }
         location.href = payload.redirect || location.href;
       } catch (error) {
         clearTimeout(timer);
         if (status) {
           status.className = 'notice is-error stage-status';
-          status.textContent = error.name === 'AbortError' ? dict[language].write_slow : error.message;
+          var failText = error.name === 'AbortError' ? dict[language].write_slow : error.message;
+          status.textContent = '';
+          if (error.code === 'credits') {
+            var creditLink = document.createElement('a');
+            creditLink.href = '/?pricing=1#pricing';
+            creditLink.textContent = failText;
+            status.appendChild(creditLink);
+          } else {
+            status.textContent = failText;
+          }
         }
         if (button) {
           button.disabled = false;
@@ -1315,7 +1328,15 @@
         if (!node) return;
         node.hidden = false;
         node.className = failed ? 'notice stage-status is-error' : 'notice stage-status';
-        node.textContent = text;
+        node.textContent = '';
+        if (failed && text.indexOf('ترقية الباقة') !== -1) {
+          var link = document.createElement('a');
+          link.href = '/?pricing=1#pricing';
+          link.textContent = text;
+          node.appendChild(link);
+        } else {
+          node.textContent = text;
+        }
       });
     };
     var watchVideo = function () {
@@ -1449,6 +1470,12 @@
     window.setTimeout(showReadingStep, 280);
   }
 
+  var savedIdea = window.sessionStorage ? sessionStorage.getItem('rateb-idea') : '';
+  var ideaBox = document.querySelector('#idea-form [name="idea"]');
+  if (savedIdea && ideaBox && !ideaBox.value) {
+    ideaBox.value = savedIdea;
+    sessionStorage.removeItem('rateb-idea');
+  }
   var ideaForm = document.getElementById('idea-form');
   var ideaFiles = document.getElementById('idea-files');
   var ideaPicks = document.getElementById('idea-picks');
@@ -1526,6 +1553,14 @@
       renderPicks();
     });
     ideaForm.addEventListener('submit', function (event) {
+      if (ideaForm.getAttribute('data-guest') === '1') {
+        event.preventDefault();
+        var box = ideaForm.querySelector('[name="idea"]');
+        if (box && window.sessionStorage) sessionStorage.setItem('rateb-idea', box.value);
+        var opener = document.querySelector('[data-auth="register"]');
+        if (opener) opener.click();
+        return;
+      }
       if (!window.FormData || !window.XMLHttpRequest) return;
       event.preventDefault();
       var data = new FormData(ideaForm);
@@ -1611,12 +1646,12 @@
     apply();
   }
   var authParams = new URLSearchParams(location.search);
-  if (authModal && authParams.get('auth') === 'login') {
+  if (authModal && (authParams.get('auth') === 'login' || authParams.get('auth') === 'register')) {
     var requested = authParams.get('next') || '/dashboard.php';
     document.querySelectorAll('#auth-modal input[name="next"]').forEach(function (node) {
       node.value = requested;
     });
-    showAuth('login');
+    showAuth(authParams.get('auth') === 'register' ? 'register' : 'login');
   }
   document.addEventListener('click', function (event) {
     var opener = event.target.closest('[data-auth]');

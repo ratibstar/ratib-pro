@@ -28,6 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['draft'])) {
 
 $draft = is_array($_SESSION['campaign_draft'] ?? null) ? $_SESSION['campaign_draft'] : [];
 
+if ($userId < 1 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $pendingIdea = trim((string) ($_POST['idea'] ?? ''));
+    if ($pendingIdea !== '') {
+        $draft['idea'] = mb_substr($pendingIdea, 0, 2000);
+        $_SESSION['campaign_draft'] = $draft;
+    }
+    header('Location: /campaign-new.php?auth=register');
+    exit;
+}
+
 if ($userId > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     check_csrf();
     $step = (string) ($_POST['step'] ?? '');
@@ -364,7 +374,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
     <h1 data-i18n="idea_title"><?= $arabic ? 'وش تبي تسوّق اليوم؟' : 'What do you want to market today?' ?></h1>
     <p class="muted" data-i18n="idea_lead"><?= $arabic ? 'اكتب فكرتك بطريقتك...' : 'Describe the idea in your own words.' ?></p>
     <?php if (in_array($error, $errorKeys, true)): ?><p class="idea-error" data-i18n="<?= e($error) ?>"><?= e(rateb_idea_message($error)) ?></p><?php endif; ?>
-    <form id="idea-form" method="post" action="/campaign-new.php" enctype="multipart/form-data"<?= $hasVideo ? ' data-has-video="1"' : '' ?>>
+    <form id="idea-form" method="post" action="/campaign-new.php" enctype="multipart/form-data"<?= $hasVideo ? ' data-has-video="1"' : '' ?><?= $userId < 1 ? ' data-guest="1"' : '' ?>>
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="step" value="understand">
       <textarea class="idea-box" name="idea" required maxlength="2000" data-i18n-placeholder="idea_placeholder" placeholder="<?= $arabic ? 'مثال: عندي عطر جديد وأبغى أطلقه في الرياض وأزيد مبيعات الواتساب.' : 'Example: I have a new fragrance and I want to launch it in Riyadh and increase WhatsApp sales.' ?>"><?= e((string) ($draft['idea'] ?? '')) ?></textarea>
@@ -456,6 +466,6 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
   </div>
 </section>
 <?php rateb_auth_dialog('/campaign-new.php'); ?>
-<script src="/public/assets/js/app.js?v=nav35"></script>
+<script src="/public/assets/js/app.js?v=price5"></script>
 </body>
 </html>
