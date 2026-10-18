@@ -582,7 +582,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </section>
   <section class="panel" id="voice" data-panel="voice">
     <h2 data-i18n="stage_voice"><?= $arabic ? 'الصوت' : 'Voice' ?></h2>
-    <?php if ($freeTier): ?><p><a class="badge" href="/?pricing=1#pricing">ترقية الباقة لفتح الميزة</a></p><?php endif; ?>
     <form id="voiceForm" data-status="stage-status" data-voice-library data-voice-choose="1">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
         <input type="hidden" name="campaign_id" value="<?= $id ?>">
@@ -824,6 +823,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=price9"></script>
+<script src="/public/assets/js/app.js?v=price10"></script>
 </body>
 </html>

@@ -156,7 +156,7 @@ function rateb_check_and_deduct_credits(int $userId, string $featureType, ?int $
         return false;
     }
     $package = rateb_account_credits(db(), $userId)['package_type'];
-    if ($package === 'free' && in_array($featureType, ['saudi_voice', 'video_storyboard'], true)) {
+    if ($package === 'free' && $featureType === 'video_storyboard') {
         return false;
     }
     $pdo = db();
@@ -205,7 +205,7 @@ function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId
 
 function rateb_feature_locked(int $userId, string $featureType): bool
 {
-    return in_array($featureType, ['saudi_voice', 'video_storyboard'], true)
+    return $featureType === 'video_storyboard'
         && rateb_account_credits(db(), $userId)['package_type'] === 'free';
 }
 
