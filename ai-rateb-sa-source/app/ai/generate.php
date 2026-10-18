@@ -108,10 +108,14 @@ if ($stage === 'copy') {
         rateb_fail(409, 'copy_locked');
     }
     $only = trim((string) ($_POST['output_type'] ?? ''));
-    if ($only !== '' && !in_array($only, rateb_copy_types(), true)) {
+    $platformRequest = in_array($only, ['snapchat', 'instagram', 'x', 'google_ads'], true);
+    if ($only !== '' && !$platformRequest && !in_array($only, rateb_copy_types(), true)) {
         rateb_fail(400, 'invalid_output');
     }
-    $locked = $only !== '' ? [$only] : rateb_copy_types();
+    $locked = $platformRequest || $only === '' || $only === 'social_posts' ? ['social_posts'] : [$only];
+    if ($only === '') {
+        $locked = rateb_copy_types();
+    }
     if (!$confirm) {
         foreach ($locked as $type) {
             $row = rateb_output_row($id, $type);
@@ -143,7 +147,8 @@ if ($resolved === 'ar') {
 
 if ($stage === 'strategy') {
     $shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar and en. ' : 'Each value must be a plain string. ';
-    $prompt = "Write one campaign strategy from these facts only. Keep every value to one or two short sentences. Return JSON with English keys: positioning, core_message, audience, channels, tone, creative_direction, call_to_action. " . $shape . $decision['instruction'] . "\nFacts:\n" . $facts;
+    $goalLine = rateb_goal_instruction((string) ($brief['objective'] ?? $campaign['objective'] ?? ''));
+    $prompt = "Write one campaign strategy from these facts only. Keep every value to one or two short sentences. Return JSON with English keys: positioning, core_message, audience, channels, tone, creative_direction, call_to_action. " . $shape . $goalLine . $decision['instruction'] . "\nFacts:\n" . $facts;
     $result = rateb_generate_output($cfg, $system, $prompt, $resolved, rateb_strategy_keys());
     if (!is_array($result) || !rateb_output_ready($result, $resolved, rateb_strategy_keys())) {
         rateb_usage_finish(db(), (int) $gate['id'], 'failed');
@@ -174,16 +179,43 @@ if ($stage === 'strategy') {
 }
 
 $only = trim((string) ($_POST['output_type'] ?? ''));
-$keys = $only !== '' ? [$only] : rateb_copy_types();
+$platforms = ['snapchat', 'instagram', 'x', 'google_ads'];
+$platformOnly = in_array($only, $platforms, true) ? $only : '';
+$keys = $platformOnly !== '' ? [] : ($only !== '' ? [$only] : rateb_copy_types());
+if ($keys === [] && $platformOnly === '') {
+    rateb_text_release($lockKey);
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    rateb_fail(400, 'invalid_output');
+}
+$wantSocial = $platformOnly !== '' || in_array('social_posts', $keys, true);
+$stringKeys = array_values(array_filter($keys, static fn (string $key): bool => $key !== 'social_posts'));
 $strategy = rateb_strategy_document((string) $strategyRow['content']);
 $shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar and en. ' : 'Each value must be a plain string. ';
-$prompt = 'Write short campaign copy from the approved strategy and the facts. Each value is at most two short sentences. Return JSON with English keys: ' . implode(', ', $keys) . '. ' . $shape . $decision['instruction'] . "\nFacts:\n" . $facts . "\nApproved strategy:\n" . json_encode($strategy, JSON_UNESCAPED_UNICODE);
-$result = rateb_generate_output($cfg, $system, $prompt, $resolved, $keys);
-if (!is_array($result) || !rateb_output_ready($result, $resolved, $keys)) {
+$socialShape = $platformOnly !== '' ? $platformOnly : 'snapchat, instagram, x, google_ads';
+$prompt = 'Write short campaign copy from the approved strategy and the facts. Each plain value is at most two short sentences. Return JSON with English keys: ' . implode(', ', $keys === [] ? ['social_posts'] : $keys) . '. ' . $shape . $decision['instruction'];
+if ($wantSocial) {
+    $prompt .= ' The social_posts value must be an object, not a string, using Saudi marketing tone. Include only these keys: ' . $socialShape . '. snapchat is one punchy line under 80 characters and has no hashtags. instagram is a caption, a line break, then 5 to 8 relevant Saudi hashtags. x is under 240 characters with at most 2 hashtags. google_ads is an object with headlines (exactly 3 strings, each at most 30 characters) and descriptions (exactly 2 strings, each at most 90 characters) and no hashtags.';
+}
+$prompt .= "\nFacts:\n" . $facts . "\nApproved strategy:\n" . json_encode($strategy, JSON_UNESCAPED_UNICODE);
+if ($wantSocial) {
+    $raw = rateb_model_json($cfg, $system, $prompt);
+    $result = is_array($raw) ? $raw : null;
+    if (is_array($result) && $stringKeys !== []) {
+        $prepared = rateb_prepare_output($raw, $resolved, $stringKeys);
+        if (is_array($prepared)) {
+            foreach ($stringKeys as $key) {
+                $result[$key] = $prepared[$key] ?? ($result[$key] ?? null);
+            }
+        }
+    }
+} else {
+    $result = rateb_generate_output($cfg, $system, $prompt, $resolved, $stringKeys);
+}
+if ($stringKeys !== [] && (!is_array($result) || !rateb_output_ready($result, $resolved, $stringKeys))) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     $bad = [];
     if (is_array($result)) {
-        foreach ($keys as $key) {
+        foreach ($stringKeys as $key) {
             if (!rateb_value_ready($result[$key] ?? null, $resolved)) {
                 $bad[] = $key;
             }
@@ -191,10 +223,30 @@ if (!is_array($result) || !rateb_output_ready($result, $resolved, $keys)) {
     }
     rateb_fail(is_array($result) ? 422 : 502, is_array($result) ? 'invalid_output' : 'ai_failed', ['fields' => $bad]);
 }
+if ($wantSocial && !is_array($result)) {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    rateb_fail(502, 'ai_failed');
+}
 $rows = [];
-foreach ($keys as $key) {
+foreach ($stringKeys as $key) {
     $value = rateb_normalize_value($result[$key], $resolved);
     $rows[$key] = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value;
+}
+if ($wantSocial) {
+    $fresh = rateb_social_pack(is_array($result['social_posts'] ?? null) ? $result['social_posts'] : $result, $platformOnly);
+    if ($fresh === []) {
+        rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+        rateb_fail(422, 'invalid_output', ['fields' => ['social_posts']]);
+    }
+    $existing = [];
+    if ($platformOnly !== '') {
+        $current = rateb_output_row($id, 'social_posts');
+        $decoded = $current ? json_decode((string) $current['content'], true) : null;
+        if (is_array($decoded)) {
+            $existing = $decoded;
+        }
+    }
+    $rows['social_posts'] = json_encode(array_merge($existing, $fresh), JSON_UNESCAPED_UNICODE);
 }
 try {
     rateb_replace_outputs($id, $rows);
@@ -206,6 +258,86 @@ rateb_usage_finish(db(), (int) $gate['id'], 'completed');
 rateb_text_release($lockKey);
 echo json_encode(['ok' => true, 'redirect' => '/campaign.php?id=' . $id . '#copy'], JSON_UNESCAPED_UNICODE);
 exit;
+
+function rateb_goal_instruction(string $goal): string
+{
+    $goal = strtolower(trim($goal));
+    if (!in_array($goal, ['conversion', 'awareness', 'traffic', 'leads'], true)) {
+        $goal = (string) (rateb_goal_from_text($goal) ?? '');
+    }
+    if ($goal === 'conversion') {
+        return 'Objective is conversion. Focus on one offer, the value of that offer, and one urgent action. ';
+    }
+    if ($goal === 'awareness') {
+        return 'Objective is awareness. Focus on brand story, feeling, and recall. Do not use aggressive sales language. ';
+    }
+    if ($goal === 'traffic') {
+        return 'Objective is traffic. Focus on the reward of opening the link. ';
+    }
+    if ($goal === 'leads') {
+        return 'Objective is leads. Focus on the benefit of submitting contact details. ';
+    }
+    return '';
+}
+
+function rateb_social_clip(string $text, int $limit): string
+{
+    $text = trim(preg_replace('/\s+/u', ' ', $text) ?? '');
+    if (mb_strlen($text) <= $limit) {
+        return $text;
+    }
+    return rtrim(mb_substr($text, 0, $limit));
+}
+
+function rateb_social_pack(array $input, string $only): array
+{
+    $source = $input;
+    if (isset($input['social_posts']) && is_array($input['social_posts'])) {
+        $source = $input['social_posts'];
+    }
+    $keys = $only !== '' ? [$only] : ['snapchat', 'instagram', 'x', 'google_ads'];
+    $pack = [];
+    foreach ($keys as $key) {
+        $value = $source[$key] ?? null;
+        if ($key === 'google_ads' && is_array($value)) {
+            $headlines = [];
+            $descriptions = [];
+            foreach ((array) ($value['headlines'] ?? []) as $line) {
+                $line = rateb_social_clip((string) $line, 30);
+                if ($line !== '') {
+                    $headlines[] = $line;
+                }
+            }
+            foreach ((array) ($value['descriptions'] ?? []) as $line) {
+                $line = rateb_social_clip((string) $line, 90);
+                if ($line !== '' && !str_contains($line, '#')) {
+                    $descriptions[] = $line;
+                }
+            }
+            $headlines = array_slice($headlines, 0, 3);
+            $descriptions = array_slice($descriptions, 0, 2);
+            if (count($headlines) === 3 && count($descriptions) === 2) {
+                $pack[$key] = ['headlines' => $headlines, 'descriptions' => $descriptions];
+            }
+            continue;
+        }
+        $text = is_string($value) ? trim($value) : '';
+        if ($text === '') {
+            continue;
+        }
+        if ($key === 'snapchat') {
+            $text = rateb_social_clip(str_replace('#', '', $text), 80);
+        } elseif ($key === 'x') {
+            $text = rateb_social_clip($text, 240);
+        } elseif ($key === 'instagram') {
+            $text = trim($text);
+        }
+        if ($text !== '') {
+            $pack[$key] = $text;
+        }
+    }
+    return $pack;
+}
 
 function rateb_fail(int $status, string $code, array $extra = []): void
 {

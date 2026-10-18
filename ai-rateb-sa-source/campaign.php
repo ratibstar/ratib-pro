@@ -220,6 +220,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
 <link rel="stylesheet" href="/public/assets/css/app.css?v=nav23">
+<style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
 <header class="top">
@@ -430,10 +431,53 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <article class="copy-card" data-output-id="<?= (int) $row['id'] ?>" data-output-type="<?= e($type) ?>" data-approved="<?= $approved ? '1' : '0' ?>">
           <h3 data-i18n="type_<?= e($type) ?>"><?= e($copyLabels[$type] ?? $type) ?></h3>
           <div id="<?= e($copyId) ?>" class="copy-body">
-            <?php foreach (rateb_field_parts((string) $row['content']) as $part): ?>
-              <?php if ($part['code'] !== ''): ?><span class="eyebrow" data-i18n="<?= $part['code'] === 'ar' ? 'lang_ar' : 'lang_en' ?>"><?= e($part['code'] === 'ar' ? ($arabic ? 'العربية' : 'Arabic') : ($arabic ? 'الإنجليزية' : 'English')) ?></span><?php endif; ?>
-              <p><?= nl2br(e($part['text'])) ?></p>
-            <?php endforeach; ?>
+            <?php $socialPack = $type === 'social_posts' ? json_decode((string) $row['content'], true) : null; ?>
+            <?php if (is_array($socialPack) && (isset($socialPack['snapchat']) || isset($socialPack['instagram']) || isset($socialPack['x']) || isset($socialPack['google_ads']))): ?>
+              <div class="social-tabs">
+                <?php
+                  $nets = ['snapchat' => 'Snapchat', 'instagram' => 'Instagram', 'x' => 'X', 'google_ads' => 'Google Ads'];
+                  foreach ($nets as $net => $netLabel):
+                    if (!isset($socialPack[$net])) { continue; }
+                    $netId = $copyId . '-' . $net;
+                    $blob = $socialPack[$net];
+                    $text = is_string($blob) ? $blob : '';
+                    if (is_array($blob)) {
+                        $lines = [];
+                        foreach ((array) ($blob['headlines'] ?? []) as $line) { $lines[] = (string) $line; }
+                        foreach ((array) ($blob['descriptions'] ?? []) as $line) { $lines[] = (string) $line; }
+                        $text = implode("\n", $lines);
+                    }
+                ?>
+                  <article class="social-card">
+                    <span class="badge"><?= e($netLabel) ?></span>
+                    <div id="<?= e($netId) ?>">
+                      <?php if (is_array($blob)): ?>
+                        <?php foreach ((array) ($blob['headlines'] ?? []) as $line): ?><p><?= e((string) $line) ?></p><?php endforeach; ?>
+                        <?php foreach ((array) ($blob['descriptions'] ?? []) as $line): ?><p><?= e((string) $line) ?></p><?php endforeach; ?>
+                      <?php else: ?>
+                        <p><?= nl2br(e((string) $blob)) ?></p>
+                      <?php endif; ?>
+                    </div>
+                    <div class="action-row">
+                      <button type="button" class="quiet" data-copy="<?= e($netId) ?>"><?= $arabic ? 'نسخ' : 'Copy' ?></button>
+                      <form data-ai="1" data-status="copy-status" data-busy="generating_copy" data-locked="<?= $approved ? '1' : '0' ?>">
+                        <input type="hidden" name="csrf" value="<?= $csrf ?>">
+                        <input type="hidden" name="campaign_id" value="<?= $id ?>">
+                        <input type="hidden" name="stage" value="copy">
+                        <input type="hidden" name="output_type" value="<?= e($net) ?>">
+                        <input type="hidden" name="confirm" value="0">
+                        <button class="quiet" type="submit"><?= $arabic ? 'إعادة هذه المنصة' : 'Regenerate this network' ?></button>
+                      </form>
+                    </div>
+                  </article>
+                <?php endforeach; ?>
+              </div>
+            <?php else: ?>
+              <?php foreach (rateb_field_parts((string) $row['content']) as $part): ?>
+                <?php if ($part['code'] !== ''): ?><span class="eyebrow" data-i18n="<?= $part['code'] === 'ar' ? 'lang_ar' : 'lang_en' ?>"><?= e($part['code'] === 'ar' ? ($arabic ? 'العربية' : 'Arabic') : ($arabic ? 'الإنجليزية' : 'English')) ?></span><?php endif; ?>
+                <p><?= nl2br(e($part['text'])) ?></p>
+              <?php endforeach; ?>
+            <?php endif; ?>
           </div>
           <p class="badge" data-i18n="<?= $approved ? 'copy_approved' : 'copy_draft' ?>"><?= $approved ? ($arabic ? 'معتمد' : 'Approved') : ($arabic ? 'مسودة' : 'Draft') ?></p>
           <div class="action-row">

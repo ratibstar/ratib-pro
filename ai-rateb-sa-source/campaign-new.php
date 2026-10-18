@@ -76,7 +76,7 @@ if ($userId > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: /campaign-new.php');
             exit;
         }
-        $draft['extract'] = rateb_read_idea($idea);
+        $draft['extract'] = rateb_read_idea($idea, (string) ($_POST['objective'] ?? ''));
         $draft['answered'] = [];
         $draft['question'] = null;
         $draft['ready'] = false;
@@ -220,6 +220,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
 <link rel="stylesheet" href="/public/assets/css/app.css?v=nav35">
+<style>.goal-pick{display:grid;gap:6px;margin:14px 0}.goal-pick select{width:100%;border-radius:14px;padding:12px;font:inherit}</style>
 </head>
 <body class="studio page-new">
 <?php rateb_site_header('/campaign-new.php', $userId > 0); ?>
@@ -367,6 +368,24 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
       <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
       <input type="hidden" name="step" value="understand">
       <textarea class="idea-box" name="idea" required maxlength="2000" data-i18n-placeholder="idea_placeholder" placeholder="<?= $arabic ? 'مثال: عندي عطر جديد وأبغى أطلقه في الرياض وأزيد مبيعات الواتساب.' : 'Example: I have a new fragrance and I want to launch it in Riyadh and increase WhatsApp sales.' ?>"><?= e((string) ($draft['idea'] ?? '')) ?></textarea>
+      <label class="goal-pick">
+        <span><?= $arabic ? 'هدف الحملة' : 'Campaign goal' ?></span>
+        <select name="objective">
+          <?php
+            $goal = (string) ($_POST['objective'] ?? ($draft['extract']['objective'] ?? ''));
+            $goals = [
+                '' => $arabic ? 'خل RATEB يفهم الهدف من النص' : 'Let RATEB read the goal from the text',
+                'conversion' => $arabic ? 'زيادة مبيعات / تحويلات' : 'Sales / conversions',
+                'awareness' => $arabic ? 'زيادة وعي / انتشار' : 'Awareness / reach',
+                'traffic' => $arabic ? 'جلب زوار للموقع' : 'Website traffic',
+                'leads' => $arabic ? 'جمع بيانات عملاء محتملين' : 'Leads',
+            ];
+            foreach ($goals as $value => $label):
+          ?>
+            <option value="<?= e($value) ?>"<?= $goal === $value ? ' selected' : '' ?>><?= e($label) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
       <div class="pick-grid" id="idea-server-files">
         <?php foreach ($files as $file): ?>
           <figure class="pick">

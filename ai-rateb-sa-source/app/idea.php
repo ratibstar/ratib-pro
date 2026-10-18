@@ -1,7 +1,29 @@
 <?php
 declare(strict_types=1);
 
-function rateb_read_idea(string $idea): array
+function rateb_goal_codes(): array
+{
+    return ['conversion', 'awareness', 'traffic', 'leads'];
+}
+
+function rateb_goal_from_text(string $text): ?string
+{
+    if (preg_match('/بيع|شراء|مبيعات|كود\s*خصم|تحويل/u', $text) === 1 || preg_match('/\b(sale|sales|buy|discount|conversion)\b/i', $text) === 1) {
+        return 'conversion';
+    }
+    if (preg_match('/نشر|وعي|اشتهار|براند/u', $text) === 1 || preg_match('/\b(awareness|brand)\b/i', $text) === 1) {
+        return 'awareness';
+    }
+    if (preg_match('/زوار|زيارات|موقع/u', $text) === 1 || preg_match('/\b(traffic|visits|website)\b/i', $text) === 1) {
+        return 'traffic';
+    }
+    if (preg_match('/بيانات|عملاء محتمل|نموذج|استفسار/u', $text) === 1 || preg_match('/\b(leads|lead)\b/i', $text) === 1) {
+        return 'leads';
+    }
+    return null;
+}
+
+function rateb_read_idea(string $idea, string $goal = ''): array
 {
     $text = trim(preg_replace('/\s+/u', ' ', $idea) ?? '');
     $found = [
@@ -64,6 +86,10 @@ function rateb_read_idea(string $idea): array
     }
     if ($found['audience'] === null && preg_match('/\bfor\s+(women|men|families|students|companies)\b/i', $text, $match)) {
         $found['audience'] = rateb_idea_clean($match[0]);
+    }
+    $picked = in_array($goal, rateb_goal_codes(), true) ? $goal : rateb_goal_from_text($text);
+    if ($picked !== null) {
+        $found['objective'] = $picked;
     }
     $tones = ['فاخر', 'فخم', 'راقي', 'هادئ', 'جريء', 'luxury', 'premium', 'calm', 'bold'];
     foreach ($tones as $tone) {
