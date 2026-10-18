@@ -191,6 +191,11 @@ html{scroll-behavior:smooth}
 .price-card ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
 .price-card .button{margin-top:auto}
 @media(max-width:900px){.price-grid{grid-template-columns:1fr}.price-card.is-featured{transform:none}}
+#pricingModal{width:min(980px,calc(100% - 32px))}
+#pricingModal .auth-card{width:100%;display:flex;flex-direction:column;gap:14px}
+#pricingModal .price-grid{width:100%}
+#pricingModal .price-card.is-featured{transform:none}
+#pricingModal .price-card .button{text-align:center}
 .showcase{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .showcase-card,.button.showcase-card,button.showcase-card{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:168px;padding:18px 18px 18px 22px;border-radius:22px;background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:0 14px 34px var(--shadow);text-align:start;text-decoration:none;font:inherit;cursor:pointer;transition:transform .2s ease,box-shadow .2s ease}
 .showcase-card::before{content:"";position:absolute;inset:0 auto 0 0;width:6px}

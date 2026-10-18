@@ -45,7 +45,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=price3">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=price4">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard.php', !empty($_SESSION['user_id'])); ?>
@@ -225,9 +225,9 @@ $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باق�
     <p><?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?></p>
     <p class="muted">الرصيد المتبقي: <?= (int) $wallet['credits_balance'] ?></p>
     <div class="price-grid">
-      <article class="price-card"><p class="eyebrow">الباقة التجريبية</p><p class="price-amount"><b>0</b></p><a class="button" href="/?pricing=1#pricing">ترقية الباقة</a></article>
-      <article class="price-card is-featured"><p class="eyebrow">باقة الانطلاق</p><p class="price-amount"><b>99</b></p><a class="button" href="/app/payment/checkout.php?package=starter">ترقية الباقة</a></article>
-      <article class="price-card"><p class="eyebrow">الباقة الاحترافية</p><p class="price-amount"><b>249</b></p><a class="button" href="/app/payment/checkout.php?package=pro">ترقية الباقة</a></article>
+      <article class="price-card"><p class="eyebrow">الباقة التجريبية</p><p class="price-amount"><b>0</b> <span>ر.س</span></p><p>50 نقطة</p><a class="button" href="/?pricing=1#pricing">الباقة الحالية</a></article>
+      <article class="price-card is-featured"><p class="eyebrow">باقة الانطلاق</p><p class="price-amount"><b>99</b> <span>ر.س / شهر</span></p><p>500 نقطة</p><a class="button" href="/app/payment/checkout.php?package=starter">ترقية الباقة</a></article>
+      <article class="price-card"><p class="eyebrow">الباقة الاحترافية</p><p class="price-amount"><b>249</b> <span>ر.س / شهر</span></p><p>2500 نقطة</p><a class="button" href="/app/payment/checkout.php?package=pro">ترقية الباقة</a></article>
     </div>
   </div>
 </dialog>
@@ -239,7 +239,6 @@ $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باق�
   <div id="demo-stage"></div>
 </dialog>
 <?php rateb_auth_dialog('/dashboard.php'); ?>
-<style>#pricingModal{width:min(920px,calc(100% - 32px))}</style>
 <script>
 document.querySelectorAll('[data-pricing-open]').forEach(function (node) {
   node.addEventListener('click', function () {
