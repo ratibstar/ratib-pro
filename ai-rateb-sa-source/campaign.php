@@ -582,7 +582,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </section>
   <section class="panel" id="voice" data-panel="voice">
     <h2 data-i18n="stage_voice"><?= $arabic ? 'الصوت' : 'Voice' ?></h2>
-    <?php if ($freeTier): ?><p class="badge">ترقية الباقة لفتح الميزة</p><?php endif; ?>
+    <?php if ($freeTier): ?><p><a class="badge" href="/?pricing=1#pricing">ترقية الباقة لفتح الميزة</a></p><?php endif; ?>
     <form id="voiceForm" data-status="stage-status" data-voice-library data-voice-choose="1">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
         <input type="hidden" name="campaign_id" value="<?= $id ?>">
@@ -637,7 +637,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </section>
   <section class="panel" id="video" data-panel="video">
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
-    <?php if ($freeTier): ?><p class="badge">ترقية الباقة لفتح الميزة</p><?php endif; ?>
+    <?php if ($freeTier): ?><p><a class="badge" href="/?pricing=1#pricing">ترقية الباقة لفتح الميزة</a></p><?php endif; ?>
     <?php if ($approvedVideo): ?>
       <p class="badge"><?= $arabic ? 'الفيديو معتمد' : 'Video approved' ?></p>
     <?php endif; ?>
@@ -685,7 +685,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     </form>
     <p class="notice stage-status" id="video-gen-status" hidden></p>
     <?php if ($videoJob && (string) $videoJob['status'] === 'failed'): ?>
-      <?php if ((string) $videoJob['error_code'] === 'credits'): ?><p class="notice is-error"><a href="/?pricing=1#pricing"><?= e(rateb_video_message('credits', $arabic)) ?></a></p><?php else: ?><p class="notice is-error"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></p><?php endif; ?>
+      <?php if (in_array((string) $videoJob['error_code'], ['credits', 'package'], true)): ?><p class="notice is-error"><a href="/?pricing=1#pricing"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></a></p><?php else: ?><p class="notice is-error"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></p><?php endif; ?>
     <?php endif; ?>
     <?php if ($videoJob && (string) $videoJob['status'] === 'completed' && (int) $videoJob['output_media_id'] > 0): ?>
       <article class="media-card">
@@ -768,7 +768,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
                 </p>
               <?php endforeach; ?>
               <?php if ($videoJob && (string) $videoJob['status'] === 'failed'): ?>
-                <?php if ((string) $videoJob['error_code'] === 'credits'): ?><p class="notice is-error"><a href="/?pricing=1#pricing"><?= e(rateb_video_message('credits', $arabic)) ?></a></p><?php else: ?><p class="notice is-error"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></p><?php endif; ?>
+                <?php if (in_array((string) $videoJob['error_code'], ['credits', 'package'], true)): ?><p class="notice is-error"><a href="/?pricing=1#pricing"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></a></p><?php else: ?><p class="notice is-error"><?= e(rateb_video_message((string) $videoJob['error_code'], $arabic)) ?></p><?php endif; ?>
               <?php endif; ?>
               <p class="notice stage-status" data-video-status hidden></p>
             </article>
@@ -824,6 +824,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=price8"></script>
+<script src="/public/assets/js/app.js?v=price9"></script>
 </body>
 </html>

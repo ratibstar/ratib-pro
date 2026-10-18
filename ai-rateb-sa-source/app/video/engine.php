@@ -283,7 +283,8 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
         return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
     }
     if (!rateb_check_and_deduct_credits((int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id'])) {
-        return ['ok' => false, 'code' => 'credits', 'job_id' => 0];
+        $lockCode = rateb_feature_locked((int) $campaign['user_id'], 'video_storyboard') ? 'package' : 'credits';
+        return ['ok' => false, 'code' => $lockCode, 'job_id' => 0];
     }
     $seconds = 0;
     foreach ($scenes as $scene) {
@@ -496,7 +497,8 @@ function rateb_video_message(string $code, bool $arabic): string
         'video_too_long' => 'مدة خطتك لا تكفي لمشهد الفيديو.',
         'video_paid' => '١٥ و٢٠ و٣٠ ثانية متاحة في الباقات المدفوعة.',
         'video_free_used' => 'استخدمت الفيديوين المجانيين لهذا الشهر.',
-        'credits' => 'رصيد النقاط غير كافٍ، يرجى ترقية الباقة',
+        'credits' => 'رصيد النقاط غير كافٍ، اضغط هنا لترقية الباقة',
+        'package' => 'هذه الميزة غير متاحة في الباقة المجانية، اضغط هنا لترقية الباقة',
         'storage' => 'تعذر حفظ الفيديو.',
         'watermark' => 'تعذر إضافة علامة RATEB AI على الفيديو.',
     ];
@@ -517,7 +519,8 @@ function rateb_video_message(string $code, bool $arabic): string
         'video_too_long' => 'Your plan duration is too short for a video scene.',
         'video_paid' => '15, 20, and 30 seconds are available on paid plans.',
         'video_free_used' => 'The two free videos for this month have been used.',
-        'credits' => 'Not enough credits. Upgrade the package.',
+        'credits' => 'Not enough credits. Click here to upgrade.',
+        'package' => 'This feature is not in the free package. Click here to upgrade.',
         'storage' => 'The video could not be saved.',
         'watermark' => 'The RATEB AI mark could not be applied to the video.',
     ];

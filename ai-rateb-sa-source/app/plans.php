@@ -203,10 +203,20 @@ function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId
         ->execute([$userId, $campaignId, $featureType . '_refund', $featureType . '_refund']);
 }
 
-function rateb_credit_stop(): void
+function rateb_feature_locked(int $userId, string $featureType): bool
+{
+    return in_array($featureType, ['saudi_voice', 'video_storyboard'], true)
+        && rateb_account_credits(db(), $userId)['package_type'] === 'free';
+}
+
+function rateb_credit_stop(int $userId = 0, string $featureType = ''): void
 {
     http_response_code(402);
-    echo json_encode(['error' => 'رصيد النقاط غير كافٍ، يرجى ترقية الباقة', 'code' => 'credits'], JSON_UNESCAPED_UNICODE);
+    if ($userId > 0 && rateb_feature_locked($userId, $featureType)) {
+        echo json_encode(['error' => 'هذه الميزة غير متاحة في الباقة المجانية، اضغط هنا لترقية الباقة', 'code' => 'package'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    echo json_encode(['error' => 'رصيد النقاط غير كافٍ، اضغط هنا لترقية الباقة', 'code' => 'credits'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

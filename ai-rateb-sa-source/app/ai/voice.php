@@ -65,7 +65,7 @@ if ($sawtakKey === '') {
 $script = $spoken;
 
 if (!rateb_check_and_deduct_credits((int) $_SESSION['user_id'], 'saudi_voice', (int) $campaign['id'])) {
-    rateb_credit_stop();
+    rateb_credit_stop((int) $_SESSION['user_id'], 'saudi_voice');
 }
 $gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'voice');
 if (!$gate['ok']) {

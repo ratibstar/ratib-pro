@@ -981,7 +981,7 @@
           status.className = 'notice is-error stage-status';
           var failText = error.name === 'AbortError' ? dict[language].write_slow : error.message;
           status.textContent = '';
-          if (error.code === 'credits') {
+          if (error.code === 'credits' || error.code === 'package') {
             var creditLink = document.createElement('a');
             creditLink.href = '/?pricing=1#pricing';
             creditLink.textContent = failText;
@@ -1037,6 +1037,17 @@
     };
   }
 
+  function linkUpgrade(node) {
+    if (!node) return;
+    var text = node.textContent || '';
+    if (text.indexOf('ترقية الباقة') === -1 && !/upgrade/i.test(text)) return;
+    node.textContent = '';
+    var link = document.createElement('a');
+    link.href = '/?pricing=1#pricing';
+    link.textContent = text;
+    node.appendChild(link);
+  }
+
   var imageForm = document.getElementById('imageForm');
   if (imageForm) {
     imageForm.onsubmit = async function (event) {
@@ -1083,6 +1094,7 @@
         if (status) {
           status.className = 'notice is-error stage-status';
           status.textContent = error.code === 'image_timeout' ? (dict[language].image_timeout) : (error.message || dict[language].image_failed);
+          linkUpgrade(status);
         }
         if (button) {
           button.disabled = false;
@@ -1187,6 +1199,7 @@
         if (status) {
           status.className = 'notice is-error stage-status';
           status.textContent = error.message || dict[language].voice_provider;
+          linkUpgrade(status);
         }
         if (button) {
           button.disabled = false;
