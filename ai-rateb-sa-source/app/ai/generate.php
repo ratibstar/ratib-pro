@@ -162,7 +162,8 @@ if (!$gate['ok']) {
     rateb_job_mark('fail');
     rateb_deny((string) $gate['code']);
 }
-$fullText = $stage === 'strategy' || ($stage === 'copy' && trim((string) ($_POST['output_type'] ?? '')) === '');
+$fullText = ($stage === 'strategy' || ($stage === 'copy' && trim((string) ($_POST['output_type'] ?? '')) === ''))
+    && !rateb_campaign_feature_paid($userId, 'text_campaign', $id);
 $charged = false;
 if ($fullText && !rateb_check_and_deduct_credits($userId, 'text_campaign', $id)) {
     rateb_text_release($lockKey);

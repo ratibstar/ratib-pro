@@ -156,6 +156,20 @@ function ensure_campaign_schema(PDO $pdo): void
     if (!isset($usageColumns['credits_deducted'])) {
         $pdo->exec('ALTER TABLE usage_events ADD COLUMN credits_deducted INT NOT NULL DEFAULT 0');
     }
+    $extra = $pdo->query("SELECT e.user_id, e.campaign_id,
+            SUM(e.operation = 'text_campaign' AND e.credits_deducted > 0) - SUM(e.operation = 'text_campaign_refund') - 1 AS extra
+        FROM usage_events e
+        WHERE e.campaign_id IS NOT NULL
+          AND e.operation IN ('text_campaign', 'text_campaign_refund')
+          AND NOT EXISTS (SELECT 1 FROM usage_events r WHERE r.user_id = e.user_id AND r.campaign_id = e.campaign_id AND r.operation = 'text_campaign_repair')
+        GROUP BY e.user_id, e.campaign_id
+        HAVING extra > 0")->fetchAll();
+    foreach ($extra as $row) {
+        $back = (int) $row['extra'] * 5;
+        $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$back, (int) $row['user_id']]);
+        $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, 'text_campaign_repair', 1, 'completed', 'text_campaign_repair', ?)")
+            ->execute([(int) $row['user_id'], (int) $row['campaign_id'], -$back]);
+    }
     $pdo->exec("CREATE TABLE IF NOT EXISTS payment_receipts (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         moyasar_id VARCHAR(64) NOT NULL,

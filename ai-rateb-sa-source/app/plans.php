@@ -180,6 +180,17 @@ function rateb_check_and_deduct_credits(int $userId, string $featureType, ?int $
     }
 }
 
+function rateb_campaign_feature_paid(int $userId, string $featureType, int $campaignId): bool
+{
+    $stmt = db()->prepare("SELECT
+        SUM(operation = ? AND credits_deducted > 0) AS charged,
+        SUM(operation = ?) AS refunded
+        FROM usage_events WHERE user_id = ? AND campaign_id = ?");
+    $stmt->execute([$featureType, $featureType . '_refund', $userId, $campaignId]);
+    $row = $stmt->fetch() ?: [];
+    return ((int) ($row['charged'] ?? 0)) - ((int) ($row['refunded'] ?? 0)) > 0;
+}
+
 function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId = null): void
 {
     $cost = rateb_get_feature_cost($featureType);
