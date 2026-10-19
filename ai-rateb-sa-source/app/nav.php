@@ -3,28 +3,46 @@ declare(strict_types=1);
 
 function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): void
 {
-    $items = [
-        ['/dashboard.php', 'dashboard', 'Dashboard'],
-        ['/campaign-new.php', 'new_campaign', 'New Campaign'],
-        ['/brand.php', 'brand_kit', 'Brand kit'],
-        ['/#workflow', 'nav_how', 'How it works'],
-        ['/#samples', 'nav_samples', 'Examples'],
-        ['/?pricing=1#pricing', 'nav_pricing', 'Pricing'],
-        ['/#create', 'nav_create', 'What it creates'],
+    $groups = [
+        [
+            ['/dashboard.php', 'dashboard', 'Dashboard'],
+            ['/campaign-new.php', 'new_campaign', 'New Campaign'],
+            ['/brand.php', 'brand_kit', 'Brand kit'],
+        ],
+        [
+            ['/#workflow', 'nav_how', 'How it works'],
+            ['/#samples', 'nav_samples', 'Examples'],
+            ['/?pricing=1#pricing', 'nav_pricing', 'Pricing'],
+            ['/#create', 'nav_create', 'What it creates'],
+        ],
     ];
-    echo '<header class="site-bar">';
-    echo '<nav class="site-nav">';
-    foreach ($items as $item) {
-        $class = $item[0] === $here ? ' class="is-here"' : '';
-        if ($loggedIn && $here === '/dashboard.php' && $item[1] === 'nav_pricing') {
-            echo '<button type="button" data-pricing-open data-i18n="nav_pricing">Pricing</button>';
-            continue;
+    $credits = null;
+    if ($loggedIn && function_exists('rateb_account_credits') && !empty($_SESSION['user_id'])) {
+        $credits = (int) rateb_account_credits(db(), (int) $_SESSION['user_id'])['credits_balance'];
+    }
+    echo '<header class="site-bar"><div class="site-shell">';
+    echo '<button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><span></span><span></span><span></span></button>';
+    echo '<nav class="site-nav" id="site-nav">';
+    foreach ($groups as $index => $group) {
+        if ($index > 0) {
+            echo '<span class="nav-sep" aria-hidden="true"></span>';
         }
-        echo '<a' . $class . ' href="' . e($item[0]) . '" data-i18n="' . e($item[1]) . '">' . e($item[2]) . '</a>';
+        foreach ($group as $item) {
+            $class = $item[0] === $here ? ' class="is-here" aria-current="page"' : '';
+            if ($loggedIn && $here === '/dashboard.php' && $item[1] === 'nav_pricing') {
+                echo '<button type="button" data-pricing-open data-i18n="nav_pricing">Pricing</button>';
+                continue;
+            }
+            echo '<a' . $class . ' href="' . e($item[0]) . '" data-i18n="' . e($item[1]) . '">' . e($item[2]) . '</a>';
+        }
     }
     echo '</nav>';
     echo '<a class="logo" href="/">RATEB <span>AI</span></a>';
     echo '<div class="edge-auth">';
+    if ($credits !== null) {
+        $chipTag = $here === '/dashboard.php' ? 'button type="button" data-pricing-open' : 'a href="/?pricing=1#pricing"';
+        echo '<' . $chipTag . ' class="credit-chip" title="Credits"><span aria-hidden="true">⚡</span>' . $credits . '</' . strtok($chipTag, ' ') . '>';
+    }
     echo '<button type="button" id="lang" class="icon">AR</button>';
     echo '<button type="button" id="theme" class="icon">☾</button>';
     if ($loggedIn) {
@@ -33,7 +51,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
         echo '<button type="button" class="login" data-auth="login" data-i18n="login">Login</button>';
         echo '<button type="button" class="register" data-auth="register" data-i18n="create_account">Create Account</button>';
     }
-    echo '</div></header>';
+    echo '</div></div></header>';
 }
 
 function rateb_auth_dialog(string $next): void

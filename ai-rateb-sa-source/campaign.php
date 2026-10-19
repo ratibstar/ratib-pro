@@ -2,6 +2,7 @@
 require_once __DIR__ . '/app/bootstrap.php';
 require_once __DIR__ . '/app/plans.php';
 require_once __DIR__ . '/app/video/engine.php';
+require_once __DIR__ . '/app/nav.php';
 require_login();
 
 $id = (int) ($_GET['id'] ?? 0);
@@ -221,24 +222,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=scroll1">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav40">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
-<header class="top">
-  <nav>
-    <a href="/dashboard.php" data-i18n="dashboard"><?= $arabic ? 'لوحة التحكم' : 'Dashboard' ?></a>
-    <a href="/campaign-new.php" data-i18n="new_campaign"><?= $arabic ? 'حملة جديدة' : 'New campaign' ?></a>
-    <a href="/brand.php" data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></a>
-  </nav>
-  <a class="brand" href="/dashboard.php">RATEB <span>AI</span></a>
-  <div class="bar-side">
-    <a class="bar-logout" href="/logout.php" data-i18n="logout"><?= $arabic ? 'خروج' : 'Logout' ?></a>
-    <button type="button" id="lang" class="icon"><?= $arabic ? 'EN' : 'AR' ?></button>
-    <button type="button" id="theme" class="icon">☾</button>
-  </div>
-</header>
-<p class="muted" style="margin:12px 36px"><?= $arabic ? 'الباقة' : 'Package' ?>: <?= e($wallet['package_type']) ?> · <?= $arabic ? 'الرصيد' : 'Credits' ?>: <?= (int) $wallet['credits_balance'] ?></p>
+<?php rateb_site_header('/campaign.php', true); ?>
 <main class="wrap workspace">
   <section class="workspace-top">
     <p class="eyebrow" data-i18n="campaign_workspace"><?= $arabic ? 'مساحة الحملة' : 'Campaign workspace' ?></p>
@@ -823,6 +811,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=price11"></script>
+<script src="/public/assets/js/app.js?v=nav40"></script>
 </body>
 </html>

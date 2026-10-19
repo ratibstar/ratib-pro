@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>RATEB AI — Forgot password</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=scroll1">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav40">
 </head>
 <body class="studio page-login">
 <div class="auth-shell">
@@ -46,6 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p class="footer-link"><a href="/login.php" data-i18n="login">Login</a></p>
   </div>
 </div>
-<script src="/public/assets/js/app.js?v=reset1"></script>
+<script src="/public/assets/js/app.js?v=nav40"></script>
 </body>
 </html>

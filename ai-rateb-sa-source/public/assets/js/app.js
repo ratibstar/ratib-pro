@@ -17,6 +17,33 @@
     themeButton.onclick = setTheme;
   }
 
+  var siteBar = document.querySelector('.site-bar');
+  var navToggle = document.querySelector('[data-nav-toggle]');
+  if (siteBar && navToggle) {
+    navToggle.addEventListener('click', function () {
+      var open = siteBar.classList.toggle('nav-open');
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    siteBar.querySelectorAll('.site-nav a, .site-nav button').forEach(function (link) {
+      link.addEventListener('click', function () {
+        siteBar.classList.remove('nav-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+  if (siteBar) {
+    var barRaised = false;
+    var raiseBar = function () {
+      var next = window.scrollY > 8;
+      if (next !== barRaised) {
+        barRaised = next;
+        siteBar.classList.toggle('is-raised', next);
+      }
+    };
+    window.addEventListener('scroll', raiseBar, { passive: true });
+    raiseBar();
+  }
+
   var dict = {
     en: {
       dashboard: 'Dashboard',

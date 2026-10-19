@@ -229,7 +229,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=scroll1">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav40">
 <style>.goal-pick{display:grid;gap:6px;margin:14px 0}.goal-pick select{width:100%;border-radius:14px;padding:12px;font:inherit}</style>
 </head>
 <body class="studio page-new">
@@ -466,6 +466,6 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
   </div>
 </section>
 <?php rateb_auth_dialog('/campaign-new.php'); ?>
-<script src="/public/assets/js/app.js?v=price5"></script>
+<script src="/public/assets/js/app.js?v=nav40"></script>
 </body>
 </html>
