@@ -363,12 +363,26 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                 if (!$row) {
                     throw new RuntimeException('missing_image');
                 }
-                $created = $provider->generateFromImage(
-                    rateb_video_image_data_uri($row),
-                    (string) $scene['prompt'],
-                    (int) $scene['duration'],
-                    rateb_video_ratio()
-                );
+                try {
+                    $created = $provider->generateFromImage(
+                        rateb_video_image_data_uri($row),
+                        (string) $scene['prompt'],
+                        (int) $scene['duration'],
+                        rateb_video_ratio()
+                    );
+                } catch (RuntimeException $providerError) {
+                    if ($providerError->getMessage() !== 'rejected_credit') {
+                        throw $providerError;
+                    }
+                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration']);
+                    $scenes[$index]['status'] = 'ready';
+                    $scenes[$index]['local'] = true;
+                    $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
+                        json_encode($scenes, JSON_UNESCAPED_UNICODE),
+                        (int) $job['id'],
+                    ]);
+                    continue;
+                }
                 $scenes[$index]['task_id'] = $created['task_id'];
                 $scenes[$index]['status'] = 'processing';
                 $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
@@ -424,6 +438,48 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
         $job['error_code'] = $code;
         return $job;
     }
+}
+
+function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds): void
+{
+    $bytes = file_get_contents(media_absolute_path($imageRow));
+    $jpeg = is_string($bytes) ? rateb_video_prompt_jpeg($bytes) : null;
+    if (!is_string($jpeg)) {
+        throw new RuntimeException('rejected_image');
+    }
+    $dir = MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips';
+    if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
+        throw new RuntimeException('storage');
+    }
+    $still = $dir . '/still-' . (int) $job['id'] . '-' . $index . '.jpg';
+    $clip = $dir . '/' . (int) $job['id'] . '-' . $index . '.mp4';
+    if (file_put_contents($still, $jpeg, LOCK_EX) === false) {
+        throw new RuntimeException('storage');
+    }
+    $frames = max(1, $seconds) * 25;
+    $zoom = $index % 2 === 0 ? "min(zoom+0.0009,1.15)" : "if(eq(on,0),1.15,max(zoom-0.0009,1))";
+    $filter = 'scale=1440:2560,zoompan=z=' . "'" . $zoom . "'" . ':d=' . $frames
+        . ":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280:fps=25,format=yuv420p";
+    $ffmpeg = is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
+    $cmd = escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($still) . ' -vf ' . escapeshellarg($filter)
+        . ' -frames:v ' . $frames . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
+    if (!function_exists('proc_open')) {
+        throw new RuntimeException('storage');
+    }
+    $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    if (!is_resource($process)) {
+        throw new RuntimeException('storage');
+    }
+    stream_get_contents($pipes[1]);
+    stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    $code = proc_close($process);
+    @unlink($still);
+    if ($code !== 0 || !is_file($clip) || filesize($clip) < 1000) {
+        throw new RuntimeException('storage');
+    }
+    chmod($clip, 0600);
 }
 
 /** @param array<int,array<string,mixed>> $scenes */
