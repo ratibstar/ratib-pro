@@ -45,7 +45,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=price4">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=scroll1">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard.php', !empty($_SESSION['user_id'])); ?>

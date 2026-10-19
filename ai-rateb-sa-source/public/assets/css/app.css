@@ -569,3 +569,12 @@ body.page-campaign .build-stages button.stage-go{min-height:32px;padding:6px 8px
 .ready-audio{display:grid;gap:8px;margin-top:12px}
 .ready-audio audio{width:100%}
 @media (max-width:900px){.studio-board{grid-template-columns:1fr}.top nav{flex-wrap:wrap;justify-content:flex-end}}
+body.studio::before,body.studio::after{will-change:transform;backface-visibility:hidden;animation-direction:alternate!important}
+body.studio::after{inset:-12% -40%}
+@keyframes color-drift{from{transform:translate3d(-6%,-4%,0) scale(1.04)}to{transform:translate3d(6%,4%,0) scale(1.14)}}
+@keyframes wave-slide{from{transform:translate3d(-14%,0,0)}to{transform:translate3d(14%,0,0)}}
+@keyframes wave-rise{from{transform:translate3d(-8%,5%,0)}to{transform:translate3d(8%,-5%,0)}}
+@keyframes wave-diagonal{from{transform:translate3d(-10%,-5%,0)}to{transform:translate3d(10%,5%,0)}}
+@keyframes pulse-wash{from{transform:scale(1.12)}to{transform:scale(1.36)}}
+body.studio .card,body.studio .panel,body.studio .kpi,body.studio .studio-stat,body.studio .flow-board li,body.studio .mock-screen,body.studio .auth-card,body.studio fieldset,body.studio .result,body.studio .media-card,body.studio .media-uploads form,body.studio .sample-card,body.studio .showcase-card,body.studio .campaign-tile,body.studio .tabs{backdrop-filter:none;background-color:color-mix(in srgb,var(--surface) 84%,transparent)}
+[data-theme=dark] body.studio .card,[data-theme=dark] body.studio .auth-card,[data-theme=dark] body.studio .kpi,[data-theme=dark] body.studio .result,[data-theme=dark] body.studio .media-card,[data-theme=dark] body.studio fieldset,[data-theme=dark] body.studio fieldset.form-section,[data-theme=dark] body.studio .studio-stat,[data-theme=dark] body.studio .campaign-tile,[data-theme=dark] body.studio .showcase-card{backdrop-filter:none;background-color:color-mix(in srgb,#3a2f62 88%,transparent)}
