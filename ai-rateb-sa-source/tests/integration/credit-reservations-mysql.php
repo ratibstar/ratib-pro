@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 /*
  * Real MySQL/MariaDB integration test for the credit reservation SQL in app/plans.php:
- * rateb_reservation_charge, rateb_reservation_settle, rateb_reservation_sweep.
+ * rateb_reservation_charge, rateb_reservation_settle, rateb_reservation_sweep, and the
+ * rateb_usage_begin plan gate that opens each reservation.
  *
  * It never uses app/bootstrap.php, db(), or config/database.php credentials. It connects
  * only to the database named in RATEB_TEST_DB_NAME and refuses to run unless that
@@ -35,7 +36,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../app/plans.php';
 
 const IT_MARKER = 'rateb_integration_marker';
-const IT_TABLES = ['users', 'usage_events', IT_MARKER];
+const IT_TABLES = ['users', 'usage_events', 'plans', 'subscriptions', IT_MARKER];
 
 function it_refuse(string $why): never
 {
@@ -144,6 +145,37 @@ function it_setup(PDO $pdo): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     $pdo->exec('ALTER TABLE usage_events ADD COLUMN event_type VARCHAR(32) NULL');
     $pdo->exec('ALTER TABLE usage_events ADD COLUMN credits_deducted INT NOT NULL DEFAULT 0');
+    // Mirrors app/schema.php: CREATE TABLE plans and subscriptions.
+    $pdo->exec("CREATE TABLE plans (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        code VARCHAR(32) NOT NULL,
+        name_ar VARCHAR(80) NOT NULL,
+        name_en VARCHAR(80) NOT NULL,
+        price_sar DECIMAL(10,2) NOT NULL DEFAULT 0,
+        video_limit INT UNSIGNED NOT NULL DEFAULT 0,
+        video_max_seconds INT UNSIGNED NOT NULL DEFAULT 0,
+        image_limit INT UNSIGNED NOT NULL DEFAULT 0,
+        watermark TINYINT(1) NOT NULL DEFAULT 1,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        sort_order INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY code (code)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $pdo->exec("CREATE TABLE subscriptions (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT UNSIGNED NOT NULL,
+        plan_id BIGINT UNSIGNED NOT NULL,
+        status VARCHAR(16) NOT NULL DEFAULT 'active',
+        period_start DATETIME NOT NULL,
+        period_end DATETIME NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_status (user_id, status),
+        KEY plan_id (plan_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 }
 
 /** Same statement as rateb_usage_begin(). */
@@ -240,10 +272,10 @@ function it_waiting_updates(PDO $observer, string $prefix): int
  *
  * @return array{0:array<int,array<string,mixed>>,1:bool}
  */
-function it_race(PDO $holder, PDO $observer, string $action, int $usageId, int $userId, string $waitPrefix): array
+function it_race(PDO $holder, PDO $observer, string $action, int $usageId, int $userId, string $waitPrefix, string $lockTable = 'usage_events', ?int $lockId = null): array
 {
     $holder->beginTransaction();
-    $holder->prepare('SELECT id FROM usage_events WHERE id = ? FOR UPDATE')->execute([$usageId]);
+    $holder->prepare('SELECT id FROM ' . $lockTable . ' WHERE id = ? FOR UPDATE')->execute([$lockId ?? $usageId]);
     $workers = [it_spawn($action, $usageId, $userId), it_spawn($action, $usageId, $userId)];
     $overlap = false;
     $deadline = microtime(true) + 15;
@@ -269,6 +301,7 @@ if (($argv[1] ?? '') === '--worker') {
         $result = match ($argv[2] ?? '') {
             'settle' => rateb_reservation_settle($pdo, $usageId, $userId, 'failed', 'ai_image'),
             'charge' => rateb_reservation_charge($pdo, $usageId, $userId, 'ai_image', 70),
+            'begin' => rateb_usage_begin($pdo, $userId, 72, 'image'),
             default => throw new RuntimeException('unknown worker action'),
         };
         echo json_encode(['result' => $result]), PHP_EOL;
@@ -418,6 +451,125 @@ if (!$overlap) {
     it_report('NOT RUN', 'concurrent charge', 'could not confirm both connections were waiting on the row lock; results: ' . json_encode($charged));
 } else {
     it_expect('two concurrent charges of one reservation debit exactly once', it_state($pdo, 108, $r8, 'ai_image') + ['outcomes' => implode(',', $outcomes)], ['outcomes' => 'ok,reservation', 'balance' => 15, 'status' => 'reserved', 'deducted' => 10, 'charges' => 1, 'refunds' => 0]);
+}
+
+// 7. Voice reservations charge 15 credits and refund or sweep them with the voice max age.
+it_user($pdo, 201, 40);
+$v1 = it_reserve($pdo, 201, 71, 'voice');
+$outcome = rateb_reservation_charge($pdo, $v1, 201, 'saudi_voice', 71);
+it_expect('a voice reservation is charged 15 credits once', it_state($pdo, 201, $v1, 'saudi_voice') + ['outcome' => $outcome], ['outcome' => 'ok', 'balance' => 25, 'status' => 'reserved', 'deducted' => 15, 'charges' => 1, 'refunds' => 0]);
+$outcome = rateb_reservation_charge($pdo, $v1, 201, 'saudi_voice', 71);
+it_expect('a charged voice reservation cannot be charged again', it_state($pdo, 201, $v1, 'saudi_voice') + ['outcome' => $outcome], ['outcome' => 'reservation', 'balance' => 25, 'deducted' => 15, 'charges' => 1]);
+$first = rateb_reservation_settle($pdo, $v1, 201, 'failed', 'saudi_voice');
+$second = rateb_reservation_settle($pdo, $v1, 201, 'failed', 'saudi_voice');
+it_expect('a failed voice reservation refunds 15 credits exactly once', it_state($pdo, 201, $v1, 'saudi_voice') + ['first' => var_export($first, true), 'second' => var_export($second, true)], ['first' => 'true', 'second' => 'false', 'balance' => 40, 'status' => 'failed', 'deducted' => 15, 'charges' => 1, 'refunds' => 1]);
+$v2 = it_reserve($pdo, 201, 71, 'voice');
+rateb_reservation_charge($pdo, $v2, 201, 'saudi_voice', 71);
+$done = rateb_reservation_settle($pdo, $v2, 201, 'completed', 'saudi_voice');
+$late = rateb_reservation_settle($pdo, $v2, 201, 'failed', 'saudi_voice');
+it_expect('a completed voice reservation keeps its charge and ignores a late failure', it_state($pdo, 201, $v2, 'saudi_voice') + ['done' => var_export($done, true), 'late' => var_export($late, true)], ['done' => 'false', 'late' => 'false', 'balance' => 25, 'status' => 'completed', 'deducted' => 15, 'charges' => 2, 'refunds' => 1]);
+
+it_user($pdo, 202, 10);
+$v3 = it_reserve($pdo, 202, 71, 'voice');
+$outcome = rateb_reservation_charge($pdo, $v3, 202, 'saudi_voice', 71);
+it_expect('a voice charge above the balance is refused and changes nothing', it_state($pdo, 202, $v3, 'saudi_voice') + ['outcome' => $outcome], ['outcome' => 'credits', 'balance' => 10, 'status' => 'reserved', 'deducted' => 0, 'charges' => 0, 'refunds' => 0]);
+
+it_user($pdo, 203, 60);
+$voiceAge = rateb_voice_reservation_max_age();
+$staleVoice = it_reserve($pdo, 203, 71, 'voice');
+rateb_reservation_charge($pdo, $staleVoice, 203, 'saudi_voice', 71);
+$youngVoice = it_reserve($pdo, 203, 71, 'voice');
+rateb_reservation_charge($pdo, $youngVoice, 203, 'saudi_voice', 71);
+$staleImage = it_reserve($pdo, 203, 71, 'image');
+rateb_reservation_charge($pdo, $staleImage, 203, 'ai_image', 71);
+$age->execute([$voiceAge + 60, $staleVoice]);
+$age->execute([$voiceAge - 60, $youngVoice]);
+$age->execute([rateb_image_reservation_max_age() + 60, $staleImage]);
+$swept = rateb_reservation_sweep($pdo, 203, 'voice', 'saudi_voice', $voiceAge);
+it_expect('the voice sweep refunds only the stale charged voice reservation', it_state($pdo, 203, $staleVoice, 'saudi_voice') + ['swept' => $swept], ['swept' => 1, 'balance' => 35, 'status' => 'failed', 'deducted' => 15, 'charges' => 2, 'refunds' => 1]);
+it_expect('the voice sweep leaves a running voice and a stale image reservation alone', ['young' => it_state($pdo, 203, $youngVoice, 'saudi_voice')['status'], 'image' => it_state($pdo, 203, $staleImage, 'ai_image')['status']], ['young' => 'reserved', 'image' => 'reserved']);
+
+// 8. The real rateb_usage_begin() plan gate, followed by charging.
+$plan = $pdo->prepare('INSERT INTO plans (code, name_ar, name_en, price_sar, video_limit, video_max_seconds, image_limit, watermark, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$plan->execute(['free', 'مجاني', 'Free', 0, 2, 10, 2, 1, 1]);
+$plan->execute(['pro', 'احترافي', 'Pro', 99, 5, 30, 3, 0, 1]);
+$proPlan = (int) $pdo->lastInsertId();
+$plan->execute(['retired', 'متوقف', 'Retired', 49, 5, 30, 5, 0, 0]);
+$retiredPlan = (int) $pdo->lastInsertId();
+$subscribe = $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end) VALUES (?, ?, 'active', NOW(), DATE_ADD(NOW(), INTERVAL 1 MONTH))");
+$countRows = static function (PDO $pdo, int $userId, string $operation, ?string $status = null): int {
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM usage_events WHERE user_id = ? AND operation = ?' . ($status !== null ? ' AND status = ?' : ''));
+    $stmt->execute($status !== null ? [$userId, $operation, $status] : [$userId, $operation]);
+    return (int) $stmt->fetchColumn();
+};
+$subscriptionPlans = static function (PDO $pdo, int $userId): string {
+    $stmt = $pdo->prepare('SELECT p.code FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.user_id = ? ORDER BY s.id');
+    $stmt->execute([$userId]);
+    return implode(',', $stmt->fetchAll(PDO::FETCH_COLUMN));
+};
+
+it_user($pdo, 301, 25);
+$gate = rateb_usage_begin($pdo, 301, 72, 'image');
+it_expect('usage_begin subscribes a new user to the free plan and opens a reservation', ['ok' => var_export($gate['ok'], true), 'watermark' => var_export($gate['watermark'] ?? null, true), 'plans' => $subscriptionPlans($pdo, 301), 'open' => var_export($pdo->inTransaction(), true)] + it_state($pdo, 301, (int) $gate['id'], 'ai_image'), ['ok' => 'true', 'watermark' => 'true', 'plans' => 'free', 'open' => 'false', 'balance' => 25, 'status' => 'reserved', 'deducted' => 0, 'charges' => 0]);
+$outcome = rateb_reservation_charge($pdo, (int) $gate['id'], 301, 'ai_image', 72);
+rateb_reservation_settle($pdo, (int) $gate['id'], 301, 'completed', 'ai_image');
+it_expect('the reservation from usage_begin is charged once and completes', it_state($pdo, 301, (int) $gate['id'], 'ai_image') + ['outcome' => $outcome], ['outcome' => 'ok', 'balance' => 15, 'status' => 'completed', 'deducted' => 10, 'charges' => 1, 'refunds' => 0]);
+$gate2 = rateb_usage_begin($pdo, 301, 72, 'image');
+rateb_reservation_charge($pdo, (int) $gate2['id'], 301, 'ai_image', 72);
+it_expect('a second usage_begin reuses the free subscription', ['ok' => var_export($gate2['ok'], true), 'plans' => $subscriptionPlans($pdo, 301)] + it_state($pdo, 301, (int) $gate2['id'], 'ai_image'), ['ok' => 'true', 'plans' => 'free', 'balance' => 5, 'status' => 'reserved', 'deducted' => 10, 'charges' => 2]);
+$denied = rateb_usage_begin($pdo, 301, 72, 'image');
+it_expect('one completed and one running image reach the free limit of 2', ['ok' => var_export($denied['ok'], true), 'code' => $denied['code'], 'id' => $denied['id'], 'reservations' => $countRows($pdo, 301, 'image'), 'open' => var_export($pdo->inTransaction(), true)] + it_state($pdo, 301, (int) $gate2['id'], 'ai_image'), ['ok' => 'false', 'code' => 'plan_limit', 'id' => 0, 'reservations' => 2, 'open' => 'false', 'balance' => 5, 'charges' => 2]);
+rateb_reservation_settle($pdo, (int) $gate2['id'], 301, 'failed', 'ai_image');
+$gate3 = rateb_usage_begin($pdo, 301, 72, 'image');
+it_expect('a refunded image frees its slot and the refund restores the balance', ['ok' => var_export($gate3['ok'], true)] + it_state($pdo, 301, (int) $gate2['id'], 'ai_image'), ['ok' => 'true', 'balance' => 15, 'status' => 'failed', 'charges' => 2, 'refunds' => 1]);
+$age->execute([21 * 60, (int) $gate3['id']]);
+$gate4 = rateb_usage_begin($pdo, 301, 72, 'image');
+$full = rateb_usage_begin($pdo, 301, 72, 'image');
+$pdo->prepare('UPDATE usage_events SET created_at = DATE_SUB(NOW(), INTERVAL 40 DAY) WHERE id = ?')->execute([(int) $gate['id']]);
+$gate5 = rateb_usage_begin($pdo, 301, 72, 'image');
+it_expect('reservations older than 20 minutes and last month\'s images do not count toward the limit', ['abandoned' => var_export($gate4['ok'], true), 'full' => $full['code'], 'last_month' => var_export($gate5['ok'], true), 'reservations' => $countRows($pdo, 301, 'image', 'reserved')], ['abandoned' => 'true', 'full' => 'plan_limit', 'last_month' => 'true', 'reservations' => 3]);
+
+it_user($pdo, 302, 40);
+$subscribe->execute([302, $proPlan]);
+$voiceGates = [];
+foreach (range(1, 4) as $unused) {
+    $voiceGate = rateb_usage_begin($pdo, 302, 72, 'voice');
+    $voiceGates[] = var_export($voiceGate['ok'], true);
+    rateb_reservation_settle($pdo, (int) $voiceGate['id'], 302, 'completed', 'saudi_voice');
+}
+$proGate = rateb_usage_begin($pdo, 302, 72, 'voice');
+$outcome = rateb_reservation_charge($pdo, (int) $proGate['id'], 302, 'saudi_voice', 72);
+rateb_reservation_settle($pdo, (int) $proGate['id'], 302, 'completed', 'saudi_voice');
+it_expect('voice has no plan count limit and its usage_begin reservation is charged 15 credits', ['gates' => implode(',', $voiceGates), 'watermark' => var_export($proGate['watermark'] ?? null, true), 'outcome' => $outcome, 'plans' => $subscriptionPlans($pdo, 302)] + it_state($pdo, 302, (int) $proGate['id'], 'saudi_voice'), ['gates' => 'true,true,true,true', 'watermark' => 'false', 'outcome' => 'ok', 'plans' => 'pro', 'balance' => 25, 'status' => 'completed', 'deducted' => 15, 'charges' => 1, 'refunds' => 0]);
+
+it_user($pdo, 303, 40);
+$subscribe->execute([303, $retiredPlan]);
+$inactive = rateb_usage_begin($pdo, 303, 72, 'image');
+it_expect('an inactive plan denies usage_begin without a reservation', ['ok' => var_export($inactive['ok'], true), 'code' => $inactive['code'], 'rows' => $countRows($pdo, 303, 'image'), 'plans' => $subscriptionPlans($pdo, 303), 'open' => var_export($pdo->inTransaction(), true)], ['ok' => 'false', 'code' => 'plan_inactive', 'rows' => 0, 'plans' => 'retired', 'open' => 'false']);
+$unknown = rateb_usage_begin($pdo, 303, 72, 'not_a_feature');
+it_expect('an unknown operation is denied', ['ok' => var_export($unknown['ok'], true), 'code' => $unknown['code']], ['ok' => 'false', 'code' => 'plan_inactive']);
+
+it_user($pdo, 304, 10);
+$poorGate = rateb_usage_begin($pdo, 304, 72, 'voice');
+$outcome = rateb_reservation_charge($pdo, (int) $poorGate['id'], 304, 'saudi_voice', 72);
+rateb_usage_finish($pdo, (int) $poorGate['id'], 'failed');
+it_expect('a low-balance voice request is closed by usage_finish without any charge', it_state($pdo, 304, (int) $poorGate['id'], 'saudi_voice') + ['ok' => var_export($poorGate['ok'], true), 'outcome' => $outcome], ['ok' => 'true', 'outcome' => 'credits', 'balance' => 10, 'status' => 'failed', 'deducted' => 0, 'charges' => 0, 'refunds' => 0]);
+
+// 9. Two connections race for the last image slot of a plan; the plan row lock admits one.
+it_user($pdo, 305, 50);
+$subscribe->execute([305, $proPlan]);
+$slot = (int) $pdo->lastInsertId();
+foreach (range(1, 2) as $unused) {
+    $used = rateb_usage_begin($pdo, 305, 72, 'image');
+    rateb_reservation_settle($pdo, (int) $used['id'], 305, 'completed', 'ai_image');
+}
+[$begun, $overlap] = it_race($holder, $observer, 'begin', 0, 305, 'SELECT s.id AS subscription_id', 'subscriptions', $slot);
+$codes = array_map(static fn (array $w): string => isset($w['result']) ? ($w['result']['ok'] ? 'ok' : (string) $w['result']['code']) : 'error: ' . ($w['error'] ?? ''), $begun);
+sort($codes);
+if (!$overlap) {
+    it_report('NOT RUN', 'concurrent usage_begin', 'could not confirm both connections were waiting on the plan lock; results: ' . json_encode($begun));
+} else {
+    it_expect('two concurrent usage_begin calls for the last slot admit exactly one', ['codes' => implode(',', $codes), 'reserved' => $countRows($pdo, 305, 'image', 'reserved'), 'completed' => $countRows($pdo, 305, 'image', 'completed')], ['codes' => 'ok,plan_limit', 'reserved' => 1, 'completed' => 2]);
 }
 
 $pdo->exec('DROP TRIGGER IF EXISTS it_fail_charge');

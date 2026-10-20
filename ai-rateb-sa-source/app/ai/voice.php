@@ -31,17 +31,12 @@ $tone = (string) ($_POST['tone'] ?? 'corporate');
 if (!in_array($tone, ['enthusiastic', 'corporate', 'soft'], true)) {
     $tone = 'corporate';
 }
-$toneLead = match ($tone) {
-    'enthusiastic' => 'قلها بحماس تفاعلي. ',
-    'soft' => 'قلها بنبرة هادئة ولطيفة. ',
-    default => '',
-};
 $tempo = match ($tone) {
     'enthusiastic' => 1.12,
     'soft' => 0.96,
     default => 1.0,
 };
-$spoken = trim(mb_substr($toneLead . $script, 0, 600));
+$spoken = trim(mb_substr($script, 0, 600));
 if (!rateb_voice_text_is_arabic($spoken)) {
     http_response_code(422);
     echo json_encode(['error' => rateb_ui_error('voice_english'), 'code' => 'voice_english', 'state' => 'unavailable'], JSON_UNESCAPED_UNICODE);
@@ -64,13 +59,21 @@ if ($sawtakKey === '') {
 }
 $script = $spoken;
 
-if (!rateb_check_and_deduct_credits((int) $_SESSION['user_id'], 'saudi_voice', (int) $campaign['id'])) {
-    rateb_credit_stop((int) $_SESSION['user_id'], 'saudi_voice');
-}
-$gate = rateb_usage_begin(db(), (int) $_SESSION['user_id'], (int) $campaign['id'], 'voice');
+$userId = (int) $_SESSION['user_id'];
+rateb_reservation_sweep(db(), $userId, 'voice', 'saudi_voice', rateb_voice_reservation_max_age());
+$gate = rateb_usage_begin(db(), $userId, (int) $campaign['id'], 'voice');
 if (!$gate['ok']) {
-    rateb_refund_credits((int) $_SESSION['user_id'], 'saudi_voice', (int) $campaign['id']);
     rateb_deny((string) $gate['code']);
+}
+$charge = rateb_reservation_charge(db(), (int) $gate['id'], $userId, 'saudi_voice', (int) $campaign['id']);
+if ($charge !== 'ok') {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    if ($charge === 'credits') {
+        rateb_credit_stop($userId, 'saudi_voice');
+    }
+    http_response_code(409);
+    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 session_write_close();
 
@@ -108,7 +111,7 @@ if ($audio !== false && $http >= 200 && $http < 300 && substr((string) $audio, 0
 if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {
     $decoded = json_decode((string) $audio, true);
     $errorCode = is_array($decoded) ? (string) ($decoded['error']['code'] ?? '') : '';
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    rateb_reservation_settle(db(), (int) $gate['id'], $userId, 'failed', 'saudi_voice');
     if ($errorCode === 'model_terms_required') {
         http_response_code(403);
         echo json_encode(['error' => rateb_ui_error('voice_terms'), 'code' => 'voice_terms', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
@@ -129,12 +132,12 @@ try {
         (string) $audio
     );
 } catch (Throwable $error) {
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    rateb_reservation_settle(db(), (int) $gate['id'], $userId, 'failed', 'saudi_voice');
     http_response_code(500);
     echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-rateb_usage_finish(db(), (int) $gate['id'], 'completed');
+rateb_reservation_settle(db(), (int) $gate['id'], $userId, 'completed', 'saudi_voice');
 rateb_store_voice_script((int) $campaign['id'], $spoken);
 
 echo json_encode(['ok' => true, 'state' => 'ready', 'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '&play=1#voice'], JSON_UNESCAPED_UNICODE);

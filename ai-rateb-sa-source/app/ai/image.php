@@ -27,12 +27,11 @@ $now = time();
 $userId = (int) $_SESSION['user_id'];
 $campaignId = (int) $campaign['id'];
 $postedJobId = strtolower(trim((string) ($_POST['job_id'] ?? '')));
+rateb_reservation_sweep(db(), $userId, 'image', 'ai_image', rateb_image_reservation_max_age());
 try {
     $decision = rateb_image_jobs_transaction($userId, static function (array $jobs) use ($userId, $campaignId, $postedJobId, $now): array {
         $decision = rateb_image_jobs_decide(ai_image_jobs_include_session($jobs, $userId), $userId, $campaignId, $postedJobId, $now);
-        foreach ($decision['finish'] as $usageId) {
-            rateb_usage_finish(db(), (int) $usageId, 'failed');
-        }
+        ai_image_settle_dropped($userId, $decision);
         return ['jobs' => $decision['jobs'], 'result' => $decision];
     });
 } catch (RuntimeException $error) {
@@ -57,14 +56,9 @@ $ratioSize = match ($ratio) {
 if (!in_array($ratio, ['1:1', '4:5', '9:16'], true)) {
     $ratio = '1:1';
 }
-$prompt = ai_campaign_image_prompt($campaign);
-$prompt = 'ratio ' . $ratio . '. ' . $prompt;
-if (function_exists('mb_substr')) {
-    $prompt = mb_substr($prompt, 0, 400);
-} else {
-    $prompt = substr($prompt, 0, 400);
-}
-if ($prompt === '') {
+$ratioLead = 'ratio ' . $ratio . '. ';
+$prompt = $ratioLead . ai_campaign_image_prompt($campaign, 400 - mb_strlen($ratioLead));
+if ($prompt === $ratioLead) {
     http_response_code(422);
     echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -73,9 +67,7 @@ $reservedId = 0;
 try {
     $decision = rateb_image_jobs_transaction($userId, static function (array $jobs) use ($userId, $campaignId, $postedJobId, $now, &$reservedId): array {
         $decision = rateb_image_jobs_decide(ai_image_jobs_include_session($jobs, $userId), $userId, $campaignId, $postedJobId, $now);
-        foreach ($decision['finish'] as $usageId) {
-            rateb_usage_finish(db(), (int) $usageId, 'failed');
-        }
+        ai_image_settle_dropped($userId, $decision);
         if (!rateb_image_job_allows_new_reservation($decision)) {
             return ['jobs' => $decision['jobs'], 'result' => $decision];
         }
@@ -136,6 +128,17 @@ if ($models['http'] !== 200 || $workers < 1) {
     exit;
 }
 
+$charge = rateb_reservation_charge(db(), $usageId, $userId, 'ai_image', $campaignId);
+if ($charge !== 'ok') {
+    ai_image_release($userId, '', $usageId, 'failed');
+    if ($charge === 'credits') {
+        rateb_credit_stop($userId, 'ai_image');
+    }
+    http_response_code(409);
+    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $payload = json_encode([
     'prompt' => $prompt,
     'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
@@ -152,14 +155,7 @@ if ($submit['http'] !== 202) {
 }
 $job = json_decode($submit['body'], true);
 $jobId = is_array($job) ? strtolower((string) ($job['id'] ?? '')) : '';
-if ($postedJobId === '' && !rateb_check_and_deduct_credits($userId, 'ai_image', $campaignId)) {
-    ai_image_release($userId, '', $usageId, 'failed');
-    rateb_credit_stop();
-}
 if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
-    if ($postedJobId === '') {
-        rateb_refund_credits($userId, 'ai_image', $campaignId);
-    }
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(502);
     echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
@@ -221,18 +217,36 @@ function ai_image_bind(array $job): void
 
 function ai_image_release(int $userId, string $jobId, int $usageId, string $status): void
 {
-    if ($usageId > 0) {
-        rateb_usage_finish(db(), $usageId, $status);
-    }
     if ($jobId !== '') {
         unset($_SESSION['ai_image_jobs'][$jobId]);
     }
-    if ($userId < 1) {
-        return;
+    $usageIds = $usageId > 0 ? [$usageId] : [];
+    if ($userId > 0) {
+        try {
+            $removed = rateb_image_jobs_transaction($userId, static function (array $jobs) use ($jobId, $usageId): array {
+                $taken = rateb_image_jobs_take($jobs, $jobId, $usageId);
+                return ['jobs' => $taken['jobs'], 'result' => $taken['removed']];
+            });
+            foreach (is_array($removed) ? $removed : [] as $job) {
+                $usageIds[] = (int) ($job['usage_id'] ?? 0);
+            }
+        } catch (RuntimeException $error) {
+            if ($error->getMessage() !== 'image_job_store') {
+                throw $error;
+            }
+        }
     }
-    rateb_image_jobs_transaction($userId, static function (array $jobs) use ($jobId, $usageId): array {
-        return ['jobs' => rateb_image_jobs_remove($jobs, $jobId, $usageId), 'result' => null];
-    });
+    foreach (array_unique($usageIds) as $id) {
+        rateb_reservation_settle(db(), (int) $id, $userId, $status, 'ai_image');
+    }
+}
+
+/** @param array{finish?:array<int,int>} $decision */
+function ai_image_settle_dropped(int $userId, array $decision): void
+{
+    foreach ($decision['finish'] ?? [] as $usageId) {
+        rateb_reservation_settle(db(), (int) $usageId, $userId, 'failed', 'ai_image');
+    }
 }
 
 /** @param array<string,mixed> $decision */
@@ -331,9 +345,9 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
         media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
     } catch (Throwable $error) {
-        rateb_usage_finish(db(), $usageId, 'failed');
+        ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(500);
-        echo json_encode(['error' => 'Could not save the image file.']);
+        echo json_encode(['error' => rateb_ui_error('image_storage'), 'code' => 'image_storage', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     ai_image_release($userId, $jobId, $usageId, 'completed');
@@ -347,7 +361,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     exit;
 }
 
-function ai_campaign_image_prompt(array $campaign): string
+function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
 {
     $rows = db()->prepare('SELECT output_type, content, approval_status FROM campaign_outputs WHERE campaign_id = ? ORDER BY id DESC');
     $rows->execute([(int) $campaign['id']]);
@@ -391,7 +405,7 @@ function ai_campaign_image_prompt(array $campaign): string
     $prompt = rateb_visual_prompt(
         array_merge(['Advertising photograph'], rateb_visual_lines($campaign, $document, $copyLine, $brand, $prefer)),
         'No written text and no logo.',
-        400
+        $limit
     );
     if (trim($prompt) === '') {
         http_response_code(422);

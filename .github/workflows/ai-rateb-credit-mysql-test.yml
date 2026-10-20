@@ -96,7 +96,7 @@ jobs:
       - name: Offline test suites
         run: |
           failed=()
-          for suite in workflow-fixes credit-reservations campaign-package video-engine strategy-output sawtak-catalog media-upload-kind; do
+          for suite in workflow-fixes credit-reservations endpoint-billing campaign-package video-engine strategy-output sawtak-catalog media-upload-kind; do
             echo "::group::tests/$suite.php"
             if php "tests/$suite.php"; then
               echo "OK tests/$suite.php"
