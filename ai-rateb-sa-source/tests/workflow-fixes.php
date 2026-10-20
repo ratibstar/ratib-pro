@@ -178,5 +178,56 @@ $jsonScenes = rateb_video_storyboard(
 check(count($jsonScenes) === 1 && str_contains($jsonScenes[0]['prompt'], 'عرض اليوم في جدة'), 'video prompt uses the Arabic field from bilingual copy');
 check(!str_contains($jsonScenes[0]['prompt'], '{') && !str_contains($jsonScenes[0]['prompt'], 'Jeddah') && !str_contains($jsonScenes[0]['purpose'], '{'), 'video prompt does not contain raw bilingual JSON');
 
+$longVoice = str_repeat('B', 400);
+check(mb_strlen(rateb_video_copy_parts([['approval_status' => 'approved', 'content' => $longVoice]], 'en')[0]) === 400, 'voiceover copy keeps more than the 180 character prompt limit');
+$longScenes = rateb_video_storyboard(['id' => 3, 'product_name' => 'Dates'], [], [$longVoice], [['id' => 8]], 5, [], 'en');
+check(!str_contains($longScenes[0]['prompt'], str_repeat('B', 181)) && mb_strlen($longScenes[0]['prompt']) <= 400, 'video visual prompt keeps copy within 180 characters');
+$ordered = rateb_video_copy_parts([
+    ['output_type' => 'social_posts', 'approval_status' => 'approved', 'content' => 'Social line'],
+    ['output_type' => 'ad_copy', 'approval_status' => 'approved', 'content' => 'Ad line'],
+    ['output_type' => 'short_ad', 'approval_status' => 'approved', 'content' => 'Short line'],
+], 'en');
+check($ordered === ['Short line', 'Ad line', 'Social line'], 'video copy order prefers the short ad regardless of row order');
+$productFirst = rateb_video_images_product_first([
+    ['id' => 1, 'source' => 'ai'],
+    ['id' => 2, 'source' => 'upload'],
+    ['id' => 3, 'source' => 'ai'],
+]);
+check((int) $productFirst[0]['id'] === 2, 'uploaded product photo leads the video images');
+
+check(rateb_voice_plain(json_encode(['ar' => 'عرض', 'en' => ''], JSON_UNESCAPED_UNICODE), 'en') === '', 'English speech does not fall back to Arabic copy');
+check(rateb_voice_plain(json_encode(['en' => 'Offer'], JSON_UNESCAPED_UNICODE), 'ar') === '', 'Arabic speech does not fall back to English copy');
+check(rateb_voice_plain(json_encode(['instagram' => 'x'], JSON_UNESCAPED_UNICODE), 'ar') === '', 'non-language JSON is not spoken');
+check(rateb_voice_plain('نص عادي', 'ar') === 'نص عادي', 'plain copy is still spoken');
+
+$chargeId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1';
+$claim = rateb_image_jobs_claim([], $userId, $campaignId, '', $now, 90);
+$pending = rateb_image_jobs_attach($claim['jobs'], rateb_image_job_record($chargeId, $userId, $campaignId, 90, $now, 'pending'));
+check(count($pending) === 1 && (int) $pending[$chargeId]['usage_id'] === 90, 'the pending job replaces the claim and keeps its reservation id');
+$firstTake = rateb_image_jobs_take($pending, $chargeId, 0);
+$secondTake = rateb_image_jobs_take($firstTake['jobs'], $chargeId, 0);
+check(array_column($firstTake['removed'], 'usage_id') === [90] && $firstTake['jobs'] === [], 'releasing by job id reports the reservation to settle even without a session');
+check($secondTake['removed'] === [], 'releasing the same job again reports nothing to settle');
+check(rateb_image_jobs_remove($pending, $chargeId, 90) === $firstTake['jobs'], 'remove keeps its old result');
+$claimTake = rateb_image_jobs_take($claim['jobs'], '', 90);
+check(array_column($claimTake['removed'], 'usage_id') === [90], 'a claim without a provider job is released by its reservation id');
+$expiredJob = rateb_image_job_record($chargeId, $userId, $campaignId, 92, $now - rateb_image_job_ttl() - 1, 'pending');
+$expiry = rateb_image_jobs_decide([$chargeId => $expiredJob], $userId, $campaignId, $chargeId, $now);
+check($expiry['finish'] === [92] && !isset($expiry['refund']), 'an expired job hands its reservation id to settlement, not a ledger refund');
+check(rateb_image_reservation_max_age() > rateb_image_job_ttl(), 'the stale-reservation sweep never runs before the image job lifetime ends');
+
+check(rateb_campaign_requirements_met(true, true, true, true, true, true), 'a campaign with every stage done meets the ready rule');
+foreach (['idea', 'strategy', 'copy', 'image', 'audio', 'video'] as $index => $stage) {
+    $flags = array_fill(0, 6, true);
+    $flags[$index] = false;
+    check(!rateb_campaign_requirements_met(...$flags), 'a campaign missing the ' . $stage . ' stage does not meet the ready rule');
+}
+$edited = rateb_edited_output_state('عرض اليوم', 'عرض الغد', 'approved');
+check($edited === ['status' => 'draft', 'invalidate_ready' => true], 'editing approved copy returns it to draft and invalidates readiness');
+$unchanged = rateb_edited_output_state('{"ar":"عرض","en":"Offer"}', json_encode(['ar' => 'عرض', 'en' => 'Offer'], JSON_UNESCAPED_UNICODE), 'approved');
+check($unchanged === ['status' => 'approved', 'invalidate_ready' => false], 'saving identical copy keeps approval even when JSON is re-encoded');
+check(rateb_edited_output_state('{"ar":"عرض","en":"Offer"}', '{"ar":"عرض جديد","en":"Offer"}', 'approved')['status'] === 'draft', 'editing one language of approved bilingual copy returns it to draft');
+check(rateb_edited_output_state('مسودة', 'مسودة جديدة', 'draft') === ['status' => 'draft', 'invalidate_ready' => false], 'editing a draft does not touch readiness');
+
 echo $failures === 0 ? "RESULT=PASS\n" : "RESULT=FAIL\n";
 exit($failures === 0 ? 0 : 1);

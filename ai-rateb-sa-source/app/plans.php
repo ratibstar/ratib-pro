@@ -36,6 +36,7 @@ function rateb_ui_error(string $code): string
         'voice_english' => $arabic ? 'توليد الكلام الإنجليزي غير متاح حاليًا. نموذج الكلام الحالي عربي فقط.' : 'English speech is currently unavailable. The current speech model is Arabic only.',
         'voice_terms' => $arabic ? 'نموذج الصوت موجود، لكن شروط استخدامه غير مقبولة لهذا الحساب.' : 'The speech model exists, but its terms are not accepted for this account.',
         'image_timeout' => $arabic ? 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.' : 'Image generation timed out. No new image was saved.',
+        'image_storage' => $arabic ? 'تعذر حفظ الصورة، وأُعيدت النقاط. حاول مرة أخرى.' : 'The image could not be saved and the credits were returned. Try again.',
         'write_busy' => $arabic ? 'RATEB يكتب الآن.' : 'RATEB is already writing.',
     ];
     return $messages[$code] ?? ($arabic ? 'تعذر تنفيذ الطلب.' : 'The request could not be completed.');
@@ -207,11 +208,12 @@ function rateb_feature_locked(int $userId, string $featureType): bool
 function rateb_credit_stop(int $userId = 0, string $featureType = ''): void
 {
     http_response_code(402);
+    $arabic = !function_exists('ui_language') || ui_language() === 'ar';
     if ($userId > 0 && rateb_feature_locked($userId, $featureType)) {
-        echo json_encode(['error' => 'هذه الميزة غير متاحة في الباقة المجانية، اضغط هنا لترقية الباقة', 'code' => 'package'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => $arabic ? 'هذه الميزة غير متاحة في الباقة المجانية، اضغط هنا لترقية الباقة' : 'This feature is not in the free package. Click here to upgrade.', 'code' => 'package'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    echo json_encode(['error' => 'رصيد النقاط غير كافٍ، اضغط هنا لترقية الباقة', 'code' => 'credits'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => $arabic ? 'رصيد النقاط غير كافٍ، اضغط هنا لترقية الباقة' : 'Not enough credits. Click here to upgrade.', 'code' => 'credits'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -273,6 +275,136 @@ function rateb_usage_finish(PDO $pdo, int $eventId, string $status): void
         return;
     }
     $pdo->prepare('UPDATE usage_events SET status = ? WHERE id = ? AND status = \'reserved\'')->execute([$status, $eventId]);
+}
+
+/**
+ * Charge a feature against one open usage reservation. The charge is recorded on the
+ * reservation row itself, so a reservation can be charged once and refunded once.
+ *
+ * @return string ok | credits | reservation
+ */
+function rateb_reservation_charge(PDO $pdo, int $usageId, int $userId, string $featureType, ?int $campaignId): string
+{
+    $cost = rateb_get_feature_cost($featureType);
+    if ($usageId < 1 || $userId < 1 || $cost < 1) {
+        return 'reservation';
+    }
+    $pdo->beginTransaction();
+    try {
+        $mark = $pdo->prepare("UPDATE usage_events SET credits_deducted = ? WHERE id = ? AND user_id = ? AND status = 'reserved' AND credits_deducted = 0");
+        $mark->execute([$cost, $usageId, $userId]);
+        if ($mark->rowCount() !== 1) {
+            $pdo->rollBack();
+            return 'reservation';
+        }
+        $debit = $pdo->prepare('UPDATE users SET credits_balance = credits_balance - ? WHERE id = ? AND credits_balance >= ?');
+        $debit->execute([$cost, $userId, $cost]);
+        if ($debit->rowCount() !== 1) {
+            $pdo->rollBack();
+            return 'credits';
+        }
+        $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, 'completed', ?, ?)")
+            ->execute([$userId, $campaignId, $featureType, $featureType, $cost]);
+        $pdo->commit();
+        return 'ok';
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
+}
+
+/**
+ * Close a usage reservation. Only the call that moves it out of 'reserved' may refund,
+ * and it refunds exactly the credits recorded on that reservation.
+ *
+ * @return bool true when this call refunded credits
+ */
+function rateb_reservation_settle(PDO $pdo, int $usageId, int $userId, string $status, string $featureType): bool
+{
+    if ($usageId < 1 || $userId < 1 || !in_array($status, ['completed', 'failed'], true)) {
+        return false;
+    }
+    $pdo->beginTransaction();
+    try {
+        $close = $pdo->prepare("UPDATE usage_events SET status = ? WHERE id = ? AND user_id = ? AND status = 'reserved'");
+        $close->execute([$status, $usageId, $userId]);
+        if ($close->rowCount() !== 1 || $status !== 'failed') {
+            $pdo->commit();
+            return false;
+        }
+        $row = $pdo->prepare('SELECT credits_deducted, campaign_id FROM usage_events WHERE id = ? AND user_id = ?');
+        $row->execute([$usageId, $userId]);
+        $charge = $row->fetch() ?: [];
+        $amount = (int) ($charge['credits_deducted'] ?? 0);
+        if ($amount < 1) {
+            $pdo->commit();
+            return false;
+        }
+        $campaignId = isset($charge['campaign_id']) && $charge['campaign_id'] !== null ? (int) $charge['campaign_id'] : null;
+        $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$amount, $userId]);
+        $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, 'completed', ?, 0)")
+            ->execute([$userId, $campaignId, $featureType . '_refund', $featureType . '_refund']);
+        $pdo->commit();
+        return true;
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
+}
+
+/**
+ * Refund charged reservations that can no longer finish, for example when the request
+ * that held them died before it could record success or failure.
+ *
+ * @return int number of reservations refunded
+ */
+function rateb_reservation_sweep(PDO $pdo, int $userId, string $operation, string $featureType, int $maxAgeSeconds): int
+{
+    if ($userId < 1 || $maxAgeSeconds < 1) {
+        return 0;
+    }
+    $stale = $pdo->prepare("SELECT id FROM usage_events WHERE user_id = ? AND operation = ? AND status = 'reserved' AND credits_deducted > 0 AND created_at < DATE_SUB(NOW(), INTERVAL ? SECOND)");
+    $stale->execute([$userId, $operation, $maxAgeSeconds]);
+    $refunded = 0;
+    foreach ($stale->fetchAll() as $row) {
+        if (rateb_reservation_settle($pdo, (int) $row['id'], $userId, 'failed', $featureType)) {
+            $refunded++;
+        }
+    }
+    return $refunded;
+}
+
+function rateb_image_reservation_max_age(): int
+{
+    return rateb_image_job_ttl() + 120;
+}
+
+function rateb_voice_reservation_max_age(): int
+{
+    return 600;
+}
+
+function rateb_campaign_requirements_met(bool $idea, bool $strategy, bool $copy, bool $image, bool $audio, bool $video): bool
+{
+    return $idea && $strategy && $copy && $image && $audio && $video;
+}
+
+/**
+ * @return array{status:string,invalidate_ready:bool}
+ */
+function rateb_edited_output_state(string $oldContent, string $newContent, string $oldStatus): array
+{
+    $old = json_decode($oldContent, true);
+    $new = json_decode($newContent, true);
+    $same = is_array($old) && is_array($new) ? $old == $new : $oldContent === $newContent;
+    if ($same) {
+        return ['status' => $oldStatus, 'invalidate_ready' => false];
+    }
+    return ['status' => 'draft', 'invalidate_ready' => $oldStatus === 'approved'];
 }
 
 function rateb_watermark_required(PDO $pdo, int $userId): bool
@@ -919,7 +1051,7 @@ function rateb_voice_plain(string $content, string $speech): string
 {
     $decoded = json_decode($content, true);
     if (is_array($decoded)) {
-        $content = (string) ($decoded[$speech] ?? $decoded['ar'] ?? $decoded['en'] ?? '');
+        $content = is_string($decoded[$speech] ?? null) ? $decoded[$speech] : '';
     }
     return trim(preg_replace('/\s+/u', ' ', $content) ?? '');
 }
@@ -1080,7 +1212,20 @@ function rateb_image_jobs_attach(array $jobs, array $job): array
 /** @param array<string,array<string,mixed>> $jobs */
 function rateb_image_jobs_remove(array $jobs, string $jobId, int $usageId): array
 {
+    return rateb_image_jobs_take($jobs, $jobId, $usageId)['jobs'];
+}
+
+/**
+ * Remove matching jobs and report which ones were removed, so a caller holding the
+ * ledger lock can settle each removed reservation exactly once.
+ *
+ * @param array<string,array<string,mixed>> $jobs
+ * @return array{jobs:array<string,array<string,mixed>>,removed:array<int,array<string,mixed>>}
+ */
+function rateb_image_jobs_take(array $jobs, string $jobId, int $usageId): array
+{
     $jobId = strtolower(trim($jobId));
+    $removed = [];
     foreach ($jobs as $key => $job) {
         if (!is_array($job)) {
             unset($jobs[$key]);
@@ -1091,9 +1236,10 @@ function rateb_image_jobs_remove(array $jobs, string $jobId, int $usageId): arra
         $sameUsage = $usageId > 0 && $job['usage_id'] === $usageId && ($jobId === '' || $job['job_id'] === $jobId);
         if ($sameJob || $sameUsage) {
             unset($jobs[$key]);
+            $removed[] = $job;
         }
     }
-    return $jobs;
+    return ['jobs' => $jobs, 'removed' => $removed];
 }
 
 /** @param array<string,array<string,mixed>> $jobs */
