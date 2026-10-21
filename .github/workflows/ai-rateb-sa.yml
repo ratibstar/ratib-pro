@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       task:
-        description: "deploy uploads the application files. verify checks secrets. generate calls the live text provider."
+        description: "deploy uploads the application files. verify checks secrets. generate calls the live text provider. diagnose checks the server video tools."
         required: true
         default: deploy
         type: choice
@@ -12,6 +12,7 @@ on:
           - deploy
           - verify
           - generate
+          - diagnose
 
 permissions:
   contents: read
@@ -252,6 +253,145 @@ jobs:
           echo "OPCACHE_BODY=$(cat "${RUNNER_TEMP}/opcache-body.txt" 2>/dev/null || true)"
           "${SSH[@]}" "$REMOTE" "rm -f '${TARGET}/${reset_name}'"
           rm -f "$KEY"
+
+  diagnose:
+    name: Diagnose ai.rateb.sa video tools
+    if: github.event.inputs.task == 'diagnose'
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 10
+    steps:
+      - name: Check ffmpeg, storage, and process support under the live PHP
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
+            echo "::error::DEPLOY_SSH_HOST, DEPLOY_SSH_USER, and DEPLOY_SSH_PRIVATE_KEY must be set in the rateb.sa environment"
+            exit 1
+          fi
+          python3 - << 'PY'
+          import os, stat, tempfile
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          fd, path = tempfile.mkstemp(prefix="ai-diag-", suffix=".pem")
+          os.close(fd)
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key if key.endswith("\n") else key + "\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          open(os.path.join(os.environ["RUNNER_TEMP"], "ai-diag-key-path"), "w", encoding="utf-8").write(path)
+          PY
+          KEY="$(cat "${RUNNER_TEMP}/ai-diag-key-path")"
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          SSH=(ssh -i "$KEY" -p "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          INDICATED="/home/admin/domains/ai.rateb.sa"
+          TARGET=""
+          for candidate in "$INDICATED" "${INDICATED}/public_html" "${INDICATED}/private_html"; do
+            if "${SSH[@]}" "$REMOTE" "test -f '${candidate}/app/plans.php'"; then
+              TARGET="$candidate"
+              break
+            fi
+          done
+          if [ -z "$TARGET" ]; then
+            echo "::error::app/plans.php was not found in the indicated domain directory"
+            rm -f "$KEY"
+            exit 1
+          fi
+          probe="video-probe-${GITHUB_RUN_ID}-$(openssl rand -hex 16).php"
+          cleanup() {
+            "${SSH[@]}" "$REMOTE" "rm -f '${TARGET}/${probe}'" || true
+            rm -f "$KEY"
+          }
+          trap cleanup EXIT
+          cat > "${RUNNER_TEMP}/video-probe.php" << 'PHP'
+          <?php
+          header('Content-Type: text/plain; charset=utf-8');
+          @set_time_limit(200);
+          $out = [];
+          $out['php'] = PHP_VERSION . ' ' . PHP_SAPI;
+          $out['max_execution_time'] = (string) ini_get('max_execution_time');
+          $out['memory_limit'] = (string) ini_get('memory_limit');
+          $out['open_basedir'] = ini_get('open_basedir') ?: '(none)';
+          $out['path'] = (string) getenv('PATH');
+          $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+          $out['proc_open'] = function_exists('proc_open') && !in_array('proc_open', $disabled, true) ? 'available' : 'DISABLED';
+          $bin = '/home/admin/bin/ffmpeg';
+          $out['ffmpeg_home_bin'] = is_file($bin) ? (is_executable($bin) ? 'present, executable' : 'present, NOT executable') : 'missing';
+          $ffmpeg = is_file($bin) ? $bin : 'ffmpeg';
+          $out['ffmpeg_used'] = $ffmpeg;
+          $media = '/home/admin/.campaign-media';
+          $out['media_root'] = is_dir($media) ? (is_writable($media) ? 'exists, writable' : 'exists, NOT writable') : 'missing';
+          $run = static function (string $cmd): array {
+              $start = microtime(true);
+              $p = @proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+              if (!is_resource($p)) {
+                  return ['code' => -1, 'out' => '', 'err' => 'proc_open failed', 'secs' => 0];
+              }
+              $o = (string) stream_get_contents($pipes[1]);
+              $e = (string) stream_get_contents($pipes[2]);
+              fclose($pipes[1]);
+              fclose($pipes[2]);
+              return ['code' => proc_close($p), 'out' => $o, 'err' => $e, 'secs' => round(microtime(true) - $start, 1)];
+          };
+          if ($out['proc_open'] === 'available') {
+              $v = $run(escapeshellarg($ffmpeg) . ' -hide_banner -version');
+              $out['ffmpeg_version'] = 'exit ' . $v['code'] . ' | ' . strtok($v['out'] . "\n", "\n");
+              if ($v['code'] !== 0) {
+                  $out['ffmpeg_version_err'] = substr($v['err'], -600);
+              }
+              $enc = $run(escapeshellarg($ffmpeg) . ' -hide_banner -encoders');
+              $out['libx264'] = str_contains($enc['out'], 'libx264') ? 'yes' : 'NO';
+              $flt = $run(escapeshellarg($ffmpeg) . ' -hide_banner -filters');
+              $out['zoompan'] = str_contains($flt['out'], 'zoompan') ? 'yes' : 'NO';
+              $out['drawtext'] = str_contains($flt['out'], 'drawtext') ? 'yes' : 'NO';
+              $tmp = sys_get_temp_dir() . '/rateb-probe-' . bin2hex(random_bytes(6));
+              if (@mkdir($tmp, 0700)) {
+                  $still = $tmp . '/still.jpg';
+                  $clip = $tmp . '/clip.mp4';
+                  $marked = $tmp . '/marked.mp4';
+                  $s = $run(escapeshellarg($ffmpeg) . ' -y -f lavfi -i color=c=0x5a28a0:s=720x1280 -frames:v 1 ' . escapeshellarg($still));
+                  $out['still'] = 'exit ' . $s['code'] . ', ' . (is_file($still) ? filesize($still) : 0) . ' bytes';
+                  $frames = 125;
+                  $zoom = 'min(zoom+0.0009,1.15)';
+                  $filter = 'scale=1440:2560,zoompan=z=' . "'" . $zoom . "'" . ':d=' . $frames
+                      . ":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280:fps=25,format=yuv420p";
+                  $r = $run(escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($still) . ' -vf ' . escapeshellarg($filter)
+                      . ' -frames:v ' . $frames . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip));
+                  $out['camera_motion_clip'] = 'exit ' . $r['code'] . ', ' . $r['secs'] . 's, ' . (is_file($clip) ? filesize($clip) : 0) . ' bytes';
+                  if ($r['code'] !== 0) {
+                      $out['camera_motion_clip_err'] = substr($r['err'], -1200);
+                  }
+                  if (is_file($clip)) {
+                      $mark = "scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p,drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
+                      $w = $run(escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($clip) . ' -vf ' . escapeshellarg($mark)
+                          . ' -c:v libx264 -preset veryfast -crf 23 -an -movflags +faststart ' . escapeshellarg($marked));
+                      $out['watermark_pass'] = 'exit ' . $w['code'] . ', ' . $w['secs'] . 's, ' . (is_file($marked) ? filesize($marked) : 0) . ' bytes';
+                      if ($w['code'] !== 0) {
+                          $out['watermark_pass_err'] = substr($w['err'], -1200);
+                      }
+                  }
+                  foreach (glob($tmp . '/*') ?: [] as $file) {
+                      @unlink($file);
+                  }
+                  @rmdir($tmp);
+              } else {
+                  $out['temp_dir'] = 'NOT writable: ' . sys_get_temp_dir();
+              }
+          }
+          foreach ($out as $k => $v) {
+              echo $k, '=', str_replace("\n", "\n    ", (string) $v), "\n";
+          }
+          PHP
+          scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${RUNNER_TEMP}/video-probe.php" "${REMOTE}:${TARGET}/${probe}"
+          code="$(curl -sS -o "${RUNNER_TEMP}/probe-body.txt" -w '%{http_code}' --max-time 240 "https://ai.rateb.sa/${probe}" || true)"
+          echo "PROBE_HTTP=${code}"
+          cat "${RUNNER_TEMP}/probe-body.txt" 2>/dev/null || true
 
   generate:
     name: Production campaign generation
