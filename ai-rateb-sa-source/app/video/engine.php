@@ -393,19 +393,91 @@ function rateb_video_valid_scenes(mixed $scenes): ?array
 }
 
 /**
- * Close the job's usage reservation. Jobs created before reservations carried their charge
- * were billed by a separate video_storyboard row; the charge is recorded on the reservation
- * first so the single guarded settle refunds it exactly once.
+ * Close the job's usage reservation. A reservation that records its own charge settles
+ * through rateb_reservation_settle. Jobs created before that (credits_deducted = 0) are
+ * refunded only when their separate charge row is proven; otherwise they close unrefunded.
  */
 function rateb_video_settle(PDO $pdo, array $job, string $status): bool
 {
     $usageId = (int) ($job['usage_id'] ?? 0);
     $userId = (int) ($job['user_id'] ?? 0);
     if ($status === 'failed') {
-        $pdo->prepare("UPDATE usage_events SET credits_deducted = ? WHERE id = ? AND user_id = ? AND operation = 'video' AND status = 'reserved' AND credits_deducted = 0")
-            ->execute([rateb_get_feature_cost('video_storyboard'), $usageId, $userId]);
+        $legacy = rateb_video_settle_legacy_failure($pdo, $usageId, $userId);
+        if ($legacy !== null) {
+            return $legacy;
+        }
     }
     return rateb_reservation_settle($pdo, $usageId, $userId, $status, 'video_storyboard');
+}
+
+/** Seconds before its reservation within which a pre-reservation video charge must fall. */
+function rateb_video_legacy_charge_window(): int
+{
+    return 300;
+}
+
+/**
+ * Fail a reservation from before charges were recorded on it. The old start flow wrote a
+ * video_storyboard charge row and then, straight after, the video reservation, so the
+ * charge counts as proven only when it is the latest such charge for the same user and
+ * campaign before the reservation, falls inside the window, and has no other video
+ * reservation or refund between them. That pairs each charge with at most one reservation,
+ * and the reservation leaves 'reserved' once, so the refund cannot repeat. Without proof
+ * the reservation is closed with no refund.
+ *
+ * @return bool|null null when the reservation is not an open pre-reservation one
+ */
+function rateb_video_settle_legacy_failure(PDO $pdo, int $usageId, int $userId): ?bool
+{
+    if ($usageId < 1 || $userId < 1) {
+        return null;
+    }
+    $pdo->beginTransaction();
+    try {
+        $find = $pdo->prepare("SELECT campaign_id, status, credits_deducted, created_at FROM usage_events WHERE id = ? AND user_id = ? AND operation = 'video' FOR UPDATE");
+        $find->execute([$usageId, $userId]);
+        $reservation = $find->fetch();
+        if (!$reservation || (string) $reservation['status'] !== 'reserved' || (int) $reservation['credits_deducted'] !== 0) {
+            $pdo->commit();
+            return null;
+        }
+        $campaignId = (int) ($reservation['campaign_id'] ?? 0);
+        $amount = 0;
+        if ($campaignId > 0) {
+            $charge = $pdo->prepare("SELECT id, credits_deducted FROM usage_events
+                WHERE user_id = ? AND campaign_id = ? AND operation = 'video_storyboard' AND event_type = 'video_storyboard'
+                  AND status = 'completed' AND credits_deducted > 0 AND id < ?
+                  AND created_at >= DATE_SUB(?, INTERVAL ? SECOND)
+                ORDER BY id DESC LIMIT 1");
+            $charge->execute([$userId, $campaignId, $usageId, (string) $reservation['created_at'], rateb_video_legacy_charge_window()]);
+            $row = $charge->fetch();
+            if ($row) {
+                $between = $pdo->prepare("SELECT COUNT(*) FROM usage_events WHERE user_id = ? AND campaign_id = ? AND id > ? AND id < ? AND operation IN ('video', 'video_storyboard_refund')");
+                $between->execute([$userId, $campaignId, (int) $row['id'], $usageId]);
+                if ((int) $between->fetchColumn() === 0) {
+                    $amount = (int) $row['credits_deducted'];
+                }
+            }
+        }
+        $close = $pdo->prepare("UPDATE usage_events SET status = 'failed', credits_deducted = ? WHERE id = ? AND user_id = ? AND status = 'reserved' AND credits_deducted = 0");
+        $close->execute([$amount, $usageId, $userId]);
+        if ($close->rowCount() !== 1) {
+            $pdo->rollBack();
+            return false;
+        }
+        if ($amount > 0) {
+            $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$amount, $userId]);
+            $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, 'completed', ?, 0)")
+                ->execute([$userId, $campaignId, 'video_storyboard_refund', 'video_storyboard_refund']);
+        }
+        $pdo->commit();
+        return $amount > 0;
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
 }
 
 /** @return bool true when this call moved the job to failed */
@@ -633,8 +705,13 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
     if (file_put_contents($still, $jpeg, LOCK_EX) === false) {
         throw new RuntimeException('storage');
     }
+    $ffmpeg = rateb_video_ffmpeg_path();
+    if ($ffmpeg === '') {
+        @unlink($still);
+        throw new RuntimeException('storage');
+    }
     $frames = max(1, $seconds) * 25;
-    $ok = rateb_video_run_ffmpeg(rateb_video_clip_command(rateb_video_ffmpeg_path(), $still, $index, $frames, $clip), 240);
+    $ok = rateb_video_run_ffmpeg(rateb_video_clip_command($ffmpeg, $still, $index, $frames, $clip), 240);
     @unlink($still);
     clearstatcache(true, $clip);
     if (!$ok || !is_file($clip) || filesize($clip) < 1000) {
@@ -648,6 +725,9 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
 function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scenes): string
 {
     $ffmpeg = rateb_video_ffmpeg_path();
+    if ($ffmpeg === '') {
+        throw new RuntimeException('storage');
+    }
     $dir = MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips';
     $list = $dir . '/list-' . (int) $job['id'] . '.txt';
     $clips = [];

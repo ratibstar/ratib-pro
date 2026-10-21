@@ -145,6 +145,25 @@ if ($posix) {
     check(!$junk['ok'] && str_contains($junk['detail'], 'no valid MP4') && $leftovers() === 0, 'a render that writes something other than an MP4 fails readiness (' . $junk['detail'] . ')');
     $absent = rateb_video_check_ffmpeg($base . '/no-such-ffmpeg', $tmpBase);
     check(!$absent['ok'] && str_contains($absent['detail'], 'did not run') && $leftovers() === 0, 'a missing ffmpeg binary fails readiness (' . $absent['detail'] . ')');
+    $bare = rateb_video_check_ffmpeg('ffmpeg', $tmpBase);
+    check(!$bare['ok'] && $bare['cleaned'] && str_contains($bare['detail'], 'absolute path') && $leftovers() === 0, 'a bare command name is not trusted, because cron PATH differs from the SSH one');
+
+    $exe = $fake('resolved', 'exit 0');
+    $plain = $base . '/ffmpeg-not-executable';
+    file_put_contents($plain, "#!/bin/sh\nexit 0\n");
+    chmod($plain, 0600);
+    check(rateb_video_ffmpeg_path(['ffmpeg', 'bin/ffmpeg', $base . '/no-such', $plain, $exe]) === $exe, 'ffmpeg resolves to the first absolute executable file, skipping relative, missing, and non-executable candidates');
+    check(rateb_video_ffmpeg_path(['ffmpeg', $base . '/no-such', $plain]) === '', 'no usable candidate resolves to an empty path');
+    check(rateb_video_ffmpeg_usable($exe) && !rateb_video_ffmpeg_usable('ffmpeg') && !rateb_video_ffmpeg_usable($plain), 'only an absolute executable file is usable');
+    $savedHome = getenv('HOME');
+    putenv('HOME=' . $base);
+    $candidates = rateb_video_ffmpeg_candidates();
+    putenv('HOME=relative/home');
+    $relativeHome = rateb_video_ffmpeg_candidates();
+    putenv($savedHome === false ? 'HOME' : 'HOME=' . $savedHome);
+    check(($candidates[0] ?? '') === $base . '/bin/ffmpeg' && in_array('/usr/bin/ffmpeg', $candidates, true), "the account's own ffmpeg is tried first, then the system paths");
+    check(array_filter($relativeHome, static fn (string $p): bool => $p[0] !== '/') === [], 'a relative HOME adds no candidate');
+    @unlink($plain);
     @rmdir($tmpBase);
     foreach (glob($base . '/ffmpeg-*') ?: [] as $file) {
         @unlink($file);
@@ -175,6 +194,31 @@ $pfWeb = $pfSpawn(['REQUEST_METHOD' => 'GET']);
 check($pfWeb['out'] === '' && $pfWeb['err'] === '', 'the preflight script refuses a web request before doing anything');
 $pfEmpty = $pfSpawn(['HOME' => sys_get_temp_dir()]);
 check($pfEmpty['code'] === 1 && str_contains($pfEmpty['out'], 'PREFLIGHT_TARGET=FAILED') && str_contains($pfEmpty['out'], 'PREFLIGHT_OK=no'), 'the preflight fails closed without a target');
+$pfArgs = static function (array $env, array $args) use ($preflight): array {
+    $process = proc_open(array_merge([PHP_BINARY, $preflight], $args), [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, $env + ['PATH' => (string) getenv('PATH'), 'SystemRoot' => (string) getenv('SystemRoot')]);
+    $out = stream_get_contents($pipes[1]);
+    $err = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    return ['code' => proc_close($process), 'out' => (string) $out, 'err' => (string) $err];
+};
+$pfBad = $pfArgs(['HOME' => sys_get_temp_dir()], ['--runtime=' . dirname(__DIR__) . '/app/video/runtime.php', '--ffmpeg=ffmpeg', '--media-root=' . $base . '/no-such-media']);
+check($pfBad['code'] === 1 && str_contains($pfBad['out'], 'PREFLIGHT_FFMPEG=FAILED no executable ffmpeg at an absolute path') && str_contains($pfBad['out'], 'PREFLIGHT_FFMPEG_RENDER=FAILED not checked'), 'the preflight fails when ffmpeg is not an absolute executable path');
+check(str_contains($pfBad['out'], $posix ? 'PREFLIGHT_MEDIA_ROOT=FAILED the media root does not exist' : 'PREFLIGHT_MEDIA_ROOT=FAILED'), 'the preflight fails when the media root is missing');
+$pfRel = $pfArgs(['HOME' => sys_get_temp_dir()], ['--media-root=relative/media']);
+check(str_contains($pfRel['out'], 'PREFLIGHT_MEDIA_ROOT=FAILED no absolute media root was given'), 'the preflight refuses a relative media root');
+$pfSession = $pfArgs(['HOME' => sys_get_temp_dir(), 'SSH_CONNECTION' => '203.0.113.1 5000 203.0.113.2 22'], ['--cron-env']);
+check(str_contains($pfSession['out'], 'PREFLIGHT_CRON_ENV=FAILED') && str_contains($pfSession['out'], 'PREFLIGHT_OK=no'), "the preflight's cron check fails when run with the SSH session environment");
+$pfInherited = $pfArgs(['HOME' => sys_get_temp_dir(), 'RATEB_AI_DB_PASSWORD' => 'from-session'], ['--cron-env']);
+check(str_contains($pfInherited['out'], 'PREFLIGHT_CRON_ENV=FAILED the database password came from the session environment') && !str_contains($pfInherited['out'], 'from-session'), "the preflight's cron check fails when the database password comes from the session, without printing it");
+
+$state = $base . '/state';
+mkdir($state, 0700);
+touch($state . '/video-worker.hold', time() - 7200);
+$held = $spawn(['HOME' => $base], ['--log=' . $state . '/video-worker.log']);
+check($held['code'] === 0 && $held['out'] === '' && $held['err'] === '' && !is_file($state . '/video-worker.log'), 'a hold file stops the worker before it loads code or connects, however old it is');
+unlink($state . '/video-worker.hold');
+@rmdir($state);
 foreach (glob($docroot . '/{,.}*', GLOB_BRACE) ?: [] as $file) {
     if (is_file($file)) {
         @unlink($file);

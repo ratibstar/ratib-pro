@@ -5,7 +5,8 @@
 #   bash video-cron.sh remove             delete only the tagged entry
 #   bash video-cron.sh wait <seconds>     wait for running worker passes to exit
 # Every other crontab line is kept unchanged and in order; if the result cannot be
-# verified, the backup taken before the change is restored.
+# verified, the backup taken before the change is restored. The entry does not start the
+# worker while ~/.rateb-ai/video-worker.hold exists (left by a deploy that stopped midway).
 set -euo pipefail
 
 php_bin=/usr/local/bin/php
@@ -78,7 +79,7 @@ case "${1:-}" in
     for path in "$home_real" "$target" "$target/cron/video-worker.php"; do
       owned_by_me "$path" || refuse "$path is not owned by the deploying account"
     done
-    line="* * * * * $php_bin $target/cron/video-worker.php --log=$state/video-worker.log >> $state/video-worker.log 2>&1 $tag"
+    line="* * * * * [ ! -e $state/video-worker.hold ] && $php_bin $target/cron/video-worker.php --log=$state/video-worker.log >> $state/video-worker.log 2>&1 $tag"
     read_crontab
     backup_crontab
     echo "CRON_TAGGED_BEFORE=$(count_tagged "$current")"

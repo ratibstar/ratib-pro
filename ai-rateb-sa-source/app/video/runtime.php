@@ -6,9 +6,34 @@ declare(strict_types=1);
  * deploy preflight can load it on its own before any application file is replaced.
  */
 
-function rateb_video_ffmpeg_path(): string
+/**
+ * Absolute places ffmpeg is looked for, in order. Cron and SSH sessions both get HOME from
+ * the account, so the deploy preflight and the cron worker resolve the same binary; PATH is
+ * never used because cron's PATH differs from an interactive one.
+ *
+ * @return array<int,string>
+ */
+function rateb_video_ffmpeg_candidates(): array
 {
-    return is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
+    $home = rtrim((string) getenv('HOME'), '/');
+    $first = $home !== '' && $home[0] === '/' ? [$home . '/bin/ffmpeg'] : [];
+    return array_values(array_unique(array_merge($first, ['/home/admin/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg'])));
+}
+
+/** @param array<int,string>|null $candidates @return string an absolute executable path, or '' */
+function rateb_video_ffmpeg_path(?array $candidates = null): string
+{
+    foreach ($candidates ?? rateb_video_ffmpeg_candidates() as $path) {
+        if (is_string($path) && str_starts_with($path, '/') && is_file($path) && is_executable($path)) {
+            return $path;
+        }
+    }
+    return '';
+}
+
+function rateb_video_ffmpeg_usable(string $ffmpeg): bool
+{
+    return str_starts_with($ffmpeg, '/') && is_file($ffmpeg) && is_executable($ffmpeg);
 }
 
 /**
@@ -166,6 +191,9 @@ function rateb_video_check_ffmpeg(string $ffmpeg, ?string $tmpBase = null): arra
     $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
     if (!function_exists('proc_open') || in_array('proc_open', $disabled, true)) {
         return ['ok' => false, 'detail' => 'proc_open is disabled for this PHP', 'cleaned' => true];
+    }
+    if (!rateb_video_ffmpeg_usable($ffmpeg)) {
+        return ['ok' => false, 'detail' => 'ffmpeg did not run: no executable file at an absolute path (' . ($ffmpeg === '' ? 'none found' : $ffmpeg) . ')', 'cleaned' => true];
     }
     $dir = rtrim($tmpBase ?? sys_get_temp_dir(), '/') . '/rateb-video-check-' . bin2hex(random_bytes(6));
     if (!@mkdir($dir, 0700)) {

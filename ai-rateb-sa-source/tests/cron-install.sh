@@ -47,7 +47,7 @@ mkdir -p "$target/cron"
 touch "$target/cron/video-worker.php"
 export PATH="$root/bin:$PATH" HOME="$home"
 run() { bash "$script" "$@"; }
-tagline="* * * * * /usr/local/bin/php $target/cron/video-worker.php --log=$home/.rateb-ai/video-worker.log >> $home/.rateb-ai/video-worker.log 2>&1 # rateb-ai-video-worker"
+tagline="* * * * * [ ! -e $home/.rateb-ai/video-worker.hold ] && /usr/local/bin/php $target/cron/video-worker.php --log=$home/.rateb-ai/video-worker.log >> $home/.rateb-ai/video-worker.log 2>&1 # rateb-ai-video-worker"
 others="$(printf 'MAILTO=""\n0 3 * * * /usr/local/bin/php /home/u/domains/rateb.sa/public_html/cron/daily.php\n*/5 * * * * echo "# rateb-ai-video-worker is mentioned here" > /dev/null\n*/5 * * * * /usr/bin/true')"
 
 # Install.
@@ -157,32 +157,51 @@ run bogus > "$root/out15" 2>&1; code=$?
 ok "an unknown command is refused" '[ $code -ne 0 ] && grep -q "^CRON=refused" "$root/out15"'
 
 # Workflow wiring.
-python3 - "$workflow" > "$root/wiring" 2>&1 << 'PY'
+python3 - "$workflow" "$src/ops/deploy-files.txt" > "$root/wiring" 2>&1 << 'PY'
 import sys, yaml
 doc = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
 on = doc.get("on", doc.get(True))
-options = on["workflow_dispatch"]["inputs"]["task"]["options"]
+inputs = on["workflow_dispatch"]["inputs"]
+options = inputs["task"]["options"]
 jobs = doc["jobs"]
 def run_of(job):
     return "\n".join(s["run"] for s in jobs[job]["steps"] if "run" in s)
-deploy, off = run_of("deploy"), run_of("worker-off")
+deploy, off, back = run_of("deploy"), run_of("worker-off"), run_of("rollback")
+order = [l.strip() for l in open(sys.argv[2], encoding="utf-8") if l.strip() and not l.startswith("#")]
 def pos(text, needle):
     i = text.find(needle)
     if i < 0:
         raise SystemExit("missing: " + needle)
     return i
+def before(a, b):
+    return order.index(a) < order.index(b)
+checkout = [s for s in jobs["deploy"]["steps"] if s.get("uses", "").startswith("actions/checkout")][0]
 checks = {
-    "worker-off is a task option": "worker-off" in options,
+    "worker-off and rollback are task options": "worker-off" in options and "rollback" in options,
     "worker-off job only runs for that task": jobs["worker-off"]["if"] == "github.event.inputs.task == 'worker-off'",
+    "rollback job only runs for that task": jobs["rollback"]["if"] == "github.event.inputs.task == 'rollback'",
+    "deploy: the approved baseline defaults to a full commit sha": len(str(inputs["baseline"]["default"])) == 40,
+    "deploy: checkout has the full history for the baseline": checkout.get("with", {}).get("fetch-depth") == 0,
     "deploy: trap is registered before anything remote changes": pos(deploy, "trap cleanup EXIT") < pos(deploy, "mkdir -p .rateb-ai"),
-    "deploy: preflight runs before the pause file and the first upload": pos(deploy, "preflight.php' --target=") < pos(deploy, 'touch "$HOME/.rateb-ai/video-worker.pause"') < pos(deploy, 'for rel in "${files[@]}"'),
-    "deploy: a failed preflight exits before the pause file": pos(deploy, "Preflight failed; no application file was changed") < pos(deploy, "PAUSED=1"),
-    "deploy: runtime.php is uploaded before engine.php": pos(deploy, '"app/video/runtime.php"') < pos(deploy, '"app/video/engine.php"'),
-    "deploy: cron is installed from ops/video-cron.sh only after readiness": pos(deploy, "WORKER_READY=yes") < pos(deploy, "bash -s -- install '${TARGET}'\" < ai-rateb-sa-source/ops/video-cron.sh"),
-    "deploy: no crontab edit is embedded in the workflow": "crontab -l" not in deploy and "crontab \"" not in deploy,
+    "deploy: the bundle is built before anything remote changes": pos(deploy, "deploy-manifest.py") < pos(deploy, "mkdir -p .rateb-ai"),
+    "deploy: preflight runs under cron's environment": pos(deploy, "${CRON_ENV} /usr/local/bin/php '${WORK}/preflight.php' --cron-env") > 0 and "--media-root=" in deploy,
+    "deploy: order is preflight, drift check and backup, pause, apply, readiness, cron": pos(deploy, "preflight.php' --cron-env") < pos(deploy, "bash -s -- prepare") < pos(deploy, 'touch "$HOME/.rateb-ai/video-worker.pause"') < pos(deploy, "bash -s -- apply") < pos(deploy, "WORKER_READY=yes") < pos(deploy, "bash -s -- install '${TARGET}'\" < ai-rateb-sa-source/ops/video-cron.sh"),
+    "deploy: a failed preflight or drift check exits before the pause file": pos(deploy, "Preflight failed; no application file was changed") < pos(deploy, "the backup could not be verified; no application file was changed") < pos(deploy, "PAUSED=1"),
+    "deploy: the hold is marked before files are replaced and released only after cron install": pos(deploy, "HOLD=1\n") < pos(deploy, "bash -s -- apply") and pos(deploy, "bash -s -- install") < pos(deploy, 'rm -f "$HOME/.rateb-ai/video-worker.hold" "$HOME/.rateb-ai/video-worker.pause"'),
+    "deploy: the readiness check runs under cron's environment": "${CRON_ENV} /usr/local/bin/php '${TARGET}/cron/video-worker.php' --check" in deploy,
+    "deploy: files are no longer copied one by one into the web root": 'for rel in "${files[@]}"' not in deploy and ":${TARGET}/config/" not in deploy,
+    "deploy: no crontab edit is embedded in the workflow": "crontab -l" not in deploy and "crontab \"" not in deploy and "crontab -l" not in back,
+    "deploy order: runtime.php before engine.php": before("app/video/runtime.php", "app/video/engine.php"),
+    "deploy order: media library before engine.php": before("app/media/library.php", "app/video/engine.php"),
+    "deploy order: engine.php before the endpoints that load it": before("app/video/engine.php", "app/ai/video.php") and before("app/video/engine.php", "app/ai/video-status.php"),
+    "deploy order: db.php and plans.php before bootstrap.php": before("app/db.php", "app/bootstrap.php") and before("app/plans.php", "app/bootstrap.php"),
+    "deploy order: bootstrap.php before pages and endpoints": all(before("app/bootstrap.php", rel) for rel in order if rel.endswith(".php") and not rel.startswith(("app/bootstrap.php", "app/video/", "app/media/library", "app/brand/", "app/db", "app/plans", "app/schema", "app/nav", "config/"))),
+    "deploy order: cron/.htaccess before the cron worker": before("cron/.htaccess", "cron/video-worker.php"),
     "worker-off: pause is set before the entry is removed": pos(off, 'touch "$HOME/.rateb-ai/video-worker.pause"') < pos(off, 'bash -s -- remove" < ai-rateb-sa-source/ops/video-cron.sh'),
     "worker-off: waits for a running pass before reporting stopped": pos(off, "bash -s -- wait 540") < pos(off, "VIDEO_WORKER=stopped"),
-    "worker-off: uploads nothing": "scp " not in off,
+    "worker-off: uploads nothing and leaves a hold in place": "scp " not in off and "rm -f \"$HOME/.rateb-ai/video-worker.hold" not in off,
+    "rollback: hold, cron removal, and wait come before the restore": pos(back, "video-worker.hold") < pos(back, "bash -s -- remove") < pos(back, "bash -s -- wait 540") < pos(back, "bash -s -- restore"),
+    "rollback: the hold is released only after a verified restore": pos(back, "ROLLBACK_OK=yes") < pos(back, 'rm -f "$HOME/.rateb-ai/video-worker.hold"'),
 }
 for name, good in checks.items():
     print(("PASS " if good else "FAIL ") + name)

@@ -14,7 +14,9 @@ if (PHP_SAPI !== 'cli' || isset($_SERVER['REQUEST_METHOD']) || isset($_SERVER['G
  * Options: --check (report readiness, including a real ffmpeg render and a two-lock test,
  * and exit), --max-seconds=N (default 50).
  * A video-worker.pause file next to the log, younger than 15 minutes, skips the pass; the
- * deploy job uses it while files are being replaced.
+ * deploy job uses it while files are being replaced. A video-worker.hold file skips every
+ * pass until it is removed: a deploy that stopped after changing files leaves it so the
+ * worker never runs against a mix of old and new files.
  */
 
 ini_set('display_errors', '0');
@@ -39,6 +41,9 @@ if (isset($options['log'])) {
     $logFile = $dir . '/' . basename($candidate);
     $pause = $dir . '/video-worker.pause';
     if (!$check && is_file($pause) && (int) @filemtime($pause) > time() - 900) {
+        exit(0);
+    }
+    if (!$check && file_exists($dir . '/video-worker.hold')) {
         exit(0);
     }
     if (is_file($logFile) && (int) @filesize($logFile) > 5 * 1024 * 1024) {

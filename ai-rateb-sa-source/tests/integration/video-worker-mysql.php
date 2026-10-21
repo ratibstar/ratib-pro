@@ -637,17 +637,116 @@ $fixedAgain = rateb_video_reconcile($pdo);
 vw_expect('a second reconcile changes nothing', ['settled' => $fixedAgain['settled'], 'orphans' => $fixedAgain['orphans']] + vw_ledger($pdo, $u17), ['settled' => 0, 'orphans' => 0, 'balance' => 50, 'refunds' => 1]);
 rateb_reservation_settle($pdo, $orphanYoung, $u18, 'failed', 'video_storyboard');
 
-// 14. Jobs created before this change (separate charge row) refund once when they fail.
+// 14. Jobs created before reservations recorded their charge (credits_deducted = 0 on the
+// reservation, the charge in a separate earlier row). A refund needs a proven charge.
+/**
+ * Build a job the way the old start flow did: charge row (optional), reservation, job.
+ * @return array{0:int,1:int} job id, usage id
+ */
+function vw_legacy_job(PDO $pdo, int $userId, int $campaignId, bool $charge = true, ?int $usageId = null): array
+{
+    if ($charge) {
+        rateb_check_and_deduct_credits($userId, 'video_storyboard', $campaignId);
+    }
+    $usageId ??= (int) rateb_usage_begin($pdo, $userId, $campaignId, 'video', 5)['id'];
+    $scenes = json_encode([['scene' => 1, 'image_id' => (int) vw_inputs($pdo, $campaignId)[0]['id'], 'duration' => 5, 'prompt' => 'push-in', 'task_id' => '', 'status' => 'queued', 'url' => '']]);
+    $pdo->prepare("INSERT INTO video_jobs (campaign_id, user_id, status, provider, storyboard, usage_id, watermark, approval_status) VALUES (?, ?, 'queued', 'runway', ?, ?, 0, 'draft')")->execute([$campaignId, $userId, $scenes, $usageId]);
+    return [(int) $pdo->lastInsertId(), $usageId];
+}
+$reject = new VwProvider('reject');
+
 $u19 = vw_user($pdo, $initial, $planIds, 50, 'starter');
 $c19 = vw_campaign($pdo, $u19);
-rateb_check_and_deduct_credits($u19, 'video_storyboard', $c19);
-$legacyUsage = rateb_usage_begin($pdo, $u19, $c19, 'video', 5)['id'];
-$scenesJson = json_encode([['scene' => 1, 'image_id' => (int) vw_inputs($pdo, $c19)[0]['id'], 'duration' => 5, 'prompt' => 'push-in', 'task_id' => '', 'status' => 'queued', 'url' => '']]);
-$pdo->prepare("INSERT INTO video_jobs (campaign_id, user_id, status, provider, storyboard, usage_id, watermark, approval_status) VALUES (?, ?, 'queued', 'runway', ?, ?, 0, 'draft')")->execute([$c19, $u19, $scenesJson, $legacyUsage]);
-$j19 = (int) $pdo->lastInsertId();
-rateb_video_worker_job($pdo, $j19, new VwProvider('reject'));
+[$j19, $usage19] = vw_legacy_job($pdo, $u19, $c19);
+rateb_video_worker_job($pdo, $j19, $reject);
+vw_expect('legacy, valid charge: the failed job refunds its earlier charge once', vw_ledger($pdo, $u19, $j19), ['job' => 'failed', 'usage' => 'failed', 'balance' => 50, 'charges' => 1, 'refunds' => 1]);
+$repeatFail = rateb_video_fail($pdo, vw_job($pdo, $j19), 'provider');
+$repeatSettle = rateb_video_settle($pdo, vw_job($pdo, $j19), 'failed');
 rateb_video_reconcile($pdo);
-vw_expect('a legacy job that fails refunds its earlier charge exactly once', vw_ledger($pdo, $u19, $j19), ['job' => 'failed', 'usage' => 'failed', 'balance' => 50, 'charges' => 1, 'refunds' => 1]);
+rateb_video_reconcile($pdo);
+$recorded = (int) $pdo->query('SELECT credits_deducted FROM usage_events WHERE id = ' . $usage19)->fetchColumn();
+vw_expect('legacy, valid charge: failing, settling, and reconciling again refund nothing more', vw_ledger($pdo, $u19, $j19) + ['fail' => var_export($repeatFail, true), 'settle' => var_export($repeatSettle, true), 'recorded' => $recorded], ['fail' => 'false', 'settle' => 'false', 'recorded' => VW_COST, 'balance' => 50, 'charges' => 1, 'refunds' => 1]);
+
+$u20 = vw_user($pdo, $initial, $planIds, 50, 'starter');
+$c20 = vw_campaign($pdo, $u20);
+[$j20] = vw_legacy_job($pdo, $u20, $c20, false);
+rateb_video_worker_job($pdo, $j20, $reject);
+rateb_video_reconcile($pdo);
+vw_expect('legacy, zero credits deducted and no charge row: closed without a refund', vw_ledger($pdo, $u20, $j20), ['job' => 'failed', 'usage' => 'failed', 'balance' => 50, 'charges' => 0, 'refunds' => 0]);
+
+$u21 = vw_user($pdo, $initial, $planIds, 50, 'starter');
+$c21 = vw_campaign($pdo, $u21);
+[$j21a] = vw_legacy_job($pdo, $u21, $c21, true, 0);
+rateb_video_worker_job($pdo, $j21a, $reject);
+$c21b = vw_campaign($pdo, $u21);
+[$j21b] = vw_legacy_job($pdo, $u21, $c21b, true, 987654321);
+rateb_video_worker_job($pdo, $j21b, $reject);
+rateb_video_reconcile($pdo);
+vw_expect('legacy, missing reservation (none, or an id that does not exist): no refund', vw_ledger($pdo, $u21) + ['a' => vw_job($pdo, $j21a)['status'], 'b' => vw_job($pdo, $j21b)['status']], ['a' => 'failed', 'b' => 'failed', 'balance' => 10, 'charges' => 2, 'refunds' => 0]);
+
+$u22 = vw_user($pdo, $initial, $planIds, 50, 'starter');
+$c22 = vw_campaign($pdo, $u22);
+rateb_check_and_deduct_credits($u22, 'video_storyboard', $c22);
+rateb_refund_credits($u22, 'video_storyboard', $c22);
+[$j22] = vw_legacy_job($pdo, $u22, $c22, false);
+rateb_video_worker_job($pdo, $j22, $reject);
+vw_expect('legacy, charge already refunded before the reservation: no second refund', vw_ledger($pdo, $u22, $j22), ['job' => 'failed', 'usage' => 'failed', 'balance' => 50, 'charges' => 1, 'refunds' => 1]);
+
+$u23 = vw_user($pdo, $initial, $planIds, 50, 'starter');
+$c23 = vw_campaign($pdo, $u23);
+[$j23a] = vw_legacy_job($pdo, $u23, $c23);
+[$j23b] = vw_legacy_job($pdo, $u23, $c23, false);
+rateb_video_worker_job($pdo, $j23b, $reject);
+$afterSecond = vw_ledger($pdo, $u23);
+rateb_video_worker_job($pdo, $j23a, $reject);
+vw_expect('legacy, one charge and two reservations: only the reservation paired with it is refunded', vw_ledger($pdo, $u23) + ['refunds_after_unpaired' => $afterSecond['refunds']], ['refunds_after_unpaired' => 0, 'balance' => 50, 'charges' => 1, 'refunds' => 1]);
+
+$u24 = vw_user($pdo, $initial, $planIds, 50, 'starter');
+$c24 = vw_campaign($pdo, $u24);
+rateb_check_and_deduct_credits($u24, 'video_storyboard', $c24);
+$pdo->prepare("UPDATE usage_events SET created_at = DATE_SUB(NOW(), INTERVAL ? SECOND) WHERE user_id = ? AND operation = 'video_storyboard'")->execute([rateb_video_legacy_charge_window() + 100, $u24]);
+[$j24] = vw_legacy_job($pdo, $u24, $c24, false);
+rateb_video_worker_job($pdo, $j24, $reject);
+vw_expect('legacy, charge older than the pairing window: no refund', vw_ledger($pdo, $u24, $j24), ['job' => 'failed', 'usage' => 'failed', 'balance' => 30, 'charges' => 1, 'refunds' => 0]);
+
+$u25 = vw_user($pdo, $initial, $planIds, 50, 'starter');
+$c25 = vw_campaign($pdo, $u25);
+$c25b = vw_campaign($pdo, $u25);
+rateb_check_and_deduct_credits($u25, 'video_storyboard', $c25);
+[$j25] = vw_legacy_job($pdo, $u25, $c25b, false);
+rateb_video_worker_job($pdo, $j25, $reject);
+vw_expect("legacy, charge for another campaign: no refund", vw_ledger($pdo, $u25, $j25), ['job' => 'failed', 'balance' => 30, 'charges' => 1, 'refunds' => 0]);
+
+$u26 = vw_user($pdo, $initial, $planIds, 50, 'starter');
+$c26 = vw_campaign($pdo, $u26);
+[$j26] = vw_legacy_job($pdo, $u26, $c26);
+$c26b = vw_campaign($pdo, $u26);
+[$j26b] = vw_legacy_job($pdo, $u26, $c26b, false);
+$c26c = vw_campaign($pdo, $u26);
+[$j26c] = vw_legacy_job($pdo, $u26, $c26c);
+$pdo->prepare("UPDATE video_jobs SET status = 'failed', error_code = 'provider' WHERE id IN (?, ?)")->execute([$j26, $j26b]);
+$pdo->prepare("UPDATE video_jobs SET status = 'completed' WHERE id = ?")->execute([$j26c]);
+$recon = rateb_video_reconcile($pdo);
+$reconAgain = rateb_video_reconcile($pdo);
+vw_expect('legacy, interrupted jobs: reconcile refunds the proven failure once, closes the unproven one, and settles the completed one without a refund', vw_ledger($pdo, $u26) + [
+    'proven' => vw_ledger($pdo, $u26, $j26)['usage'], 'unproven' => vw_ledger($pdo, $u26, $j26b)['usage'], 'completed' => vw_ledger($pdo, $u26, $j26c)['usage'], 'again' => $reconAgain['settled'],
+], ['proven' => 'failed', 'unproven' => 'failed', 'completed' => 'completed', 'again' => 0, 'balance' => 30, 'charges' => 2, 'refunds' => 1]);
+
+$u27 = vw_user($pdo, $initial, $planIds, 50, 'starter');
+$c27 = vw_campaign($pdo, $u27);
+[$j27] = vw_legacy_job($pdo, $u27, $c27);
+$holder->beginTransaction();
+$holder->prepare('SELECT id FROM video_jobs WHERE id = ? FOR UPDATE')->execute([$j27]);
+$legacyFailers = [vw_spawn(['fail', (string) $j27]), vw_spawn(['fail', (string) $j27])];
+$overlap = vw_wait_for($observer, "UPDATE video_jobs SET status = 'failed'", 2);
+$holder->commit();
+$legacyFailed = [vw_collect($legacyFailers[0]), vw_collect($legacyFailers[1])];
+rateb_video_reconcile($pdo);
+if (!$overlap) {
+    vw_report('NOT RUN', 'concurrent legacy job failure', 'both connections were not seen waiting on the job row: ' . json_encode($legacyFailed));
+} else {
+    vw_expect('legacy, two connections failing the same job at once refund exactly once', vw_ledger($pdo, $u27, $j27) + ['winners' => count(array_filter($legacyFailed, static fn (array $w): bool => ($w['result'] ?? null) === true))], ['winners' => 1, 'job' => 'failed', 'usage' => 'failed', 'balance' => 50, 'charges' => 1, 'refunds' => 1]);
+}
 
 // 15. Readiness: two named locks per connection, the real ffmpeg render, and failures.
 $lockKeys = [];
@@ -684,7 +783,9 @@ if (!$hasFfmpeg || !$hasGd) {
     vw_expect('readiness passes with a real render, working locks, and storage', ['ready' => var_export($ready['ready'], true)] + $ready['report'], ['ready' => 'true', 'named_locks' => 'ok', 'ffmpeg_render' => 'ok', 'media_root' => 'ok', 'proc_open' => 'ok']);
 }
 $noFfmpeg = rateb_video_worker_readiness($pdo, ['env' => 'loaded', 'ffmpeg' => $mediaRoot . '/no-such-ffmpeg']);
-vw_expect('readiness is refused when ffmpeg cannot render', ['ready' => var_export($noFfmpeg['ready'], true), 'render' => substr($noFfmpeg['report']['ffmpeg_render'], 0, 6)], ['ready' => 'false', 'render' => 'FAILED']);
+vw_expect('readiness is refused when ffmpeg cannot render', ['ready' => var_export($noFfmpeg['ready'], true), 'render' => substr($noFfmpeg['report']['ffmpeg_render'], 0, 6), 'ffmpeg' => substr($noFfmpeg['report']['ffmpeg'], 0, 6)], ['ready' => 'false', 'render' => 'FAILED', 'ffmpeg' => 'FAILED']);
+$bareFfmpeg = rateb_video_worker_readiness($pdo, ['env' => 'loaded', 'ffmpeg' => 'ffmpeg']);
+vw_expect('readiness is refused when ffmpeg is a bare command name instead of an absolute path', ['ready' => var_export($bareFfmpeg['ready'], true), 'ffmpeg' => substr($bareFfmpeg['report']['ffmpeg'], 0, 6)], ['ready' => 'false', 'ffmpeg' => 'FAILED']);
 
 // 16. Ledger invariant for every test user.
 $broken = [];
