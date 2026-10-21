@@ -18,7 +18,10 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     ];
     $credits = null;
     if ($loggedIn && function_exists('rateb_account_credits') && !empty($_SESSION['user_id'])) {
-        $credits = (int) rateb_account_credits(db(), (int) $_SESSION['user_id'])['credits_balance'];
+        $pdo = function_exists('db') ? db() : ($GLOBALS['pdo'] ?? null);
+        if ($pdo instanceof PDO) {
+            $credits = (int) rateb_account_credits($pdo, (int) $_SESSION['user_id'])['credits_balance'];
+        }
     }
     echo '<header class="site-bar"><div class="site-shell">';
     echo '<button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><span></span><span></span><span></span></button>';
