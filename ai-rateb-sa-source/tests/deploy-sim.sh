@@ -198,10 +198,11 @@ untouched_after_abort() {
     && key_removed ai-deploy-key-path
 }
 held() { [ -e "$SIM_HOME/.rateb-ai/video-worker.hold" ] && [ -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && grep -qx "VIDEO_WORKER_HOLD=kept" "$1"; }
+# The worker an earlier deploy installed, started by cron with this account's state folder.
 worker_blocked() {
   local log="$SIM_HOME/.rateb-ai/video-worker.log"
-  rm -f "$log"
-  HOME="$SIM_HOME" php "$target/cron/video-worker.php" --log="$log" > /dev/null 2>&1 && [ ! -s "$log" ]
+  rm -f "$log" "$SIM_HOME/.rateb-ai/video-worker.pause"
+  HOME="$SIM_HOME" php "$src/cron/video-worker.php" --log="$log" > /dev/null 2>&1 && [ ! -s "$log" ]
 }
 
 # A-E. Preflight failures stop the deploy before the drift check, the backup, or any change.
@@ -293,7 +294,9 @@ chmod 755 "$target/app/ai"
 ok "partial failure: the deploy fails after some files changed" '[ $code -ne 0 ] && grep -qx "APPLIED=app/video/runtime.php" "$sim/j.out" && grep -q "^GUARD=error: could not replace app/ai/" "$sim/j.out" && grep -qx "HOLD=kept" "$sim/j.out"'
 ok "partial failure: the hold and pause stay, and the crontab is unchanged" 'held "$sim/j.out" && [ "$(cat "$FAKE_CRON")" = "$others" ] && ! grep -q "bash -s -- install" "$sim/log"'
 ok "partial failure: the error names the backup to roll back to" 'grep -q "run task=rollback with backup_id=$(backup_id_of "$sim/j.out")" "$sim/j.out"'
-ok "partial failure: the worker does not run while the hold is set" 'worker_blocked'
+ok "partial failure: the worker cron entry is not installed and the worker file was not reached" '! grep -q "rateb-ai-video-worker" "$FAKE_CRON" && [ ! -e "$target/cron/video-worker.php" ]'
+ok "partial failure: an already installed worker does not run while the hold is set, even with the pause gone" 'worker_blocked'
+touch "$SIM_HOME/.rateb-ai/video-worker.pause"
 SIM_BACKUP_ID="$(backup_id_of "$sim/j.out")"
 run_job rollback.sh "$sim/j2.out"; code=$?
 ok "partial failure: rollback restores the baseline tree exactly" '[ $code -eq 0 ] && grep -qx "ROLLBACK_OK=yes" "$sim/j2.out" && [ "$(tree_hash "$target")" = "$before" ]'
@@ -329,7 +332,7 @@ first_backup="$(backup_id_of "$sim/n.out")"
 ok "deploy: succeeds" '[ $code -eq 0 ] && grep -qx "APPLY_OK=yes" "$sim/n.out"'
 ok "deploy: preflight passed every check under cron's environment" 'grep -qx "PREFLIGHT_OK=yes" "$sim/n.out" && grep -q "^PREFLIGHT_CRON_ENV=ok PATH=" "$sim/n.out" && grep -qx "PREFLIGHT_MEDIA_ROOT=ok" "$sim/n.out" && grep -q "^PREFLIGHT_FFMPEG=/" "$sim/n.out" && grep -qx "PREFLIGHT_NAMED_LOCKS=ok" "$sim/n.out" && grep -qx "PREFLIGHT_FFMPEG_RENDER=ok" "$sim/n.out" && grep -q "^PREFLIGHT_PREPEND=ok mode=0600" "$sim/n.out"'
 ok "deploy: every file matched the baseline or was new, and the backup was verified" 'grep -qx "DRIFT_OK=yes" "$sim/n.out" && grep -qx "BACKUP_VERIFIED=yes" "$sim/n.out" && [ -n "$first_backup" ]'
-ok "deploy: the backup is private and holds the replaced files" 'd="$SIM_HOME/.rateb-ai/backups/$first_backup"; [ "$(stat -c %a "$d")" = 700 ] && [ "$(stat -c %a "$d/files.tar.gz")" = 600 ] && tar -tzf "$d/files.tar.gz" | grep -qx "app/video/engine.php" && ! tar -tzf "$d/files.tar.gz" | grep -qx "app/video/runtime.php"'
+ok "deploy: the backup is private and holds the replaced files" 'd="$SIM_HOME/.rateb-ai/backups/$first_backup"; [ "$(stat -c %a "$d")" = 700 ] && [ "$(stat -c %a "$d/files.tar.gz")" = 600 ] && tar -tzf "$d/files.tar.gz" > "$sim/list" && grep -qx "app/video/engine.php" "$sim/list" && ! grep -qx "app/video/runtime.php" "$sim/list"'
 ok "deploy: the worker readiness check ran under cron's environment and passed" 'grep -qx "WORKER_READY=yes" "$sim/n.out" && grep -qx "WORKER_FFMPEG_RENDER=ok" "$sim/n.out" && grep -qx "WORKER_NAMED_LOCKS=ok" "$sim/n.out" && grep -qx "WORKER_ENV=loaded" "$sim/n.out" && grep -q "env -i .*video-worker.php${q} --check" "$sim/log"'
 same=1
 while IFS= read -r rel; do
@@ -375,7 +378,7 @@ run_job rollback.sh "$sim/p.out"; code=$?
 ok "rollback: restores the baseline tree exactly" '[ $code -eq 0 ] && grep -qx "ROLLBACK_OK=yes" "$sim/p.out" && grep -qx "ROLLBACK=done" "$sim/p.out" && [ "$(tree_hash "$target")" = "$before" ]'
 ok "rollback: deletes files the deploy added and restores the ones it replaced" 'grep -qx "REMOVED_FILE=app/video/runtime.php" "$sim/p.out" && grep -qx "RESTORED_FILE=app/video/engine.php" "$sim/p.out" && [ ! -e "$target/cron/video-worker.php" ]'
 ok "rollback: the worker cron entry is removed, other entries kept, hold and pause cleared" '[ "$(cat "$FAKE_CRON")" = "$others" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.hold" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && grep -qx "VIDEO_WORKER=removed" "$sim/p.out"'
-ok "rollback: a backup of the state it replaced was written first" 'pre="$(sed -n "s/^PRE_RESTORE_BACKUP=//p" "$sim/p.out")"; [ -n "$pre" ] && tar -tzf "$SIM_HOME/.rateb-ai/backups/$pre/files.tar.gz" | grep -qx "app/video/runtime.php"'
+ok "rollback: a backup of the state it replaced was written first" 'pre="$(sed -n "s/^PRE_RESTORE_BACKUP=//p" "$sim/p.out")"; [ -n "$pre" ] && tar -tzf "$SIM_HOME/.rateb-ai/backups/$pre/files.tar.gz" > "$sim/list" && grep -qx "app/video/runtime.php" "$sim/list"'
 
 # Q. Rollback when a file changed after the deploy: refused, then allowed explicitly.
 new_server q
