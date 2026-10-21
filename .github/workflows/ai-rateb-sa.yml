@@ -416,6 +416,39 @@ jobs:
           echo "FPM_POOL_FILES_READABLE=$("${SSH[@]}" "$REMOTE" "n=0; for f in /usr/local/php83/etc/php-fpm.d/*.conf /usr/local/directadmin/data/users/admin/php/*.conf; do [ -r \"\$f\" ] && n=\$((n+1)); done; echo \$n" || true)"
           echo "PROFILE_EXPORT_NAMES=$("${SSH[@]}" "$REMOTE" "grep -ohE '^[[:space:]]*export[[:space:]]+(RATEB_[A-Z_]+|RUNWAY_API_KEY)' ~/.bashrc ~/.bash_profile ~/.profile 2>/dev/null | awk '{print \$2}' | sort -u | tr '\n' ','" || true)"
           echo "CRONTAB_LINES=$("${SSH[@]}" "$REMOTE" "crontab -l 2>/dev/null | grep -cv '^[[:space:]]*\(#\|\$\)' || true")"
+          echo "USER_INI_KEYS=$("${SSH[@]}" "$REMOTE" "grep -oE '^[[:space:]]*[A-Za-z_.]+[[:space:]]*=' '${TARGET}/.user.ini' 2>/dev/null | tr -d ' =' | sort -u | tr '\n' ','" || true)"
+          cat > "${RUNNER_TEMP}/prepend-check.php" << 'PHP'
+          <?php
+          $target = $argv[1] ?? '';
+          $ini = @parse_ini_file($target . '/.user.ini', false, INI_SCANNER_RAW) ?: [];
+          $file = trim((string) ($ini['auto_prepend_file'] ?? ''), " \"'");
+          echo 'PREPEND_DECLARED=', $file !== '' ? 'yes' : 'no', "\n";
+          if ($file === '') { exit(0); }
+          $real = realpath($file);
+          echo 'PREPEND_IS_FILE=', ($real !== false && is_file($real)) ? 'yes' : 'no', "\n";
+          echo 'PREPEND_UNDER_HOME=', ($real !== false && str_starts_with($real, '/home/admin/')) ? 'yes' : 'no', "\n";
+          echo 'PREPEND_INSIDE_DOCROOT=', ($real !== false && str_starts_with($real, rtrim((string) realpath($target), '/') . '/')) ? 'yes' : 'no', "\n";
+          if ($real === false) { exit(0); }
+          $calls = [];
+          foreach (token_get_all((string) file_get_contents($real)) as $t) {
+              if (is_array($t) && in_array($t[0], [T_STRING, T_EXIT, T_ECHO, T_PRINT, T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE], true)) {
+                  $name = strtolower($t[1]);
+                  if (in_array($name, ['putenv', 'header', 'session_start', 'exit', 'die', 'echo', 'print', 'require', 'require_once', 'include', 'include_once', 'ini_set', 'setcookie', 'ob_start'], true)) {
+                      $calls[$name] = ($calls[$name] ?? 0) + 1;
+                  }
+              }
+          }
+          ksort($calls);
+          echo 'PREPEND_CALLS=', http_build_query($calls, '', ','), "\n";
+          ob_start();
+          require $real;
+          $printed = strlen((string) ob_get_clean());
+          echo 'PREPEND_OUTPUT_BYTES=', $printed, "\n";
+          foreach (['RATEB_AI_DB_PASSWORD', 'RUNWAY_API_KEY', 'RATEB_VIDEO_PROVIDER'] as $name) {
+              echo 'CLI_AFTER_PREPEND_', $name, '=', getenv($name) ? 'SET' : 'NOT_SET', "\n";
+          }
+          PHP
+          "${SSH[@]}" "$REMOTE" "/usr/local/bin/php -- '${TARGET}'" < "${RUNNER_TEMP}/prepend-check.php" || echo "PREPEND_CHECK=error"
 
   generate:
     name: Production campaign generation
