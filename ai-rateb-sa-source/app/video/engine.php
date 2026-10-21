@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/provider.php';
+require_once __DIR__ . '/runtime.php';
 require_once __DIR__ . '/../plans.php';
 
 function rateb_video_ratio(): string
@@ -359,24 +360,6 @@ function rateb_video_stale_seconds(): int
     return 1200;
 }
 
-/**
- * Named MySQL lock, scoped to the current database. It belongs to the connection, so a
- * crashed worker releases it automatically.
- */
-function rateb_video_lock(PDO $pdo, string $key, int $waitSeconds): bool
-{
-    $stmt = $pdo->prepare("SELECT GET_LOCK(CONCAT(LEFT(DATABASE(), 24), ':', ?), ?)");
-    $stmt->execute([$key, max(0, $waitSeconds)]);
-    return (int) $stmt->fetchColumn() === 1;
-}
-
-function rateb_video_unlock(PDO $pdo, string $key): void
-{
-    $stmt = $pdo->prepare("SELECT RELEASE_LOCK(CONCAT(LEFT(DATABASE(), 24), ':', ?))");
-    $stmt->execute([$key]);
-    $stmt->fetchColumn();
-}
-
 function rateb_video_valid_task_id(string $taskId): bool
 {
     return preg_match('/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/', $taskId) === 1;
@@ -633,49 +616,6 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign, ?RatebVideoP
     }
 }
 
-function rateb_video_ffmpeg_path(): string
-{
-    return is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
-}
-
-/**
- * Run one ffmpeg command with a hard time limit. Output is drained continuously so a
- * chatty encoder cannot block on a full pipe.
- */
-function rateb_video_run_ffmpeg(string $cmd, int $timeoutSeconds): bool
-{
-    if (!function_exists('proc_open')) {
-        throw new RuntimeException('storage');
-    }
-    $process = proc_open('exec ' . $cmd, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
-    if (!is_resource($process)) {
-        throw new RuntimeException('storage');
-    }
-    fclose($pipes[0]);
-    stream_set_blocking($pipes[1], false);
-    stream_set_blocking($pipes[2], false);
-    $deadline = microtime(true) + max(1, $timeoutSeconds);
-    $exit = -1;
-    while (true) {
-        $status = proc_get_status($process);
-        stream_get_contents($pipes[1]);
-        stream_get_contents($pipes[2]);
-        if (!$status['running']) {
-            $exit = (int) $status['exitcode'];
-            break;
-        }
-        if (microtime(true) > $deadline) {
-            proc_terminate($process, 9);
-            break;
-        }
-        usleep(100000);
-    }
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    proc_close($process);
-    return $exit === 0;
-}
-
 function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds): void
 {
     $source = media_resolve_path($imageRow);
@@ -694,12 +634,7 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
         throw new RuntimeException('storage');
     }
     $frames = max(1, $seconds) * 25;
-    $zoom = $index % 2 === 0 ? "min(zoom+0.0009,1.15)" : "if(eq(on,0),1.15,max(zoom-0.0009,1))";
-    $filter = 'scale=1440:2560,zoompan=z=' . "'" . $zoom . "'" . ':d=' . $frames
-        . ":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280:fps=25,format=yuv420p";
-    $cmd = escapeshellarg(rateb_video_ffmpeg_path()) . ' -nostdin -loglevel error -y -i ' . escapeshellarg($still) . ' -vf ' . escapeshellarg($filter)
-        . ' -frames:v ' . $frames . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
-    $ok = rateb_video_run_ffmpeg($cmd, 240);
+    $ok = rateb_video_run_ffmpeg(rateb_video_clip_command(rateb_video_ffmpeg_path(), $still, $index, $frames, $clip), 240);
     @unlink($still);
     clearstatcache(true, $clip);
     if (!$ok || !is_file($clip) || filesize($clip) < 1000) {
@@ -715,34 +650,22 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     $ffmpeg = rateb_video_ffmpeg_path();
     $dir = MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips';
     $list = $dir . '/list-' . (int) $job['id'] . '.txt';
-    $lines = '';
+    $clips = [];
     foreach ($scenes as $index => $scene) {
         $clip = $dir . '/' . (int) $job['id'] . '-' . $index . '.mp4';
         if (!is_file($clip)) {
             throw new RuntimeException('provider');
         }
-        $lines .= "file " . escapeshellarg($clip) . "\n";
+        $clips[] = $clip;
     }
-    file_put_contents($list, $lines);
+    file_put_contents($list, rateb_video_concat_list($clips));
     $out = $dir . '/final-' . (int) $job['id'] . '.mp4';
     $voice = $pdo->prepare('SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = \'audio\' ORDER BY id DESC LIMIT 1');
     $voice->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
     $audio = $voice->fetch();
     $audioPath = $audio ? (media_resolve_path($audio) ?? '') : '';
-    $filter = 'scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p';
-    if ((int) $job['watermark'] === 1) {
-        $filter .= ",drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
-    }
-    $cmd = escapeshellarg($ffmpeg) . ' -nostdin -loglevel error -y -f concat -safe 0 -i ' . escapeshellarg($list);
-    if ($audioPath !== '' && is_file($audioPath)) {
-        $cmd .= ' -i ' . escapeshellarg($audioPath);
-        $cmd .= ' -filter_complex ' . escapeshellarg('[0:v]' . $filter . '[v]');
-        $cmd .= ' -map [v] -map 1:a -shortest';
-    } else {
-        $cmd .= ' -vf ' . escapeshellarg($filter) . ' -an';
-    }
-    $cmd .= ' -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . escapeshellarg($out);
-    $ok = rateb_video_run_ffmpeg($cmd, 600);
+    $audioPath = $audioPath !== '' && is_file($audioPath) ? $audioPath : '';
+    $ok = rateb_video_run_ffmpeg(rateb_video_compose_command($ffmpeg, $list, $audioPath, (int) $job['watermark'] === 1, $out), 600);
     clearstatcache(true, $out);
     $bytes = is_file($out) ? file_get_contents($out) : false;
     @unlink($list);

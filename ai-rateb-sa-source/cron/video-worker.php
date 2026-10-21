@@ -11,7 +11,8 @@ if (PHP_SAPI !== 'cli' || isset($_SERVER['REQUEST_METHOD']) || isset($_SERVER['G
 /*
  * Video background worker for ai.rateb.sa. Run by cron once a minute:
  *   php cron/video-worker.php --log=/home/<account>/.rateb-ai/video-worker.log
- * Options: --check (report readiness and exit), --max-seconds=N (default 50).
+ * Options: --check (report readiness, including a real ffmpeg render and a two-lock test,
+ * and exit), --max-seconds=N (default 50).
  * A video-worker.pause file next to the log, younger than 15 minutes, skips the pass; the
  * deploy job uses it while files are being replaced.
  */
@@ -81,30 +82,12 @@ try {
 }
 
 if ($check) {
-    $report = ['php' => PHP_VERSION . ' ' . PHP_SAPI, 'env' => $env, 'db' => 'ok'];
-    $report['db_server'] = rateb_video_worker_redact((string) $pdo->query('SELECT VERSION()')->fetchColumn());
-    $first = rateb_video_lock($pdo, 'video-check-a', 0);
-    $second = rateb_video_lock($pdo, 'video-check-b', 0);
-    $report['named_locks'] = ($first && $second) ? 'ok' : 'FAILED';
-    rateb_video_unlock($pdo, 'video-check-a');
-    rateb_video_unlock($pdo, 'video-check-b');
-    $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
-    $report['proc_open'] = function_exists('proc_open') && !in_array('proc_open', $disabled, true) ? 'ok' : 'FAILED';
-    $report['curl'] = extension_loaded('curl') ? 'ok' : 'FAILED';
-    $report['gd'] = function_exists('imagecreatefromstring') ? 'ok' : 'FAILED';
-    $ffmpeg = rateb_video_ffmpeg_path();
-    $report['ffmpeg'] = $ffmpeg;
-    $report['ffmpeg_runs'] = $report['proc_open'] === 'ok' && rateb_video_run_ffmpeg(escapeshellarg($ffmpeg) . ' -nostdin -hide_banner -version', 30) ? 'ok' : 'FAILED';
-    $report['media_root'] = is_dir(MEDIA_ROOT) && is_writable(MEDIA_ROOT) ? 'ok' : 'FAILED';
-    $provider = rateb_video_provider();
-    $report['provider'] = $provider->name() . ($provider->configured() ? ' configured' : ' NOT configured');
-    $report['active_jobs'] = (string) (int) $pdo->query("SELECT COUNT(*) FROM video_jobs WHERE status IN ('queued', 'processing')")->fetchColumn();
-    foreach ($report as $key => $value) {
+    $readiness = rateb_video_worker_readiness($pdo, ['env' => $env]);
+    foreach ($readiness['report'] as $key => $value) {
         echo 'WORKER_', strtoupper($key), '=', $value, "\n";
     }
-    $ready = !in_array('FAILED', $report, true);
-    echo 'WORKER_READY=', $ready ? 'yes' : 'no', "\n";
-    exit($ready ? 0 : 1);
+    echo 'WORKER_READY=', $readiness['ready'] ? 'yes' : 'no', "\n";
+    exit($readiness['ready'] ? 0 : 1);
 }
 
 $stats = rateb_video_worker_run($pdo, ['seconds' => $maxSeconds, 'log' => $log]);

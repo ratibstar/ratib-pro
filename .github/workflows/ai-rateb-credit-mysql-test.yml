@@ -38,6 +38,7 @@ jobs:
       RATEB_TEST_DB_CONFIRM: rateb_ai_credit_test
       RATEB_TEST_DB_USER: rateb_credit_test
       RATEB_VIDEO_TEST_DB_NAME: rateb_ai_video_test
+      RATEB_DEPLOY_TEST_DB_NAME: rateb_ai_deploy_test
 
     defaults:
       run:
@@ -67,12 +68,12 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: pdo_mysql, mbstring, gd
+          extensions: pdo_mysql, mbstring, gd, posix
           coverage: none
           tools: none
 
       - name: Check PHP extensions
-        run: php -r 'foreach (["pdo_mysql", "mbstring", "gd"] as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "missing $e\n"); exit(1); } } echo PHP_VERSION, PHP_EOL;'
+        run: php -r 'foreach (["pdo_mysql", "mbstring", "gd", "posix"] as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "missing $e\n"); exit(1); } } echo PHP_VERSION, PHP_EOL;'
 
       - name: Install ffmpeg for the video worker test
         run: |
@@ -101,6 +102,8 @@ jobs:
           test "$failures" -eq 0
 
       - name: Offline test suites
+        env:
+          RATEB_TEST_REQUIRE_FFMPEG: '1'
         run: |
           failed=()
           for suite in workflow-fixes credit-reservations endpoint-billing campaign-package video-engine video-worker strategy-output sawtak-catalog media-upload-kind; do
@@ -118,7 +121,7 @@ jobs:
             exit 1
           fi
 
-      - name: Crontab installer test
+      - name: Cron install, remove, and wait test
         run: |
           python3 -c 'import yaml' 2>/dev/null || pip install --quiet pyyaml
           bash tests/cron-install.sh
@@ -152,9 +155,11 @@ jobs:
           docker exec -i -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot <<SQL
           CREATE DATABASE \`${RATEB_TEST_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
           CREATE DATABASE \`${RATEB_VIDEO_TEST_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+          CREATE DATABASE \`${RATEB_DEPLOY_TEST_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
           CREATE USER '${RATEB_TEST_DB_USER}'@'%' IDENTIFIED BY '${password}';
           GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, TRIGGER ON \`${RATEB_TEST_DB_NAME}\`.* TO '${RATEB_TEST_DB_USER}'@'%';
           GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, INDEX ON \`${RATEB_VIDEO_TEST_DB_NAME}\`.* TO '${RATEB_TEST_DB_USER}'@'%';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, INDEX ON \`${RATEB_DEPLOY_TEST_DB_NAME}\`.* TO '${RATEB_TEST_DB_USER}'@'%';
           SET GLOBAL log_bin_trust_function_creators = 1;
           SQL
           docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -N -e "SHOW GRANTS FOR '${RATEB_TEST_DB_USER}'@'%'"
@@ -199,6 +204,27 @@ jobs:
           grep -Eq '^SUMMARY pass=[1-9][0-9]* fail=0 not_run=0$' "$RUNNER_TEMP/video-mysql.log"
           grep -qx 'FFMPEG yes GD yes' "$RUNNER_TEMP/video-mysql.log"
 
+      - name: Deploy and worker-off simulation
+        if: always()
+        run: |
+          test -n "${RATEB_TEST_DB_PASS:-}"
+          python3 -c 'import yaml' 2>/dev/null || pip install --quiet pyyaml
+          # The application's media root is fixed at /home/admin/.campaign-media; this runner is disposable.
+          sudo mkdir -p /home/admin/.campaign-media
+          sudo chown "$(id -u):$(id -g)" /home/admin/.campaign-media
+          set +e
+          bash tests/deploy-sim.sh 2>&1 | tee "$RUNNER_TEMP/deploy-sim.log"
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "Deploy simulation exit code: $code"
+          if [ "$code" -ne 0 ]; then
+            [ "$code" -eq 2 ] && echo "::error::Deploy simulation refused (exit 2); nothing was proven."
+            [ "$code" -eq 1 ] && echo "::error::Deploy simulation failed (exit 1)."
+            exit 1
+          fi
+          grep -qx 'RESULT=PASS' "$RUNNER_TEMP/deploy-sim.log"
+          grep -Eq '^SUMMARY pass=[1-9][0-9]* fail=0$' "$RUNNER_TEMP/deploy-sim.log"
+
       - name: Remove test database and user
         if: always()
         run: |
@@ -207,5 +233,5 @@ jobs:
             RATEB_TEST_DB_NAME="$RATEB_VIDEO_TEST_DB_NAME" RATEB_TEST_DB_CONFIRM="$RATEB_VIDEO_TEST_DB_NAME" php tests/integration/video-worker-mysql.php --cleanup || true
           fi
           if [ -n "${MYSQL_CONTAINER:-}" ]; then
-            docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -e "DROP DATABASE IF EXISTS \`${RATEB_TEST_DB_NAME}\`; DROP DATABASE IF EXISTS \`${RATEB_VIDEO_TEST_DB_NAME}\`; DROP USER IF EXISTS '${RATEB_TEST_DB_USER}'@'%';" || true
+            docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -e "DROP DATABASE IF EXISTS \`${RATEB_TEST_DB_NAME}\`; DROP DATABASE IF EXISTS \`${RATEB_VIDEO_TEST_DB_NAME}\`; DROP DATABASE IF EXISTS \`${RATEB_DEPLOY_TEST_DB_NAME}\`; DROP USER IF EXISTS '${RATEB_TEST_DB_USER}'@'%';" || true
           fi

@@ -33,7 +33,7 @@ function rateb_video_worker_load_env(string $docroot): string
         return 'refused';
     }
     $perms = @fileperms($real);
-    if ($perms === false || ($perms & 0002) !== 0) {
+    if ($perms === false || ($perms & 0022) !== 0) {
         return 'refused';
     }
     $owner = @fileowner($real);
@@ -52,6 +52,40 @@ function rateb_video_worker_load_env(string $docroot): string
         ob_end_clean();
     }
     return 'loaded';
+}
+
+/**
+ * Readiness report for `cron/video-worker.php --check`. A value that starts with FAILED
+ * blocks the cron entry from being installed.
+ *
+ * @param array{env?:string,ffmpeg?:string,tmp?:string,lock_hook?:callable} $options
+ * @return array{report:array<string,string>,ready:bool}
+ */
+function rateb_video_worker_readiness(PDO $pdo, array $options = []): array
+{
+    $report = ['php' => PHP_VERSION . ' ' . PHP_SAPI, 'env' => (string) ($options['env'] ?? 'none'), 'db' => 'ok'];
+    $report['db_server'] = rateb_video_worker_redact((string) $pdo->query('SELECT VERSION()')->fetchColumn());
+    $locks = rateb_video_check_locks($pdo, $options['lock_hook'] ?? null);
+    $report['named_locks'] = $locks['ok'] ? 'ok' : 'FAILED ' . $locks['detail'];
+    $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+    $report['proc_open'] = function_exists('proc_open') && !in_array('proc_open', $disabled, true) ? 'ok' : 'FAILED';
+    $report['curl'] = extension_loaded('curl') ? 'ok' : 'FAILED';
+    $report['gd'] = function_exists('imagecreatefromstring') ? 'ok' : 'FAILED';
+    $ffmpeg = (string) ($options['ffmpeg'] ?? rateb_video_ffmpeg_path());
+    $report['ffmpeg'] = $ffmpeg;
+    $render = rateb_video_check_ffmpeg($ffmpeg, $options['tmp'] ?? null);
+    $report['ffmpeg_render'] = $render['ok'] ? 'ok' : 'FAILED ' . rateb_video_worker_redact($render['detail']);
+    $report['media_root'] = is_dir(MEDIA_ROOT) && is_writable(MEDIA_ROOT) ? 'ok' : 'FAILED';
+    $provider = rateb_video_provider();
+    $report['provider'] = $provider->name() . ($provider->configured() ? ' configured' : ' NOT configured');
+    $report['active_jobs'] = (string) (int) $pdo->query("SELECT COUNT(*) FROM video_jobs WHERE status IN ('queued', 'processing')")->fetchColumn();
+    $ready = true;
+    foreach ($report as $value) {
+        if (str_starts_with($value, 'FAILED')) {
+            $ready = false;
+        }
+    }
+    return ['report' => $report, 'ready' => $ready];
 }
 
 /**

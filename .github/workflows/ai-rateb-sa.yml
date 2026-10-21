@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       task:
-        description: "deploy uploads the application files. verify checks secrets. generate calls the live text provider. diagnose checks the server video tools."
+        description: "deploy uploads the application files. verify checks secrets. generate calls the live text provider. diagnose checks the server video tools. worker-off removes the video worker cron entry and waits for a running pass to finish; run it before rolling back the video worker code."
         required: true
         default: deploy
         type: choice
@@ -13,6 +13,7 @@ on:
           - verify
           - generate
           - diagnose
+          - worker-off
 
 permissions:
   contents: read
@@ -105,7 +106,21 @@ jobs:
           KEY="$(cat "${RUNNER_TEMP}/ai-deploy-key-path")"
           PORT="${DEPLOY_SSH_PORT:-22}"
           SSH=(ssh -i "$KEY" -p "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
           REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          PREFLIGHT_DIR=""
+          PAUSED=0
+          cleanup() {
+            if [ -n "$PREFLIGHT_DIR" ]; then
+              "${SSH[@]}" "$REMOTE" "rm -rf '${PREFLIGHT_DIR}'" || true
+            fi
+            if [ "$PAUSED" = "1" ]; then
+              "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.pause"' || true
+              echo "VIDEO_WORKER_PAUSE=cleared"
+            fi
+            rm -f "$KEY"
+          }
+          trap cleanup EXIT
           INDICATED="/home/admin/domains/ai.rateb.sa"
           TARGET=""
           for candidate in "$INDICATED" "${INDICATED}/public_html" "${INDICATED}/private_html"; do
@@ -116,22 +131,33 @@ jobs:
           done
           if [ -z "$TARGET" ]; then
             echo "::error::app/plans.php was not found in the indicated domain directory or its public_html or private_html child"
-            rm -f "$KEY"
             exit 1
           fi
           echo "COMMIT=${GITHUB_SHA}"
           echo "TARGET=${TARGET}"
-          # app/bootstrap.php was never deployed before the video worker; replace it only when the
-          # server still has the repository version (before or after db() moved to app/db.php).
-          boot_remote="$("${SSH[@]}" "$REMOTE" "php -r \"echo hash_file('sha256', '${TARGET}/app/bootstrap.php') ?: 'missing';\"")"
+          # Preflight runs from a private folder before anything in the web root changes. It checks
+          # the target and file ownership, that app/bootstrap.php is still the repository version
+          # (before or after db() moved to app/db.php), the prepend file's owner and mode, the
+          # database and two named locks, and a real ffmpeg render.
           boot_local="$(sha256sum ai-rateb-sa-source/app/bootstrap.php | awk '{print $1}')"
-          if [ "$boot_remote" != "00d991b8b00a9b960d4e3fde11a3709d8704f79768fbea145ae583e37d70779f" ] && [ "$boot_remote" != "$boot_local" ]; then
-            echo "::error::The server app/bootstrap.php differs from the repository; it was not replaced. Reconcile it before deploying."
-            rm -f "$KEY"
+          PREFLIGHT_DIR=".rateb-ai/preflight-${GITHUB_RUN_ID}"
+          "${SSH[@]}" "$REMOTE" "mkdir -p .rateb-ai && chmod 700 .rateb-ai && rm -rf '${PREFLIGHT_DIR}' && mkdir -m 700 '${PREFLIGHT_DIR}'"
+          "${SCP[@]}" ai-rateb-sa-source/ops/preflight.php "${REMOTE}:${PREFLIGHT_DIR}/preflight.php"
+          "${SCP[@]}" ai-rateb-sa-source/app/video/runtime.php "${REMOTE}:${PREFLIGHT_DIR}/runtime.php"
+          set +e
+          preflight_out="$("${SSH[@]}" "$REMOTE" "/usr/local/bin/php '${PREFLIGHT_DIR}/preflight.php' --target='${TARGET}' --runtime='${PREFLIGHT_DIR}/runtime.php' --bootstrap-sha256=00d991b8b00a9b960d4e3fde11a3709d8704f79768fbea145ae583e37d70779f,${boot_local}" 2>&1)"
+          preflight_code=$?
+          set -e
+          grep -E '^PREFLIGHT_[A-Z0-9_]+=' <<< "$preflight_out" || true
+          if [ "$preflight_code" -ne 0 ] || ! grep -qx 'PREFLIGHT_OK=yes' <<< "$preflight_out"; then
+            echo "::error::Preflight failed; no application file was changed."
             exit 1
           fi
-          "${SSH[@]}" "$REMOTE" 'mkdir -p "$HOME/.rateb-ai" && chmod 700 "$HOME/.rateb-ai" && touch "$HOME/.rateb-ai/video-worker.pause"'
-          trap '"${SSH[@]}" "$REMOTE" "rm -f \"\$HOME/.rateb-ai/video-worker.pause\"" || true; rm -f "$KEY"' EXIT
+          "${SSH[@]}" "$REMOTE" "rm -rf '${PREFLIGHT_DIR}'"
+          PREFLIGHT_DIR=""
+          "${SSH[@]}" "$REMOTE" 'touch "$HOME/.rateb-ai/video-worker.pause"'
+          PAUSED=1
+          echo "VIDEO_WORKER_PAUSE=set"
           files=(
             "app/plans.php"
             "app/schema.php"
@@ -141,6 +167,7 @@ jobs:
             "app/ai/voice.php"
             "app/ai/video.php"
             "app/ai/video-status.php"
+            "app/video/runtime.php"
             "app/video/engine.php"
             "app/video/provider.php"
             "public/assets/js/app.js"
@@ -252,7 +279,7 @@ jobs:
           Path(os.environ["RUNNER_TEMP"], "opcache-reset.php").write_text(
               "<?php\n"
               "if (function_exists('opcache_invalidate')) {\n"
-              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/voice.php','app/ai/video.php','app/ai/video-status.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php','app/db.php','app/bootstrap.php','app/video/worker.php'] as $rel) {\n"
+              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/voice.php','app/ai/video.php','app/ai/video-status.php','app/video/runtime.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php','app/db.php','app/bootstrap.php','app/video/worker.php'] as $rel) {\n"
               "        opcache_invalidate(__DIR__ . '/' . $rel, true);\n"
               "    }\n"
               "}\n"
@@ -279,58 +306,65 @@ jobs:
           set -e
           grep -E '^WORKER_[A-Z_]+=|video-worker ' <<< "$check_out" || true
           if [ "$check_code" -ne 0 ] || ! grep -qx 'WORKER_READY=yes' <<< "$check_out"; then
-            echo "::error::The video worker readiness check failed; the cron entry was not installed or changed."
+            echo "::error::The video worker readiness check failed; the cron entry was not installed or changed. If an earlier deploy installed it, it is still active: run task=worker-off to stop it."
             exit 1
           fi
-          cat > "${RUNNER_TEMP}/install-video-cron.sh" << 'SH'
+          "${SSH[@]}" "$REMOTE" "bash -s -- install '${TARGET}'" < ai-rateb-sa-source/ops/video-cron.sh
+          "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.pause"'
+          PAUSED=0
+          echo "VIDEO_WORKER_PAUSE=cleared"
+
+  worker-off:
+    name: Stop the ai.rateb.sa video worker
+    if: github.event.inputs.task == 'worker-off'
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Remove the cron entry and wait for a running pass
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
           set -euo pipefail
-          target="$1"
-          case "$target" in
-            /home/*/domains/ai.rateb.sa|/home/*/domains/ai.rateb.sa/public_html|/home/*/domains/ai.rateb.sa/private_html) ;;
-            *) echo "CRON=refused: unexpected target"; exit 1 ;;
-          esac
-          test -f "$target/cron/video-worker.php"
-          php_bin=/usr/local/bin/php
-          state="$HOME/.rateb-ai"
-          tag='# rateb-ai-video-worker'
-          line="* * * * * $php_bin $target/cron/video-worker.php --log=$state/video-worker.log >> $state/video-worker.log 2>&1 $tag"
-          mkdir -p "$state"
-          chmod 700 "$state"
-          current="$(mktemp)"
-          next="$(mktemp)"
-          err="$(mktemp)"
-          trap 'rm -f "$current" "$next" "$err"' EXIT
-          if ! crontab -l > "$current" 2> "$err"; then
-            if grep -qi 'no crontab' "$err"; then
-              : > "$current"
-            else
-              echo "CRON=error: could not read the current crontab; nothing changed"
-              exit 1
-            fi
-          fi
-          backup="$state/crontab.backup.$(date -u +%Y%m%dT%H%M%SZ)"
-          cp "$current" "$backup"
-          chmod 600 "$backup"
-          ls -1t "$state"/crontab.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -f
-          echo "CRON_TAGGED_BEFORE=$(grep -cF "$tag" "$current" || true)"
-          grep -vF "$tag" "$current" > "$next" || true
-          printf '%s\n' "$line" >> "$next"
-          crontab "$next"
-          installed="$(mktemp)"
-          crontab -l > "$installed"
-          if [ "$(grep -cF "$tag" "$installed" || true)" != "1" ] || ! diff -q <(grep -vF "$tag" "$current") <(grep -vF "$tag" "$installed") > /dev/null; then
-            crontab "$backup"
-            rm -f "$installed"
-            echo "CRON=error: verification failed; the previous crontab was restored"
+          if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
+            echo "::error::DEPLOY_SSH_HOST, DEPLOY_SSH_USER, and DEPLOY_SSH_PRIVATE_KEY must be set in the rateb.sa environment"
             exit 1
           fi
-          rm -f "$installed"
-          echo "CRON_OTHER_ENTRIES_PRESERVED=$(grep -cvF "$tag" "$current" || true)"
-          echo "CRON_ENTRY=installed"
-          SH
-          "${SSH[@]}" "$REMOTE" "bash -s -- '${TARGET}'" < "${RUNNER_TEMP}/install-video-cron.sh"
+          python3 - << 'PY'
+          import os, stat, tempfile
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          fd, path = tempfile.mkstemp(prefix="ai-off-", suffix=".pem")
+          os.close(fd)
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key if key.endswith("\n") else key + "\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          open(os.path.join(os.environ["RUNNER_TEMP"], "ai-off-key-path"), "w", encoding="utf-8").write(path)
+          PY
+          KEY="$(cat "${RUNNER_TEMP}/ai-off-key-path")"
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          SSH=(ssh -i "$KEY" -p "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          trap 'rm -f "$KEY"' EXIT
+          # The pause file stops new passes at once, before the crontab changes. If a later step
+          # fails it is left in place; it expires on its own after 15 minutes.
+          "${SSH[@]}" "$REMOTE" 'mkdir -p "$HOME/.rateb-ai" && chmod 700 "$HOME/.rateb-ai" && touch "$HOME/.rateb-ai/video-worker.pause"'
+          echo "VIDEO_WORKER_PAUSE=set"
+          "${SSH[@]}" "$REMOTE" "bash -s -- remove" < ai-rateb-sa-source/ops/video-cron.sh
+          if ! "${SSH[@]}" "$REMOTE" "bash -s -- wait 540" < ai-rateb-sa-source/ops/video-cron.sh; then
+            echo "::error::The cron entry is removed, but a worker pass is still running. Run worker-off again and roll back only after it reports VIDEO_WORKER=stopped."
+            exit 1
+          fi
           "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.pause"'
           echo "VIDEO_WORKER_PAUSE=cleared"
+          echo "VIDEO_WORKER=stopped"
 
   diagnose:
     name: Diagnose ai.rateb.sa video tools

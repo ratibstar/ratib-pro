@@ -89,6 +89,8 @@ if ($posix) {
     chmod($private . '/open.php', 0666);
     file_put_contents($docroot . '/.user.ini', 'auto_prepend_file = "' . $private . "/open.php\"\n");
     check(rateb_video_worker_load_env($docroot) === 'refused' && getenv('RATEB_WORKER_TEST_OPEN') === false, 'a world-writable prepend file is refused');
+    chmod($private . '/open.php', 0620);
+    check(rateb_video_worker_load_env($docroot) === 'refused' && getenv('RATEB_WORKER_TEST_OPEN') === false, 'a group-writable prepend file is refused');
     file_put_contents($docroot . '/.user.ini', 'auto_prepend_file = "' . $private . "/env.php\"\n");
     ob_start();
     $loaded = rateb_video_worker_load_env($docroot);
@@ -101,9 +103,78 @@ if ($posix) {
     $elapsed = microtime(true) - $started;
     check(!$finished && $elapsed < 4, 'a hung encoder is stopped at its time limit');
     check(rateb_video_run_ffmpeg('true', 5) && !rateb_video_run_ffmpeg('false', 5), 'encoder exit codes are reported');
+
+    // ffmpeg readiness: a real render, then fake binaries that each lack one thing.
+    $tmpBase = $base . '/check-tmp';
+    mkdir($tmpBase, 0700);
+    $leftovers = static fn (): int => count(glob($tmpBase . '/*') ?: []);
+    $fake = static function (string $name, string $render) use ($base): string {
+        $lists = [
+            'encoders' => " V....D libx264              libx264 H.264\n A....D aac                  AAC (Advanced Audio Coding)\n",
+            'filters' => " ... format            V->V       pixel format\n ... pad               V->V       pad\n ... scale             V->V       scale\n T.C zoompan           V->V       Apply Zoom & Pan effect.\n T.C drawtext          V->V       Draw text\n",
+            'demuxers' => " D  concat          Virtual concatenation script\n",
+        ];
+        if ($name === 'no-x264-drawtext') {
+            $lists['encoders'] = " A....D aac                  AAC (Advanced Audio Coding)\n";
+            $lists['filters'] = str_replace(" T.C drawtext          V->V       Draw text\n", '', $lists['filters']);
+        }
+        $body = "#!/bin/sh\ncase \" \$* \" in\n";
+        foreach ($lists as $kind => $text) {
+            $body .= "  *\" -{$kind} \"*) printf '%s' " . escapeshellarg($text) . "; exit 0 ;;\n";
+        }
+        $body .= "esac\n" . $render . "\n";
+        $file = $base . '/ffmpeg-' . $name;
+        file_put_contents($file, $body);
+        chmod($file, 0700);
+        return $file;
+    };
+    $realFfmpeg = trim((string) shell_exec('command -v ffmpeg 2>/dev/null'));
+    if ($realFfmpeg !== '' && function_exists('imagejpeg')) {
+        $real = rateb_video_check_ffmpeg($realFfmpeg, $tmpBase);
+        check($real['ok'] && $real['cleaned'] && $leftovers() === 0, 'the readiness render passes with a full ffmpeg and leaves no temporary files' . ($real['ok'] ? '' : ' (' . $real['detail'] . ')'));
+    } elseif (getenv('RATEB_TEST_REQUIRE_FFMPEG') === '1') {
+        check(false, 'the readiness render needs ffmpeg and GD, which CI must provide');
+    } else {
+        echo "SKIP real ffmpeg readiness render (ffmpeg or GD not installed)\n";
+    }
+    $missing = rateb_video_check_ffmpeg($fake('no-x264-drawtext', 'exit 0'), $tmpBase);
+    check(!$missing['ok'] && str_contains($missing['detail'], 'libx264') && str_contains($missing['detail'], 'drawtext') && !str_contains($missing['detail'], 'aac') && $leftovers() === 0, 'readiness names each missing ffmpeg capability and cleans up (' . $missing['detail'] . ')');
+    $broken = rateb_video_check_ffmpeg($fake('render-fails', "echo \"Unknown encoder 'libx264'\" >&2\nexit 1"), $tmpBase);
+    check(!$broken['ok'] && str_contains($broken['detail'], 'clip render failed') && str_contains($broken['detail'], 'Unknown encoder') && $leftovers() === 0, 'a failing render is reported with the encoder error and cleaned up (' . $broken['detail'] . ')');
+    $junk = rateb_video_check_ffmpeg($fake('junk-output', "for last; do :; done\necho junk > \"\$last\"\nexit 0"), $tmpBase);
+    check(!$junk['ok'] && str_contains($junk['detail'], 'no valid MP4') && $leftovers() === 0, 'a render that writes something other than an MP4 fails readiness (' . $junk['detail'] . ')');
+    $absent = rateb_video_check_ffmpeg($base . '/no-such-ffmpeg', $tmpBase);
+    check(!$absent['ok'] && str_contains($absent['detail'], 'did not run') && $leftovers() === 0, 'a missing ffmpeg binary fails readiness (' . $absent['detail'] . ')');
+    @rmdir($tmpBase);
+    foreach (glob($base . '/ffmpeg-*') ?: [] as $file) {
+        @unlink($file);
+    }
 } else {
-    echo "SKIP posix-only checks (file modes, process time limit) on Windows\n";
+    echo "SKIP posix-only checks (file modes, process time limit, ffmpeg readiness) on Windows\n";
 }
+
+$runtimeTokens = token_get_all((string) file_get_contents(dirname(__DIR__) . '/app/video/runtime.php'));
+$runtimeIncludes = array_filter($runtimeTokens, static fn ($t): bool => is_array($t) && in_array($t[0], [T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE], true));
+check($runtimeIncludes === [], 'runtime.php loads no other file, so the preflight can run it alone');
+$engineSource = (string) file_get_contents(dirname(__DIR__) . '/app/video/engine.php');
+check(str_contains($engineSource, 'rateb_video_clip_command(') && str_contains($engineSource, 'rateb_video_compose_command(') && !str_contains($engineSource, 'zoompan='), 'the engine renders with the same command builders the readiness check uses');
+$silent = rateb_video_compose_command('ffmpeg', '/x/list.txt', '', false, '/x/out.mp4');
+$voiced = rateb_video_compose_command('ffmpeg', '/x/list.txt', '/x/voice.mp3', true, '/x/out.mp4');
+check(str_contains($silent, ' -an ') && !str_contains($silent, 'drawtext') && str_contains($voiced, '-map ' . escapeshellarg('[v]') . ' -map 1:a') && str_contains($voiced, 'drawtext') && str_contains($voiced, '-c:a aac'), 'compose commands keep the silent, voiced, and watermark variants');
+
+$preflight = dirname(__DIR__) . '/ops/preflight.php';
+$pfSpawn = static function (array $env) use ($preflight): array {
+    $process = proc_open([PHP_BINARY, $preflight], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, $env + ['PATH' => (string) getenv('PATH'), 'SystemRoot' => (string) getenv('SystemRoot')]);
+    $out = stream_get_contents($pipes[1]);
+    $err = stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    return ['code' => proc_close($process), 'out' => (string) $out, 'err' => (string) $err];
+};
+$pfWeb = $pfSpawn(['REQUEST_METHOD' => 'GET']);
+check($pfWeb['out'] === '' && $pfWeb['err'] === '', 'the preflight script refuses a web request before doing anything');
+$pfEmpty = $pfSpawn(['HOME' => sys_get_temp_dir()]);
+check($pfEmpty['code'] === 1 && str_contains($pfEmpty['out'], 'PREFLIGHT_TARGET=FAILED') && str_contains($pfEmpty['out'], 'PREFLIGHT_OK=no'), 'the preflight fails closed without a target');
 foreach (glob($docroot . '/{,.}*', GLOB_BRACE) ?: [] as $file) {
     if (is_file($file)) {
         @unlink($file);

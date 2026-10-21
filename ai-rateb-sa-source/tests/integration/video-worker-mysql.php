@@ -649,7 +649,44 @@ rateb_video_worker_job($pdo, $j19, new VwProvider('reject'));
 rateb_video_reconcile($pdo);
 vw_expect('a legacy job that fails refunds its earlier charge exactly once', vw_ledger($pdo, $u19, $j19), ['job' => 'failed', 'usage' => 'failed', 'balance' => 50, 'charges' => 1, 'refunds' => 1]);
 
-// 15. Ledger invariant for every test user.
+// 15. Readiness: two named locks per connection, the real ffmpeg render, and failures.
+$lockKeys = [];
+$safe = rateb_video_check_locks($pdo, static function (PDO $pdo, string $a, string $b) use (&$lockKeys): void {
+    $lockKeys = [$a, $b];
+});
+$free = $pdo->prepare("SELECT IS_FREE_LOCK(CONCAT(LEFT(DATABASE(), 24), ':', ?))");
+$released = 0;
+foreach ($lockKeys as $key) {
+    $free->execute([$key]);
+    $released += (int) $free->fetchColumn();
+}
+vw_expect('this server keeps two named locks on one connection, and the check releases both', ['ok' => var_export($safe['ok'], true), 'released' => $released], ['ok' => 'true', 'released' => 2]);
+$lostFirst = rateb_video_check_locks($pdo, static function (PDO $pdo, string $a): void {
+    rateb_video_unlock($pdo, $a);
+});
+vw_expect('a server that drops the first lock when a second is taken fails the lock check', ['ok' => var_export($lostFirst['ok'], true), 'names_first' => var_export(str_contains($lostFirst['detail'], 'first'), true)], ['ok' => 'false', 'names_first' => 'true']);
+$stolenKey = '';
+$stolen = rateb_video_check_locks($pdo, static function (PDO $pdo, string $a, string $b) use ($holder, &$stolenKey): void {
+    rateb_video_unlock($pdo, $b);
+    rateb_video_lock($holder, $b, 0);
+    $stolenKey = $b;
+});
+vw_expect('a lock that ends up owned by another connection fails the lock check', ['ok' => var_export($stolen['ok'], true), 'names_second' => var_export(str_contains($stolen['detail'], 'second'), true), 'stolen' => var_export($stolenKey !== '', true)], ['ok' => 'false', 'names_second' => 'true', 'stolen' => 'true']);
+rateb_video_unlock($holder, $stolenKey);
+$unsafe = rateb_video_worker_readiness($pdo, ['env' => 'loaded', 'lock_hook' => static function (PDO $pdo, string $a): void {
+    rateb_video_unlock($pdo, $a);
+}]);
+vw_expect('readiness is refused when named locks are unsafe', ['ready' => var_export($unsafe['ready'], true), 'locks' => substr($unsafe['report']['named_locks'], 0, 6)], ['ready' => 'false', 'locks' => 'FAILED']);
+if (!$hasFfmpeg || !$hasGd) {
+    vw_report('NOT RUN', 'readiness with a real ffmpeg render', 'ffmpeg and GD are required');
+} else {
+    $ready = rateb_video_worker_readiness($pdo, ['env' => 'loaded']);
+    vw_expect('readiness passes with a real render, working locks, and storage', ['ready' => var_export($ready['ready'], true)] + $ready['report'], ['ready' => 'true', 'named_locks' => 'ok', 'ffmpeg_render' => 'ok', 'media_root' => 'ok', 'proc_open' => 'ok']);
+}
+$noFfmpeg = rateb_video_worker_readiness($pdo, ['env' => 'loaded', 'ffmpeg' => $mediaRoot . '/no-such-ffmpeg']);
+vw_expect('readiness is refused when ffmpeg cannot render', ['ready' => var_export($noFfmpeg['ready'], true), 'render' => substr($noFfmpeg['report']['ffmpeg_render'], 0, 6)], ['ready' => 'false', 'render' => 'FAILED']);
+
+// 16. Ledger invariant for every test user.
 $broken = [];
 foreach ($initial as $userId => $start) {
     $l = vw_ledger($pdo, (int) $userId);
