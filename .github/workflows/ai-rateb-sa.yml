@@ -329,6 +329,15 @@ jobs:
           $out['ffmpeg_used'] = $ffmpeg;
           $media = '/home/admin/.campaign-media';
           $out['media_root'] = is_dir($media) ? (is_writable($media) ? 'exists, writable' : 'exists, NOT writable') : 'missing';
+          foreach (['RATEB_AI_DB_PASSWORD', 'RATEB_VIDEO_PROVIDER', 'RUNWAY_API_KEY', 'RATEB_PRIVATE_VIDEO_URL', 'RATEB_PRIVATE_VIDEO_TOKEN'] as $name) {
+              $value = getenv($name);
+              $out['fpm_getenv_' . $name] = ($value !== false && $value !== '') ? 'SET' : 'NOT_SET';
+              $out['fpm_server_' . $name] = !empty($_SERVER[$name]) ? 'SET' : 'NOT_SET';
+          }
+          $provider = strtolower(trim((string) getenv('RATEB_VIDEO_PROVIDER')));
+          $out['fpm_video_provider_choice'] = in_array($provider, ['', 'runway', 'private'], true) ? ($provider === '' ? '(default)' : $provider) : '(other)';
+          $dbConfig = (string) @file_get_contents(__DIR__ . '/config/database.php');
+          $out['database_config_reads_env'] = str_contains($dbConfig, 'RATEB_AI_DB_PASSWORD') ? 'yes' : 'no';
           $run = static function (string $cmd): array {
               $start = microtime(true);
               $p = @proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
@@ -398,6 +407,15 @@ jobs:
           echo "CLI_PHP=$("${SSH[@]}" "$REMOTE" "command -v php || echo missing")"
           echo "CLI_DISABLE_FUNCTIONS=$("${SSH[@]}" "$REMOTE" "php -r 'echo ini_get(\"disable_functions\") ?: \"(none)\";'" || echo error)"
           echo "CLI_CRONTAB=$("${SSH[@]}" "$REMOTE" "command -v crontab || echo missing")"
+          echo "CLI_PHP_VERSION=$("${SSH[@]}" "$REMOTE" "/usr/local/bin/php -r 'echo PHP_VERSION, \" \", PHP_SAPI, \" pdo_mysql=\", extension_loaded(\"pdo_mysql\") ? \"yes\" : \"no\";'" || echo error)"
+          echo "CLI_ENV_RATEB_AI_DB_PASSWORD=$("${SSH[@]}" "$REMOTE" "/usr/local/bin/php -r 'echo getenv(\"RATEB_AI_DB_PASSWORD\") ? \"SET\" : \"NOT_SET\";'" || echo error)"
+          echo "CLI_ENV_RUNWAY_API_KEY=$("${SSH[@]}" "$REMOTE" "/usr/local/bin/php -r 'echo getenv(\"RUNWAY_API_KEY\") ? \"SET\" : \"NOT_SET\";'" || echo error)"
+          echo "HTACCESS_SETENV_NAMES=$("${SSH[@]}" "$REMOTE" "grep -ohE '^[[:space:]]*SetEnv[[:space:]]+[A-Za-z_]+' '${TARGET}/.htaccess' 2>/dev/null | awk '{print \$2}' | sort -u | tr '\n' ','" || true)"
+          echo "USER_INI_PRESENT=$("${SSH[@]}" "$REMOTE" "test -f '${TARGET}/.user.ini' && echo yes || echo no")"
+          echo "FPM_POOL_ENV_NAMES=$("${SSH[@]}" "$REMOTE" "for f in /usr/local/php83/etc/php-fpm.d/*.conf /usr/local/directadmin/data/users/admin/php/*.conf; do [ -r \"\$f\" ] && grep -ohE '^[[:space:]]*env\[[A-Za-z_]+\]' \"\$f\" | sed -E 's/.*env\[([A-Za-z_]+)\].*/\1/'; done 2>/dev/null | sort -u | tr '\n' ','" || true)"
+          echo "FPM_POOL_FILES_READABLE=$("${SSH[@]}" "$REMOTE" "n=0; for f in /usr/local/php83/etc/php-fpm.d/*.conf /usr/local/directadmin/data/users/admin/php/*.conf; do [ -r \"\$f\" ] && n=\$((n+1)); done; echo \$n" || true)"
+          echo "PROFILE_EXPORT_NAMES=$("${SSH[@]}" "$REMOTE" "grep -ohE '^[[:space:]]*export[[:space:]]+(RATEB_[A-Z_]+|RUNWAY_API_KEY)' ~/.bashrc ~/.bash_profile ~/.profile 2>/dev/null | awk '{print \$2}' | sort -u | tr '\n' ','" || true)"
+          echo "CRONTAB_LINES=$("${SSH[@]}" "$REMOTE" "crontab -l 2>/dev/null | grep -cv '^[[:space:]]*\(#\|\$\)' || true")"
 
   generate:
     name: Production campaign generation
