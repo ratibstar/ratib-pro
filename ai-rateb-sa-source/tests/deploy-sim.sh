@@ -255,6 +255,7 @@ run_job deploy.sh "$sim/h2.out"; code=$?
 ok "deploy: a second deploy keeps exactly one cron entry" '[ $code -eq 0 ] && [ "$(grep -cE "# rateb-ai-video-worker$" "$FAKE_CRON")" = 1 ] && [ "$(grep -vE "# rateb-ai-video-worker$" "$FAKE_CRON")" = "$others" ]'
 
 # I. worker-off waits for a running pass, removes only the tagged entry, and clears the pause.
+: > "$sim/log"
 bash -c 'sleep 4; :' "$target/cron/video-worker.php" &
 fake_worker=$!
 started=$SECONDS
@@ -264,7 +265,9 @@ wait "$fake_worker" 2> /dev/null
 ok "worker-off: succeeds and reports the worker stopped" '[ $code -eq 0 ] && grep -qx "VIDEO_WORKER=stopped" "$sim/i.out" && grep -qx "CRON_ENTRY=removed" "$sim/i.out"'
 ok "worker-off: waited for the running pass to exit" '[ $elapsed -ge 4 ]'
 ok "worker-off: only the tagged entry was removed" '[ "$(cat "$FAKE_CRON")" = "$others" ]'
-ok "worker-off: pause cleared, nothing uploaded, key removed" '[ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && ! grep -q "^SCP " "$sim/log" && key_removed ai-off-key-path'
+ok "worker-off: the pause file was set, then cleared" 'grep -qx "VIDEO_WORKER_PAUSE=set" "$sim/i.out" && grep -qx "VIDEO_WORKER_PAUSE=cleared" "$sim/i.out" && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ]'
+ok "worker-off: nothing was uploaded" '! grep -q "^SCP " "$sim/log"'
+ok "worker-off: the key was removed" 'key_removed ai-off-key-path'
 run_job worker-off.sh "$sim/i2.out"; code=$?
 ok "worker-off: a second run is a no-op" '[ $code -eq 0 ] && grep -qx "CRON_ENTRY=absent" "$sim/i2.out" && [ "$(cat "$FAKE_CRON")" = "$others" ]'
 
