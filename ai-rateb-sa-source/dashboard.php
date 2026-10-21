@@ -45,7 +45,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav43">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav44">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard.php', !empty($_SESSION['user_id'])); ?>
@@ -53,7 +53,7 @@ foreach ($campaigns as $row) {
 $wallet = !empty($_SESSION['user_id']) ? rateb_account_credits($pdo, (int) $_SESSION['user_id']) : ['package_type' => 'free', 'credits_balance' => 0];
 $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باقة الانطلاق', 'pro' => 'الباقة الاحترافية'];
 ?>
-<p class="muted" style="margin:12px 36px">الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
+<p class="muted" style="width:min(1800px,calc(100% - 36px));margin:12px auto 0">الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>
     <p class="muted" data-i18n="campaign_deleted">Campaign deleted.</p>
