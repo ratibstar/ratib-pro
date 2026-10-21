@@ -2,11 +2,6 @@ name: RATEB AI Credit MySQL Test
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ai-credit-integrity]
-    paths:
-      - 'ai-rateb-sa-source/**'
-      - '.github/workflows/ai-rateb-credit-mysql-test.yml'
 
 permissions:
   contents: read
