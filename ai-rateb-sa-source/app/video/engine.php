@@ -27,7 +27,7 @@ function rateb_video_clips(int $seconds): array
     };
 }
 
-function rateb_video_copy_text(string $content, string $prefer = 'ar'): string
+function rateb_video_copy_text(string $content, string $prefer = 'ar', int $limit = 180): string
 {
     $content = trim($content);
     if ($content !== '' && ($content[0] === '{' || $content[0] === '[')) {
@@ -47,7 +47,12 @@ function rateb_video_copy_text(string $content, string $prefer = 'ar'): string
     if ($plain === '' || $plain[0] === '{' || $plain[0] === '[') {
         return '';
     }
-    return mb_substr($plain, 0, 600);
+    return mb_substr($plain, 0, max(1, $limit));
+}
+
+function rateb_video_voiceover_limit(): int
+{
+    return 600;
 }
 
 function rateb_video_split_lines(string $text, int $count): array
@@ -71,12 +76,18 @@ function rateb_video_split_lines(string $text, int $count): array
 /** @param array<int,array<string,mixed>> $rows */
 function rateb_video_copy_parts(array $rows, string $prefer = 'ar'): array
 {
+    $order = array_flip(['short_ad', 'headline', 'call_to_action', 'ad_copy', 'social_posts']);
+    $rows = array_values(array_filter($rows, 'is_array'));
+    usort($rows, static function (array $a, array $b) use ($order): int {
+        $rank = static fn (array $row): int => $order[(string) ($row['output_type'] ?? '')] ?? count($order);
+        return $rank($a) <=> $rank($b);
+    });
     $parts = [];
     foreach ($rows as $row) {
-        if (!is_array($row) || (string) ($row['approval_status'] ?? '') !== 'approved') {
+        if ((string) ($row['approval_status'] ?? '') !== 'approved') {
             continue;
         }
-        $line = rateb_video_copy_text((string) ($row['content'] ?? ''), $prefer);
+        $line = rateb_video_copy_text((string) ($row['content'] ?? ''), $prefer, rateb_video_voiceover_limit());
         if ($line !== '') {
             $parts[] = $line;
         }
@@ -98,7 +109,8 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
         'realistic environmental motion, steady premium camera, product identity unchanged, no logos changing, no text',
     ];
     $prefer = $prefer === 'en' ? 'en' : 'ar';
-    $copyLine = rateb_video_copy_text((string) ($copyParts[0] ?? ''), $prefer);
+    $spokenCopy = rateb_video_copy_text((string) ($copyParts[0] ?? ''), $prefer, rateb_video_voiceover_limit());
+    $copyLine = mb_substr($spokenCopy, 0, 180);
     $purpose = rateb_prompt_plain($strategy['creative_direction'] ?? '', $prefer);
     if ($purpose === '') {
         $purpose = rateb_prompt_plain($strategy['core_message'] ?? '', $prefer);
@@ -107,7 +119,7 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
         $purpose = $copyLine;
     }
     $purpose = mb_substr($purpose, 0, 180);
-    $voiceLines = rateb_video_split_lines($copyLine !== '' ? $copyLine : $purpose, count($clips));
+    $voiceLines = rateb_video_split_lines($spokenCopy !== '' ? $spokenCopy : $purpose, count($clips));
     $ratio = '1:1';
     foreach ($images as $imageRow) {
         if (str_contains((string) ($imageRow['original_name'] ?? ''), '9x16')) {
@@ -217,6 +229,25 @@ function rateb_video_prompt_jpeg(string $bytes): ?string
     return $jpeg;
 }
 
+/** @return array<string,mixed> */
+function rateb_video_brand(PDO $pdo, int $userId): array
+{
+    $stmt = $pdo->prepare('SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch();
+    return $row ?: [];
+}
+
+/**
+ * @param array<int,array<string,mixed>> $images
+ * @return array<int,array<string,mixed>>
+ */
+function rateb_video_images_product_first(array $images): array
+{
+    usort($images, static fn (array $a, array $b): int => ((string) ($a['source'] ?? '') === 'ai') <=> ((string) ($b['source'] ?? '') === 'ai'));
+    return $images;
+}
+
 function rateb_video_latest_job(PDO $pdo, int $campaignId, int $userId): ?array
 {
     $stmt = $pdo->prepare('SELECT * FROM video_jobs WHERE campaign_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1');
@@ -269,16 +300,9 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
         return ['ok' => false, 'code' => $durationCode, 'job_id' => 0];
     }
     $strategy = rateb_strategy_document((string) $strategyRow['content']) ?? [];
-    $brand = [];
-    $brandStmt = $pdo->prepare('SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
-    $brandStmt->execute([(int) $campaign['user_id']]);
-    $brandRow = $brandStmt->fetch();
-    if ($brandRow) {
-        $brand = $brandRow;
-    }
     $prefer = (string) (rateb_output_language($pdo, $campaign)['speech'] ?? 'ar') === 'en' ? 'en' : 'ar';
     $parts = rateb_video_copy_parts($copyRows, $prefer);
-    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, $brand, $prefer);
+    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, rateb_video_brand($pdo, (int) $campaign['user_id']), $prefer);
     if ($scenes === []) {
         return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
     }

@@ -1,0 +1,170 @@
+name: RATEB AI Credit MySQL Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-rateb-credit-mysql-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  credit-mysql:
+    name: Credit reservations on disposable MySQL 8.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          # Throwaway root password for this job-scoped container only. It is not a secret and
+          # is never used by the application or the integration test.
+          MYSQL_ROOT_PASSWORD: ci-disposable-root
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-disposable-root --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    env:
+      MYSQL_ROOT_PASSWORD: ci-disposable-root
+      RATEB_TEST_DB_HOST: 127.0.0.1
+      RATEB_TEST_DB_NAME: rateb_ai_credit_test
+      RATEB_TEST_DB_CONFIRM: rateb_ai_credit_test
+      RATEB_TEST_DB_USER: rateb_credit_test
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai-rateb-sa-source
+
+    steps:
+      - name: Require a feature branch
+        working-directory: ${{ github.workspace }}
+        env:
+          REF: ${{ github.ref }}
+          REF_TYPE: ${{ github.ref_type }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$REF_TYPE" != "branch" ] || [ "$REF" = "refs/heads/main" ] || [ -z "$DEFAULT_BRANCH" ] || [ "$REF" = "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "::error::Run this workflow on a feature branch that contains the code under test, not on $REF."
+            exit 1
+          fi
+          echo "Testing $REF"
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, gd
+          coverage: none
+          tools: none
+
+      - name: Check PHP extensions
+        run: php -r 'foreach (["pdo_mysql", "mbstring"] as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "missing $e\n"); exit(1); } } echo PHP_VERSION, PHP_EOL;'
+
+      - name: PHP syntax check
+        run: |
+          failures=0
+          count=0
+          while IFS= read -r -d '' file; do
+            count=$((count + 1))
+            if ! output="$(php -l "$file" 2>&1)"; then
+              echo "$output"
+              failures=$((failures + 1))
+            fi
+          done < <(find . -type f -name '*.php' -not -path './vendor/*' -not -path '*/node_modules/*' -print0)
+          echo "Checked $count PHP files, $failures with syntax errors."
+          test "$count" -gt 0
+          test "$failures" -eq 0
+
+      - name: Offline test suites
+        run: |
+          failed=()
+          for suite in workflow-fixes credit-reservations endpoint-billing campaign-package video-engine strategy-output sawtak-catalog media-upload-kind; do
+            echo "::group::tests/$suite.php"
+            if php "tests/$suite.php"; then
+              echo "OK tests/$suite.php"
+            else
+              echo "::error::tests/$suite.php exited with $?"
+              failed+=("$suite")
+            fi
+            echo "::endgroup::"
+          done
+          if [ "${#failed[@]}" -ne 0 ]; then
+            echo "Failed suites: ${failed[*]}"
+            exit 1
+          fi
+
+      - name: Wait for MySQL
+        env:
+          SERVICE_CONTAINER: ${{ job.services.mysql.id }}
+          SERVICE_PORT: ${{ job.services.mysql.ports['3306'] }}
+        run: |
+          test -n "$SERVICE_CONTAINER"
+          test -n "$SERVICE_PORT"
+          echo "MYSQL_CONTAINER=$SERVICE_CONTAINER" >> "$GITHUB_ENV"
+          echo "RATEB_TEST_DB_PORT=$SERVICE_PORT" >> "$GITHUB_ENV"
+          MYSQL_CONTAINER="$SERVICE_CONTAINER"
+          RATEB_TEST_DB_PORT="$SERVICE_PORT"
+          for i in $(seq 1 60); do
+            if docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -N -e 'SELECT 1' > /dev/null 2>&1; then
+              echo "MySQL is ready on host port $RATEB_TEST_DB_PORT"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::MySQL service did not become ready"
+          exit 1
+
+      - name: Create test database and test-only user
+        run: |
+          password="$(openssl rand -hex 24)"
+          echo "::add-mask::$password"
+          echo "RATEB_TEST_DB_PASS=$password" >> "$GITHUB_ENV"
+          docker exec -i -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot <<SQL
+          CREATE DATABASE \`${RATEB_TEST_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+          CREATE USER '${RATEB_TEST_DB_USER}'@'%' IDENTIFIED BY '${password}';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, TRIGGER ON \`${RATEB_TEST_DB_NAME}\`.* TO '${RATEB_TEST_DB_USER}'@'%';
+          SET GLOBAL log_bin_trust_function_creators = 1;
+          SQL
+          docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -N -e "SHOW GRANTS FOR '${RATEB_TEST_DB_USER}'@'%'"
+
+      - name: MySQL credit reservation integration test
+        run: |
+          set +e
+          php tests/integration/credit-reservations-mysql.php 2>&1 | tee "$RUNNER_TEMP/credit-mysql.log"
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "Integration test exit code: $code"
+          if [ "$code" -ne 0 ]; then
+            [ "$code" -eq 2 ] && echo "::error::Integration test refused or incomplete (exit 2); a NOT RUN case is never a pass."
+            [ "$code" -eq 1 ] && echo "::error::Integration test failed (exit 1)."
+            exit 1
+          fi
+          grep -qx 'RESULT=PASS' "$RUNNER_TEMP/credit-mysql.log"
+          grep -Eq '^SUMMARY pass=[1-9][0-9]* fail=0 not_run=0$' "$RUNNER_TEMP/credit-mysql.log"
+          if grep -Eq '^(FAIL|NOT RUN) ' "$RUNNER_TEMP/credit-mysql.log"; then
+            echo "::error::A case failed or did not run."
+            exit 1
+          fi
+
+      - name: Remove test database and user
+        if: always()
+        run: |
+          if [ -n "${RATEB_TEST_DB_PASS:-}" ]; then
+            php tests/integration/credit-reservations-mysql.php --cleanup || true
+          fi
+          if [ -n "${MYSQL_CONTAINER:-}" ]; then
+            docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -e "DROP DATABASE IF EXISTS \`${RATEB_TEST_DB_NAME}\`; DROP USER IF EXISTS '${RATEB_TEST_DB_USER}'@'%';" || true
+          fi
