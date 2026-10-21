@@ -648,6 +648,27 @@ body.studio .site-bar .edge-auth .register:hover{transform:translateY(-1px);box-
   body.studio .site-bar .site-nav{grid-column:2;grid-row:1;justify-self:center}
   body.studio .site-bar .edge-auth{grid-column:3;grid-row:1}
 }
+@media (min-width:1500px){
+  .site-bar .site-shell{gap:18px;padding:12px 16px;border-radius:26px}
+  body.studio .site-bar .logo{font-size:34px}
+  body.studio .site-bar .site-nav{gap:4px}
+  body.studio .site-bar .site-nav a,body.studio .site-bar .site-nav button{padding:10px 16px;font-size:17px}
+  .site-bar .nav-sep{height:24px;margin:0 8px}
+  body.studio .site-bar .edge-auth{gap:10px}
+  body.studio .site-bar .edge-auth .icon{width:46px;min-width:46px;height:46px;font-size:14px}
+  body.studio .site-bar .edge-auth .login,body.studio .site-bar .edge-auth .register{height:46px;padding:0 20px;font-size:16px}
+  .site-bar .credit-chip,body.studio .site-bar .bar-logout{height:46px;font-size:16px}
+  .home-section,.studio-hero,.landing-hero{scroll-margin-top:104px}
+}
+@media (min-width:1700px){
+  .site-bar .site-shell{padding:14px 20px;border-radius:28px}
+  body.studio .site-bar .logo{font-size:38px}
+  body.studio .site-bar .site-nav a,body.studio .site-bar .site-nav button{padding:11px 18px;font-size:18.5px}
+  body.studio .site-bar .edge-auth .icon{width:50px;min-width:50px;height:50px;font-size:15px;border-radius:14px}
+  body.studio .site-bar .edge-auth .login,body.studio .site-bar .edge-auth .register{height:50px;padding:0 24px;font-size:18px;border-radius:14px}
+  .site-bar .credit-chip,body.studio .site-bar .bar-logout{height:50px;font-size:17px}
+  .home-section,.studio-hero,.landing-hero{scroll-margin-top:112px}
+}
 @media (max-width:640px){
   body.studio .site-bar{padding:8px 10px}
   body.studio .site-bar .logo{font-size:22px}
