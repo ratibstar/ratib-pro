@@ -37,6 +37,7 @@ jobs:
       RATEB_TEST_DB_NAME: rateb_ai_credit_test
       RATEB_TEST_DB_CONFIRM: rateb_ai_credit_test
       RATEB_TEST_DB_USER: rateb_credit_test
+      RATEB_VIDEO_TEST_DB_NAME: rateb_ai_video_test
 
     defaults:
       run:
@@ -71,7 +72,18 @@ jobs:
           tools: none
 
       - name: Check PHP extensions
-        run: php -r 'foreach (["pdo_mysql", "mbstring"] as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "missing $e\n"); exit(1); } } echo PHP_VERSION, PHP_EOL;'
+        run: php -r 'foreach (["pdo_mysql", "mbstring", "gd"] as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "missing $e\n"); exit(1); } } echo PHP_VERSION, PHP_EOL;'
+
+      - name: Install ffmpeg for the video worker test
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core > /dev/null
+          version="$(ffmpeg -hide_banner -version)"
+          echo "${version%%$'\n'*}"
+          filters="$(ffmpeg -hide_banner -filters 2>/dev/null)"
+          grep -q ' zoompan ' <<< "$filters"
+          grep -q ' drawtext ' <<< "$filters"
+          echo "ffmpeg zoompan and drawtext filters present"
 
       - name: PHP syntax check
         run: |
@@ -91,7 +103,7 @@ jobs:
       - name: Offline test suites
         run: |
           failed=()
-          for suite in workflow-fixes credit-reservations endpoint-billing campaign-package video-engine strategy-output sawtak-catalog media-upload-kind; do
+          for suite in workflow-fixes credit-reservations endpoint-billing campaign-package video-engine video-worker strategy-output sawtak-catalog media-upload-kind; do
             echo "::group::tests/$suite.php"
             if php "tests/$suite.php"; then
               echo "OK tests/$suite.php"
@@ -105,6 +117,11 @@ jobs:
             echo "Failed suites: ${failed[*]}"
             exit 1
           fi
+
+      - name: Crontab installer test
+        run: |
+          python3 -c 'import yaml' 2>/dev/null || pip install --quiet pyyaml
+          bash tests/cron-install.sh
 
       - name: Wait for MySQL
         env:
@@ -134,8 +151,10 @@ jobs:
           echo "RATEB_TEST_DB_PASS=$password" >> "$GITHUB_ENV"
           docker exec -i -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot <<SQL
           CREATE DATABASE \`${RATEB_TEST_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+          CREATE DATABASE \`${RATEB_VIDEO_TEST_DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
           CREATE USER '${RATEB_TEST_DB_USER}'@'%' IDENTIFIED BY '${password}';
           GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, TRIGGER ON \`${RATEB_TEST_DB_NAME}\`.* TO '${RATEB_TEST_DB_USER}'@'%';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, INDEX ON \`${RATEB_VIDEO_TEST_DB_NAME}\`.* TO '${RATEB_TEST_DB_USER}'@'%';
           SET GLOBAL log_bin_trust_function_creators = 1;
           SQL
           docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -N -e "SHOW GRANTS FOR '${RATEB_TEST_DB_USER}'@'%'"
@@ -159,12 +178,34 @@ jobs:
             exit 1
           fi
 
+      - name: MySQL video worker integration test
+        if: always()
+        env:
+          RATEB_TEST_DB_NAME: ${{ env.RATEB_VIDEO_TEST_DB_NAME }}
+          RATEB_TEST_DB_CONFIRM: ${{ env.RATEB_VIDEO_TEST_DB_NAME }}
+        run: |
+          test -n "${RATEB_TEST_DB_PASS:-}"
+          set +e
+          php tests/integration/video-worker-mysql.php 2>&1 | tee "$RUNNER_TEMP/video-mysql.log"
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "Video worker integration test exit code: $code"
+          if [ "$code" -ne 0 ]; then
+            [ "$code" -eq 2 ] && echo "::error::Video worker test refused or incomplete (exit 2); a NOT RUN case is never a pass."
+            [ "$code" -eq 1 ] && echo "::error::Video worker test failed (exit 1)."
+            exit 1
+          fi
+          grep -qx 'RESULT=PASS' "$RUNNER_TEMP/video-mysql.log"
+          grep -Eq '^SUMMARY pass=[1-9][0-9]* fail=0 not_run=0$' "$RUNNER_TEMP/video-mysql.log"
+          grep -qx 'FFMPEG yes GD yes' "$RUNNER_TEMP/video-mysql.log"
+
       - name: Remove test database and user
         if: always()
         run: |
           if [ -n "${RATEB_TEST_DB_PASS:-}" ]; then
             php tests/integration/credit-reservations-mysql.php --cleanup || true
+            RATEB_TEST_DB_NAME="$RATEB_VIDEO_TEST_DB_NAME" RATEB_TEST_DB_CONFIRM="$RATEB_VIDEO_TEST_DB_NAME" php tests/integration/video-worker-mysql.php --cleanup || true
           fi
           if [ -n "${MYSQL_CONTAINER:-}" ]; then
-            docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -e "DROP DATABASE IF EXISTS \`${RATEB_TEST_DB_NAME}\`; DROP USER IF EXISTS '${RATEB_TEST_DB_USER}'@'%';" || true
+            docker exec -e MYSQL_PWD="$MYSQL_ROOT_PASSWORD" "$MYSQL_CONTAINER" mysql -uroot -e "DROP DATABASE IF EXISTS \`${RATEB_TEST_DB_NAME}\`; DROP DATABASE IF EXISTS \`${RATEB_VIDEO_TEST_DB_NAME}\`; DROP USER IF EXISTS '${RATEB_TEST_DB_USER}'@'%';" || true
           fi

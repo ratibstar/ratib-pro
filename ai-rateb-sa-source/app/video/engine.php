@@ -156,8 +156,8 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
 
 function rateb_video_image_data_uri(array $row): string
 {
-    $path = media_absolute_path($row);
-    $bytes = file_get_contents($path);
+    $path = media_resolve_path($row);
+    $bytes = $path === null ? false : file_get_contents($path);
     if (!is_string($bytes) || $bytes === '') {
         throw new RuntimeException('missing_image');
     }
@@ -290,101 +290,276 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     if ($images === []) {
         return ['ok' => false, 'code' => 'missing_image', 'job_id' => 0];
     }
-    $active = rateb_video_latest_job($pdo, (int) $campaign['id'], (int) $campaign['user_id']);
-    if ($active && in_array((string) $active['status'], ['queued', 'processing'], true)) {
-        return ['ok' => true, 'code' => '', 'job_id' => (int) $active['id']];
+    $userId = (int) $campaign['user_id'];
+    $campaignId = (int) $campaign['id'];
+    $lockKey = 'video-start:' . $campaignId;
+    if (!rateb_video_lock($pdo, $lockKey, 10)) {
+        return ['ok' => false, 'code' => 'busy', 'job_id' => 0];
     }
-    $plan = rateb_user_plan($pdo, (int) $campaign['user_id']);
-    $durationCode = rateb_video_duration_code($plan, $seconds);
-    if ($durationCode !== '') {
-        return ['ok' => false, 'code' => $durationCode, 'job_id' => 0];
+    try {
+        $active = rateb_video_latest_job($pdo, $campaignId, $userId);
+        if ($active && rateb_video_active((string) $active['status'])) {
+            return ['ok' => true, 'code' => '', 'job_id' => (int) $active['id']];
+        }
+        $plan = rateb_user_plan($pdo, $userId);
+        $durationCode = rateb_video_duration_code($plan, $seconds);
+        if ($durationCode !== '') {
+            return ['ok' => false, 'code' => $durationCode, 'job_id' => 0];
+        }
+        $strategy = rateb_strategy_document((string) $strategyRow['content']) ?? [];
+        $prefer = (string) (rateb_output_language($pdo, $campaign)['speech'] ?? 'ar') === 'en' ? 'en' : 'ar';
+        $parts = rateb_video_copy_parts($copyRows, $prefer);
+        $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, rateb_video_brand($pdo, $userId), $prefer);
+        if ($scenes === [] || rateb_video_valid_scenes($scenes) === null) {
+            return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
+        }
+        $seconds = 0;
+        foreach ($scenes as $scene) {
+            $seconds += (int) $scene['duration'];
+        }
+        $gate = rateb_usage_begin($pdo, $userId, $campaignId, 'video', $seconds);
+        if (!$gate['ok']) {
+            return ['ok' => false, 'code' => (string) $gate['code'], 'job_id' => 0];
+        }
+        $usageId = (int) $gate['id'];
+        $charge = rateb_reservation_charge($pdo, $usageId, $userId, 'video_storyboard', $campaignId);
+        if ($charge !== 'ok') {
+            rateb_reservation_settle($pdo, $usageId, $userId, 'failed', 'video_storyboard');
+            $code = $charge === 'credits' ? (rateb_feature_locked($userId, 'video_storyboard') ? 'package' : 'credits') : 'provider';
+            return ['ok' => false, 'code' => $code, 'job_id' => 0];
+        }
+        try {
+            $insert = $pdo->prepare('INSERT INTO video_jobs (campaign_id, user_id, status, provider, storyboard, usage_id, watermark, approval_status) VALUES (?, ?, \'queued\', ?, ?, ?, ?, \'draft\')');
+            $insert->execute([
+                $campaignId,
+                $userId,
+                $provider->name(),
+                json_encode($scenes, JSON_UNESCAPED_UNICODE),
+                $usageId,
+                !empty($gate['watermark']) ? 1 : 0,
+            ]);
+        } catch (Throwable $error) {
+            rateb_reservation_settle($pdo, $usageId, $userId, 'failed', 'video_storyboard');
+            throw $error;
+        }
+        return ['ok' => true, 'code' => '', 'job_id' => (int) $pdo->lastInsertId()];
+    } finally {
+        rateb_video_unlock($pdo, $lockKey);
     }
-    $strategy = rateb_strategy_document((string) $strategyRow['content']) ?? [];
-    $prefer = (string) (rateb_output_language($pdo, $campaign)['speech'] ?? 'ar') === 'en' ? 'en' : 'ar';
-    $parts = rateb_video_copy_parts($copyRows, $prefer);
-    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, rateb_video_brand($pdo, (int) $campaign['user_id']), $prefer);
-    if ($scenes === []) {
-        return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
-    }
-    if (!rateb_check_and_deduct_credits((int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id'])) {
-        $lockCode = rateb_feature_locked((int) $campaign['user_id'], 'video_storyboard') ? 'package' : 'credits';
-        return ['ok' => false, 'code' => $lockCode, 'job_id' => 0];
-    }
-    $seconds = 0;
-    foreach ($scenes as $scene) {
-        $seconds += (int) $scene['duration'];
-    }
-    $gate = rateb_usage_begin($pdo, (int) $campaign['user_id'], (int) $campaign['id'], 'video', $seconds);
-    if (!$gate['ok']) {
-        rateb_refund_credits((int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id']);
-        return ['ok' => false, 'code' => (string) $gate['code'], 'job_id' => 0];
-    }
-    $insert = $pdo->prepare('INSERT INTO video_jobs (campaign_id, user_id, status, provider, storyboard, usage_id, watermark, approval_status) VALUES (?, ?, \'queued\', ?, ?, ?, ?, \'draft\')');
-    $insert->execute([
-        (int) $campaign['id'],
-        (int) $campaign['user_id'],
-        $provider->name(),
-        json_encode($scenes, JSON_UNESCAPED_UNICODE),
-        (int) $gate['id'],
-        !empty($gate['watermark']) ? 1 : 0,
-    ]);
-    return ['ok' => true, 'code' => '', 'job_id' => (int) $pdo->lastInsertId()];
 }
 
-function rateb_video_fail(PDO $pdo, array $job, string $code): void
+function rateb_video_active(string $status): bool
 {
-    $update = $pdo->prepare("UPDATE video_jobs SET status = 'failed', error_code = ? WHERE id = ? AND user_id = ? AND status <> 'failed'");
+    return $status === 'queued' || $status === 'processing';
+}
+
+/** Seconds without progress after which a queued or processing job is failed and refunded. */
+function rateb_video_stale_seconds(): int
+{
+    return 1200;
+}
+
+/**
+ * Named MySQL lock, scoped to the current database. It belongs to the connection, so a
+ * crashed worker releases it automatically.
+ */
+function rateb_video_lock(PDO $pdo, string $key, int $waitSeconds): bool
+{
+    $stmt = $pdo->prepare("SELECT GET_LOCK(CONCAT(LEFT(DATABASE(), 24), ':', ?), ?)");
+    $stmt->execute([$key, max(0, $waitSeconds)]);
+    return (int) $stmt->fetchColumn() === 1;
+}
+
+function rateb_video_unlock(PDO $pdo, string $key): void
+{
+    $stmt = $pdo->prepare("SELECT RELEASE_LOCK(CONCAT(LEFT(DATABASE(), 24), ':', ?))");
+    $stmt->execute([$key]);
+    $stmt->fetchColumn();
+}
+
+function rateb_video_valid_task_id(string $taskId): bool
+{
+    return preg_match('/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/', $taskId) === 1;
+}
+
+/**
+ * @return array<int,array<string,mixed>>|null the storyboard when every scene is well formed
+ */
+function rateb_video_valid_scenes(mixed $scenes): ?array
+{
+    if (!is_array($scenes) || $scenes === [] || count($scenes) > 3 || !array_is_list($scenes)) {
+        return null;
+    }
+    foreach ($scenes as $scene) {
+        if (!is_array($scene)) {
+            return null;
+        }
+        $imageId = $scene['image_id'] ?? null;
+        $prompt = $scene['prompt'] ?? null;
+        $taskId = $scene['task_id'] ?? '';
+        $status = $scene['status'] ?? 'queued';
+        if (!is_int($imageId) || $imageId < 1
+            || !in_array($scene['duration'] ?? null, [5, 10], true)
+            || !is_string($prompt) || trim($prompt) === '' || mb_strlen($prompt) > 1000
+            || !is_string($taskId) || ($taskId !== '' && !rateb_video_valid_task_id($taskId))
+            || !in_array($status, ['queued', 'processing', 'ready'], true)) {
+            return null;
+        }
+    }
+    return $scenes;
+}
+
+/**
+ * Close the job's usage reservation. Jobs created before reservations carried their charge
+ * were billed by a separate video_storyboard row; the charge is recorded on the reservation
+ * first so the single guarded settle refunds it exactly once.
+ */
+function rateb_video_settle(PDO $pdo, array $job, string $status): bool
+{
+    $usageId = (int) ($job['usage_id'] ?? 0);
+    $userId = (int) ($job['user_id'] ?? 0);
+    if ($status === 'failed') {
+        $pdo->prepare("UPDATE usage_events SET credits_deducted = ? WHERE id = ? AND user_id = ? AND operation = 'video' AND status = 'reserved' AND credits_deducted = 0")
+            ->execute([rateb_get_feature_cost('video_storyboard'), $usageId, $userId]);
+    }
+    return rateb_reservation_settle($pdo, $usageId, $userId, $status, 'video_storyboard');
+}
+
+/** @return bool true when this call moved the job to failed */
+function rateb_video_fail(PDO $pdo, array $job, string $code): bool
+{
+    $update = $pdo->prepare("UPDATE video_jobs SET status = 'failed', error_code = ? WHERE id = ? AND user_id = ? AND status IN ('queued', 'processing')");
     $update->execute([
         $code,
         (int) $job['id'],
         (int) $job['user_id'],
     ]);
-    rateb_usage_finish($pdo, (int) $job['usage_id'], 'failed');
-    if ($update->rowCount() === 1) {
-        rateb_refund_credits((int) $job['user_id'], 'video_storyboard', (int) ($job['campaign_id'] ?? 0) ?: null);
+    if ($update->rowCount() !== 1) {
+        return false;
     }
+    rateb_video_settle($pdo, $job, 'failed');
+    return true;
 }
 
-function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
+/** @return array<string,mixed> the job, failed with 'timeout' when it stopped making progress */
+function rateb_video_reap_locked(PDO $pdo, array $job): array
 {
-    if ((string) $job['status'] === 'completed' || (string) $job['status'] === 'failed') {
+    if (!rateb_video_active((string) $job['status'])) {
         return $job;
     }
-    $updated = strtotime((string) ($job['updated_at'] ?? 'now')) ?: time();
-    if ($updated < time() - 1200 && (string) $job['status'] !== 'queued') {
-        rateb_video_fail($pdo, $job, 'timeout');
-        $job['status'] = 'failed';
-        $job['error_code'] = 'timeout';
+    $stale = $pdo->prepare("SELECT * FROM video_jobs WHERE id = ? AND user_id = ? AND status IN ('queued', 'processing') AND updated_at < DATE_SUB(NOW(), INTERVAL ? SECOND)");
+    $stale->execute([(int) $job['id'], (int) $job['user_id'], rateb_video_stale_seconds()]);
+    $row = $stale->fetch();
+    if ($row) {
+        rateb_video_fail($pdo, $row, 'timeout');
+    }
+    $fresh = $pdo->prepare('SELECT * FROM video_jobs WHERE id = ? AND user_id = ?');
+    $fresh->execute([(int) $job['id'], (int) $job['user_id']]);
+    return $fresh->fetch() ?: $job;
+}
+
+/** Read-only status path: fail a stalled job unless a worker currently holds it. */
+function rateb_video_reap(PDO $pdo, array $job): array
+{
+    if (!rateb_video_active((string) $job['status'])) {
         return $job;
     }
-    $scenes = json_decode((string) $job['storyboard'], true);
-    if (!is_array($scenes) || $scenes === []) {
-        rateb_video_fail($pdo, $job, 'invalid');
-        $job['status'] = 'failed';
-        $job['error_code'] = 'invalid';
-        return $job;
-    }
-    $provider = rateb_video_provider();
-    if (!$provider->configured()) {
-        rateb_video_fail($pdo, $job, 'not_configured');
-        $job['status'] = 'failed';
-        $job['error_code'] = 'not_configured';
+    $key = 'video-job:' . (int) $job['id'];
+    if (!rateb_video_lock($pdo, $key, 0)) {
         return $job;
     }
     try {
-        foreach ($scenes as $index => $scene) {
-            if (!is_array($scene)) {
-                throw new RuntimeException('invalid');
+        return rateb_video_reap_locked($pdo, $job);
+    } finally {
+        rateb_video_unlock($pdo, $key);
+    }
+}
+
+/**
+ * Store the final video and mark the job completed in one transaction. A rerun after a
+ * crash reuses the job's media row instead of adding another one.
+ */
+function rateb_video_complete(PDO $pdo, array $job, array $campaign, string $bytes): ?int
+{
+    $jobId = (int) $job['id'];
+    $name = media_safe_download_name('campaign-video-' . $jobId . '.mp4', 'mp4');
+    $created = '';
+    $pdo->beginTransaction();
+    try {
+        $lock = $pdo->prepare('SELECT status FROM video_jobs WHERE id = ? AND user_id = ? FOR UPDATE');
+        $lock->execute([$jobId, (int) $job['user_id']]);
+        if (!rateb_video_active((string) $lock->fetchColumn())) {
+            $pdo->rollBack();
+            return null;
+        }
+        $existing = $pdo->prepare("SELECT id FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = 'video' AND source = 'ai' AND original_name = ? ORDER BY id LIMIT 1");
+        $existing->execute([(int) $campaign['id'], (int) $campaign['user_id'], $name]);
+        $mediaId = (int) ($existing->fetchColumn() ?: 0);
+        if ($mediaId < 1) {
+            $mediaId = media_store_bytes($campaign, 'video', 'ai', $name, 'video/mp4', $bytes);
+            $stored = $pdo->prepare('SELECT stored_name FROM campaign_media WHERE id = ?');
+            $stored->execute([$mediaId]);
+            $created = (string) $stored->fetchColumn();
+        }
+        $pdo->prepare("UPDATE video_jobs SET status = 'completed', output_media_id = ?, error_code = '' WHERE id = ? AND status IN ('queued', 'processing')")
+            ->execute([$mediaId, $jobId]);
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($created !== '') {
+            $path = media_resolve_path(['stored_name' => $created, 'campaign_id' => (int) $campaign['id']]);
+            if ($path !== null) {
+                @unlink($path);
             }
+        }
+        throw $error;
+    }
+    rateb_video_settle($pdo, $job, 'completed');
+    return $mediaId;
+}
+
+/** Called only by the CLI worker while it holds the job lock. */
+function rateb_video_advance(PDO $pdo, array $job, array $campaign, ?RatebVideoProvider $provider = null): array
+{
+    if (!rateb_video_active((string) $job['status'])) {
+        return $job;
+    }
+    $markFailed = static function (string $code) use ($pdo, $job): array {
+        rateb_video_fail($pdo, $job, $code);
+        $job['status'] = 'failed';
+        $job['error_code'] = $code;
+        return $job;
+    };
+    if ((int) $campaign['id'] !== (int) $job['campaign_id'] || (int) $campaign['user_id'] !== (int) $job['user_id']) {
+        return $markFailed('invalid');
+    }
+    $scenes = rateb_video_valid_scenes(json_decode((string) $job['storyboard'], true));
+    if ($scenes === null) {
+        return $markFailed('invalid');
+    }
+    $provider ??= rateb_video_provider();
+    if (!$provider->configured()) {
+        return $markFailed('not_configured');
+    }
+    $saveScenes = static function (array $scenes) use ($pdo, $job): void {
+        $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ? AND status IN ('queued', 'processing')")->execute([
+            json_encode($scenes, JSON_UNESCAPED_UNICODE),
+            (int) $job['id'],
+        ]);
+    };
+    try {
+        foreach ($scenes as $index => $scene) {
             if ((string) ($scene['status'] ?? '') === 'ready') {
                 continue;
             }
             $taskId = (string) ($scene['task_id'] ?? '');
             if ($taskId === '') {
-                $image = db()->prepare('SELECT * FROM campaign_media WHERE id = ? AND campaign_id = ? AND user_id = ? AND kind = \'image\'');
+                $image = $pdo->prepare('SELECT * FROM campaign_media WHERE id = ? AND campaign_id = ? AND user_id = ? AND kind = \'image\'');
                 $image->execute([(int) $scene['image_id'], (int) $campaign['id'], (int) $campaign['user_id']]);
                 $row = $image->fetch();
-                if (!$row) {
+                if (!$row || media_resolve_path($row) === null) {
                     throw new RuntimeException('missing_image');
                 }
                 try {
@@ -401,18 +576,16 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                     rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration']);
                     $scenes[$index]['status'] = 'ready';
                     $scenes[$index]['local'] = true;
-                    $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
-                        json_encode($scenes, JSON_UNESCAPED_UNICODE),
-                        (int) $job['id'],
-                    ]);
+                    $saveScenes($scenes);
                     continue;
                 }
-                $scenes[$index]['task_id'] = $created['task_id'];
+                $createdId = (string) ($created['task_id'] ?? '');
+                if (!rateb_video_valid_task_id($createdId)) {
+                    throw new RuntimeException('provider');
+                }
+                $scenes[$index]['task_id'] = $createdId;
                 $scenes[$index]['status'] = 'processing';
-                $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
-                    json_encode($scenes, JSON_UNESCAPED_UNICODE),
-                    (int) $job['id'],
-                ]);
+                $saveScenes($scenes);
                 $job['status'] = 'processing';
                 $job['storyboard'] = json_encode($scenes, JSON_UNESCAPED_UNICODE);
                 return $job;
@@ -437,36 +610,76 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
             chmod($clipPath, 0600);
             $scenes[$index]['status'] = 'ready';
             $scenes[$index]['url'] = '';
-            $pdo->prepare('UPDATE video_jobs SET storyboard = ? WHERE id = ?')->execute([
-                json_encode($scenes, JSON_UNESCAPED_UNICODE),
-                (int) $job['id'],
-            ]);
+            $saveScenes($scenes);
         }
         $final = rateb_video_compose($pdo, $job, $campaign, $scenes);
-        $mediaId = media_store_bytes($campaign, 'video', 'ai', 'campaign.mp4', 'video/mp4', $final);
-        $pdo->prepare("UPDATE video_jobs SET status = 'completed', output_media_id = ?, error_code = '' WHERE id = ?")->execute([
-            $mediaId,
-            (int) $job['id'],
-        ]);
-        rateb_usage_finish($pdo, (int) $job['usage_id'], 'completed');
+        $mediaId = rateb_video_complete($pdo, $job, $campaign, $final);
+        if ($mediaId === null) {
+            return $job;
+        }
         $job['status'] = 'completed';
         $job['output_media_id'] = $mediaId;
         $job['error_code'] = '';
         return $job;
     } catch (RuntimeException $error) {
-        $code = in_array($error->getMessage(), ['not_configured', 'auth', 'rejected', 'rejected_image', 'rejected_model', 'rejected_credit', 'timeout', 'provider', 'invalid', 'missing_image', 'storage', 'watermark'], true)
-            ? $error->getMessage()
-            : 'provider';
-        rateb_video_fail($pdo, $job, $code);
-        $job['status'] = 'failed';
-        $job['error_code'] = $code;
-        return $job;
+        if ($error instanceof PDOException) {
+            throw $error;
+        }
+        $message = $error->getMessage();
+        $code = in_array($message, ['not_configured', 'auth', 'rejected', 'rejected_image', 'rejected_model', 'rejected_credit', 'timeout', 'provider', 'invalid', 'missing_image', 'storage', 'watermark'], true)
+            ? $message
+            : (in_array($message, ['Storage unavailable.', 'Unsupported media.'], true) ? 'storage' : 'provider');
+        return $markFailed($code);
     }
+}
+
+function rateb_video_ffmpeg_path(): string
+{
+    return is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
+}
+
+/**
+ * Run one ffmpeg command with a hard time limit. Output is drained continuously so a
+ * chatty encoder cannot block on a full pipe.
+ */
+function rateb_video_run_ffmpeg(string $cmd, int $timeoutSeconds): bool
+{
+    if (!function_exists('proc_open')) {
+        throw new RuntimeException('storage');
+    }
+    $process = proc_open('exec ' . $cmd, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    if (!is_resource($process)) {
+        throw new RuntimeException('storage');
+    }
+    fclose($pipes[0]);
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+    $deadline = microtime(true) + max(1, $timeoutSeconds);
+    $exit = -1;
+    while (true) {
+        $status = proc_get_status($process);
+        stream_get_contents($pipes[1]);
+        stream_get_contents($pipes[2]);
+        if (!$status['running']) {
+            $exit = (int) $status['exitcode'];
+            break;
+        }
+        if (microtime(true) > $deadline) {
+            proc_terminate($process, 9);
+            break;
+        }
+        usleep(100000);
+    }
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+    proc_close($process);
+    return $exit === 0;
 }
 
 function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds): void
 {
-    $bytes = file_get_contents(media_absolute_path($imageRow));
+    $source = media_resolve_path($imageRow);
+    $bytes = $source === null ? false : file_get_contents($source);
     $jpeg = is_string($bytes) ? rateb_video_prompt_jpeg($bytes) : null;
     if (!is_string($jpeg)) {
         throw new RuntimeException('rejected_image');
@@ -484,23 +697,13 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
     $zoom = $index % 2 === 0 ? "min(zoom+0.0009,1.15)" : "if(eq(on,0),1.15,max(zoom-0.0009,1))";
     $filter = 'scale=1440:2560,zoompan=z=' . "'" . $zoom . "'" . ':d=' . $frames
         . ":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280:fps=25,format=yuv420p";
-    $ffmpeg = is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
-    $cmd = escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($still) . ' -vf ' . escapeshellarg($filter)
+    $cmd = escapeshellarg(rateb_video_ffmpeg_path()) . ' -nostdin -loglevel error -y -i ' . escapeshellarg($still) . ' -vf ' . escapeshellarg($filter)
         . ' -frames:v ' . $frames . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
-    if (!function_exists('proc_open')) {
-        throw new RuntimeException('storage');
-    }
-    $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
-    if (!is_resource($process)) {
-        throw new RuntimeException('storage');
-    }
-    stream_get_contents($pipes[1]);
-    stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $code = proc_close($process);
+    $ok = rateb_video_run_ffmpeg($cmd, 240);
     @unlink($still);
-    if ($code !== 0 || !is_file($clip) || filesize($clip) < 1000) {
+    clearstatcache(true, $clip);
+    if (!$ok || !is_file($clip) || filesize($clip) < 1000) {
+        @unlink($clip);
         throw new RuntimeException('storage');
     }
     chmod($clip, 0600);
@@ -509,7 +712,7 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
 /** @param array<int,array<string,mixed>> $scenes */
 function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scenes): string
 {
-    $ffmpeg = is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
+    $ffmpeg = rateb_video_ffmpeg_path();
     $dir = MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips';
     $list = $dir . '/list-' . (int) $job['id'] . '.txt';
     $lines = '';
@@ -525,12 +728,12 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     $voice = $pdo->prepare('SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = \'audio\' ORDER BY id DESC LIMIT 1');
     $voice->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
     $audio = $voice->fetch();
-    $audioPath = $audio ? media_absolute_path($audio) : '';
+    $audioPath = $audio ? (media_resolve_path($audio) ?? '') : '';
     $filter = 'scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p';
     if ((int) $job['watermark'] === 1) {
         $filter .= ",drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
     }
-    $cmd = escapeshellarg($ffmpeg) . ' -y -f concat -safe 0 -i ' . escapeshellarg($list);
+    $cmd = escapeshellarg($ffmpeg) . ' -nostdin -loglevel error -y -f concat -safe 0 -i ' . escapeshellarg($list);
     if ($audioPath !== '' && is_file($audioPath)) {
         $cmd .= ' -i ' . escapeshellarg($audioPath);
         $cmd .= ' -filter_complex ' . escapeshellarg('[0:v]' . $filter . '[v]');
@@ -539,21 +742,12 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
         $cmd .= ' -vf ' . escapeshellarg($filter) . ' -an';
     }
     $cmd .= ' -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . escapeshellarg($out);
-    $code = 1;
-    if (!function_exists('proc_open')) {
-        throw new RuntimeException('storage');
-    }
-    $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
-    if (!is_resource($process)) {
-        throw new RuntimeException('storage');
-    }
-    stream_get_contents($pipes[1]);
-    stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $code = proc_close($process);
+    $ok = rateb_video_run_ffmpeg($cmd, 600);
+    clearstatcache(true, $out);
     $bytes = is_file($out) ? file_get_contents($out) : false;
-    if ($code !== 0 || !is_string($bytes) || !str_contains(substr($bytes, 0, 32), 'ftyp')) {
+    @unlink($list);
+    @unlink($out);
+    if (!$ok || !is_string($bytes) || !str_contains(substr($bytes, 0, 32), 'ftyp')) {
         if ((int) $job['watermark'] === 1) {
             throw new RuntimeException('watermark');
         }
@@ -585,6 +779,7 @@ function rateb_video_message(string $code, bool $arabic): string
         'package' => 'هذه الميزة غير متاحة في الباقة المجانية، اضغط هنا لترقية الباقة',
         'storage' => 'تعذر حفظ الفيديو.',
         'watermark' => 'تعذر إضافة علامة RATEB AI على الفيديو.',
+        'busy' => 'يجري تجهيز طلب فيديو آخر لهذه الحملة. حاول بعد لحظات.',
     ];
     $en = [
         'not_configured' => 'Video generation is not configured.',
@@ -607,6 +802,7 @@ function rateb_video_message(string $code, bool $arabic): string
         'package' => 'This feature is not in the free package. Click here to upgrade.',
         'storage' => 'The video could not be saved.',
         'watermark' => 'The RATEB AI mark could not be applied to the video.',
+        'busy' => 'Another video request for this campaign is being prepared. Try again in a moment.',
     ];
     $map = $arabic ? $ar : $en;
     return $map[$code] ?? ($arabic ? 'تعذر إنشاء الفيديو.' : 'The video could not be generated.');
