@@ -320,6 +320,9 @@ jobs:
           $out['path'] = (string) getenv('PATH');
           $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
           $out['proc_open'] = function_exists('proc_open') && !in_array('proc_open', $disabled, true) ? 'available' : 'DISABLED';
+          $out['disable_functions'] = (string) ini_get('disable_functions');
+          $out['php_ini'] = (string) php_ini_loaded_file();
+          $out['php_ini_scanned'] = (string) php_ini_scanned_files();
           $bin = '/home/admin/bin/ffmpeg';
           $out['ffmpeg_home_bin'] = is_file($bin) ? (is_executable($bin) ? 'present, executable' : 'present, NOT executable') : 'missing';
           $ffmpeg = is_file($bin) ? $bin : 'ffmpeg';
@@ -392,6 +395,9 @@ jobs:
           code="$(curl -sS -o "${RUNNER_TEMP}/probe-body.txt" -w '%{http_code}' --max-time 240 "https://ai.rateb.sa/${probe}" || true)"
           echo "PROBE_HTTP=${code}"
           cat "${RUNNER_TEMP}/probe-body.txt" 2>/dev/null || true
+          echo "CLI_PHP=$("${SSH[@]}" "$REMOTE" "command -v php || echo missing")"
+          echo "CLI_DISABLE_FUNCTIONS=$("${SSH[@]}" "$REMOTE" "php -r 'echo ini_get(\"disable_functions\") ?: \"(none)\";'" || echo error)"
+          echo "CLI_CRONTAB=$("${SSH[@]}" "$REMOTE" "command -v crontab || echo missing")"
 
   generate:
     name: Production campaign generation
