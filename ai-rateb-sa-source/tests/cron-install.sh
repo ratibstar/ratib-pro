@@ -167,6 +167,7 @@ jobs = doc["jobs"]
 def run_of(job):
     return "\n".join(s["run"] for s in jobs[job]["steps"] if "run" in s)
 deploy, off, back = run_of("deploy"), run_of("worker-off"), run_of("rollback")
+dsq = " ".join(deploy.split())
 order = [l.strip() for l in open(sys.argv[2], encoding="utf-8") if l.strip() and not l.startswith("#")]
 def pos(text, needle):
     i = text.find(needle)
@@ -187,7 +188,18 @@ checks = {
     "deploy: preflight runs under cron's environment": pos(deploy, "${CRON_ENV} /usr/local/bin/php '${WORK}/preflight.php' --cron-env") > 0 and "--media-root=" in deploy,
     "deploy: order is preflight, drift check and backup, pause, apply, readiness, cron": pos(deploy, "preflight.php' --cron-env") < pos(deploy, "bash -s -- prepare") < pos(deploy, 'touch "$HOME/.rateb-ai/video-worker.pause"') < pos(deploy, "bash -s -- apply") < pos(deploy, "WORKER_READY=yes") < pos(deploy, "bash -s -- install '${TARGET}'\" < ai-rateb-sa-source/ops/video-cron.sh"),
     "deploy: a failed preflight or drift check exits before the pause file": pos(deploy, "Preflight failed; no application file was changed") < pos(deploy, "the backup could not be verified; no application file was changed") < pos(deploy, "PAUSED=1"),
-    "deploy: the hold is marked before files are replaced and released only after cron install": pos(deploy, "HOLD=1\n") < pos(deploy, "bash -s -- apply") and pos(deploy, "bash -s -- install") < pos(deploy, 'rm -f "$HOME/.rateb-ai/video-worker.hold" "$HOME/.rateb-ai/video-worker.pause"'),
+    "deploy: the hold is marked before files are replaced and released only after cron install": pos(deploy, "HOLD=1\n") < pos(deploy, "bash -s -- apply") and pos(deploy, "bash -s -- install") < pos(deploy, "bash -s -- release '${RUN}' '${BACKUP_ID}' '${RECOVER}'"),
+    "deploy: the workflow never removes the hold itself (only the guard's release does)": not any("video-worker.hold" in l and "rm " in l for l in deploy.splitlines()),
+    "deploy: the pause is removed after a successful run only once the release succeeded": pos(dsq, "HOLD=(released|absent)") < pos(dsq, "HOLD=0 \"${SSH[@]}\" \"$REMOTE\" 'rm -f \"$HOME/.rateb-ai/video-worker.pause\"'"),
+    "deploy: the trap clears the pause only when no hold may be in place and no pass was left running": pos(dsq, 'cleanup() {') < pos(dsq, 'if [ "$HOLD" = "1" ]; then') < pos(dsq, 'elif [ "$PAUSED" = "1" ] && [ "$PAUSE_KEEP" = "1" ]; then echo "VIDEO_WORKER_PAUSE=kept"') < pos(dsq, "elif [ \"$PAUSED\" = \"1\" ]; then \"${SSH[@]}\" \"$REMOTE\" 'rm -f \"$HOME/.rateb-ai/video-worker.pause\"'") < pos(dsq, "trap cleanup EXIT"),
+    "deploy: the hold flag is dropped after a failed apply only when the guard cleared its own hold": "if grep -qx 'FILES_CHANGED=0' <<< \"$apply_out\" && grep -qx 'HOLD=cleared' <<< \"$apply_out\"; then HOLD=0" in dsq and [l.strip() for l in deploy.splitlines()].count("HOLD=0") == 3,
+    "deploy: a hold reported by prepare stops the deploy before the pause file": pos(deploy, "grep -qx 'HOLD=kept' <<< \"$guard_out\"") < pos(deploy, "PAUSED=1"),
+    "deploy: prepare, apply, and release get the recover id": "prepare '${TARGET}' '${RUN}' '${RECOVER}'" in deploy and "apply '${TARGET}' '${RUN}' '${BACKUP_ID}' '${RECOVER}'" in deploy and "recover_backup_id" in inputs,
+    "deploy: waits for a running worker pass after the pause and before apply": pos(deploy, 'touch "$HOME/.rateb-ai/video-worker.pause"') < pos(deploy, 'bash -s -- wait 540" < ai-rateb-sa-source/ops/video-cron.sh') < pos(deploy, "HOLD=1\n") < pos(deploy, "bash -s -- apply"),
+    "deploy: a pass still running after the wait stops the deploy and keeps the pause": pos(deploy, "bash -s -- wait 540") < pos(deploy, "PAUSE_KEEP=1\n") < pos(deploy, "bash -s -- apply"),
+    "deploy: the job timeout leaves room for the 540 second wait": int(jobs["deploy"]["timeout-minutes"]) >= 20,
+    "rollback: a hold already in place is not overwritten": '[ -e \\"\\$HOME/.rateb-ai/video-worker.hold\\" ] ||' in back and 'printf "rollback\\n" >' not in back,
+    "rollback: a symlinked hold is refused before the pause, and the hold is written with noclobber": pos(back, r'if [ -L \"\$HOME/.rateb-ai/video-worker.hold\" ]; then echo HOLD=symlink; exit 1; fi') < pos(back, r'touch \"\$HOME/.rateb-ai/video-worker.pause\"') < pos(back, r"(set -C && printf 'restore=%s\n'") < pos(back, "HELD=1\n"),
     "deploy: the readiness check runs under cron's environment": "${CRON_ENV} /usr/local/bin/php '${TARGET}/cron/video-worker.php' --check" in deploy,
     "deploy: files are no longer copied one by one into the web root": 'for rel in "${files[@]}"' not in deploy and ":${TARGET}/config/" not in deploy,
     "deploy: no crontab edit is embedded in the workflow": "crontab -l" not in deploy and "crontab \"" not in deploy and "crontab -l" not in back,

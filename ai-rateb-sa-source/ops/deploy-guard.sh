@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 # Protects the ai.rateb.sa application files during deploy and rollback. The workflow pipes
 # it over SSH; it is never uploaded to the web root.
-#   bash deploy-guard.sh prepare <target> <run>
+#   bash deploy-guard.sh prepare <target> <run> [<recover-id>]
 #       Check the uploaded bundle in ~/.rateb-ai/deploy-<run>, compare every target file with
 #       the manifest, then back up the files that will be replaced and verify the backup.
-#   bash deploy-guard.sh apply <target> <run> <backup-id>
+#   bash deploy-guard.sh apply <target> <run> <backup-id> [<recover-id>]
 #       Set the worker hold, then swap the staged files in, in manifest order, re-checking
 #       each target against the backup right before replacing it.
+#   bash deploy-guard.sh release <run> <backup-id> [<recover-id>]
+#       Remove the hold after a successful deploy, only if this deploy set or took it over.
 #   bash deploy-guard.sh restore <target> <backup-id> [--allow-mismatch]
 #       Put a backup back: restore replaced files and delete files the deploy added.
 #   bash deploy-guard.sh list <backup-id>
 #       Print the files a backup covers.
 # Backups live in ~/.rateb-ai/backups/<id> (meta, backup.tsv, files.tar.gz, archive.sha256).
 # Nothing in the target changes unless every check before it passed.
+# A hold that is already in place (left by a deploy or rollback that stopped midway) is never
+# overwritten or removed here: a deploy refuses to start unless <recover-id> names the backup
+# the hold records, and a deploy that takes a hold over keeps it if it fails. Only a
+# successful deploy (release) or a successful rollback removes it.
 set -euo pipefail
 umask 077
 
@@ -39,6 +45,34 @@ mode_of() { stat -c %a -- "$1"; }
 valid_rel() {
   [[ "$1" =~ $rel_re ]] || return 1
   case "/$1/" in */../* | */./*) return 1 ;; esac
+}
+
+# The backup id a hold records (backup= from a deploy, restore= from a rollback), or nothing.
+hold_id() {
+  [ -f "$hold" ] || return 0
+  sed -n -E 's/^(backup|restore)=([0-9]{8}T[0-9]{6}Z-[0-9]{1,20})$/\2/p' "$hold" | head -n 1 || true
+}
+
+held_elsewhere() {
+  local held
+  held="$(hold_id)"
+  echo "HOLD=kept"
+  echo "HOLD_ID=${held:-unknown}"
+  die "a hold left by an earlier deploy or rollback is in place; it stays until a rollback succeeds or a deploy run with recover_backup_id=${held:-<the backup id it records>} succeeds; nothing changed"
+}
+
+# check_hold <recover-id>: without a hold, no recover id may be given; with one, the recover id
+# must name the backup the hold records.
+check_hold() {
+  if [ -e "$hold" ] || [ -L "$hold" ]; then
+    if [ -n "$1" ] && [ -f "$hold" ] && [ "$(hold_id)" = "$1" ]; then
+      echo "HOLD=adopted"
+      echo "HOLD_ID=$1"
+      return 0
+    fi
+    held_elsewhere
+  fi
+  [ -z "$1" ] || die "recover_backup_id is set but no hold is in place; nothing changed"
 }
 
 check_target() {
@@ -195,9 +229,11 @@ write_backup() {
 }
 
 cmd_prepare() {
-  local target="$1" run="$2" work stage expected entry i rel kind dst cur label failed=0 list id staged
+  local target="$1" run="$2" recover="$3" work stage expected entry i rel kind dst cur label failed=0 list id staged
   check_target "$target"
   [[ "$run" =~ ^[0-9]{1,20}$ ]] || die "invalid run id"
+  [ -z "$recover" ] || [[ "$recover" =~ $id_re ]] || die "invalid recover backup id"
+  check_hold "$recover"
   work="$state/deploy-$run"
   stage="$work/stage"
   [ -f "$work/bundle.tar.gz" ] && [ -f "$work/bundle.sha256" ] || die "the bundle was not uploaded"
@@ -271,10 +307,11 @@ cmd_prepare() {
 }
 
 cmd_apply() {
-  local target="$1" run="$2" id="$3" stage i rel dst src parent mode
+  local target="$1" run="$2" id="$3" recover="$4" stage i rel dst src parent mode mine
   check_target "$target"
   [[ "$run" =~ ^[0-9]{1,20}$ ]] || die "invalid run id"
   [[ "$id" =~ $id_re ]] || die "invalid backup id"
+  [ -z "$recover" ] || [[ "$recover" =~ $id_re ]] || die "invalid recover backup id"
   stage="$state/deploy-$run/stage"
   load_manifest "$stage/manifest.tsv"
   verify_backup "$id" "$target"
@@ -286,10 +323,13 @@ cmd_apply() {
   done
 
   APPLIED=0
+  OWN_HOLD=0
+  mine="$(printf 'backup=%s\nrun=%s' "$id" "$run")"
+  # Only a hold this run created, still unchanged, is removed when nothing was replaced.
   stop() {
     echo "GUARD=error: $1"
     echo "FILES_CHANGED=$APPLIED"
-    if [ "$APPLIED" -eq 0 ]; then
+    if [ "$APPLIED" -eq 0 ] && [ "$OWN_HOLD" = 1 ] && [ -f "$hold" ] && [ "$(cat "$hold")" = "$mine" ]; then
       rm -f "$hold"
       echo "HOLD=cleared"
     else
@@ -298,8 +338,22 @@ cmd_apply() {
     exit 1
   }
   mkdir -p "$state"
-  printf 'backup=%s\nrun=%s\n' "$id" "$run" > "$hold"
-  echo "HOLD=set"
+  if [ -n "$recover" ]; then
+    if ! { [ -f "$hold" ] && [ "$(hold_id)" = "$recover" ]; }; then
+      echo "FILES_CHANGED=0"
+      [ -e "$hold" ] || die "recover_backup_id is set but no hold is in place; nothing changed"
+      held_elsewhere
+    fi
+    echo "HOLD=adopted"
+  else
+    # noclobber: the hold is created only if none exists, so an earlier one is never replaced.
+    if [ -e "$hold" ] || [ -L "$hold" ] || ! (set -C && printf '%s\n' "$mine" > "$hold") 2> /dev/null; then
+      echo "FILES_CHANGED=0"
+      held_elsewhere
+    fi
+    OWN_HOLD=1
+    echo "HOLD=set"
+  fi
   for rel in "${M_REL[@]}"; do
     state_matches "$target/$rel" "${B_ST[$rel]}" "${B_SHA[$rel]}" || stop "$rel changed after the backup was taken"
   done
@@ -371,8 +425,12 @@ cmd_restore() {
   write_backup "$target" "$pre" "$list"
   rm -f "$list"
   echo "PRE_RESTORE_BACKUP=$pre"
-  printf 'restore=%s\n' "$id" > "$hold"
-  echo "HOLD=set"
+  if [ -e "$hold" ] || [ -L "$hold" ]; then
+    echo "HOLD=kept"
+  else
+    (set -C && printf 'restore=%s\n' "$id" > "$hold") 2> /dev/null || die "could not set the worker hold; nothing was restored"
+    echo "HOLD=set"
+  fi
 
   ext="$(mktemp -d "$dir/restore.XXXXXX")"
   tar -xzpf "$dir/files.tar.gz" -C "$ext" --no-same-owner || die "backup $id could not be unpacked"
@@ -402,6 +460,24 @@ cmd_restore() {
   echo "ROLLBACK_OK=yes"
 }
 
+cmd_release() {
+  local run="$1" id="$2" recover="$3"
+  [[ "$run" =~ ^[0-9]{1,20}$ ]] || die "invalid run id"
+  [[ "$id" =~ $id_re ]] || die "invalid backup id"
+  [ -z "$recover" ] || [[ "$recover" =~ $id_re ]] || die "invalid recover backup id"
+  if [ ! -e "$hold" ] && [ ! -L "$hold" ]; then
+    echo "HOLD=absent"
+    return 0
+  fi
+  if [ -n "$recover" ]; then
+    [ -f "$hold" ] && [ "$(hold_id)" = "$recover" ] || { echo "HOLD=kept"; die "the hold records another deploy or rollback; it stays"; }
+  else
+    [ -f "$hold" ] && [ "$(cat "$hold")" = "$(printf 'backup=%s\nrun=%s' "$id" "$run")" ] || { echo "HOLD=kept"; die "the hold was not set by this deploy; it stays"; }
+  fi
+  rm -f "$hold"
+  echo "HOLD=released"
+}
+
 cmd_list() {
   [[ "$1" =~ $id_re ]] || die "invalid backup id"
   [ -f "$backups/$1/backup.tsv" ] || die "backup $1 does not exist"
@@ -410,12 +486,16 @@ cmd_list() {
 
 case "${1:-}" in
   prepare)
-    [ $# -eq 3 ] || die "usage: prepare <target> <run>"
-    cmd_prepare "$2" "$3"
+    [ $# -eq 3 ] || [ $# -eq 4 ] || die "usage: prepare <target> <run> [<recover-id>]"
+    cmd_prepare "$2" "$3" "${4:-}"
     ;;
   apply)
-    [ $# -eq 4 ] || die "usage: apply <target> <run> <backup-id>"
-    cmd_apply "$2" "$3" "$4"
+    [ $# -eq 4 ] || [ $# -eq 5 ] || die "usage: apply <target> <run> <backup-id> [<recover-id>]"
+    cmd_apply "$2" "$3" "$4" "${5:-}"
+    ;;
+  release)
+    [ $# -eq 3 ] || [ $# -eq 4 ] || die "usage: release <run> <backup-id> [<recover-id>]"
+    cmd_release "$2" "$3" "${4:-}"
     ;;
   restore)
     [ $# -eq 3 ] || [ $# -eq 4 ] || die "usage: restore <target> <backup-id> [--allow-mismatch]"
@@ -426,6 +506,6 @@ case "${1:-}" in
     cmd_list "$2"
     ;;
   *)
-    die "usage: deploy-guard.sh prepare|apply|restore|list"
+    die "usage: deploy-guard.sh prepare|apply|release|restore|list"
     ;;
 esac

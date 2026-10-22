@@ -79,6 +79,14 @@ if [ -n "${SIM_FAIL_CHECK:-}" ] && [[ "$cmd" == *"cron/video-worker.php' --check
   echo "WORKER_READY=no"
   exit 1
 fi
+if [ -n "${SIM_WAIT_TIMEOUT:-}" ] && [[ "$cmd" == *"bash -s -- wait 540"* ]]; then
+  echo "VIDEO_WORKER_RUNNING=1"
+  exit 1
+fi
+# A worker pass that started just before the pause: it runs 4 seconds, then logs its exit.
+if [ -n "${SIM_START_WORKER:-}" ] && [[ "$cmd" == *'touch "$HOME/.rateb-ai/video-worker.pause"'* ]]; then
+  nohup bash -c 'sleep 4; echo "WORKER_PASS_EXITED" >> "$SIM_LOG"' "$SIM_HOME/domains/ai.rateb.sa/cron/video-worker.php" > /dev/null 2>&1 &
+fi
 cd "$SIM_HOME" || exit 255
 HOME="$SIM_HOME" PATH="$SIM_REMOTE_PATH" exec bash -c "$cmd"
 EOF
@@ -150,8 +158,9 @@ PHPCFG
   SIM_REMOTE_PATH="$DEFAULT_REMOTE_PATH"
   SIM_CRON_PATH="$sim/remote-bin:/usr/bin:/bin"
   export SIM_HOME FAKE_CRON SIM_REMOTE_PATH SIM_CRON_PATH
-  unset SIM_CORRUPT SIM_FAIL_CHECK SIM_WORKER_HTTP FAKE_CRON_FAIL
+  unset SIM_CORRUPT SIM_FAIL_CHECK SIM_WORKER_HTTP FAKE_CRON_FAIL SIM_WAIT_TIMEOUT SIM_START_WORKER
   SIM_ACCEPT=false
+  SIM_RECOVER=""
   SIM_BACKUP_ID=""
   SIM_ALLOW=false
   : > "$sim/log"
@@ -165,7 +174,7 @@ run_job() {
     cd "$repo" && env GITHUB_SHA=simulated GITHUB_RUN_ID="$run_id" RUNNER_TEMP="$sim/runner" \
       DEPLOY_SSH_HOST=sim.invalid DEPLOY_SSH_USER=admin DEPLOY_SSH_PORT=22 \
       DEPLOY_SSH_PRIVATE_KEY='-----BEGIN SIM KEY-----\nnot-a-real-key\n-----END SIM KEY-----' \
-      DEPLOY_BASELINE="$BASELINE" DEPLOY_ACCEPT_GENERATED="$SIM_ACCEPT" RATEB_GOOGLE_CLIENT_ID="$SIM_CLIENT_ID" \
+      DEPLOY_BASELINE="$BASELINE" DEPLOY_ACCEPT_GENERATED="$SIM_ACCEPT" DEPLOY_RECOVER_BACKUP_ID="$SIM_RECOVER" RATEB_GOOGLE_CLIENT_ID="$SIM_CLIENT_ID" \
       ROLLBACK_BACKUP_ID="$SIM_BACKUP_ID" ROLLBACK_ALLOW_MISMATCH="$SIM_ALLOW" \
       PATH="$sim/bin:$PATH" SIM_LOG="$sim/log" SIM_PHP="$(command -v php)" \
       bash --noprofile --norc -eo pipefail "$sim/$1"
@@ -347,7 +356,7 @@ grep '^APPLIED=' "$sim/n.out" | sed 's/^APPLIED=//' > "$sim/applied"
 ok "deploy: files were swapped in the order of ops/deploy-files.txt" 'grep -vE "^(#|$)" "$src/ops/deploy-files.txt" | grep -xF -f "$sim/applied" | cmp -s - "$sim/applied"'
 ok "deploy: exactly one cron entry, guarded by the hold, other entries unchanged" '[ "$(grep -cE "# rateb-ai-video-worker$" "$FAKE_CRON")" = 1 ] && grep -qF "* * * * * [ ! -e $SIM_HOME/.rateb-ai/video-worker.hold ] && /usr/local/bin/php $target/cron/video-worker.php --log=$SIM_HOME/.rateb-ai/video-worker.log" "$FAKE_CRON" && [ "$(grep -vE "# rateb-ai-video-worker$" "$FAKE_CRON")" = "$others" ]'
 ok "deploy: hold and pause cleared; work folder, opcache script, and key removed" '[ ! -e "$SIM_HOME/.rateb-ai/video-worker.hold" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && [ ! -e "$SIM_HOME/.rateb-ai/deploy-$run_id" ] && [ ! -e "$target/opcache-$run_id.php" ] && key_removed ai-deploy-key-path'
-ok "deploy: the order was preflight, drift check and backup, pause, swap, readiness, cron" 'in_order "$sim/log" "preflight.php${q} --cron-env" "bash -s -- prepare" "touch \"\$HOME/.rateb-ai/video-worker.pause\"" "bash -s -- apply" "video-worker.php${q} --check" "bash -s -- install"'
+ok "deploy: the order was preflight, drift check and backup, pause, wait, swap, readiness, cron, release" 'in_order "$sim/log" "preflight.php${q} --cron-env" "bash -s -- prepare" "touch \"\$HOME/.rateb-ai/video-worker.pause\"" "bash -s -- wait 540" "bash -s -- apply" "video-worker.php${q} --check" "bash -s -- install" "bash -s -- release" && grep -qx "HOLD=released" "$sim/n.out"'
 run_job deploy.sh "$sim/n2.out"; code=$?
 ok "deploy: a second deploy changes no file and keeps exactly one cron entry" '[ $code -eq 0 ] && grep -qx "FILES_CHANGED=0" "$sim/n2.out" && ! grep -q "^APPLIED=" "$sim/n2.out" && grep -qx "DRIFT=app/video/engine.php ok deployed" "$sim/n2.out" && [ "$(grep -cE "# rateb-ai-video-worker$" "$FAKE_CRON")" = 1 ]'
 
@@ -397,6 +406,72 @@ SIM_ALLOW=false
 : > "$sim/log"
 run_job rollback.sh "$sim/q3.out"; code=$?
 ok "rollback: an invalid backup id is refused before connecting" '[ $code -ne 0 ] && grep -q "Set backup_id" "$sim/q3.out" && [ ! -s "$sim/log" ]'
+
+# R. A deploy stops midway (hold and pause stay); a second deploy that fails before changing
+# any file keeps both, byte for byte, and the worker stays stopped. Only a successful recovery
+# deploy (recover_backup_id) releases them.
+new_server r
+printf '%s\n' "$others" > "$FAKE_CRON"
+chmod 555 "$target/app/ai"
+run_job deploy.sh "$sim/r1.out"; code=$?
+r_backup="$(backup_id_of "$sim/r1.out")"
+hold_file="$SIM_HOME/.rateb-ai/video-worker.hold"
+pause_file="$SIM_HOME/.rateb-ai/video-worker.pause"
+hold_before="$(sha256sum "$hold_file" 2> /dev/null | cut -c1-64)"
+mid="$(tree_hash "$target")"
+ok "held deploy: the first deploy stops after files changed, with the hold and pause in place" '[ $code -ne 0 ] && grep -qx "APPLIED=app/video/runtime.php" "$sim/r1.out" && held "$sim/r1.out" && [ -n "$hold_before" ] && grep -q "deploy run with recover_backup_id=$r_backup succeeds" "$sim/r1.out"'
+: > "$sim/log"
+run_job deploy.sh "$sim/r2.out"; code=$?
+ok "held deploy: a second deploy refuses before the pause, the swap, or a new backup" '[ $code -ne 0 ] && grep -qx "HOLD=kept" "$sim/r2.out" && grep -qx "HOLD_ID=$r_backup" "$sim/r2.out" && grep -q "A worker hold left by an earlier deploy or rollback is in place" "$sim/r2.out" && ! grep -q "touch \"\$HOME/.rateb-ai/video-worker.pause\"" "$sim/log" && ! grep -q "bash -s -- apply" "$sim/log" && [ "$(ls -A "$SIM_HOME/.rateb-ai/backups" | wc -l)" = 1 ] && [ "$(tree_hash "$target")" = "$mid" ]'
+ok "held deploy: after the refused deploy the hold is unchanged and the pause is still there" '[ "$(sha256sum "$hold_file" | cut -c1-64)" = "$hold_before" ] && [ -e "$pause_file" ] && ! grep -q "VIDEO_WORKER_PAUSE=cleared" "$sim/r2.out"'
+SIM_RECOVER="$r_backup"
+: > "$sim/log"
+run_job deploy.sh "$sim/r3.out"; code=$?
+ok "held deploy: a second deploy that takes the hold over and fails before changing any file" '[ $code -ne 0 ] && grep -qx "HOLD=adopted" "$sim/r3.out" && grep -qx "FILES_CHANGED=0" "$sim/r3.out" && grep -qx "HOLD=kept" "$sim/r3.out" && ! grep -q "^APPLIED=" "$sim/r3.out" && grep -q "a hold from an earlier deploy or rollback is in place; the hold and pause stay" "$sim/r3.out" && [ "$(tree_hash "$target")" = "$mid" ]'
+ok "held deploy: both the hold (byte for byte) and the pause remain after the second failure" '[ "$(sha256sum "$hold_file" | cut -c1-64)" = "$hold_before" ] && [ -e "$pause_file" ] && grep -qx "VIDEO_WORKER_HOLD=kept" "$sim/r3.out" && grep -qx "VIDEO_WORKER_PAUSE=kept" "$sim/r3.out" && ! grep -q "VIDEO_WORKER_PAUSE=cleared" "$sim/r3.out" && ! grep -q "rm -f \"\$HOME/.rateb-ai/video-worker.pause\"" "$sim/log"'
+ok "held deploy: the crontab is untouched and the worker stays stopped" '[ "$(cat "$FAKE_CRON")" = "$others" ] && worker_blocked'
+touch "$pause_file"
+chmod 755 "$target/app/ai"
+run_job deploy.sh "$sim/r4.out"; code=$?
+ok "held deploy: a successful recovery deploy finishes, then releases the hold and pause" '[ $code -eq 0 ] && grep -qx "HOLD=adopted" "$sim/r4.out" && grep -qx "ORIGINAL_BACKUP_ID=$r_backup" "$sim/r4.out" && grep -qx "HOLD=released" "$sim/r4.out" && [ ! -e "$hold_file" ] && [ ! -e "$pause_file" ] && [ "$(grep -cE "# rateb-ai-video-worker$" "$FAKE_CRON")" = 1 ]'
+SIM_RECOVER=""
+
+# S. A worker pass that started before the pause: the deploy waits for it before any swap.
+new_server s
+export SIM_START_WORKER=1
+run_job deploy.sh "$sim/s.out"; code=$?
+sleep 1
+ok "worker pass running: the deploy waited for it to exit before replacing any file" '[ $code -eq 0 ] && grep -qx "VIDEO_WORKER_RUNNING=0" "$sim/s.out" && in_order "$sim/log" "touch \"\$HOME/.rateb-ai/video-worker.pause\"" "bash -s -- wait 540" "WORKER_PASS_EXITED" "bash -s -- apply"'
+
+# T. A worker pass still running when the wait gives up: nothing is replaced, the pause stays.
+new_server t
+before="$(tree_hash "$target")"
+export SIM_WAIT_TIMEOUT=1
+run_job deploy.sh "$sim/t.out"; code=$?
+ok "worker pass still running after the wait: the deploy stops before the hold or any swap" '[ $code -ne 0 ] && grep -qx "VIDEO_WORKER_RUNNING=1" "$sim/t.out" && grep -q "still running after 540 seconds; no application file was changed" "$sim/t.out" && ! grep -q "bash -s -- apply" "$sim/log" && [ "$(tree_hash "$target")" = "$before" ]'
+ok "worker pass still running after the wait: the pause stays, no hold is set, the crontab is untouched" '[ -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.hold" ] && grep -qx "VIDEO_WORKER_PAUSE=kept" "$sim/t.out" && [ ! -e "$FAKE_CRON" ]'
+
+# U. Rollback never writes the hold through a symbolic link, dangling or not: it refuses before
+# the pause, the cron change, or the restore, and the link and its target stay as they were.
+new_server u
+printf '%s\n' "$others" > "$FAKE_CRON"
+before="$(tree_hash "$target")"
+mkdir -p "$SIM_HOME/.rateb-ai"
+hold_file="$SIM_HOME/.rateb-ai/video-worker.hold"
+SIM_BACKUP_ID="20260101T000000Z-1"
+ln -s "$sim/u/hold-target" "$hold_file"
+: > "$sim/log"
+run_job rollback.sh "$sim/u1.out"; code=$?
+ok "rollback with a dangling symlink as the hold: refused, nothing is created through it" '[ $code -ne 0 ] && grep -q "video-worker.hold is a symbolic link" "$sim/u1.out" && [ -L "$hold_file" ] && [ "$(readlink "$hold_file")" = "$sim/u/hold-target" ] && [ ! -e "$sim/u/hold-target" ]'
+ok "rollback with a dangling symlink as the hold: no pause, cron change, wait, or restore; tree unchanged" '[ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && [ "$(cat "$FAKE_CRON")" = "$others" ] && ! grep -q "bash -s -- remove" "$sim/log" && ! grep -q "bash -s -- restore" "$sim/log" && [ "$(tree_hash "$target")" = "$before" ] && ! grep -q "VIDEO_WORKER_HOLD=set" "$sim/u1.out" && key_removed ai-rollback-key-path'
+rm "$hold_file"
+printf 'not a hold\n' > "$sim/u/real-file"
+ln -s "$sim/u/real-file" "$hold_file"
+: > "$sim/log"
+run_job rollback.sh "$sim/u2.out"; code=$?
+ok "rollback with a symlink to an existing file as the hold: refused, the file it points to is unchanged" '[ $code -ne 0 ] && grep -q "video-worker.hold is a symbolic link" "$sim/u2.out" && [ -L "$hold_file" ] && [ "$(cat "$sim/u/real-file")" = "not a hold" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && ! grep -q "bash -s -- remove" "$sim/log" && [ "$(cat "$FAKE_CRON")" = "$others" ]'
+rm "$hold_file"
+SIM_BACKUP_ID=""
 
 ok "no output or log contains the database password or a client id" '! grep -rqF -e "$RATEB_TEST_DB_PASS" -e "$SIM_CLIENT_ID" -e "$PROD_CLIENT_ID" "$sim"/*.out "$sim/log"'
 

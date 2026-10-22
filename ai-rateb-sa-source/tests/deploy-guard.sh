@@ -92,6 +92,10 @@ g apply "$target" 7 "$id" > "$root/a.out" 2>&1; code=$?
 ok "apply: replaces, keeps, and adds files in manifest order" '[ $code -eq 0 ] && grep -qx "APPLY_OK=yes" "$root/a.out" && grep -qx "FILES_CHANGED=2" "$root/a.out" && grep -qx "UNCHANGED=app/lib/b.php" "$root/a.out" && [ "$(cat "$target/app/a.php")" = A2 ] && [ "$(cat "$target/app/new/c.php")" = C1 ]'
 ok "apply: keeps the replaced file's mode, gives new files 644, leaves other files alone" '[ "$(stat -c %a "$target/app/a.php")" = 640 ] && [ "$(stat -c %a "$target/app/new/c.php")" = 644 ] && [ "$(cat "$target/app/keep.php")" = K ]'
 ok "apply: sets the hold (the workflow releases it after readiness)" 'grep -qx "HOLD=set" "$root/a.out" && grep -qx "backup=$id" "$home/.rateb-ai/video-worker.hold"'
+g release 8 "$id" > "$root/rel.out" 2>&1; code=$?
+ok "release: a hold set by another run is refused and kept" '[ $code -ne 0 ] && grep -qx "HOLD=kept" "$root/rel.out" && grep -qx "backup=$id" "$home/.rateb-ai/video-worker.hold"'
+g release 7 "$id" > "$root/rel.out" 2>&1; code=$?
+ok "release: the run that set the hold removes it" '[ $code -eq 0 ] && grep -qx "HOLD=released" "$root/rel.out" && [ ! -e "$home/.rateb-ai/video-worker.hold" ]'
 g list "$id" > "$root/l.out" 2>&1
 ok "list: prints every file the backup covers" '[ "$(grep -c "^BACKUP_FILE=" "$root/l.out")" = 3 ]'
 g restore "$target" "$id" > "$root/r.out" 2>&1; code=$?
@@ -226,6 +230,67 @@ ok "apply: a failure after a file changed keeps the hold" '[ $code -ne 0 ] && gr
 rmdir "$target/app/new"
 g restore "$target" "$id" > "$root/r.out" 2>&1; code=$?
 ok "restore after a partial apply: the previous tree comes back" '[ $code -eq 0 ] && [ "$(tree_hash "$target")" = "$before" ]'
+ok "restore after a partial apply: the hold the deploy left is kept as it was (the rollback job releases it)" 'grep -qx "HOLD=kept" "$root/r.out" && grep -qx "backup=$id" "$home/.rateb-ai/video-worker.hold"'
+
+# A hold left by an earlier deploy or rollback is never overwritten or removed by a deploy.
+setup heldprep
+hold="$home/.rateb-ai/video-worker.hold"
+bundle
+mkdir -p "$home/.rateb-ai"
+printf 'backup=20260101T000000Z-1\nrun=1\n' > "$hold"
+held_before="$(sha "$hold")"
+ok "hold in place: prepare refuses, names the backup it records, and writes nothing" 'refused_prepare "a hold left by an earlier deploy or rollback is in place" && grep -qx "HOLD=kept" "$root/out" && grep -qx "HOLD_ID=20260101T000000Z-1" "$root/out" && [ "$(sha "$hold")" = "$held_before" ]'
+g prepare "$target" 7 20260101T000000Z-2 > "$root/out" 2>&1; code=$?
+ok "hold in place: a recover id naming another backup is refused" '[ $code -ne 0 ] && grep -qx "HOLD=kept" "$root/out" && [ "$(sha "$hold")" = "$held_before" ] && no_backups'
+g release 7 20260101T000000Z-1 > "$root/out" 2>&1; code=$?
+ok "hold in place: release without proof of ownership keeps it" '[ $code -ne 0 ] && grep -qx "HOLD=kept" "$root/out" && [ "$(sha "$hold")" = "$held_before" ]'
+rm "$hold"
+g prepare "$target" 7 20260101T000000Z-1 > "$root/out" 2>&1; code=$?
+ok "no hold: a recover id is refused" '[ $code -ne 0 ] && grep -q "no hold is in place" "$root/out" && no_backups'
+
+setup heldapply
+hold="$home/.rateb-ai/video-worker.hold"
+bundle
+g prepare "$target" 7 > "$root/p.out" 2>&1
+id="$(backup_of "$root/p.out")"
+printf 'restore=20260101T000000Z-1\n' > "$hold"
+held_before="$(sha "$hold")"
+g apply "$target" 7 "$id" > "$root/out" 2>&1; code=$?
+ok "hold set after prepare: apply refuses before any change and keeps the hold byte for byte" '[ $code -ne 0 ] && grep -qx "FILES_CHANGED=0" "$root/out" && grep -qx "HOLD=kept" "$root/out" && ! grep -qx "HOLD=cleared" "$root/out" && [ "$(sha "$hold")" = "$held_before" ] && [ "$(tree_hash "$target")" = "$before" ]'
+rm "$hold"; ln -s "$root/heldapply/nowhere" "$hold"
+g apply "$target" 7 "$id" > "$root/out" 2>&1; code=$?
+ok "a dangling link where the hold goes is not written through" '[ $code -ne 0 ] && grep -qx "HOLD=kept" "$root/out" && [ -L "$hold" ] && [ ! -e "$root/heldapply/nowhere" ] && [ "$(tree_hash "$target")" = "$before" ]'
+rm "$hold"
+
+# The exact sequence: a deploy stops midway (hold and pause stay), a second deploy fails before
+# it changes any file, and both files stay; only a successful recovery releases the hold.
+setup sequence
+hold="$home/.rateb-ai/video-worker.hold"
+pause="$home/.rateb-ai/video-worker.pause"
+bundle
+g prepare "$target" 7 > "$root/p.out" 2>&1
+id1="$(backup_of "$root/p.out")"
+mkdir -p "$target/app/new"; chmod 555 "$target/app/new"
+g apply "$target" 7 "$id1" > "$root/a1.out" 2>&1; code=$?
+touch "$pause"
+held_before="$(sha "$hold")"
+ok "sequence: the first deploy stops after a file changed and leaves its hold" '[ $code -ne 0 ] && grep -qx "FILES_CHANGED=1" "$root/a1.out" && grep -qx "HOLD=kept" "$root/a1.out" && grep -qx "backup=$id1" "$hold"'
+mid="$(tree_hash "$target")"
+work="$home/.rateb-ai/deploy-8"; mkdir -p "$work"; bundle
+g prepare "$target" 8 > "$root/out" 2>&1; code=$?
+ok "sequence: a second deploy without the recover id refuses before its backup" '[ $code -ne 0 ] && grep -qx "HOLD=kept" "$root/out" && grep -qx "HOLD_ID=$id1" "$root/out" && [ "$(ls -A "$home/.rateb-ai/backups" | wc -l)" = 1 ] && [ "$(sha "$hold")" = "$held_before" ] && [ -e "$pause" ]'
+g prepare "$target" 8 "$id1" > "$root/p2.out" 2>&1; code=$?
+id2="$(backup_of "$root/p2.out")"
+ok "sequence: with the recover id the second deploy takes the hold over and backs up the mixed state" '[ $code -eq 0 ] && grep -qx "HOLD=adopted" "$root/p2.out" && grep -qx "DRIFT=app/a.php ok deployed" "$root/p2.out" && [ -n "$id2" ] && [ "$id2" != "$id1" ]'
+g apply "$target" 8 "$id2" "$id1" > "$root/a2.out" 2>&1; code=$?
+ok "sequence: the second deploy fails before changing any file, and the hold stays byte for byte with the pause" '[ $code -ne 0 ] && grep -qx "HOLD=adopted" "$root/a2.out" && grep -qx "FILES_CHANGED=0" "$root/a2.out" && grep -qx "HOLD=kept" "$root/a2.out" && ! grep -qx "HOLD=cleared" "$root/a2.out" && [ "$(sha "$hold")" = "$held_before" ] && [ -e "$pause" ] && [ "$(tree_hash "$target")" = "$mid" ]'
+g release 8 "$id2" > "$root/out" 2>&1; code=$?
+ok "sequence: the second deploy cannot release a hold it only took over without the recover id" '[ $code -ne 0 ] && [ "$(sha "$hold")" = "$held_before" ]'
+chmod 755 "$target/app/new"
+g apply "$target" 8 "$id2" "$id1" > "$root/a3.out" 2>&1; code=$?
+ok "sequence: a recovery deploy completes and keeps the hold until it is released" '[ $code -eq 0 ] && grep -qx "APPLY_OK=yes" "$root/a3.out" && [ "$(cat "$target/app/new/c.php")" = C1 ] && [ "$(sha "$hold")" = "$held_before" ]'
+g release 8 "$id2" "$id1" > "$root/out" 2>&1; code=$?
+ok "sequence: the successful recovery releases the hold" '[ $code -eq 0 ] && grep -qx "HOLD=released" "$root/out" && [ ! -e "$hold" ]'
 
 setup wrongbackup
 bundle

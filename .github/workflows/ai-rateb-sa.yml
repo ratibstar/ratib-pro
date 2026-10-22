@@ -24,6 +24,10 @@ on:
         required: false
         type: boolean
         default: false
+      recover_backup_id:
+        description: "deploy: only after a deploy stopped midway and left the worker hold. The ROLLBACK_BACKUP_ID that deploy printed (the backup the hold records); lets this deploy take the hold over, finish, and release it. Without it a deploy refuses to start while a hold is in place."
+        required: false
+        default: ""
       backup_id:
         description: "rollback: the ROLLBACK_BACKUP_ID printed by the deploy."
         required: false
@@ -83,7 +87,7 @@ jobs:
     if: github.event.inputs.task == 'deploy'
     runs-on: ubuntu-latest
     environment: rateb.sa
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -98,6 +102,7 @@ jobs:
           DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
           DEPLOY_BASELINE: ${{ github.event.inputs.baseline }}
           DEPLOY_ACCEPT_GENERATED: ${{ github.event.inputs.accept_generated_config_change }}
+          DEPLOY_RECOVER_BACKUP_ID: ${{ github.event.inputs.recover_backup_id }}
           RATEB_GOOGLE_CLIENT_ID: ${{ secrets.RATEB_GOOGLE_CLIENT_ID }}
           RATEB_GITHUB_CLIENT_SECRET: ${{ secrets.RATEB_GITHUB_CLIENT_SECRET }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -108,6 +113,11 @@ jobs:
           set -euo pipefail
           if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
             echo "::error::DEPLOY_SSH_HOST, DEPLOY_SSH_USER, and DEPLOY_SSH_PRIVATE_KEY must be set in the rateb.sa environment"
+            exit 1
+          fi
+          RECOVER="${DEPLOY_RECOVER_BACKUP_ID:-}"
+          if [ -n "$RECOVER" ] && ! [[ "$RECOVER" =~ ^[0-9]{8}T[0-9]{6}Z-[0-9]+$ ]]; then
+            echo "::error::recover_backup_id must be the ROLLBACK_BACKUP_ID printed by the deploy that stopped midway."
             exit 1
           fi
           python3 - << 'PY'
@@ -139,18 +149,30 @@ jobs:
           CRON_ENV='env -i HOME="$HOME" LOGNAME="$(id -un)" USER="$(id -un)" SHELL=/bin/sh PATH=/usr/bin:/bin'
           WORK_SET=0
           PAUSED=0
+          PAUSE_KEEP=0
           HOLD=0
           BACKUP_ID=""
-          # Before any file is replaced a failure clears the pause. Once a file may have been
-          # replaced the pause and the hold stay: the worker must not run against a mix of old
-          # and new files until a deploy succeeds or task=rollback restores the backup.
+          # The trap never removes the hold; only the guard does (deploy-guard.sh release after a
+          # successful deploy, or apply when it set the hold itself and nothing was replaced).
+          # The pause this run set is cleared only when no hold may be in place (HOLD=0) and no
+          # worker pass was left running (PAUSE_KEEP=0). Once a file may have been replaced, or a
+          # hold from an earlier deploy or rollback is in place, the pause and the hold stay: the
+          # worker must not run against a mix of old and new files until a deploy succeeds or
+          # task=rollback restores the backup.
           cleanup() {
             if [ "$WORK_SET" = "1" ]; then
               "${SSH[@]}" "$REMOTE" "rm -rf '${WORK}'" || true
             fi
             if [ "$HOLD" = "1" ]; then
               echo "VIDEO_WORKER_HOLD=kept"
-              echo "::error::Application files may be partly replaced. The video worker stays stopped by ~/.rateb-ai/video-worker.hold until a deploy succeeds, or run task=rollback with backup_id=${BACKUP_ID:-unknown}."
+              echo "VIDEO_WORKER_PAUSE=kept"
+              if [ -n "$RECOVER" ]; then
+                echo "::error::Application files may be partly replaced. The video worker stays stopped by ~/.rateb-ai/video-worker.hold until a deploy run with recover_backup_id=${RECOVER} succeeds, or run task=rollback with backup_id=${RECOVER} (set rollback_allow_mismatch if files of a newer deploy are reported as MISMATCH)."
+              else
+                echo "::error::Application files may be partly replaced. The video worker stays stopped by ~/.rateb-ai/video-worker.hold until a deploy run with recover_backup_id=${BACKUP_ID:-unknown} succeeds, or run task=rollback with backup_id=${BACKUP_ID:-unknown}."
+              fi
+            elif [ "$PAUSED" = "1" ] && [ "$PAUSE_KEEP" = "1" ]; then
+              echo "VIDEO_WORKER_PAUSE=kept"
             elif [ "$PAUSED" = "1" ]; then
               "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.pause"' || true
               echo "VIDEO_WORKER_PAUSE=cleared"
@@ -203,10 +225,14 @@ jobs:
 
           # 2. Compare every target file with the manifest, then back up and verify. Still no change.
           set +e
-          guard_out="$("${SSH[@]}" "$REMOTE" "bash -s -- prepare '${TARGET}' '${RUN}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
+          guard_out="$("${SSH[@]}" "$REMOTE" "bash -s -- prepare '${TARGET}' '${RUN}' '${RECOVER}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
           guard_code=$?
           set -e
-          grep -E '^(DRIFT|BACKUP|GUARD)[A-Z_]*=' <<< "$guard_out" || true
+          grep -E '^(DRIFT|BACKUP|HOLD|GUARD)[A-Z_]*=' <<< "$guard_out" || true
+          if grep -qx 'HOLD=kept' <<< "$guard_out"; then
+            echo "::error::A worker hold left by an earlier deploy or rollback is in place; no application file was changed, and the hold and pause stay. Run task=rollback, or deploy with recover_backup_id set to the HOLD_ID above."
+            exit 1
+          fi
           if [ "$guard_code" -ne 0 ] || ! grep -qx 'DRIFT_OK=yes' <<< "$guard_out" || ! grep -qx 'BACKUP_VERIFIED=yes' <<< "$guard_out"; then
             echo "::error::A production file differs from the approved baseline, or the backup could not be verified; no application file was changed."
             exit 1
@@ -217,21 +243,38 @@ jobs:
             exit 1
           fi
           echo "ROLLBACK_BACKUP_ID=${BACKUP_ID}"
+          if [ -n "$RECOVER" ]; then
+            echo "ORIGINAL_BACKUP_ID=${RECOVER}"
+          fi
 
-          # 3. Pause, then swap the staged files in (libraries first). The guard sets the hold first.
+          # 3. Pause, wait for a worker pass that started before the pause, then swap the staged
+          # files in (libraries first). The guard sets the hold first.
           "${SSH[@]}" "$REMOTE" 'touch "$HOME/.rateb-ai/video-worker.pause"'
           PAUSED=1
           echo "VIDEO_WORKER_PAUSE=set"
+          set +e
+          wait_out="$("${SSH[@]}" "$REMOTE" "bash -s -- wait 540" < ai-rateb-sa-source/ops/video-cron.sh 2>&1)"
+          wait_code=$?
+          set -e
+          grep -E '^(VIDEO_WORKER_RUNNING|CRON)=' <<< "$wait_out" || true
+          if [ "$wait_code" -ne 0 ] || ! grep -qx 'VIDEO_WORKER_RUNNING=0' <<< "$wait_out"; then
+            PAUSE_KEEP=1
+            echo "::error::A video worker pass was still running after 540 seconds; no application file was changed. The pause stays (it expires on its own after 15 minutes)."
+            exit 1
+          fi
           HOLD=1
           set +e
-          apply_out="$("${SSH[@]}" "$REMOTE" "bash -s -- apply '${TARGET}' '${RUN}' '${BACKUP_ID}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
+          apply_out="$("${SSH[@]}" "$REMOTE" "bash -s -- apply '${TARGET}' '${RUN}' '${BACKUP_ID}' '${RECOVER}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
           apply_code=$?
           set -e
-          grep -E '^(APPLIED|UNCHANGED|FILES_CHANGED|APPLY_OK|HOLD|GUARD)=' <<< "$apply_out" || true
+          grep -E '^(APPLIED|UNCHANGED|FILES_CHANGED|APPLY_OK|HOLD|HOLD_ID|GUARD)=' <<< "$apply_out" || true
           if [ "$apply_code" -ne 0 ] || ! grep -qx 'APPLY_OK=yes' <<< "$apply_out"; then
+            # HOLD=cleared is printed only when the guard removed a hold it set itself.
             if grep -qx 'FILES_CHANGED=0' <<< "$apply_out" && grep -qx 'HOLD=cleared' <<< "$apply_out"; then
               HOLD=0
               echo "::error::Replacing files stopped before any file changed."
+            elif grep -qx 'FILES_CHANGED=0' <<< "$apply_out"; then
+              echo "::error::Replacing files stopped before any file changed, but a hold from an earlier deploy or rollback is in place; the hold and pause stay."
             else
               echo "::error::Replacing files stopped after some files changed."
             fi
@@ -274,10 +317,20 @@ jobs:
             exit 1
           fi
 
-          # 5. Install the cron entry, then release the hold and the pause.
+          # 5. Install the cron entry, then release the hold (only if this deploy set or took it
+          # over) and the pause.
           "${SSH[@]}" "$REMOTE" "bash -s -- install '${TARGET}'" < ai-rateb-sa-source/ops/video-cron.sh
-          "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.hold" "$HOME/.rateb-ai/video-worker.pause"'
+          set +e
+          release_out="$("${SSH[@]}" "$REMOTE" "bash -s -- release '${RUN}' '${BACKUP_ID}' '${RECOVER}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
+          release_code=$?
+          set -e
+          grep -E '^(HOLD|GUARD)=' <<< "$release_out" || true
+          if [ "$release_code" -ne 0 ] || ! grep -qxE 'HOLD=(released|absent)' <<< "$release_out"; then
+            echo "::error::The hold in place was not set by this deploy, so it was not released."
+            exit 1
+          fi
           HOLD=0
+          "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.pause"'
           PAUSED=0
           echo "VIDEO_WORKER_HOLD=cleared"
           echo "VIDEO_WORKER_PAUSE=cleared"
@@ -407,8 +460,22 @@ jobs:
           echo "TARGET=${TARGET}"
           echo "BACKUP_ID=${ROLLBACK_BACKUP_ID}"
           # Stop the worker before any file changes: hold and pause first, then remove the cron
-          # entry and wait for a running pass.
-          "${SSH[@]}" "$REMOTE" 'mkdir -p "$HOME/.rateb-ai" && chmod 700 "$HOME/.rateb-ai" && touch "$HOME/.rateb-ai/video-worker.pause" && printf "rollback\n" > "$HOME/.rateb-ai/video-worker.hold"'
+          # entry and wait for a running pass. A hold already in place is kept as it is; a
+          # successful restore is what releases it. A symbolic link where the hold goes (even a
+          # dangling one) is refused before anything changes and is never written through;
+          # noclobber also refuses one that appears between the check and the write.
+          set +e
+          hold_out="$("${SSH[@]}" "$REMOTE" "mkdir -p \"\$HOME/.rateb-ai\" && chmod 700 \"\$HOME/.rateb-ai\" && if [ -L \"\$HOME/.rateb-ai/video-worker.hold\" ]; then echo HOLD=symlink; exit 1; fi && touch \"\$HOME/.rateb-ai/video-worker.pause\" && { [ -e \"\$HOME/.rateb-ai/video-worker.hold\" ] || (set -C && printf 'restore=%s\n' '${ROLLBACK_BACKUP_ID}' > \"\$HOME/.rateb-ai/video-worker.hold\"); }" 2>&1)"
+          hold_code=$?
+          set -e
+          if [ "$hold_code" -ne 0 ]; then
+            if grep -qx 'HOLD=symlink' <<< "$hold_out"; then
+              echo "::error::~/.rateb-ai/video-worker.hold is a symbolic link. It was not followed or written through, and nothing changed. Check where it points, remove it by hand, then run the rollback again."
+            else
+              echo "::error::The worker hold could not be set; nothing was restored."
+            fi
+            exit 1
+          fi
           HELD=1
           echo "VIDEO_WORKER_HOLD=set"
           "${SSH[@]}" "$REMOTE" "bash -s -- remove" < ai-rateb-sa-source/ops/video-cron.sh
