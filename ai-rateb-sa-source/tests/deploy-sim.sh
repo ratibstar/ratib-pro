@@ -307,6 +307,7 @@ ok "partial failure: the worker cron entry is not installed and the worker file 
 ok "partial failure: an already installed worker does not run while the hold is set, even with the pause gone" 'worker_blocked'
 touch "$SIM_HOME/.rateb-ai/video-worker.pause"
 SIM_BACKUP_ID="$(backup_id_of "$sim/j.out")"
+: > "$sim/log"
 run_job rollback.sh "$sim/j2.out"; code=$?
 ok "partial failure: rollback restores the baseline tree exactly" '[ $code -eq 0 ] && grep -qx "ROLLBACK_OK=yes" "$sim/j2.out" && [ "$(tree_hash "$target")" = "$before" ]'
 ok "partial failure: rollback releases the hold and pause only after the restore" '[ ! -e "$SIM_HOME/.rateb-ai/video-worker.hold" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && grep -qx "VIDEO_WORKER_HOLD=cleared" "$sim/j2.out" && in_order "$sim/log" "bash -s -- remove" "bash -s -- wait 540" "bash -s -- restore"'
