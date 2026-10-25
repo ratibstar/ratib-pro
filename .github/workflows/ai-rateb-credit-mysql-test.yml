@@ -109,6 +109,7 @@ jobs:
             --enable-decoder=mjpeg,png,h264,aac,pcm_s16le \
             --enable-encoder=libx264,aac,rawvideo,wrapped_avframe,pcm_s16le \
             --enable-parser=h264,hevc,aac,mjpeg,png \
+            --enable-bsf=h264_mp4toannexb \
             --enable-filter=zoompan,overlay,scale,pad,format,crop,aresample,aformat,anull,null > /dev/null
           make -j"$(nproc)" > /dev/null
           make install > /dev/null
