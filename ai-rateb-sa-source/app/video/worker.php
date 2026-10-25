@@ -75,6 +75,7 @@ function rateb_video_worker_readiness(PDO $pdo, array $options = []): array
     $report['ffmpeg'] = rateb_video_ffmpeg_usable($ffmpeg) ? $ffmpeg : 'FAILED no executable ffmpeg at an absolute path';
     $render = rateb_video_check_ffmpeg($ffmpeg, $options['tmp'] ?? null);
     $report['ffmpeg_render'] = $render['ok'] ? 'ok' : 'FAILED ' . rateb_video_worker_redact($render['detail']);
+    $report['ffmpeg_text'] = 'diagnostic ' . rateb_video_worker_redact($render['text']);
     $report['media_root'] = is_dir(MEDIA_ROOT) && is_writable(MEDIA_ROOT) ? 'ok' : 'FAILED';
     $provider = rateb_video_provider();
     $report['provider'] = $provider->name() . ($provider->configured() ? ' configured' : ' NOT configured');

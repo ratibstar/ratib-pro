@@ -117,6 +117,7 @@ function db(): PDO
 require_once __DIR__ . '/../../app/schema.php';
 require_once __DIR__ . '/../../app/media/library.php';
 require_once __DIR__ . '/../../app/video/worker.php';
+require_once __DIR__ . '/../support/video-inspect.php';
 
 /** Local stand-in for Runway. Every image request is appended to VW_CALLS. */
 final class VwProvider implements RatebVideoProvider
@@ -435,6 +436,29 @@ function vw_wait_for(PDO $observer, string $prefix, int $count): bool
     return false;
 }
 
+function vw_voice(int $campaignId, int $userId): void
+{
+    media_store_bytes(['id' => $campaignId, 'user_id' => $userId], 'audio', 'upload', 'voice.wav', 'audio/wav', vt_wav(3));
+}
+
+/** The job's stored video, inspected with the real ffmpeg. */
+function vw_inspect(PDO $pdo, string $ffmpeg, int $jobId): array
+{
+    $stmt = $pdo->prepare('SELECT m.* FROM video_jobs j INNER JOIN campaign_media m ON m.id = j.output_media_id WHERE j.id = ?');
+    $stmt->execute([$jobId]);
+    $row = $stmt->fetch();
+    $path = $row ? media_resolve_path($row) : null;
+    return $path === null ? ['video' => 'missing'] : vt_inspect($ffmpeg, $path, MEDIA_ROOT);
+}
+
+/** Compose files the job left in its clips folder; '' when none. */
+function vw_leftovers(int $campaignId, int $jobId): string
+{
+    $dir = MEDIA_ROOT . '/' . $campaignId . '/clips';
+    $left = array_filter([$dir . '/watermark-' . $jobId . '.png', $dir . '/list-' . $jobId . '.txt', $dir . '/final-' . $jobId . '.mp4'], 'is_file');
+    return implode(',', array_map('basename', $left));
+}
+
 function vw_video_ok(PDO $pdo, int $jobId): bool
 {
     $stmt = $pdo->prepare('SELECT m.* FROM video_jobs j INNER JOIN campaign_media m ON m.id = j.output_media_id WHERE j.id = ?');
@@ -487,6 +511,7 @@ if (!$render) {
     $stats = rateb_video_worker_run($pdo, ['provider' => $local]);
     vw_expect('the worker renders a queued job with ffmpeg and completes it', vw_ledger($pdo, $u1, $first['job_id']) + ['valid_mp4' => var_export(vw_video_ok($pdo, $first['job_id']), true), 'locked' => var_export($stats['locked'], true)], ['locked' => 'true', 'valid_mp4' => 'true', 'job' => 'completed', 'error' => '', 'usage' => 'completed', 'videos' => 1, 'balance' => 30, 'charges' => 1, 'refunds' => 0]);
     vw_expect('the same pass also completes the job created by the concurrent starts', vw_ledger($pdo, $u2, $jobIds[0] ?? 0), ['job' => 'completed', 'usage' => 'completed', 'videos' => 1, 'balance' => 30, 'charges' => 1, 'refunds' => 0]);
+    vw_expect('a paid-plan silent video is real H.264 with nothing drawn in the watermark corner', vw_inspect($pdo, $ffmpeg, $first['job_id']) + ['watermark' => (int) vw_job($pdo, $first['job_id'])['watermark'], 'leftovers' => vw_leftovers($c1, $first['job_id'])], ['watermark' => 0, 'video' => 'h264', 'audio' => 'none', 'decodes' => 'yes', 'mark_pixels' => 0, 'leftovers' => '']);
     $callsBefore = vw_calls($calls);
     $rerun = rateb_video_worker_run($pdo, ['provider' => $local]);
     vw_expect('a second pass after completion adds no video, charge, or refund', vw_ledger($pdo, $u1, $first['job_id']) + ['jobs' => $rerun['jobs'], 'new_calls' => vw_calls($calls) - $callsBefore], ['jobs' => 0, 'new_calls' => 0, 'job' => 'completed', 'videos' => 1, 'balance' => 30, 'charges' => 1, 'refunds' => 0]);
@@ -533,19 +558,36 @@ if (!$render) {
     // 8. The provider path: create a task, then download and compose on the next pass.
     $u8 = vw_user($pdo, $initial, $planIds, 50, 'starter');
     $c8 = vw_campaign($pdo, $u8);
+    vw_voice($c8, $u8);
     $j8 = vw_start($pdo, $c8)['job_id'];
     $remote = new VwProvider('remote');
     rateb_video_worker_job($pdo, $j8, $remote);
     $task = (string) (json_decode((string) vw_job($pdo, $j8)['storyboard'], true)[0]['task_id'] ?? '');
     rateb_video_worker_job($pdo, $j8, $remote);
     vw_expect('a provider task is saved, then downloaded and completed on the next pass', vw_ledger($pdo, $u8, $j8) + ['task' => $task, 'valid_mp4' => var_export(vw_video_ok($pdo, $j8), true)], ['task' => 'vw-task-5', 'valid_mp4' => 'true', 'job' => 'completed', 'videos' => 1, 'balance' => 30, 'charges' => 1, 'refunds' => 0]);
+    vw_expect('a paid-plan voiced video has AAC voice and nothing drawn in the watermark corner', vw_inspect($pdo, $ffmpeg, $j8) + ['leftovers' => vw_leftovers($c8, $j8)], ['video' => 'h264', 'audio' => 'aac', 'decodes' => 'yes', 'mark_pixels' => 0, 'leftovers' => '']);
 
-    // 9. Free plan videos carry the RATEB AI watermark pass.
+    // 9. Free plan videos carry the RATEB AI watermark, overlaid from a GD-drawn PNG.
     $u9 = vw_user($pdo, $initial, $planIds, 50, 'free');
     $c9 = vw_campaign($pdo, $u9);
+    vw_voice($c9, $u9);
     $j9 = vw_start($pdo, $c9)['job_id'];
     rateb_video_worker_job($pdo, $j9, $local);
     vw_expect('a watermarked free-plan video renders and completes', vw_ledger($pdo, $u9, $j9) + ['watermark' => (int) vw_job($pdo, $j9)['watermark']], ['watermark' => 1, 'job' => 'completed', 'error' => '', 'videos' => 1, 'balance' => 30, 'refunds' => 0]);
+    $seen9 = vw_inspect($pdo, $ffmpeg, $j9);
+    vw_expect('the free-plan video is H.264 with AAC voice, decodes, and leaves no compose files', $seen9 + ['leftovers' => vw_leftovers($c9, $j9)], ['video' => 'h264', 'audio' => 'aac', 'decodes' => 'yes', 'leftovers' => '']);
+    vw_report(($seen9['mark_pixels'] ?? -1) >= 50 ? 'PASS' : 'FAIL', 'the watermark is visibly drawn in the bottom corner of the decoded free-plan video', 'bright pixels=' . ($seen9['mark_pixels'] ?? -1));
+
+    // 9b. If the watermark cannot be drawn, the free-plan job fails and is refunded; nothing unwatermarked is saved.
+    $u9b = vw_user($pdo, $initial, $planIds, 50, 'free');
+    $c9b = vw_campaign($pdo, $u9b);
+    vw_voice($c9b, $u9b);
+    $j9b = vw_start($pdo, $c9b)['job_id'];
+    $blocked = MEDIA_ROOT . '/' . $c9b . '/clips/watermark-' . $j9b . '.png';
+    mkdir($blocked, 0700, true);
+    $outcome9b = rateb_video_worker_job($pdo, $j9b, $local);
+    vw_expect('a free-plan job whose watermark cannot be drawn fails with the watermark error and is refunded', vw_ledger($pdo, $u9b, $j9b) + ['outcome' => $outcome9b, 'output' => (string) (vw_job($pdo, $j9b)['output_media_id'] ?? ''), 'leftovers' => vw_leftovers($c9b, $j9b)], ['outcome' => 'failed', 'job' => 'failed', 'error' => 'watermark', 'usage' => 'failed', 'videos' => 0, 'output' => '', 'balance' => 50, 'charges' => 1, 'refunds' => 1, 'leftovers' => '']);
+    @rmdir($blocked);
 }
 
 // 10. A provider failure fails the job and refunds exactly once.

@@ -738,18 +738,28 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
         }
         $clips[] = $clip;
     }
-    file_put_contents($list, rateb_video_concat_list($clips));
     $out = $dir . '/final-' . (int) $job['id'] . '.mp4';
-    $voice = $pdo->prepare('SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = \'audio\' ORDER BY id DESC LIMIT 1');
-    $voice->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
-    $audio = $voice->fetch();
-    $audioPath = $audio ? (media_resolve_path($audio) ?? '') : '';
-    $audioPath = $audioPath !== '' && is_file($audioPath) ? $audioPath : '';
-    $ok = rateb_video_run_ffmpeg(rateb_video_compose_command($ffmpeg, $list, $audioPath, (int) $job['watermark'] === 1, $out), 600);
-    clearstatcache(true, $out);
-    $bytes = is_file($out) ? file_get_contents($out) : false;
-    @unlink($list);
-    @unlink($out);
+    $mark = (int) $job['watermark'] === 1 ? $dir . '/watermark-' . (int) $job['id'] . '.png' : '';
+    try {
+        file_put_contents($list, rateb_video_concat_list($clips));
+        $voice = $pdo->prepare('SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = \'audio\' ORDER BY id DESC LIMIT 1');
+        $voice->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
+        $audio = $voice->fetch();
+        $audioPath = $audio ? (media_resolve_path($audio) ?? '') : '';
+        $audioPath = $audioPath !== '' && is_file($audioPath) ? $audioPath : '';
+        if ($mark !== '' && !rateb_video_watermark_png($mark)) {
+            throw new RuntimeException('watermark');
+        }
+        $ok = rateb_video_run_ffmpeg(rateb_video_compose_command($ffmpeg, $list, $audioPath, $mark, $out), 600);
+        clearstatcache(true, $out);
+        $bytes = is_file($out) ? file_get_contents($out) : false;
+    } finally {
+        @unlink($list);
+        @unlink($out);
+        if ($mark !== '') {
+            @unlink($mark);
+        }
+    }
     if (!$ok || !is_string($bytes) || !str_contains(substr($bytes, 0, 32), 'ftyp')) {
         if ((int) $job['watermark'] === 1) {
             throw new RuntimeException('watermark');

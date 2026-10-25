@@ -79,13 +79,49 @@ jobs:
       - name: Install ffmpeg for the video worker test
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core > /dev/null
+          sudo apt-get install -y -qq ffmpeg > /dev/null
           version="$(ffmpeg -hide_banner -version)"
           echo "${version%%$'\n'*}"
           filters="$(ffmpeg -hide_banner -filters 2>/dev/null)"
+          decoders="$(ffmpeg -hide_banner -decoders 2>/dev/null)"
           grep -q ' zoompan ' <<< "$filters"
-          grep -q ' drawtext ' <<< "$filters"
-          echo "ffmpeg zoompan and drawtext filters present"
+          grep -q ' overlay ' <<< "$filters"
+          grep -q ' png ' <<< "$decoders"
+          echo "ffmpeg zoompan and overlay filters and the png decoder present"
+
+      # Production's ffmpeg has no drawtext (built without FreeType). Build one the same way from
+      # the pinned upstream release, with only what the worker and its tests use.
+      - name: Build an ffmpeg without drawtext
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -qq pkg-config libx264-dev zlib1g-dev > /dev/null
+          src="$RUNNER_TEMP/ffmpeg-src"
+          git clone --quiet --depth 1 --branch n7.1.1 https://github.com/FFmpeg/FFmpeg.git "$src"
+          test "$(git -C "$src" rev-parse HEAD)" = db69d06eeeab4f46da15030a80d539efb4503ca8
+          cd "$src"
+          ./configure --prefix="$RUNNER_TEMP/ffmpeg-no-drawtext" --disable-everything --disable-doc --disable-ffplay --disable-ffprobe \
+            --disable-network --disable-x86asm --enable-gpl --enable-libx264 --enable-zlib \
+            --enable-protocol=file,pipe \
+            --enable-demuxer=concat,image2,mjpeg,image_jpeg_pipe,image_png_pipe,mov,wav \
+            --enable-muxer=mp4,null,rawvideo \
+            --enable-decoder=mjpeg,png,h264,aac,pcm_s16le \
+            --enable-encoder=libx264,aac,rawvideo,wrapped_avframe,pcm_s16le \
+            --enable-parser=h264,aac,mjpeg,png \
+            --enable-filter=zoompan,overlay,scale,pad,format,crop,aresample,aformat,anull,null > /dev/null
+          make -j"$(nproc)" > /dev/null
+          make install > /dev/null
+          bin="$RUNNER_TEMP/ffmpeg-no-drawtext/bin/ffmpeg"
+          filters="$("$bin" -hide_banner -filters 2>/dev/null)"
+          if grep -q ' drawtext ' <<< "$filters"; then
+            echo "::error::The test build must not have drawtext."
+            exit 1
+          fi
+          for filter in zoompan overlay scale pad format; do
+            grep -q " ${filter} " <<< "$filters"
+          done
+          version="$("$bin" -hide_banner -version)"
+          echo "${version%%$'\n'*}"
+          echo "RATEB_TEST_FFMPEG_NO_DRAWTEXT=$bin" >> "$GITHUB_ENV"
 
       - name: PHP syntax check
         run: |

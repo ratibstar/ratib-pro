@@ -212,6 +212,7 @@ if (!$runtimeOk) {
     } else {
         $render = rateb_video_check_ffmpeg($ffmpeg);
         pf('FFMPEG_RENDER', $render['ok'] ? 'ok' : 'FAILED ' . $render['detail'], $render['ok']);
+        pf('FFMPEG_TEXT', $render['text'] . ' (diagnostic; the watermark does not use drawtext)');
     }
 }
 

@@ -98,22 +98,65 @@ function rateb_video_concat_list(array $clips): string
     return $lines;
 }
 
-/** $audio is an audio file to lay under the video, or '' for a silent video. */
-function rateb_video_compose_command(string $ffmpeg, string $list, string $audio, bool $watermark, string $out): string
+/**
+ * $audio is an audio file to lay under the video, or '' for a silent video. $watermark is a
+ * PNG from rateb_video_watermark_png(), or '' for none.
+ */
+function rateb_video_compose_command(string $ffmpeg, string $list, string $audio, string $watermark, string $out): string
 {
     $filter = 'scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p';
-    if ($watermark) {
-        $filter .= ",drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
-    }
     $cmd = escapeshellarg($ffmpeg) . ' -nostdin -loglevel error -y -f concat -safe 0 -i ' . escapeshellarg($list);
+    if ($watermark === '' && $audio === '') {
+        return $cmd . ' -vf ' . escapeshellarg($filter) . ' -an -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . escapeshellarg($out);
+    }
+    $graph = '[0:v]' . $filter;
+    if ($watermark !== '') {
+        $cmd .= ' -i ' . escapeshellarg($watermark);
+        $graph .= '[base];[base][1:v]overlay=x=W-w-24:y=H-h-24,format=yuv420p';
+    }
     if ($audio !== '') {
         $cmd .= ' -i ' . escapeshellarg($audio);
-        $cmd .= ' -filter_complex ' . escapeshellarg('[0:v]' . $filter . '[v]');
-        $cmd .= ' -map ' . escapeshellarg('[v]') . ' -map 1:a -shortest';
-    } else {
-        $cmd .= ' -vf ' . escapeshellarg($filter) . ' -an';
     }
+    $cmd .= ' -filter_complex ' . escapeshellarg($graph . '[v]') . ' -map ' . escapeshellarg('[v]');
+    $cmd .= $audio !== '' ? ' -map ' . ($watermark !== '' ? '2' : '1') . ':a -shortest' : ' -an';
     return $cmd . ' -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . escapeshellarg($out);
+}
+
+/**
+ * Write the free-plan "RATEB AI" watermark as a PNG for ffmpeg's overlay filter. It uses GD's
+ * built-in font, like image watermarks, so neither ffmpeg's drawtext filter nor any font file
+ * is needed.
+ */
+function rateb_video_watermark_png(string $path): bool
+{
+    foreach (['imagecreatetruecolor', 'imagesavealpha', 'imagestring', 'imagescale', 'imagepng'] as $function) {
+        if (!function_exists($function)) {
+            return false;
+        }
+    }
+    $label = 'RATEB AI';
+    $width = imagefontwidth(5) * strlen($label) + 12;
+    $height = imagefontheight(5) + 8;
+    $small = imagecreatetruecolor($width, $height);
+    imagealphablending($small, false);
+    imagefill($small, 0, 0, imagecolorallocatealpha($small, 0, 0, 0, 70));
+    imagestring($small, 5, 6, 4, $label, imagecolorallocatealpha($small, 255, 255, 255, 0));
+    $mark = imagescale($small, $width * 2, $height * 2, IMG_NEAREST_NEIGHBOUR);
+    imagedestroy($small);
+    if ($mark === false) {
+        return false;
+    }
+    imagealphablending($mark, false);
+    imagesavealpha($mark, true);
+    $saved = @imagepng($mark, $path);
+    imagedestroy($mark);
+    clearstatcache(true, $path);
+    if (!$saved || !is_file($path) || filesize($path) < 100) {
+        @unlink($path);
+        return false;
+    }
+    @chmod($path, 0600);
+    return true;
 }
 
 /**
@@ -180,27 +223,52 @@ function rateb_video_check_locks(PDO $pdo, ?callable $afterAcquire = null): arra
 }
 
 /**
+ * What the ffmpeg build offers for drawing text itself. Diagnostic only: the worker draws its
+ * watermark with GD and the overlay filter. drawtext needs libfreetype (and libharfbuzz from
+ * ffmpeg 6.1); Arabic shaping and right-to-left order need libharfbuzz and libfribidi, and
+ * fontconfig is how drawtext finds a font when no font file is given.
+ */
+function rateb_video_text_support(string $filters, string $version): string
+{
+    $parts = ['drawtext=' . (preg_match('/^\s*\S+\s+drawtext\s/m', $filters) === 1 ? 'present' : 'absent')];
+    if (preg_match('/^ffmpeg version (\S+)/m', $version, $match) === 1) {
+        $parts[] = 'version=' . substr((string) preg_replace('/[^A-Za-z0-9._+~-]/', '', $match[1]), 0, 40);
+    }
+    if (preg_match('/^\s*configuration:(.*)$/m', $version, $match) === 1) {
+        $libs = ['libfreetype' => 'libfreetype', 'libharfbuzz' => 'libharfbuzz', 'libfribidi' => 'libfribidi', 'libfontconfig' => '(lib)?fontconfig'];
+        foreach ($libs as $name => $flag) {
+            $parts[] = $name . '=' . (preg_match('/(^|\s)--enable-' . $flag . '(\s|$)/', $match[1]) === 1 ? 'yes' : 'no');
+        }
+    } else {
+        $parts[] = 'build=unknown';
+    }
+    return implode(' ', $parts);
+}
+
+/**
  * Render a two-second video with every ffmpeg feature the worker uses: zoompan clips from a
- * still, the concat demuxer, the drawtext watermark, libx264 video, and AAC audio. Nothing is
- * installed or changed, and the temporary folder is always removed.
+ * still, the concat demuxer, the PNG watermark overlay, libx264 video, and AAC audio. Nothing
+ * is installed or changed, and the temporary folder is always removed. text is a diagnostic
+ * from rateb_video_text_support() and never decides ok.
  *
- * @return array{ok:bool,detail:string,cleaned:bool}
+ * @return array{ok:bool,detail:string,cleaned:bool,text:string}
  */
 function rateb_video_check_ffmpeg(string $ffmpeg, ?string $tmpBase = null): array
 {
     $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
     if (!function_exists('proc_open') || in_array('proc_open', $disabled, true)) {
-        return ['ok' => false, 'detail' => 'proc_open is disabled for this PHP', 'cleaned' => true];
+        return ['ok' => false, 'detail' => 'proc_open is disabled for this PHP', 'cleaned' => true, 'text' => 'not checked'];
     }
     if (!rateb_video_ffmpeg_usable($ffmpeg)) {
-        return ['ok' => false, 'detail' => 'ffmpeg did not run: no executable file at an absolute path (' . ($ffmpeg === '' ? 'none found' : $ffmpeg) . ')', 'cleaned' => true];
+        return ['ok' => false, 'detail' => 'ffmpeg did not run: no executable file at an absolute path (' . ($ffmpeg === '' ? 'none found' : $ffmpeg) . ')', 'cleaned' => true, 'text' => 'not checked'];
     }
     $dir = rtrim($tmpBase ?? sys_get_temp_dir(), '/') . '/rateb-video-check-' . bin2hex(random_bytes(6));
     if (!@mkdir($dir, 0700)) {
-        return ['ok' => false, 'detail' => 'could not create a temporary folder', 'cleaned' => true];
+        return ['ok' => false, 'detail' => 'could not create a temporary folder', 'cleaned' => true, 'text' => 'not checked'];
     }
+    $text = 'not checked';
     try {
-        $detail = rateb_video_check_ffmpeg_in($ffmpeg, $dir);
+        $detail = rateb_video_check_ffmpeg_in($ffmpeg, $dir, $text);
     } catch (Throwable $error) {
         $detail = 'check stopped (' . get_class($error) . ')';
     } finally {
@@ -216,11 +284,11 @@ function rateb_video_check_ffmpeg(string $ffmpeg, ?string $tmpBase = null): arra
     if ($detail === '' && !$cleaned) {
         $detail = 'temporary files could not be removed';
     }
-    return ['ok' => $detail === '', 'detail' => $detail === '' ? 'ok' : $detail, 'cleaned' => $cleaned];
+    return ['ok' => $detail === '', 'detail' => $detail === '' ? 'ok' : $detail, 'cleaned' => $cleaned, 'text' => $text];
 }
 
 /** @return string '' when the render passed, otherwise what failed */
-function rateb_video_check_ffmpeg_in(string $ffmpeg, string $dir): string
+function rateb_video_check_ffmpeg_in(string $ffmpeg, string $dir, string &$text = ''): string
 {
     $bin = escapeshellarg($ffmpeg);
     $tail = static function (string $file) use ($dir): string {
@@ -230,14 +298,17 @@ function rateb_video_check_ffmpeg_in(string $ffmpeg, string $dir): string
         return $text === '' ? 'no error output' : substr($text, -200);
     };
     $lists = [];
-    foreach (['encoders', 'filters', 'demuxers'] as $kind) {
+    foreach (['encoders', 'decoders', 'filters', 'demuxers'] as $kind) {
         $file = $dir . '/' . $kind . '.txt';
         if (!rateb_video_run_ffmpeg($bin . ' -hide_banner -' . $kind . ' > ' . escapeshellarg($file) . ' 2>&1', 30)) {
             return 'ffmpeg did not run at ' . $ffmpeg . ': ' . $tail($file);
         }
         $lists[$kind] = (string) file_get_contents($file);
     }
-    $required = ['encoders' => ['libx264', 'aac'], 'filters' => ['zoompan', 'drawtext', 'scale', 'pad', 'format'], 'demuxers' => ['concat']];
+    $versionFile = $dir . '/version.txt';
+    $version = rateb_video_run_ffmpeg($bin . ' -hide_banner -version > ' . escapeshellarg($versionFile) . ' 2>&1', 30) ? (string) file_get_contents($versionFile) : '';
+    $text = rateb_video_text_support($lists['filters'], $version);
+    $required = ['encoders' => ['libx264', 'aac'], 'decoders' => ['png'], 'filters' => ['zoompan', 'overlay', 'scale', 'pad', 'format'], 'demuxers' => ['concat']];
     $missing = [];
     foreach ($required as $kind => $names) {
         foreach ($names as $name) {
@@ -246,8 +317,10 @@ function rateb_video_check_ffmpeg_in(string $ffmpeg, string $dir): string
             }
         }
     }
-    if (!function_exists('imagecreatetruecolor') || !function_exists('imagejpeg')) {
-        $missing[] = 'gd';
+    foreach (['imagecreatetruecolor', 'imagejpeg', 'imagepng', 'imagesavealpha', 'imagestring', 'imagescale'] as $function) {
+        if (!function_exists($function)) {
+            $missing[] = 'gd ' . $function;
+        }
     }
     if ($missing !== []) {
         return 'missing ' . implode(', ', $missing);
@@ -283,10 +356,14 @@ function rateb_video_check_ffmpeg_in(string $ffmpeg, string $dir): string
     }
     $list = $dir . '/list.txt';
     file_put_contents($list, rateb_video_concat_list($clips));
+    $mark = $dir . '/watermark.png';
+    if (!rateb_video_watermark_png($mark)) {
+        return 'the watermark PNG could not be drawn with GD';
+    }
     $final = $dir . '/final.mp4';
     $err = $dir . '/compose.err';
-    if (!rateb_video_run_ffmpeg(rateb_video_compose_command($ffmpeg, $list, $audio, true, $final) . ' 2> ' . escapeshellarg($err), 120)) {
-        return 'concat/drawtext/aac compose failed: ' . $tail($err);
+    if (!rateb_video_run_ffmpeg(rateb_video_compose_command($ffmpeg, $list, $audio, $mark, $final) . ' 2> ' . escapeshellarg($err), 120)) {
+        return 'concat/overlay/aac compose failed: ' . $tail($err);
     }
     clearstatcache(true, $final);
     $bytes = is_file($final) ? (string) file_get_contents($final) : '';

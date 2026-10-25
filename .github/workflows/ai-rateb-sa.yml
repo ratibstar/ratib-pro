@@ -658,11 +658,16 @@ jobs:
               if ($v['code'] !== 0) {
                   $out['ffmpeg_version_err'] = substr($v['err'], -600);
               }
+              $listed = static fn (string $list, string $name): bool => preg_match('/^\s*\S+\s+' . preg_quote($name, '/') . '\s/m', $list) === 1;
               $enc = $run(escapeshellarg($ffmpeg) . ' -hide_banner -encoders');
               $out['libx264'] = str_contains($enc['out'], 'libx264') ? 'yes' : 'NO';
+              $out['aac'] = $listed($enc['out'], 'aac') ? 'yes' : 'NO';
+              $dec = $run(escapeshellarg($ffmpeg) . ' -hide_banner -decoders');
+              $out['png_decoder'] = $listed($dec['out'], 'png') ? 'yes' : 'NO';
               $flt = $run(escapeshellarg($ffmpeg) . ' -hide_banner -filters');
               $out['zoompan'] = str_contains($flt['out'], 'zoompan') ? 'yes' : 'NO';
-              $out['drawtext'] = str_contains($flt['out'], 'drawtext') ? 'yes' : 'NO';
+              $out['overlay'] = $listed($flt['out'], 'overlay') ? 'yes' : 'NO';
+              $out['drawtext'] = ($listed($flt['out'], 'drawtext') ? 'present' : 'absent') . ' (informational; the video watermark uses a GD PNG and overlay, not drawtext)';
               $tmp = sys_get_temp_dir() . '/rateb-probe-' . bin2hex(random_bytes(6));
               if (@mkdir($tmp, 0700)) {
                   $still = $tmp . '/still.jpg';
@@ -680,11 +685,23 @@ jobs:
                   if ($r['code'] !== 0) {
                       $out['camera_motion_clip_err'] = substr($r['err'], -1200);
                   }
-                  if (is_file($clip)) {
-                      $mark = "scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p,drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
-                      $w = $run(escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($clip) . ' -vf ' . escapeshellarg($mark)
-                          . ' -c:v libx264 -preset veryfast -crf 23 -an -movflags +faststart ' . escapeshellarg($marked));
-                      $out['watermark_pass'] = 'exit ' . $w['code'] . ', ' . $w['secs'] . 's, ' . (is_file($marked) ? filesize($marked) : 0) . ' bytes';
+                  if (is_file($clip) && !function_exists('imagescale')) {
+                      $out['watermark_pass'] = 'not run: GD is not available to draw the watermark PNG';
+                  } elseif (is_file($clip)) {
+                      $markPng = $tmp . '/mark.png';
+                      $label = 'RATEB AI';
+                      $small = imagecreatetruecolor(imagefontwidth(5) * strlen($label) + 12, imagefontheight(5) + 8);
+                      imagealphablending($small, false);
+                      imagefill($small, 0, 0, imagecolorallocatealpha($small, 0, 0, 0, 70));
+                      imagestring($small, 5, 6, 4, $label, imagecolorallocatealpha($small, 255, 255, 255, 0));
+                      $big = imagescale($small, imagesx($small) * 2, imagesy($small) * 2, IMG_NEAREST_NEIGHBOUR);
+                      imagealphablending($big, false);
+                      imagesavealpha($big, true);
+                      imagepng($big, $markPng);
+                      $graph = '[0:v]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p[base];[base][1:v]overlay=x=W-w-24:y=H-h-24,format=yuv420p[v]';
+                      $w = $run(escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($clip) . ' -i ' . escapeshellarg($markPng) . ' -filter_complex ' . escapeshellarg($graph)
+                          . ' -map ' . escapeshellarg('[v]') . ' -c:v libx264 -preset veryfast -crf 23 -an -movflags +faststart ' . escapeshellarg($marked));
+                      $out['watermark_pass'] = 'exit ' . $w['code'] . ', ' . $w['secs'] . 's, ' . (is_file($marked) ? filesize($marked) : 0) . ' bytes (GD PNG + overlay)';
                       if ($w['code'] !== 0) {
                           $out['watermark_pass_err'] = substr($w['err'], -1200);
                       }

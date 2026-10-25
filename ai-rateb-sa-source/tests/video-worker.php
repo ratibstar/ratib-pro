@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../app/video/worker.php';
+require_once __DIR__ . '/support/video-inspect.php';
 
 $failures = 0;
 function check(bool $ok, string $name): void
@@ -108,15 +109,23 @@ if ($posix) {
     $tmpBase = $base . '/check-tmp';
     mkdir($tmpBase, 0700);
     $leftovers = static fn (): int => count(glob($tmpBase . '/*') ?: []);
+    // The fake lists mirror the production build: everything the worker needs, but no drawtext.
     $fake = static function (string $name, string $render) use ($base): string {
         $lists = [
             'encoders' => " V....D libx264              libx264 H.264\n A....D aac                  AAC (Advanced Audio Coding)\n",
-            'filters' => " ... format            V->V       pixel format\n ... pad               V->V       pad\n ... scale             V->V       scale\n T.C zoompan           V->V       Apply Zoom & Pan effect.\n T.C drawtext          V->V       Draw text\n",
+            'decoders' => " VFS..D png                  PNG (Portable Network Graphics) image\n",
+            'filters' => " ... format            V->V       pixel format\n ... pad               V->V       pad\n ... scale             V->V       scale\n T.C zoompan           V->V       Apply Zoom & Pan effect.\n TSC overlay           VV->V      Overlay a video source on top of the input.\n",
             'demuxers' => " D  concat          Virtual concatenation script\n",
+            'version' => "ffmpeg version 7.0.2-static Copyright (c) 2000-2024 the FFmpeg developers\nconfiguration: --enable-gpl --enable-libx264 --enable-zlib\n",
         ];
-        if ($name === 'no-x264-drawtext') {
+        if ($name === 'no-x264-overlay') {
             $lists['encoders'] = " A....D aac                  AAC (Advanced Audio Coding)\n";
-            $lists['filters'] = str_replace(" T.C drawtext          V->V       Draw text\n", '', $lists['filters']);
+            $lists['filters'] = str_replace(" TSC overlay           VV->V      Overlay a video source on top of the input.\n", '', $lists['filters']);
+        }
+        if ($name === 'no-zoompan-aac-png') {
+            $lists['encoders'] = " V....D libx264              libx264 H.264\n";
+            $lists['decoders'] = '';
+            $lists['filters'] = str_replace(" T.C zoompan           V->V       Apply Zoom & Pan effect.\n", '', $lists['filters']);
         }
         $body = "#!/bin/sh\ncase \" \$* \" in\n";
         foreach ($lists as $kind => $text) {
@@ -132,13 +141,49 @@ if ($posix) {
     if ($realFfmpeg !== '' && function_exists('imagejpeg')) {
         $real = rateb_video_check_ffmpeg($realFfmpeg, $tmpBase);
         check($real['ok'] && $real['cleaned'] && $leftovers() === 0, 'the readiness render passes with a full ffmpeg and leaves no temporary files' . ($real['ok'] ? '' : ' (' . $real['detail'] . ')'));
+        check(preg_match('/^drawtext=(present|absent) /', $real['text']) === 1 && str_contains($real['text'], 'libfreetype='), 'readiness reports the build\'s text support (' . $real['text'] . ')');
     } elseif (getenv('RATEB_TEST_REQUIRE_FFMPEG') === '1') {
         check(false, 'the readiness render needs ffmpeg and GD, which CI must provide');
     } else {
         echo "SKIP real ffmpeg readiness render (ffmpeg or GD not installed)\n";
     }
-    $missing = rateb_video_check_ffmpeg($fake('no-x264-drawtext', 'exit 0'), $tmpBase);
-    check(!$missing['ok'] && str_contains($missing['detail'], 'libx264') && str_contains($missing['detail'], 'drawtext') && !str_contains($missing['detail'], 'aac') && $leftovers() === 0, 'readiness names each missing ffmpeg capability and cleans up (' . $missing['detail'] . ')');
+
+    // A real ffmpeg compiled without drawtext or FreeType (CI builds one), like production's.
+    $noDrawtext = (string) getenv('RATEB_TEST_FFMPEG_NO_DRAWTEXT');
+    if ($noDrawtext !== '' && function_exists('imagepng')) {
+        $builtLists = (string) shell_exec(escapeshellarg($noDrawtext) . ' -hide_banner -filters 2>&1') . (string) shell_exec(escapeshellarg($noDrawtext) . ' -hide_banner -decoders 2>&1') . (string) shell_exec(escapeshellarg($noDrawtext) . ' -hide_banner -encoders 2>&1');
+        $has = static fn (string $name): bool => preg_match('/^\s*\S+\s+' . preg_quote($name, '/') . '\s/m', $builtLists) === 1;
+        check(!$has('drawtext') && $has('overlay') && $has('png') && $has('libx264') && $has('aac'), 'the test build really has overlay, PNG decoding, libx264, and AAC, and no drawtext');
+        $built = rateb_video_check_ffmpeg($noDrawtext, $tmpBase);
+        check($built['ok'] && $leftovers() === 0, 'readiness passes with a real ffmpeg that has no drawtext' . ($built['ok'] ? '' : ' (' . $built['detail'] . ')'));
+        check(str_starts_with($built['text'], 'drawtext=absent ') && str_contains($built['text'], 'libfreetype=no libharfbuzz=no libfribidi=no libfontconfig=no'), 'readiness reports that build as having no text libraries (' . $built['text'] . ')');
+        $renderDir = $tmpBase . '/no-drawtext-render';
+        mkdir($renderDir, 0700);
+        $free = vt_render($noDrawtext, $renderDir, true, true);
+        $freeSeen = $free['file'] !== '' ? vt_inspect($noDrawtext, $free['file'], $renderDir) : [];
+        check($free['file'] !== '' && $freeSeen['video'] === 'h264' && $freeSeen['audio'] === 'aac' && $freeSeen['decodes'] === 'yes' && $freeSeen['mark_pixels'] >= 50, 'without drawtext, a free-plan video renders with the PNG watermark visible in the corner and AAC voice (' . $free['detail'] . ' ' . json_encode($freeSeen) . ')');
+        $paid = vt_render($noDrawtext, $renderDir, false, true);
+        $paidSeen = $paid['file'] !== '' ? vt_inspect($noDrawtext, $paid['file'], $renderDir) : [];
+        check($paid['file'] !== '' && $paidSeen['audio'] === 'aac' && $paidSeen['decodes'] === 'yes' && $paidSeen['mark_pixels'] === 0, 'a paid-plan video from the same build has voice and nothing drawn in the watermark corner (' . $paid['detail'] . ' ' . json_encode($paidSeen) . ')');
+        $silentFree = vt_render($noDrawtext, $renderDir, true, false);
+        $silentSeen = $silentFree['file'] !== '' ? vt_inspect($noDrawtext, $silentFree['file'], $renderDir) : [];
+        check($silentFree['file'] !== '' && $silentSeen['audio'] === 'none' && $silentSeen['decodes'] === 'yes' && $silentSeen['mark_pixels'] >= 50, 'a silent free-plan video also carries the watermark (' . $silentFree['detail'] . ' ' . json_encode($silentSeen) . ')');
+        foreach (glob($renderDir . '/*') ?: [] as $file) {
+            @unlink($file);
+        }
+        @rmdir($renderDir);
+    } elseif (getenv('RATEB_TEST_REQUIRE_FFMPEG') === '1') {
+        check(false, 'CI must provide a real ffmpeg built without drawtext in RATEB_TEST_FFMPEG_NO_DRAWTEXT');
+    } else {
+        echo "SKIP real no-drawtext ffmpeg render (RATEB_TEST_FFMPEG_NO_DRAWTEXT not set)\n";
+    }
+    $missing = rateb_video_check_ffmpeg($fake('no-x264-overlay', 'exit 0'), $tmpBase);
+    check(!$missing['ok'] && str_contains($missing['detail'], 'libx264') && str_contains($missing['detail'], 'overlay') && !str_contains($missing['detail'], 'aac') && !str_contains($missing['detail'], 'drawtext') && $leftovers() === 0, 'readiness names each missing ffmpeg capability, does not require drawtext, and cleans up (' . $missing['detail'] . ')');
+    $missingMore = rateb_video_check_ffmpeg($fake('no-zoompan-aac-png', 'exit 0'), $tmpBase);
+    check(!$missingMore['ok'] && str_contains($missingMore['detail'], 'zoompan') && str_contains($missingMore['detail'], 'aac') && str_contains($missingMore['detail'], 'png') && !str_contains($missingMore['detail'], 'libx264') && $leftovers() === 0, 'a missing zoompan filter, AAC encoder, or PNG decoder fails readiness (' . $missingMore['detail'] . ')');
+    check($missing['text'] === 'drawtext=absent version=7.0.2-static libfreetype=no libharfbuzz=no libfribidi=no libfontconfig=no', 'readiness reports a build without FreeType, HarfBuzz, FriBidi, or fontconfig (' . $missing['text'] . ')');
+    $noOverlay = rateb_video_check_ffmpeg($fake('compose-fails', "case \" \$* \" in\n  *overlay*) echo \"No such filter: 'overlay'\" >&2; exit 1 ;;\nesac\nfor last; do :; done\nprintf '\\000\\000\\000\\030ftypisom' > \"\$last\"\nexit 0"), $tmpBase);
+    check(!$noOverlay['ok'] && str_contains($noOverlay['detail'], 'concat/overlay/aac compose failed') && str_contains($noOverlay['detail'], "No such filter: 'overlay'") && $leftovers() === 0, 'a compose step that cannot overlay the watermark fails readiness and is cleaned up (' . $noOverlay['detail'] . ')');
     $broken = rateb_video_check_ffmpeg($fake('render-fails', "echo \"Unknown encoder 'libx264'\" >&2\nexit 1"), $tmpBase);
     check(!$broken['ok'] && str_contains($broken['detail'], 'clip render failed') && str_contains($broken['detail'], 'Unknown encoder') && $leftovers() === 0, 'a failing render is reported with the encoder error and cleaned up (' . $broken['detail'] . ')');
     $junk = rateb_video_check_ffmpeg($fake('junk-output', "for last; do :; done\necho junk > \"\$last\"\nexit 0"), $tmpBase);
@@ -177,9 +222,43 @@ $runtimeIncludes = array_filter($runtimeTokens, static fn ($t): bool => is_array
 check($runtimeIncludes === [], 'runtime.php loads no other file, so the preflight can run it alone');
 $engineSource = (string) file_get_contents(dirname(__DIR__) . '/app/video/engine.php');
 check(str_contains($engineSource, 'rateb_video_clip_command(') && str_contains($engineSource, 'rateb_video_compose_command(') && !str_contains($engineSource, 'zoompan='), 'the engine renders with the same command builders the readiness check uses');
-$silent = rateb_video_compose_command('ffmpeg', '/x/list.txt', '', false, '/x/out.mp4');
-$voiced = rateb_video_compose_command('ffmpeg', '/x/list.txt', '/x/voice.mp3', true, '/x/out.mp4');
-check(str_contains($silent, ' -an ') && !str_contains($silent, 'drawtext') && str_contains($voiced, '-map ' . escapeshellarg('[v]') . ' -map 1:a') && str_contains($voiced, 'drawtext') && str_contains($voiced, '-c:a aac'), 'compose commands keep the silent, voiced, and watermark variants');
+$silent = rateb_video_compose_command('ffmpeg', '/x/list.txt', '', '', '/x/out.mp4');
+$voiced = rateb_video_compose_command('ffmpeg', '/x/list.txt', '/x/voice.mp3', '', '/x/out.mp4');
+$marked = rateb_video_compose_command('ffmpeg', '/x/list.txt', '', '/x/mark.png', '/x/out.mp4');
+$both = rateb_video_compose_command('ffmpeg', '/x/list.txt', '/x/voice.mp3', '/x/mark.png', '/x/out.mp4');
+check(str_contains($silent, ' -vf ') && str_contains($silent, ' -an ') && !str_contains($silent, 'overlay'), 'a silent unwatermarked compose keeps the simple filter');
+check(str_contains($voiced, '-map ' . escapeshellarg('[v]') . ' -map 1:a -shortest') && !str_contains($voiced, 'overlay') && str_contains($voiced, '-c:a aac'), 'a voiced compose maps the voice as the second input');
+check(str_contains($marked, ' -i ' . escapeshellarg('/x/mark.png') . ' -filter_complex ') && str_contains($marked, '[base][1:v]overlay=x=W-w-24:y=H-h-24,format=yuv420p[v]') && str_contains($marked, ' -an '), 'a silent watermarked compose overlays the PNG in the bottom corner');
+check(strpos($both, escapeshellarg('/x/mark.png')) < strpos($both, escapeshellarg('/x/voice.mp3')) && strpos($both, escapeshellarg('/x/voice.mp3')) < strpos($both, ' -filter_complex ') && str_contains($both, '[1:v]overlay') && str_contains($both, ' -map 2:a -shortest'), 'a voiced watermarked compose lists every input before the output options and maps the voice as the third input');
+check(array_filter([$silent, $voiced, $marked, $both], static fn (string $c): bool => str_contains($c, 'drawtext') || str_contains($c, 'font')) === [] && !str_contains((string) file_get_contents(dirname(__DIR__) . '/app/video/runtime.php'), ',drawtext'), 'no compose command needs drawtext or a font, so a build without FreeType can render');
+check(rateb_video_text_support(" T.C drawtext V->V Draw text\n", "ffmpeg version n7.1 Copyright\n  configuration: --enable-gpl --enable-libfreetype --enable-libharfbuzz --enable-libfribidi --enable-fontconfig\n") === 'drawtext=present version=n7.1 libfreetype=yes libharfbuzz=yes libfribidi=yes libfontconfig=yes', 'text support reads a build with every text library');
+check(rateb_video_text_support('', '') === 'drawtext=absent build=unknown' && rateb_video_text_support('', "configuration: --enable-libfreetype-x --disable-libharfbuzz\n") === 'drawtext=absent libfreetype=no libharfbuzz=no libfribidi=no libfontconfig=no', 'text support reports an unknown build and does not match lookalike flags');
+if (function_exists('imagepng') && function_exists('imagecreatefrompng')) {
+    $markFile = sys_get_temp_dir() . '/rateb-mark-' . bin2hex(random_bytes(4)) . '.png';
+    $drawn = rateb_video_watermark_png($markFile);
+    $png = $drawn ? imagecreatefrompng($markFile) : false;
+    $white = 0;
+    if ($png !== false) {
+        for ($y = 0; $y < imagesy($png); $y++) {
+            for ($x = 0; $x < imagesx($png); $x++) {
+                $white += imagecolorat($png, $x, $y) === 0xFFFFFF ? 1 : 0;
+            }
+        }
+    }
+    check($drawn && $png !== false && imagesx($png) === 168 && imagesy($png) === 46 && (imagecolorat($png, 0, 0) >> 24) === 70 && $white > 100, 'the watermark PNG is a translucent box with opaque white text, drawn without fonts');
+    @unlink($markFile);
+    check(!rateb_video_watermark_png(sys_get_temp_dir() . '/no-such-dir-' . bin2hex(random_bytes(4)) . '/mark.png'), 'a watermark that cannot be written is reported, so the engine fails the job instead of rendering it unwatermarked');
+} else {
+    echo "SKIP watermark PNG drawing (GD not loaded)\n";
+}
+$composeSource = substr($engineSource, (int) strpos($engineSource, 'function rateb_video_compose('), 2600);
+check(preg_match("/\\\$mark !== '' && !rateb_video_watermark_png\(\\\$mark\)\)\s*\{\s*throw new RuntimeException\('watermark'\)/", $composeSource) === 1, 'the engine fails a free-plan job when its watermark cannot be drawn');
+check(preg_match("/\} finally \{\s*@unlink\(\\\$list\);\s*@unlink\(\\\$out\);\s*if \(\\\$mark !== ''\) \{\s*@unlink\(\\\$mark\);/", $composeSource) === 1 && strpos($composeSource, 'try {') < strpos($composeSource, 'rateb_video_watermark_png('), 'the watermark PNG, concat list, and temporary output are removed on every path, even when ffmpeg cannot start');
+$q = static fn (string $s): string => escapeshellarg($s);
+$scaleOnly = 'scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p';
+$tail = ' -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . $q('/x/out.mp4');
+check($silent === $q('ffmpeg') . ' -nostdin -loglevel error -y -f concat -safe 0 -i ' . $q('/x/list.txt') . ' -vf ' . $q($scaleOnly) . ' -an' . $tail, 'a paid silent compose is byte-for-byte the command used before the watermark change');
+check($voiced === $q('ffmpeg') . ' -nostdin -loglevel error -y -f concat -safe 0 -i ' . $q('/x/list.txt') . ' -i ' . $q('/x/voice.mp3') . ' -filter_complex ' . $q('[0:v]' . $scaleOnly . '[v]') . ' -map ' . $q('[v]') . ' -map 1:a -shortest' . $tail, 'a paid voiced compose is byte-for-byte the command used before the watermark change');
 
 $preflight = dirname(__DIR__) . '/ops/preflight.php';
 $pfSpawn = static function (array $env) use ($preflight): array {
