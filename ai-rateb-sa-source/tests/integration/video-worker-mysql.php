@@ -345,7 +345,7 @@ function vw_campaign(PDO $pdo, int $userId): int
     $campaignId = (int) $pdo->lastInsertId();
     $image = imagecreatetruecolor(360, 640);
     imagefill($image, 0, 0, imagecolorallocate($image, 15, 118, 110));
-    imagefilledrectangle($image, 80, 200, 280, 440, imagecolorallocate($image, 240, 200, 90));
+    imagefilledrectangle($image, 80, 200, 280, 440, imagecolorallocate($image, 150, 110, 40));
     ob_start();
     imagepng($image);
     $png = (string) ob_get_clean();

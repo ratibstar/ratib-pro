@@ -15,7 +15,7 @@ function vt_render(string $ffmpeg, string $dir, bool $watermark, bool $audio): a
 {
     $image = imagecreatetruecolor(360, 640);
     imagefill($image, 0, 0, imagecolorallocate($image, 15, 118, 110));
-    imagefilledrectangle($image, 80, 200, 280, 440, imagecolorallocate($image, 240, 200, 90));
+    imagefilledrectangle($image, 80, 200, 280, 440, imagecolorallocate($image, 150, 110, 40));
     $still = $dir . '/vt-still.jpg';
     imagejpeg($image, $still, 85);
     imagedestroy($image);
