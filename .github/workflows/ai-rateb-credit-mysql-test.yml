@@ -99,6 +99,8 @@ jobs:
           git clone --quiet --depth 1 --branch n7.1.1 https://github.com/FFmpeg/FFmpeg.git "$src"
           test "$(git -C "$src" rev-parse HEAD)" = db69d06eeeab4f46da15030a80d539efb4503ca8
           cd "$src"
+          # n7.1.1 links aom_film_grain.o only through hevc_sei, which h264's shared SEI code needs;
+          # the hevc parser is the smallest component that selects it.
           ./configure --prefix="$RUNNER_TEMP/ffmpeg-no-drawtext" --disable-everything --disable-doc --disable-ffplay --disable-ffprobe \
             --disable-network --disable-x86asm --enable-gpl --enable-libx264 --enable-zlib \
             --enable-protocol=file,pipe \
@@ -106,7 +108,7 @@ jobs:
             --enable-muxer=mp4,null,rawvideo \
             --enable-decoder=mjpeg,png,h264,aac,pcm_s16le \
             --enable-encoder=libx264,aac,rawvideo,wrapped_avframe,pcm_s16le \
-            --enable-parser=h264,aac,mjpeg,png \
+            --enable-parser=h264,hevc,aac,mjpeg,png \
             --enable-filter=zoompan,overlay,scale,pad,format,crop,aresample,aformat,anull,null > /dev/null
           make -j"$(nproc)" > /dev/null
           make install > /dev/null
