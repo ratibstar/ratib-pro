@@ -28,6 +28,14 @@ on:
         description: "deploy: only after a deploy stopped midway and left the worker hold. The ROLLBACK_BACKUP_ID that deploy printed (the backup the hold records); lets this deploy take the hold over, finish, and release it. Without it a deploy refuses to start while a hold is in place."
         required: false
         default: ""
+      worker_mode:
+        description: "deploy: inactive (default) installs and checks the worker files but leaves no video worker cron entry (an existing one is removed), so no video is processed. active installs the cron entry. To switch the worker on later, run deploy again with active on the same commit."
+        required: false
+        type: choice
+        default: inactive
+        options:
+          - inactive
+          - active
       backup_id:
         description: "rollback: the ROLLBACK_BACKUP_ID printed by the deploy."
         required: false
@@ -103,6 +111,7 @@ jobs:
           DEPLOY_BASELINE: ${{ github.event.inputs.baseline }}
           DEPLOY_ACCEPT_GENERATED: ${{ github.event.inputs.accept_generated_config_change }}
           DEPLOY_RECOVER_BACKUP_ID: ${{ github.event.inputs.recover_backup_id }}
+          DEPLOY_WORKER_MODE: ${{ github.event.inputs.worker_mode }}
           RATEB_GOOGLE_CLIENT_ID: ${{ secrets.RATEB_GOOGLE_CLIENT_ID }}
           RATEB_GITHUB_CLIENT_SECRET: ${{ secrets.RATEB_GITHUB_CLIENT_SECRET }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -120,6 +129,12 @@ jobs:
             echo "::error::recover_backup_id must be the ROLLBACK_BACKUP_ID printed by the deploy that stopped midway."
             exit 1
           fi
+          WORKER_MODE="${DEPLOY_WORKER_MODE:-inactive}"
+          if [ "$WORKER_MODE" != "inactive" ] && [ "$WORKER_MODE" != "active" ]; then
+            echo "::error::worker_mode must be inactive or active."
+            exit 1
+          fi
+          echo "WORKER_MODE=${WORKER_MODE}"
           python3 - << 'PY'
           import os, stat, tempfile
           key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "").strip()
@@ -317,9 +332,28 @@ jobs:
             exit 1
           fi
 
-          # 5. Install the cron entry, then release the hold (only if this deploy set or took it
-          # over) and the pause.
-          "${SSH[@]}" "$REMOTE" "bash -s -- install '${TARGET}'" < ai-rateb-sa-source/ops/video-cron.sh
+          # 5. Set the worker cron entry for worker_mode while the hold still blocks every pass:
+          # active installs it; inactive removes only the tagged entry, so no pass starts after
+          # the release. Every other crontab line stays as it was. Then release the hold (only if
+          # this deploy set or took it over) and the pause.
+          set +e
+          if [ "$WORKER_MODE" = "active" ]; then
+            cron_out="$("${SSH[@]}" "$REMOTE" "bash -s -- install '${TARGET}'" < ai-rateb-sa-source/ops/video-cron.sh 2>&1)"
+          else
+            cron_out="$("${SSH[@]}" "$REMOTE" "bash -s -- remove" < ai-rateb-sa-source/ops/video-cron.sh 2>&1)"
+          fi
+          cron_code=$?
+          set -e
+          grep -E '^CRON[A-Z_]*=' <<< "$cron_out" || true
+          if [ "$WORKER_MODE" = "active" ]; then
+            cron_want='CRON_ENTRY=installed'
+          else
+            cron_want='CRON_ENTRY=(removed|absent)'
+          fi
+          if [ "$cron_code" -ne 0 ] || ! grep -qxE "$cron_want" <<< "$cron_out"; then
+            echo "::error::The video worker cron entry could not be set for worker_mode=${WORKER_MODE}; the hold and pause stay."
+            exit 1
+          fi
           set +e
           release_out="$("${SSH[@]}" "$REMOTE" "bash -s -- release '${RUN}' '${BACKUP_ID}' '${RECOVER}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
           release_code=$?
@@ -334,6 +368,7 @@ jobs:
           PAUSED=0
           echo "VIDEO_WORKER_HOLD=cleared"
           echo "VIDEO_WORKER_PAUSE=cleared"
+          echo "VIDEO_WORKER=${WORKER_MODE}"
           echo "DEPLOYED_COMMIT=${GITHUB_SHA}"
           echo "DEPLOYED_TARGET=${TARGET}"
 

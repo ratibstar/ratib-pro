@@ -161,6 +161,7 @@ PHPCFG
   unset SIM_CORRUPT SIM_FAIL_CHECK SIM_WORKER_HTTP FAKE_CRON_FAIL SIM_WAIT_TIMEOUT SIM_START_WORKER
   SIM_ACCEPT=false
   SIM_RECOVER=""
+  SIM_WORKER_MODE=active
   SIM_BACKUP_ID=""
   SIM_ALLOW=false
   : > "$sim/log"
@@ -174,7 +175,7 @@ run_job() {
     cd "$repo" && env GITHUB_SHA=simulated GITHUB_RUN_ID="$run_id" RUNNER_TEMP="$sim/runner" \
       DEPLOY_SSH_HOST=sim.invalid DEPLOY_SSH_USER=admin DEPLOY_SSH_PORT=22 \
       DEPLOY_SSH_PRIVATE_KEY='-----BEGIN SIM KEY-----\nnot-a-real-key\n-----END SIM KEY-----' \
-      DEPLOY_BASELINE="$BASELINE" DEPLOY_ACCEPT_GENERATED="$SIM_ACCEPT" DEPLOY_RECOVER_BACKUP_ID="$SIM_RECOVER" RATEB_GOOGLE_CLIENT_ID="$SIM_CLIENT_ID" \
+      DEPLOY_BASELINE="$BASELINE" DEPLOY_ACCEPT_GENERATED="$SIM_ACCEPT" DEPLOY_RECOVER_BACKUP_ID="$SIM_RECOVER" DEPLOY_WORKER_MODE="$SIM_WORKER_MODE" RATEB_GOOGLE_CLIENT_ID="$SIM_CLIENT_ID" \
       ROLLBACK_BACKUP_ID="$SIM_BACKUP_ID" ROLLBACK_ALLOW_MISMATCH="$SIM_ALLOW" \
       PATH="$sim/bin:$PATH" SIM_LOG="$sim/log" SIM_PHP="$(command -v php)" \
       bash --noprofile --norc -eo pipefail "$sim/$1"
@@ -473,6 +474,42 @@ run_job rollback.sh "$sim/u2.out"; code=$?
 ok "rollback with a symlink to an existing file as the hold: refused, the file it points to is unchanged" '[ $code -ne 0 ] && grep -q "video-worker.hold is a symbolic link" "$sim/u2.out" && [ -L "$hold_file" ] && [ "$(cat "$sim/u/real-file")" = "not a hold" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && ! grep -q "bash -s -- remove" "$sim/log" && [ "$(cat "$FAKE_CRON")" = "$others" ]'
 rm "$hold_file"
 SIM_BACKUP_ID=""
+
+# V. worker_mode. The default and inactive install and check the worker files but leave no worker
+# cron entry (removing one that is there) before the hold is released, so no pass starts. active
+# on the same commit changes no file and installs the entry. Other crontab lines never change.
+new_server v
+printf '%s\n' "$others" > "$FAKE_CRON"
+SIM_WORKER_MODE=""
+run_job deploy.sh "$sim/v1.out"; code=$?
+ok "worker_mode default: the deploy succeeds as inactive, with the files replaced and the readiness check passed" '[ $code -eq 0 ] && grep -qx "WORKER_MODE=inactive" "$sim/v1.out" && grep -qx "APPLY_OK=yes" "$sim/v1.out" && grep -qx "WORKER_READY=yes" "$sim/v1.out" && cmp -s "$src/cron/video-worker.php" "$target/cron/video-worker.php" && grep -qx "VIDEO_WORKER=inactive" "$sim/v1.out"'
+ok "worker_mode default: no worker cron entry, other entries unchanged, hold and pause released" '[ "$(cat "$FAKE_CRON")" = "$others" ] && grep -qx "CRON_ENTRY=absent" "$sim/v1.out" && ! grep -q "bash -s -- install" "$sim/log" && grep -qx "HOLD=released" "$sim/v1.out" && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.hold" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ]'
+ok "worker_mode inactive: the order was preflight, drift check and backup, pause, wait, swap, readiness, cron removal, release" 'in_order "$sim/log" "preflight.php${q} --cron-env" "bash -s -- prepare" "touch \"\$HOME/.rateb-ai/video-worker.pause\"" "bash -s -- wait 540" "bash -s -- apply" "video-worker.php${q} --check" "bash -s -- remove" "bash -s -- release"'
+v_tree="$(tree_hash "$target")"
+SIM_WORKER_MODE=active
+: > "$sim/log"
+run_job deploy.sh "$sim/v2.out"; code=$?
+ok "worker_mode active on the same commit: no file changes, then exactly one guarded entry and the other entries kept" '[ $code -eq 0 ] && grep -qx "FILES_CHANGED=0" "$sim/v2.out" && ! grep -q "^APPLIED=" "$sim/v2.out" && [ "$(tree_hash "$target")" = "$v_tree" ] && grep -qx "CRON_ENTRY=installed" "$sim/v2.out" && grep -qx "VIDEO_WORKER=active" "$sim/v2.out" && [ "$(grep -cE "# rateb-ai-video-worker$" "$FAKE_CRON")" = 1 ] && grep -qF "* * * * * [ ! -e $SIM_HOME/.rateb-ai/video-worker.hold ] && " "$FAKE_CRON" && [ "$(grep -vE "# rateb-ai-video-worker$" "$FAKE_CRON")" = "$others" ]'
+ok "worker_mode active: the drift check, swap, and readiness come before the entry, and the release after it" 'grep -qx "DRIFT_OK=yes" "$sim/v2.out" && in_order "$sim/log" "bash -s -- prepare" "bash -s -- apply" "video-worker.php${q} --check" "bash -s -- install" "bash -s -- release" && ! grep -q "bash -s -- remove" "$sim/log" && grep -qx "HOLD=released" "$sim/v2.out"'
+SIM_WORKER_MODE=inactive
+: > "$sim/log"
+run_job deploy.sh "$sim/v3.out"; code=$?
+ok "worker_mode inactive over an installed worker: only the tagged entry is removed, after readiness and before the release" '[ $code -eq 0 ] && grep -qx "CRON_ENTRY=removed" "$sim/v3.out" && [ "$(cat "$FAKE_CRON")" = "$others" ] && in_order "$sim/log" "video-worker.php${q} --check" "bash -s -- remove" "bash -s -- release" && grep -qx "VIDEO_WORKER=inactive" "$sim/v3.out" && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.hold" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ]'
+export FAKE_CRON_FAIL=1
+: > "$sim/log"
+run_job deploy.sh "$sim/v4.out"; code=$?
+unset FAKE_CRON_FAIL
+v_backup="$(backup_id_of "$sim/v4.out")"
+ok "worker_mode inactive with an unreadable crontab: fails, keeps the hold and pause, and changes no crontab line" '[ $code -ne 0 ] && grep -q "could not read the current crontab" "$sim/v4.out" && grep -q "could not be set for worker_mode=inactive; the hold and pause stay" "$sim/v4.out" && held "$sim/v4.out" && [ "$(cat "$FAKE_CRON")" = "$others" ] && ! grep -q "bash -s -- release" "$sim/log"'
+SIM_RECOVER="$v_backup"
+run_job deploy.sh "$sim/v5.out"; code=$?
+SIM_RECOVER=""
+ok "worker_mode inactive: a recovery deploy with recover_backup_id finishes and releases the hold, still with no worker entry" '[ $code -eq 0 ] && grep -qx "HOLD=adopted" "$sim/v5.out" && grep -qx "HOLD=released" "$sim/v5.out" && grep -qx "CRON_ENTRY=absent" "$sim/v5.out" && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.hold" ] && [ ! -e "$SIM_HOME/.rateb-ai/video-worker.pause" ] && [ "$(cat "$FAKE_CRON")" = "$others" ]'
+SIM_WORKER_MODE=bogus
+: > "$sim/log"
+run_job deploy.sh "$sim/v6.out"; code=$?
+ok "worker_mode: an unknown value is refused before connecting" '[ $code -ne 0 ] && grep -q "worker_mode must be inactive or active" "$sim/v6.out" && [ ! -s "$sim/log" ]'
+SIM_WORKER_MODE=active
 
 ok "no output or log contains the database password or a client id" '! grep -rqF -e "$RATEB_TEST_DB_PASS" -e "$SIM_CLIENT_ID" -e "$PROD_CLIENT_ID" "$sim"/*.out "$sim/log"'
 
