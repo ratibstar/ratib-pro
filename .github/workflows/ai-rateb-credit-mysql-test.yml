@@ -126,6 +126,22 @@ jobs:
           echo "${version%%$'\n'*}"
           echo "RATEB_TEST_FFMPEG_NO_DRAWTEXT=$bin" >> "$GITHUB_ENV"
 
+      # TEMPORARY: explains the paid-plan watermark-corner pixel count. Remove with tests/diag/.
+      - name: Diagnose the paid-plan watermark corner (temporary)
+        continue-on-error: true
+        env:
+          RATEB_DIAG_DIR: ${{ runner.temp }}/paid-corner-diag
+        run: RATEB_DIAG_SYSTEM_FFMPEG="$(command -v ffmpeg)" php tests/diag/paid-corner.php
+
+      - name: Upload the paid-plan corner diagnostic (temporary)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paid-corner-diag
+          path: ${{ runner.temp }}/paid-corner-diag
+          if-no-files-found: warn
+          retention-days: 5
+
       - name: PHP syntax check
         run: |
           failures=0
