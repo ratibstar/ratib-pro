@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       task:
-        description: "deploy uploads the application files. verify checks secrets. generate calls the live text provider. diagnose checks the server video tools."
+        description: "deploy checks every server file against the approved baseline, backs up what it replaces, then uploads the application files. verify checks secrets. generate calls the live text provider. diagnose checks the server video tools. worker-off removes the video worker cron entry and waits for a running pass to finish. rollback stops the worker and restores a deploy backup (set backup_id)."
         required: true
         default: deploy
         type: choice
@@ -13,6 +13,38 @@ on:
           - verify
           - generate
           - diagnose
+          - worker-off
+          - rollback
+      baseline:
+        description: "deploy: the commit whose files production is approved to hold now. Any server file matching neither this commit nor the commit being deployed stops the deploy before anything changes."
+        required: false
+        default: 3b137c24168eb0bc21606d3f92a69122c5b5335b
+      accept_generated_config_change:
+        description: "deploy: allow configuration files written from secrets (config/google.php, config/*.local.php) to replace server copies with different content. Use only when a secret was rotated on purpose."
+        required: false
+        type: boolean
+        default: false
+      recover_backup_id:
+        description: "deploy: only after a deploy stopped midway and left the worker hold. The ROLLBACK_BACKUP_ID that deploy printed (the backup the hold records); lets this deploy take the hold over, finish, and release it. Without it a deploy refuses to start while a hold is in place."
+        required: false
+        default: ""
+      worker_mode:
+        description: "deploy: inactive (default) installs and checks the worker files but leaves no video worker cron entry (an existing one is removed), so no video is processed. active installs the cron entry. To switch the worker on later, run deploy again with active on the same commit."
+        required: false
+        type: choice
+        default: inactive
+        options:
+          - inactive
+          - active
+      backup_id:
+        description: "rollback: the ROLLBACK_BACKUP_ID printed by the deploy."
+        required: false
+        default: ""
+      rollback_allow_mismatch:
+        description: "rollback: restore even if files changed after the deploy (they are backed up first)."
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -63,17 +95,23 @@ jobs:
     if: github.event.inputs.task == 'deploy'
     runs-on: ubuntu-latest
     environment: rateb.sa
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-      - name: Upload plans, image, and video engine
+      - name: Check, back up, and replace the application files
         env:
           DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
           DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
           DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+          DEPLOY_BASELINE: ${{ github.event.inputs.baseline }}
+          DEPLOY_ACCEPT_GENERATED: ${{ github.event.inputs.accept_generated_config_change }}
+          DEPLOY_RECOVER_BACKUP_ID: ${{ github.event.inputs.recover_backup_id }}
+          DEPLOY_WORKER_MODE: ${{ github.event.inputs.worker_mode }}
           RATEB_GOOGLE_CLIENT_ID: ${{ secrets.RATEB_GOOGLE_CLIENT_ID }}
           RATEB_GITHUB_CLIENT_SECRET: ${{ secrets.RATEB_GITHUB_CLIENT_SECRET }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -86,6 +124,17 @@ jobs:
             echo "::error::DEPLOY_SSH_HOST, DEPLOY_SSH_USER, and DEPLOY_SSH_PRIVATE_KEY must be set in the rateb.sa environment"
             exit 1
           fi
+          RECOVER="${DEPLOY_RECOVER_BACKUP_ID:-}"
+          if [ -n "$RECOVER" ] && ! [[ "$RECOVER" =~ ^[0-9]{8}T[0-9]{6}Z-[0-9]+$ ]]; then
+            echo "::error::recover_backup_id must be the ROLLBACK_BACKUP_ID printed by the deploy that stopped midway."
+            exit 1
+          fi
+          WORKER_MODE="${DEPLOY_WORKER_MODE:-inactive}"
+          if [ "$WORKER_MODE" != "inactive" ] && [ "$WORKER_MODE" != "active" ]; then
+            echo "::error::worker_mode must be inactive or active."
+            exit 1
+          fi
+          echo "WORKER_MODE=${WORKER_MODE}"
           python3 - << 'PY'
           import os, stat, tempfile
           key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "").strip()
@@ -105,7 +154,47 @@ jobs:
           KEY="$(cat "${RUNNER_TEMP}/ai-deploy-key-path")"
           PORT="${DEPLOY_SSH_PORT:-22}"
           SSH=(ssh -i "$KEY" -p "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
           REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          RUN="${GITHUB_RUN_ID}"
+          WORK=".rateb-ai/deploy-${RUN}"
+          BUNDLE="${RUNNER_TEMP}/ai-bundle"
+          # cron starts the worker with a bare environment; the preflight and the readiness
+          # check run under the same one so they test what cron will use.
+          CRON_ENV='env -i HOME="$HOME" LOGNAME="$(id -un)" USER="$(id -un)" SHELL=/bin/sh PATH=/usr/bin:/bin'
+          WORK_SET=0
+          PAUSED=0
+          PAUSE_KEEP=0
+          HOLD=0
+          BACKUP_ID=""
+          # The trap never removes the hold; only the guard does (deploy-guard.sh release after a
+          # successful deploy, or apply when it set the hold itself and nothing was replaced).
+          # The pause this run set is cleared only when no hold may be in place (HOLD=0) and no
+          # worker pass was left running (PAUSE_KEEP=0). Once a file may have been replaced, or a
+          # hold from an earlier deploy or rollback is in place, the pause and the hold stay: the
+          # worker must not run against a mix of old and new files until a deploy succeeds or
+          # task=rollback restores the backup.
+          cleanup() {
+            if [ "$WORK_SET" = "1" ]; then
+              "${SSH[@]}" "$REMOTE" "rm -rf '${WORK}'" || true
+            fi
+            if [ "$HOLD" = "1" ]; then
+              echo "VIDEO_WORKER_HOLD=kept"
+              echo "VIDEO_WORKER_PAUSE=kept"
+              if [ -n "$RECOVER" ]; then
+                echo "::error::Application files may be partly replaced. The video worker stays stopped by ~/.rateb-ai/video-worker.hold until a deploy run with recover_backup_id=${RECOVER} succeeds, or run task=rollback with backup_id=${RECOVER} (set rollback_allow_mismatch if files of a newer deploy are reported as MISMATCH)."
+              else
+                echo "::error::Application files may be partly replaced. The video worker stays stopped by ~/.rateb-ai/video-worker.hold until a deploy run with recover_backup_id=${BACKUP_ID:-unknown} succeeds, or run task=rollback with backup_id=${BACKUP_ID:-unknown}."
+              fi
+            elif [ "$PAUSED" = "1" ] && [ "$PAUSE_KEEP" = "1" ]; then
+              echo "VIDEO_WORKER_PAUSE=kept"
+            elif [ "$PAUSED" = "1" ]; then
+              "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.pause"' || true
+              echo "VIDEO_WORKER_PAUSE=cleared"
+            fi
+            rm -rf "$KEY" "$BUNDLE"
+          }
+          trap cleanup EXIT
           INDICATED="/home/admin/domains/ai.rateb.sa"
           TARGET=""
           for candidate in "$INDICATED" "${INDICATED}/public_html" "${INDICATED}/private_html"; do
@@ -116,143 +205,356 @@ jobs:
           done
           if [ -z "$TARGET" ]; then
             echo "::error::app/plans.php was not found in the indicated domain directory or its public_html or private_html child"
-            rm -f "$KEY"
             exit 1
           fi
           echo "COMMIT=${GITHUB_SHA}"
           echo "TARGET=${TARGET}"
-          files=(
-            "app/plans.php"
-            "app/schema.php"
-            "app/ai/generate.php"
-            "app/idea.php"
-            "app/ai/image.php"
-            "app/ai/voice.php"
-            "app/ai/video.php"
-            "app/ai/video-status.php"
-            "app/video/engine.php"
-            "app/video/provider.php"
-            "public/assets/js/app.js"
-            "public/assets/css/app.css"
-            "app/media/upload.php"
-            "app/media/library.php"
-            "campaign.php"
-            "dashboard.php"
-            "campaign-copy.php"
-            "campaign-new.php"
-            "brand.php"
-            "index.php"
-            "app/auth/login.php"
-            "app/auth/register.php"
-            "app/auth/google.php"
-            "app/auth/github.php"
-            "config/google.php"
-            "config/github.php"
-            "config/ai.php"
-            "app/payment/webhook.php"
-            "app/payment/checkout.php"
-            "config/guard.php"
-            "app/brand/library.php"
-            "app/nav.php"
-          )
-          for rel in "${files[@]}"; do
-            local_file="ai-rateb-sa-source/${rel}"
-            local_sum="$(sha256sum "$local_file" | awk '{print $1}')"
-            "${SSH[@]}" "$REMOTE" "mkdir -p '${TARGET}/$(dirname "$rel")'"
-            scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-              "$local_file" "${REMOTE}:${TARGET}/${rel}"
-            remote_sum="$("${SSH[@]}" "$REMOTE" "php -r \"echo hash_file('sha256', '${TARGET}/${rel}');\"")"
-            echo "FILE=${rel}"
-            echo "LOCAL_SHA256=${local_sum}"
-            echo "REMOTE_SHA256=${remote_sum}"
-            if [ "$local_sum" != "$remote_sum" ]; then
-              echo "::error::Checksum mismatch for ${rel}"
-              rm -f "$KEY"
-              exit 1
+
+          # The bundle: every file to write, its sha256, and the server contents it may replace
+          # (the approved baseline commit or this deploy's own version), built on the runner.
+          accept=()
+          if [ "${DEPLOY_ACCEPT_GENERATED:-false}" = "true" ]; then
+            accept=(--accept-generated-change)
+          fi
+          rm -rf "$BUNDLE"
+          python3 ai-rateb-sa-source/ops/deploy-manifest.py --baseline "${DEPLOY_BASELINE:-}" --out "$BUNDLE" "${accept[@]}"
+          boot_allowed="$(sed -n 's/^BOOTSTRAP_SHA256=//p' "$BUNDLE/deploy.env")"
+          media_root="$(sed -n 's/^MEDIA_ROOT=//p' "$BUNDLE/deploy.env")"
+
+          # 1. Preflight from a private folder, under cron's environment. Nothing in the web root changes.
+          "${SSH[@]}" "$REMOTE" "mkdir -p .rateb-ai && chmod 700 .rateb-ai && rm -rf '${WORK}' && mkdir -m 700 '${WORK}'"
+          WORK_SET=1
+          "${SCP[@]}" ai-rateb-sa-source/ops/preflight.php "${REMOTE}:${WORK}/preflight.php"
+          "${SCP[@]}" ai-rateb-sa-source/app/video/runtime.php "${REMOTE}:${WORK}/runtime.php"
+          "${SCP[@]}" "$BUNDLE/bundle.tar.gz" "${REMOTE}:${WORK}/bundle.tar.gz"
+          "${SCP[@]}" "$BUNDLE/bundle.sha256" "${REMOTE}:${WORK}/bundle.sha256"
+          set +e
+          preflight_out="$("${SSH[@]}" "$REMOTE" "${CRON_ENV} /usr/local/bin/php '${WORK}/preflight.php' --cron-env --target='${TARGET}' --runtime='${WORK}/runtime.php' --media-root='${media_root}' --bootstrap-sha256=${boot_allowed}" 2>&1)"
+          preflight_code=$?
+          set -e
+          grep -E '^PREFLIGHT_[A-Z0-9_]+=' <<< "$preflight_out" || true
+          if [ "$preflight_code" -ne 0 ] || ! grep -qx 'PREFLIGHT_OK=yes' <<< "$preflight_out"; then
+            echo "::error::Preflight failed; no application file was changed."
+            exit 1
+          fi
+
+          # 2. Compare every target file with the manifest, then back up and verify. Still no change.
+          set +e
+          guard_out="$("${SSH[@]}" "$REMOTE" "bash -s -- prepare '${TARGET}' '${RUN}' '${RECOVER}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
+          guard_code=$?
+          set -e
+          grep -E '^(DRIFT|BACKUP|HOLD|GUARD)[A-Z_]*=' <<< "$guard_out" || true
+          if grep -qx 'HOLD=kept' <<< "$guard_out"; then
+            echo "::error::A worker hold left by an earlier deploy or rollback is in place; no application file was changed, and the hold and pause stay. Run task=rollback, or deploy with recover_backup_id set to the HOLD_ID above."
+            exit 1
+          fi
+          if [ "$guard_code" -ne 0 ] || ! grep -qx 'DRIFT_OK=yes' <<< "$guard_out" || ! grep -qx 'BACKUP_VERIFIED=yes' <<< "$guard_out"; then
+            echo "::error::A production file differs from the approved baseline, or the backup could not be verified; no application file was changed."
+            exit 1
+          fi
+          BACKUP_ID="$(sed -n 's/^BACKUP_ID=//p' <<< "$guard_out" | tail -n 1)"
+          if ! [[ "$BACKUP_ID" =~ ^[0-9]{8}T[0-9]{6}Z-[0-9]+$ ]]; then
+            echo "::error::The guard reported no backup id; no application file was changed."
+            exit 1
+          fi
+          echo "ROLLBACK_BACKUP_ID=${BACKUP_ID}"
+          if [ -n "$RECOVER" ]; then
+            echo "ORIGINAL_BACKUP_ID=${RECOVER}"
+          fi
+
+          # 3. Pause, wait for a worker pass that started before the pause, then swap the staged
+          # files in (libraries first). The guard sets the hold first.
+          "${SSH[@]}" "$REMOTE" 'touch "$HOME/.rateb-ai/video-worker.pause"'
+          PAUSED=1
+          echo "VIDEO_WORKER_PAUSE=set"
+          set +e
+          wait_out="$("${SSH[@]}" "$REMOTE" "bash -s -- wait 540" < ai-rateb-sa-source/ops/video-cron.sh 2>&1)"
+          wait_code=$?
+          set -e
+          grep -E '^(VIDEO_WORKER_RUNNING|CRON)=' <<< "$wait_out" || true
+          if [ "$wait_code" -ne 0 ] || ! grep -qx 'VIDEO_WORKER_RUNNING=0' <<< "$wait_out"; then
+            PAUSE_KEEP=1
+            echo "::error::A video worker pass was still running after 540 seconds; no application file was changed. The pause stays (it expires on its own after 15 minutes)."
+            exit 1
+          fi
+          HOLD=1
+          set +e
+          apply_out="$("${SSH[@]}" "$REMOTE" "bash -s -- apply '${TARGET}' '${RUN}' '${BACKUP_ID}' '${RECOVER}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
+          apply_code=$?
+          set -e
+          grep -E '^(APPLIED|UNCHANGED|FILES_CHANGED|APPLY_OK|HOLD|HOLD_ID|GUARD)=' <<< "$apply_out" || true
+          if [ "$apply_code" -ne 0 ] || ! grep -qx 'APPLY_OK=yes' <<< "$apply_out"; then
+            # HOLD=cleared is printed only when the guard removed a hold it set itself.
+            if grep -qx 'FILES_CHANGED=0' <<< "$apply_out" && grep -qx 'HOLD=cleared' <<< "$apply_out"; then
+              HOLD=0
+              echo "::error::Replacing files stopped before any file changed."
+            elif grep -qx 'FILES_CHANGED=0' <<< "$apply_out"; then
+              echo "::error::Replacing files stopped before any file changed, but a hold from an earlier deploy or rollback is in place; the hold and pause stay."
+            else
+              echo "::error::Replacing files stopped after some files changed."
             fi
-          done
-          if [ -n "${RATEB_GOOGLE_CLIENT_ID:-}" ]; then
-            python3 - << 'PY'
-          import os
-          from pathlib import Path
-          cid = os.environ.get("RATEB_GOOGLE_CLIENT_ID", "").replace("\\", "\\\\").replace("'", "\\'")
-          Path(os.environ["RUNNER_TEMP"], "google-client.php").write_text(
-              "<?php\ndeclare(strict_types=1);\nreturn ['client_id' => '" + cid + "'];\n",
-              encoding="utf-8",
-          )
-          PY
-            scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-              "${RUNNER_TEMP}/google-client.php" "${REMOTE}:${TARGET}/config/google.php"
-            echo "GOOGLE_CLIENT=written"
-          else
-            echo "GOOGLE_CLIENT=not_set"
+            exit 1
           fi
-          if [ -n "${RATEB_GITHUB_CLIENT_SECRET:-}" ]; then
-            python3 - << 'PY'
-          import os
-          from pathlib import Path
-          secret = os.environ.get("RATEB_GITHUB_CLIENT_SECRET", "").replace("\\", "\\\\").replace("'", "\\'")
-          Path(os.environ["RUNNER_TEMP"], "github-local.php").write_text(
-              "<?php\ndeclare(strict_types=1);\nreturn ['client_secret' => '" + secret + "'];\n",
-              encoding="utf-8",
-          )
-          PY
-            scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-              "${RUNNER_TEMP}/github-local.php" "${REMOTE}:${TARGET}/config/github.local.php"
-            echo "GITHUB_SECRET=written"
-          else
-            echo "GITHUB_SECRET=not_set"
-          fi
-          python3 - << 'PY'
-          import os
-          from pathlib import Path
-          keys = {
-              "deepseek_api_key": os.environ.get("DEEPSEEK_API_KEY", ""),
-              "sawtak_api_key": os.environ.get("SAWTAK_API_KEY", ""),
-              "horde_api_key": os.environ.get("HORDE_API_KEY", ""),
-              "moyasar_secret_key": os.environ.get("MOYASAR_SECRET_KEY", ""),
-          }
-          present = {name: value for name, value in keys.items() if value}
-          print("AI_LOCAL_KEYS=" + ",".join(present) if present else "AI_LOCAL_KEYS=none")
-          if not present:
-              raise SystemExit(0)
-          def php(value: str) -> str:
-              return value.replace("\\", "\\\\").replace("'", "\\'")
-          body = "<?php\ndeclare(strict_types=1);\nreturn [\n"
-          for name, value in present.items():
-              body += f"    '{name}' => '{php(value)}',\n"
-          body += "];\n"
-          Path(os.environ["RUNNER_TEMP"], "ai-local.php").write_text(body, encoding="utf-8")
-          PY
-          if [ -f "${RUNNER_TEMP}/ai-local.php" ]; then
-            scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-              "${RUNNER_TEMP}/ai-local.php" "${REMOTE}:${TARGET}/config/ai.local.php"
-            echo "AI_LOCAL=written"
-          fi
-          echo "DEPLOYED_COMMIT=${GITHUB_SHA}"
-          echo "DEPLOYED_TARGET=${TARGET}"
-          python3 - << 'PY'
-          import os
-          from pathlib import Path
-          Path(os.environ["RUNNER_TEMP"], "opcache-reset.php").write_text(
+
+          # 4. Clear opcache for the replaced files, then confirm the worker is CLI only and ready.
+          python3 - "$BUNDLE/opcache.txt" "${RUNNER_TEMP}/opcache-reset.php" << 'PY'
+          import json, sys
+          rels = [line.strip() for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
+          open(sys.argv[2], "w", encoding="utf-8", newline="\n").write(
               "<?php\n"
               "if (function_exists('opcache_invalidate')) {\n"
-              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/voice.php','app/ai/video.php','app/ai/video-status.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php'] as $rel) {\n"
+              "    foreach (" + json.dumps(rels) + " as $rel) {\n"
               "        opcache_invalidate(__DIR__ . '/' . $rel, true);\n"
               "    }\n"
               "}\n"
-              "echo 'ok';\n",
-              encoding="utf-8",
+              "echo 'ok';\n"
           )
           PY
-          reset_name="opcache-${GITHUB_RUN_ID}.php"
-          scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-            "${RUNNER_TEMP}/opcache-reset.php" "${REMOTE}:${TARGET}/${reset_name}"
+          reset_name="opcache-${RUN}.php"
+          "${SCP[@]}" "${RUNNER_TEMP}/opcache-reset.php" "${REMOTE}:${TARGET}/${reset_name}"
           reset_code="$(curl -sS -o "${RUNNER_TEMP}/opcache-body.txt" -w '%{http_code}' --max-time 15 "https://ai.rateb.sa/${reset_name}" || true)"
           echo "OPCACHE_HTTP=${reset_code}"
           echo "OPCACHE_BODY=$(cat "${RUNNER_TEMP}/opcache-body.txt" 2>/dev/null || true)"
           "${SSH[@]}" "$REMOTE" "rm -f '${TARGET}/${reset_name}'"
-          rm -f "$KEY"
+          worker_http="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://ai.rateb.sa/cron/video-worker.php" || true)"
+          echo "WORKER_HTTP=${worker_http}"
+          if [ "$worker_http" = "200" ]; then
+            echo "::error::cron/video-worker.php answered over HTTP; it must be CLI only."
+            exit 1
+          fi
+          set +e
+          check_out="$("${SSH[@]}" "$REMOTE" "${CRON_ENV} /usr/local/bin/php '${TARGET}/cron/video-worker.php' --check" 2>&1)"
+          check_code=$?
+          set -e
+          grep -E '^WORKER_[A-Z_]+=|video-worker ' <<< "$check_out" || true
+          if [ "$check_code" -ne 0 ] || ! grep -qx 'WORKER_READY=yes' <<< "$check_out"; then
+            echo "::error::The video worker readiness check failed; the cron entry was not installed or changed."
+            exit 1
+          fi
+
+          # 5. Set the worker cron entry for worker_mode while the hold still blocks every pass:
+          # active installs it; inactive removes only the tagged entry, so no pass starts after
+          # the release. Every other crontab line stays as it was. Then release the hold (only if
+          # this deploy set or took it over) and the pause.
+          set +e
+          if [ "$WORKER_MODE" = "active" ]; then
+            cron_out="$("${SSH[@]}" "$REMOTE" "bash -s -- install '${TARGET}'" < ai-rateb-sa-source/ops/video-cron.sh 2>&1)"
+          else
+            cron_out="$("${SSH[@]}" "$REMOTE" "bash -s -- remove" < ai-rateb-sa-source/ops/video-cron.sh 2>&1)"
+          fi
+          cron_code=$?
+          set -e
+          grep -E '^CRON[A-Z_]*=' <<< "$cron_out" || true
+          if [ "$WORKER_MODE" = "active" ]; then
+            cron_want='CRON_ENTRY=installed'
+          else
+            cron_want='CRON_ENTRY=(removed|absent)'
+          fi
+          if [ "$cron_code" -ne 0 ] || ! grep -qxE "$cron_want" <<< "$cron_out"; then
+            echo "::error::The video worker cron entry could not be set for worker_mode=${WORKER_MODE}; the hold and pause stay."
+            exit 1
+          fi
+          set +e
+          release_out="$("${SSH[@]}" "$REMOTE" "bash -s -- release '${RUN}' '${BACKUP_ID}' '${RECOVER}'" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
+          release_code=$?
+          set -e
+          grep -E '^(HOLD|GUARD)=' <<< "$release_out" || true
+          if [ "$release_code" -ne 0 ] || ! grep -qxE 'HOLD=(released|absent)' <<< "$release_out"; then
+            echo "::error::The hold in place was not set by this deploy, so it was not released."
+            exit 1
+          fi
+          HOLD=0
+          "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.pause"'
+          PAUSED=0
+          echo "VIDEO_WORKER_HOLD=cleared"
+          echo "VIDEO_WORKER_PAUSE=cleared"
+          echo "VIDEO_WORKER=${WORKER_MODE}"
+          echo "DEPLOYED_COMMIT=${GITHUB_SHA}"
+          echo "DEPLOYED_TARGET=${TARGET}"
+
+  worker-off:
+    name: Stop the ai.rateb.sa video worker
+    if: github.event.inputs.task == 'worker-off'
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Remove the cron entry and wait for a running pass
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
+            echo "::error::DEPLOY_SSH_HOST, DEPLOY_SSH_USER, and DEPLOY_SSH_PRIVATE_KEY must be set in the rateb.sa environment"
+            exit 1
+          fi
+          python3 - << 'PY'
+          import os, stat, tempfile
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          fd, path = tempfile.mkstemp(prefix="ai-off-", suffix=".pem")
+          os.close(fd)
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key if key.endswith("\n") else key + "\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          open(os.path.join(os.environ["RUNNER_TEMP"], "ai-off-key-path"), "w", encoding="utf-8").write(path)
+          PY
+          KEY="$(cat "${RUNNER_TEMP}/ai-off-key-path")"
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          SSH=(ssh -i "$KEY" -p "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          trap 'rm -f "$KEY"' EXIT
+          # The pause file stops new passes at once, before the crontab changes. If a later step
+          # fails it is left in place; it expires on its own after 15 minutes. A hold left by a
+          # stopped deploy is not touched.
+          "${SSH[@]}" "$REMOTE" 'mkdir -p "$HOME/.rateb-ai" && chmod 700 "$HOME/.rateb-ai" && touch "$HOME/.rateb-ai/video-worker.pause"'
+          echo "VIDEO_WORKER_PAUSE=set"
+          "${SSH[@]}" "$REMOTE" "bash -s -- remove" < ai-rateb-sa-source/ops/video-cron.sh
+          if ! "${SSH[@]}" "$REMOTE" "bash -s -- wait 540" < ai-rateb-sa-source/ops/video-cron.sh; then
+            echo "::error::The cron entry is removed, but a worker pass is still running. Run worker-off again and roll back only after it reports VIDEO_WORKER=stopped."
+            exit 1
+          fi
+          "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.pause"'
+          echo "VIDEO_WORKER_PAUSE=cleared"
+          echo "VIDEO_WORKER_HOLD=$("${SSH[@]}" "$REMOTE" 'test -e "$HOME/.rateb-ai/video-worker.hold" && echo present || echo absent')"
+          echo "VIDEO_WORKER=stopped"
+
+  rollback:
+    name: Restore ai.rateb.sa files from a deploy backup
+    if: github.event.inputs.task == 'rollback'
+    runs-on: ubuntu-latest
+    environment: rateb.sa
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Stop the worker, then restore the backup
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+          ROLLBACK_BACKUP_ID: ${{ github.event.inputs.backup_id }}
+          ROLLBACK_ALLOW_MISMATCH: ${{ github.event.inputs.rollback_allow_mismatch }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
+            echo "::error::DEPLOY_SSH_HOST, DEPLOY_SSH_USER, and DEPLOY_SSH_PRIVATE_KEY must be set in the rateb.sa environment"
+            exit 1
+          fi
+          if ! [[ "${ROLLBACK_BACKUP_ID:-}" =~ ^[0-9]{8}T[0-9]{6}Z-[0-9]+$ ]]; then
+            echo "::error::Set backup_id to the ROLLBACK_BACKUP_ID line printed by the deploy."
+            exit 1
+          fi
+          python3 - << 'PY'
+          import os, stat, tempfile
+          key = os.environ.get("DEPLOY_SSH_PRIVATE_KEY", "").strip()
+          if "\\n" in key and "\n" not in key:
+              key = key.replace("\\n", "\n")
+          fd, path = tempfile.mkstemp(prefix="ai-rollback-", suffix=".pem")
+          os.close(fd)
+          with open(path, "w", encoding="utf-8", newline="\n") as handle:
+              handle.write(key if key.endswith("\n") else key + "\n")
+          os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
+          open(os.path.join(os.environ["RUNNER_TEMP"], "ai-rollback-key-path"), "w", encoding="utf-8").write(path)
+          PY
+          KEY="$(cat "${RUNNER_TEMP}/ai-rollback-key-path")"
+          PORT="${DEPLOY_SSH_PORT:-22}"
+          SSH=(ssh -i "$KEY" -p "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          SCP=(scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new)
+          REMOTE="${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
+          HELD=0
+          cleanup() {
+            if [ "$HELD" = "1" ]; then
+              echo "VIDEO_WORKER_HOLD=kept"
+              echo "::error::The rollback did not finish. The video worker stays stopped by ~/.rateb-ai/video-worker.hold."
+            fi
+            rm -f "$KEY"
+          }
+          trap cleanup EXIT
+          INDICATED="/home/admin/domains/ai.rateb.sa"
+          TARGET=""
+          for candidate in "$INDICATED" "${INDICATED}/public_html" "${INDICATED}/private_html"; do
+            if "${SSH[@]}" "$REMOTE" "test -f '${candidate}/app/plans.php'"; then
+              TARGET="$candidate"
+              break
+            fi
+          done
+          if [ -z "$TARGET" ]; then
+            echo "::error::app/plans.php was not found in the indicated domain directory"
+            exit 1
+          fi
+          echo "TARGET=${TARGET}"
+          echo "BACKUP_ID=${ROLLBACK_BACKUP_ID}"
+          # Stop the worker before any file changes: hold and pause first, then remove the cron
+          # entry and wait for a running pass. A hold already in place is kept as it is; a
+          # successful restore is what releases it. A symbolic link where the hold goes (even a
+          # dangling one) is refused before anything changes and is never written through;
+          # noclobber also refuses one that appears between the check and the write.
+          set +e
+          hold_out="$("${SSH[@]}" "$REMOTE" "mkdir -p \"\$HOME/.rateb-ai\" && chmod 700 \"\$HOME/.rateb-ai\" && if [ -L \"\$HOME/.rateb-ai/video-worker.hold\" ]; then echo HOLD=symlink; exit 1; fi && touch \"\$HOME/.rateb-ai/video-worker.pause\" && { [ -e \"\$HOME/.rateb-ai/video-worker.hold\" ] || (set -C && printf 'restore=%s\n' '${ROLLBACK_BACKUP_ID}' > \"\$HOME/.rateb-ai/video-worker.hold\"); }" 2>&1)"
+          hold_code=$?
+          set -e
+          if [ "$hold_code" -ne 0 ]; then
+            if grep -qx 'HOLD=symlink' <<< "$hold_out"; then
+              echo "::error::~/.rateb-ai/video-worker.hold is a symbolic link. It was not followed or written through, and nothing changed. Check where it points, remove it by hand, then run the rollback again."
+            else
+              echo "::error::The worker hold could not be set; nothing was restored."
+            fi
+            exit 1
+          fi
+          HELD=1
+          echo "VIDEO_WORKER_HOLD=set"
+          "${SSH[@]}" "$REMOTE" "bash -s -- remove" < ai-rateb-sa-source/ops/video-cron.sh
+          if ! "${SSH[@]}" "$REMOTE" "bash -s -- wait 540" < ai-rateb-sa-source/ops/video-cron.sh; then
+            echo "::error::A worker pass is still running; no file was restored. Run the rollback again."
+            exit 1
+          fi
+          allow=""
+          if [ "${ROLLBACK_ALLOW_MISMATCH:-false}" = "true" ]; then
+            allow="--allow-mismatch"
+          fi
+          set +e
+          restore_out="$("${SSH[@]}" "$REMOTE" "bash -s -- restore '${TARGET}' '${ROLLBACK_BACKUP_ID}' ${allow}" < ai-rateb-sa-source/ops/deploy-guard.sh 2>&1)"
+          restore_code=$?
+          set -e
+          grep -E '^(ROLLBACK|BACKUP|PRE_RESTORE|RESTORED|REMOVED|HOLD|GUARD)[A-Z_]*=' <<< "$restore_out" || true
+          if [ "$restore_code" -ne 0 ] || ! grep -qx 'ROLLBACK_OK=yes' <<< "$restore_out"; then
+            echo "::error::The backup was not restored."
+            exit 1
+          fi
+          sed -n 's/^BACKUP_FILE=//p' <<< "$("${SSH[@]}" "$REMOTE" "bash -s -- list '${ROLLBACK_BACKUP_ID}'" < ai-rateb-sa-source/ops/deploy-guard.sh)" | grep '\.php$' > "${RUNNER_TEMP}/rollback-opcache.txt" || true
+          python3 - "${RUNNER_TEMP}/rollback-opcache.txt" "${RUNNER_TEMP}/opcache-reset.php" << 'PY'
+          import json, sys
+          rels = [line.strip() for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
+          open(sys.argv[2], "w", encoding="utf-8", newline="\n").write(
+              "<?php\n"
+              "if (function_exists('opcache_invalidate')) {\n"
+              "    foreach (" + json.dumps(rels) + " as $rel) {\n"
+              "        opcache_invalidate(__DIR__ . '/' . $rel, true);\n"
+              "    }\n"
+              "}\n"
+              "echo 'ok';\n"
+          )
+          PY
+          reset_name="opcache-${GITHUB_RUN_ID}.php"
+          "${SCP[@]}" "${RUNNER_TEMP}/opcache-reset.php" "${REMOTE}:${TARGET}/${reset_name}"
+          reset_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://ai.rateb.sa/${reset_name}" || true)"
+          echo "OPCACHE_HTTP=${reset_code}"
+          "${SSH[@]}" "$REMOTE" "rm -f '${TARGET}/${reset_name}'"
+          "${SSH[@]}" "$REMOTE" 'rm -f "$HOME/.rateb-ai/video-worker.hold" "$HOME/.rateb-ai/video-worker.pause"'
+          HELD=0
+          echo "VIDEO_WORKER_HOLD=cleared"
+          echo "VIDEO_WORKER=removed"
+          echo "ROLLBACK=done"
 
   diagnose:
     name: Diagnose ai.rateb.sa video tools
@@ -329,6 +631,15 @@ jobs:
           $out['ffmpeg_used'] = $ffmpeg;
           $media = '/home/admin/.campaign-media';
           $out['media_root'] = is_dir($media) ? (is_writable($media) ? 'exists, writable' : 'exists, NOT writable') : 'missing';
+          foreach (['RATEB_AI_DB_PASSWORD', 'RATEB_VIDEO_PROVIDER', 'RUNWAY_API_KEY', 'RATEB_PRIVATE_VIDEO_URL', 'RATEB_PRIVATE_VIDEO_TOKEN'] as $name) {
+              $value = getenv($name);
+              $out['fpm_getenv_' . $name] = ($value !== false && $value !== '') ? 'SET' : 'NOT_SET';
+              $out['fpm_server_' . $name] = !empty($_SERVER[$name]) ? 'SET' : 'NOT_SET';
+          }
+          $provider = strtolower(trim((string) getenv('RATEB_VIDEO_PROVIDER')));
+          $out['fpm_video_provider_choice'] = in_array($provider, ['', 'runway', 'private'], true) ? ($provider === '' ? '(default)' : $provider) : '(other)';
+          $dbConfig = (string) @file_get_contents(__DIR__ . '/config/database.php');
+          $out['database_config_reads_env'] = str_contains($dbConfig, 'RATEB_AI_DB_PASSWORD') ? 'yes' : 'no';
           $run = static function (string $cmd): array {
               $start = microtime(true);
               $p = @proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
@@ -347,11 +658,16 @@ jobs:
               if ($v['code'] !== 0) {
                   $out['ffmpeg_version_err'] = substr($v['err'], -600);
               }
+              $listed = static fn (string $list, string $name): bool => preg_match('/^\s*\S+\s+' . preg_quote($name, '/') . '\s/m', $list) === 1;
               $enc = $run(escapeshellarg($ffmpeg) . ' -hide_banner -encoders');
               $out['libx264'] = str_contains($enc['out'], 'libx264') ? 'yes' : 'NO';
+              $out['aac'] = $listed($enc['out'], 'aac') ? 'yes' : 'NO';
+              $dec = $run(escapeshellarg($ffmpeg) . ' -hide_banner -decoders');
+              $out['png_decoder'] = $listed($dec['out'], 'png') ? 'yes' : 'NO';
               $flt = $run(escapeshellarg($ffmpeg) . ' -hide_banner -filters');
               $out['zoompan'] = str_contains($flt['out'], 'zoompan') ? 'yes' : 'NO';
-              $out['drawtext'] = str_contains($flt['out'], 'drawtext') ? 'yes' : 'NO';
+              $out['overlay'] = $listed($flt['out'], 'overlay') ? 'yes' : 'NO';
+              $out['drawtext'] = ($listed($flt['out'], 'drawtext') ? 'present' : 'absent') . ' (informational; the video watermark uses a GD PNG and overlay, not drawtext)';
               $tmp = sys_get_temp_dir() . '/rateb-probe-' . bin2hex(random_bytes(6));
               if (@mkdir($tmp, 0700)) {
                   $still = $tmp . '/still.jpg';
@@ -369,11 +685,23 @@ jobs:
                   if ($r['code'] !== 0) {
                       $out['camera_motion_clip_err'] = substr($r['err'], -1200);
                   }
-                  if (is_file($clip)) {
-                      $mark = "scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p,drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
-                      $w = $run(escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($clip) . ' -vf ' . escapeshellarg($mark)
-                          . ' -c:v libx264 -preset veryfast -crf 23 -an -movflags +faststart ' . escapeshellarg($marked));
-                      $out['watermark_pass'] = 'exit ' . $w['code'] . ', ' . $w['secs'] . 's, ' . (is_file($marked) ? filesize($marked) : 0) . ' bytes';
+                  if (is_file($clip) && !function_exists('imagescale')) {
+                      $out['watermark_pass'] = 'not run: GD is not available to draw the watermark PNG';
+                  } elseif (is_file($clip)) {
+                      $markPng = $tmp . '/mark.png';
+                      $label = 'RATEB AI';
+                      $small = imagecreatetruecolor(imagefontwidth(5) * strlen($label) + 12, imagefontheight(5) + 8);
+                      imagealphablending($small, false);
+                      imagefill($small, 0, 0, imagecolorallocatealpha($small, 0, 0, 0, 70));
+                      imagestring($small, 5, 6, 4, $label, imagecolorallocatealpha($small, 255, 255, 255, 0));
+                      $big = imagescale($small, imagesx($small) * 2, imagesy($small) * 2, IMG_NEAREST_NEIGHBOUR);
+                      imagealphablending($big, false);
+                      imagesavealpha($big, true);
+                      imagepng($big, $markPng);
+                      $graph = '[0:v]scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p[base];[base][1:v]overlay=x=W-w-24:y=H-h-24,format=yuv420p[v]';
+                      $w = $run(escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($clip) . ' -i ' . escapeshellarg($markPng) . ' -filter_complex ' . escapeshellarg($graph)
+                          . ' -map ' . escapeshellarg('[v]') . ' -c:v libx264 -preset veryfast -crf 23 -an -movflags +faststart ' . escapeshellarg($marked));
+                      $out['watermark_pass'] = 'exit ' . $w['code'] . ', ' . $w['secs'] . 's, ' . (is_file($marked) ? filesize($marked) : 0) . ' bytes (GD PNG + overlay)';
                       if ($w['code'] !== 0) {
                           $out['watermark_pass_err'] = substr($w['err'], -1200);
                       }
@@ -398,6 +726,100 @@ jobs:
           echo "CLI_PHP=$("${SSH[@]}" "$REMOTE" "command -v php || echo missing")"
           echo "CLI_DISABLE_FUNCTIONS=$("${SSH[@]}" "$REMOTE" "php -r 'echo ini_get(\"disable_functions\") ?: \"(none)\";'" || echo error)"
           echo "CLI_CRONTAB=$("${SSH[@]}" "$REMOTE" "command -v crontab || echo missing")"
+          echo "CLI_PHP_VERSION=$("${SSH[@]}" "$REMOTE" "/usr/local/bin/php -r 'echo PHP_VERSION, \" \", PHP_SAPI, \" pdo_mysql=\", extension_loaded(\"pdo_mysql\") ? \"yes\" : \"no\";'" || echo error)"
+          echo "CLI_ENV_RATEB_AI_DB_PASSWORD=$("${SSH[@]}" "$REMOTE" "/usr/local/bin/php -r 'echo getenv(\"RATEB_AI_DB_PASSWORD\") ? \"SET\" : \"NOT_SET\";'" || echo error)"
+          echo "CLI_ENV_RUNWAY_API_KEY=$("${SSH[@]}" "$REMOTE" "/usr/local/bin/php -r 'echo getenv(\"RUNWAY_API_KEY\") ? \"SET\" : \"NOT_SET\";'" || echo error)"
+          echo "HTACCESS_SETENV_NAMES=$("${SSH[@]}" "$REMOTE" "grep -ohE '^[[:space:]]*SetEnv[[:space:]]+[A-Za-z_]+' '${TARGET}/.htaccess' 2>/dev/null | awk '{print \$2}' | sort -u | tr '\n' ','" || true)"
+          echo "USER_INI_PRESENT=$("${SSH[@]}" "$REMOTE" "test -f '${TARGET}/.user.ini' && echo yes || echo no")"
+          echo "FPM_POOL_ENV_NAMES=$("${SSH[@]}" "$REMOTE" "for f in /usr/local/php83/etc/php-fpm.d/*.conf /usr/local/directadmin/data/users/admin/php/*.conf; do [ -r \"\$f\" ] && grep -ohE '^[[:space:]]*env\[[A-Za-z_]+\]' \"\$f\" | sed -E 's/.*env\[([A-Za-z_]+)\].*/\1/'; done 2>/dev/null | sort -u | tr '\n' ','" || true)"
+          echo "FPM_POOL_FILES_READABLE=$("${SSH[@]}" "$REMOTE" "n=0; for f in /usr/local/php83/etc/php-fpm.d/*.conf /usr/local/directadmin/data/users/admin/php/*.conf; do [ -r \"\$f\" ] && n=\$((n+1)); done; echo \$n" || true)"
+          echo "PROFILE_EXPORT_NAMES=$("${SSH[@]}" "$REMOTE" "grep -ohE '^[[:space:]]*export[[:space:]]+(RATEB_[A-Z_]+|RUNWAY_API_KEY)' ~/.bashrc ~/.bash_profile ~/.profile 2>/dev/null | awk '{print \$2}' | sort -u | tr '\n' ','" || true)"
+          echo "CRONTAB_LINES=$("${SSH[@]}" "$REMOTE" "crontab -l 2>/dev/null | grep -cv '^[[:space:]]*\(#\|\$\)' || true")"
+          echo "USER_INI_KEYS=$("${SSH[@]}" "$REMOTE" "grep -oE '^[[:space:]]*[A-Za-z_.]+[[:space:]]*=' '${TARGET}/.user.ini' 2>/dev/null | tr -d ' =' | sort -u | tr '\n' ','" || true)"
+          cat > "${RUNNER_TEMP}/prepend-check.php" << 'PHP'
+          <?php
+          $target = $argv[1] ?? '';
+          $ini = @parse_ini_file($target . '/.user.ini', false, INI_SCANNER_RAW) ?: [];
+          $file = trim((string) ($ini['auto_prepend_file'] ?? ''), " \"'");
+          echo 'PREPEND_DECLARED=', $file !== '' ? 'yes' : 'no', "\n";
+          if ($file === '') { exit(0); }
+          $real = realpath($file);
+          echo 'PREPEND_IS_FILE=', ($real !== false && is_file($real)) ? 'yes' : 'no', "\n";
+          echo 'PREPEND_UNDER_HOME=', ($real !== false && str_starts_with($real, '/home/admin/')) ? 'yes' : 'no', "\n";
+          echo 'PREPEND_INSIDE_DOCROOT=', ($real !== false && str_starts_with($real, rtrim((string) realpath($target), '/') . '/')) ? 'yes' : 'no', "\n";
+          if ($real === false) { exit(0); }
+          $calls = [];
+          foreach (token_get_all((string) file_get_contents($real)) as $t) {
+              if (is_array($t) && in_array($t[0], [T_STRING, T_EXIT, T_ECHO, T_PRINT, T_REQUIRE, T_REQUIRE_ONCE, T_INCLUDE, T_INCLUDE_ONCE], true)) {
+                  $name = strtolower($t[1]);
+                  if (in_array($name, ['putenv', 'header', 'session_start', 'exit', 'die', 'echo', 'print', 'require', 'require_once', 'include', 'include_once', 'ini_set', 'setcookie', 'ob_start'], true)) {
+                      $calls[$name] = ($calls[$name] ?? 0) + 1;
+                  }
+              }
+          }
+          ksort($calls);
+          echo 'PREPEND_CALLS=', http_build_query($calls, '', ','), "\n";
+          ob_start();
+          require $real;
+          $printed = strlen((string) ob_get_clean());
+          echo 'PREPEND_OUTPUT_BYTES=', $printed, "\n";
+          foreach (['RATEB_AI_DB_PASSWORD', 'RUNWAY_API_KEY', 'RATEB_VIDEO_PROVIDER'] as $name) {
+              echo 'CLI_AFTER_PREPEND_', $name, '=', getenv($name) ? 'SET' : 'NOT_SET', "\n";
+          }
+          PHP
+          "${SSH[@]}" "$REMOTE" "/usr/local/bin/php -- '${TARGET}'" < "${RUNNER_TEMP}/prepend-check.php" || echo "PREPEND_CHECK=error"
+          # Aggregate video_jobs counts by status only, in a read-only transaction. db() is not
+          # used because it runs the schema check; no row content or identifier is printed.
+          cat > "${RUNNER_TEMP}/queue-count.php" << 'PHP'
+          <?php
+          ini_set('display_errors', '0');
+          ini_set('log_errors', '0');
+          $target = $argv[1] ?? '';
+          $pdo = null;
+          $started = false;
+          $stage = 'env';
+          try {
+              if (!is_file($target . '/app/video/worker.php') || !is_file($target . '/config/database.php')) {
+                  throw new RuntimeException();
+              }
+              require $target . '/app/video/worker.php';
+              if (rateb_video_worker_load_env($target) !== 'loaded') {
+                  throw new RuntimeException();
+              }
+              $stage = 'config';
+              $c = require $target . '/config/database.php';
+              if (!is_array($c) || (string) ($c['password'] ?? '') === '') {
+                  throw new RuntimeException();
+              }
+              $stage = 'query';
+              $pdo = new PDO("mysql:host={$c['host']};dbname={$c['database']};charset={$c['charset']}", $c['username'], $c['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+              unset($c);
+              $pdo->exec('START TRANSACTION READ ONLY');
+              $started = true;
+              $counts = ['queued' => 0, 'processing' => 0, 'completed' => 0, 'failed' => 0, 'other' => 0];
+              foreach ($pdo->query('SELECT status, COUNT(*) FROM video_jobs GROUP BY status', PDO::FETCH_NUM) as [$status, $n]) {
+                  $counts[array_key_exists((string) $status, $counts) ? (string) $status : 'other'] += (int) $n;
+              }
+              $pdo->exec('ROLLBACK');
+              $started = false;
+          } catch (Throwable $error) {
+              if ($started) {
+                  try {
+                      $pdo->exec('ROLLBACK');
+                  } catch (Throwable $ignored) {
+                  }
+              }
+              echo 'QUEUE_COUNT=failed stage=', $stage, "\n";
+              exit(1);
+          }
+          foreach ($counts as $status => $n) {
+              echo 'QUEUE_', strtoupper($status), '=', $n, "\n";
+          }
+          echo 'QUEUE_ACTIVE=', $counts['queued'] + $counts['processing'], "\n";
+          echo "QUEUE_COUNT=ok\n";
+          PHP
+          CRON_ENV='env -i HOME="$HOME" LOGNAME="$(id -un)" USER="$(id -un)" SHELL=/bin/sh PATH=/usr/bin:/bin'
+          "${SSH[@]}" "$REMOTE" "${CRON_ENV} /usr/local/bin/php -- '${TARGET}'" < "${RUNNER_TEMP}/queue-count.php"
 
   generate:
     name: Production campaign generation

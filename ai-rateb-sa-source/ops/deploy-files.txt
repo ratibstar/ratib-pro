@@ -1,0 +1,42 @@
+# Application files the ai.rateb.sa deploy replaces, in the order they are swapped in:
+# libraries before the files that load them, app/db.php before app/bootstrap.php,
+# endpoints and pages next, cron/.htaccess before the cron worker it protects.
+# Paths are relative to ai-rateb-sa-source/ and to the server target folder.
+app/video/runtime.php
+app/video/provider.php
+app/schema.php
+app/db.php
+app/plans.php
+app/media/library.php
+app/video/engine.php
+app/video/worker.php
+app/brand/library.php
+app/nav.php
+config/guard.php
+config/ai.php
+config/google.php
+config/github.php
+app/bootstrap.php
+app/idea.php
+app/ai/generate.php
+app/ai/image.php
+app/ai/voice.php
+app/ai/video.php
+app/ai/video-status.php
+app/media/upload.php
+app/auth/login.php
+app/auth/register.php
+app/auth/google.php
+app/auth/github.php
+app/payment/webhook.php
+app/payment/checkout.php
+campaign.php
+dashboard.php
+campaign-copy.php
+campaign-new.php
+brand.php
+index.php
+public/assets/js/app.js
+public/assets/css/app.css
+cron/.htaccess
+cron/video-worker.php

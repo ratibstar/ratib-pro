@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-const MEDIA_ROOT = '/home/admin/.campaign-media';
+if (!defined('MEDIA_ROOT')) {
+    define('MEDIA_ROOT', '/home/admin/.campaign-media');
+}
 
 function media_kind_limits(): array
 {
@@ -203,16 +205,24 @@ function media_store_bytes(array $campaign, string $kind, string $source, string
     return (int) db()->lastInsertId();
 }
 
-function media_absolute_path(array $row): string
+function media_resolve_path(array $row): ?string
 {
-    $name = (string) $row['stored_name'];
+    $name = (string) ($row['stored_name'] ?? '');
     if (preg_match('/^[a-f0-9]{32}\.(jpg|png|webp|gif|mp4|webm|mp3|wav|ogg|m4a)$/', $name) !== 1) {
-        http_response_code(404);
-        exit('Not found.');
+        return null;
     }
     $root = realpath(MEDIA_ROOT);
-    $full = realpath(MEDIA_ROOT . '/' . (int) $row['campaign_id'] . '/' . $name);
+    $full = realpath(MEDIA_ROOT . '/' . (int) ($row['campaign_id'] ?? 0) . '/' . $name);
     if ($root === false || $full === false || !str_starts_with($full, $root . DIRECTORY_SEPARATOR)) {
+        return null;
+    }
+    return $full;
+}
+
+function media_absolute_path(array $row): string
+{
+    $full = media_resolve_path($row);
+    if ($full === null) {
         http_response_code(404);
         exit('Not found.');
     }

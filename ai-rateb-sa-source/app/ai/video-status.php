@@ -16,7 +16,7 @@ if (!$job) {
     echo json_encode(['ok' => true, 'status' => 'empty', 'error' => ''], JSON_UNESCAPED_UNICODE);
     exit;
 }
-$job = rateb_video_advance(db(), $job, $campaign);
+$job = rateb_video_reap(db(), $job);
 $scenes = json_decode((string) $job['storyboard'], true);
 $seconds = is_array($scenes) ? count($scenes) * rateb_video_clip_seconds() : 0;
 header('Content-Type: application/json; charset=utf-8');
