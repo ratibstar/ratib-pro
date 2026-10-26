@@ -768,6 +768,58 @@ jobs:
           }
           PHP
           "${SSH[@]}" "$REMOTE" "/usr/local/bin/php -- '${TARGET}'" < "${RUNNER_TEMP}/prepend-check.php" || echo "PREPEND_CHECK=error"
+          # Aggregate video_jobs counts by status only, in a read-only transaction. db() is not
+          # used because it runs the schema check; no row content or identifier is printed.
+          cat > "${RUNNER_TEMP}/queue-count.php" << 'PHP'
+          <?php
+          ini_set('display_errors', '0');
+          ini_set('log_errors', '0');
+          $target = $argv[1] ?? '';
+          $pdo = null;
+          $started = false;
+          $stage = 'env';
+          try {
+              if (!is_file($target . '/app/video/worker.php') || !is_file($target . '/config/database.php')) {
+                  throw new RuntimeException();
+              }
+              require $target . '/app/video/worker.php';
+              if (rateb_video_worker_load_env($target) !== 'loaded') {
+                  throw new RuntimeException();
+              }
+              $stage = 'config';
+              $c = require $target . '/config/database.php';
+              if (!is_array($c) || (string) ($c['password'] ?? '') === '') {
+                  throw new RuntimeException();
+              }
+              $stage = 'query';
+              $pdo = new PDO("mysql:host={$c['host']};dbname={$c['database']};charset={$c['charset']}", $c['username'], $c['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+              unset($c);
+              $pdo->exec('START TRANSACTION READ ONLY');
+              $started = true;
+              $counts = ['queued' => 0, 'processing' => 0, 'completed' => 0, 'failed' => 0, 'other' => 0];
+              foreach ($pdo->query('SELECT status, COUNT(*) FROM video_jobs GROUP BY status', PDO::FETCH_NUM) as [$status, $n]) {
+                  $counts[array_key_exists((string) $status, $counts) ? (string) $status : 'other'] += (int) $n;
+              }
+              $pdo->exec('ROLLBACK');
+              $started = false;
+          } catch (Throwable $error) {
+              if ($started) {
+                  try {
+                      $pdo->exec('ROLLBACK');
+                  } catch (Throwable $ignored) {
+                  }
+              }
+              echo 'QUEUE_COUNT=failed stage=', $stage, "\n";
+              exit(1);
+          }
+          foreach ($counts as $status => $n) {
+              echo 'QUEUE_', strtoupper($status), '=', $n, "\n";
+          }
+          echo 'QUEUE_ACTIVE=', $counts['queued'] + $counts['processing'], "\n";
+          echo "QUEUE_COUNT=ok\n";
+          PHP
+          CRON_ENV='env -i HOME="$HOME" LOGNAME="$(id -un)" USER="$(id -un)" SHELL=/bin/sh PATH=/usr/bin:/bin'
+          "${SSH[@]}" "$REMOTE" "${CRON_ENV} /usr/local/bin/php -- '${TARGET}'" < "${RUNNER_TEMP}/queue-count.php"
 
   generate:
     name: Production campaign generation
