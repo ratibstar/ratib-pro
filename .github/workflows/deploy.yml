@@ -28,7 +28,47 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A push whose every changed file is ai.rateb.sa-only skips the rateb.sa deploy. Any other
+  # file in the push, a manual run, or a push range that cannot be read deploys as before.
+  scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deploy: ${{ steps.scope.outputs.deploy }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: .github
+
+      - name: Decide whether this push touches rateb.sa
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          deploy=true
+          if [ "$EVENT" = "push" ] && [ -n "${BEFORE//0/}" ] \
+            && git fetch --quiet --no-tags --depth=1 --filter=blob:none origin "$BEFORE" \
+            && files="$(git diff --no-renames --name-only "$BEFORE" "$AFTER")" && [ -n "$files" ]; then
+            other="$(grep -Ev '^(ai-rateb-sa-source/|\.github/workflows/ai-rateb-sa\.yml$|\.github/workflows/ai-rateb-credit-mysql-test\.yml$)' <<< "$files" || true)"
+            if [ -z "$other" ]; then
+              deploy=false
+              echo "All $(wc -l <<< "$files") changed files are ai.rateb.sa-only; skipping the rateb.sa deploy."
+            else
+              echo "$(wc -l <<< "$other") changed files outside ai.rateb.sa, e.g. $(head -n 1 <<< "$other"); deploying."
+            fi
+          else
+            echo "Manual run or unreadable push range; deploying as before."
+          fi
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+
   deploy:
+    needs: scope
+    if: ${{ !cancelled() && (needs.scope.result != 'success' || needs.scope.outputs.deploy != 'false') }}
     runs-on: ubuntu-latest
     environment: rateb.sa
     timeout-minutes: 20
