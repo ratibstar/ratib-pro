@@ -158,6 +158,131 @@ foreach ($videos as $name => $mp4) {
     }
 }
 
+/*
+ * Stage isolation: the same still through decode, scale, zoompan, the full clip filter, and
+ * libx264, each build's luma plane compared with the system build's at that stage.
+ */
+function d_raw(string $ffmpeg, string $input, string $vf, int $frames, string $raw): string
+{
+    $cmd = escapeshellarg($ffmpeg) . ' -nostdin -v error -y -i ' . escapeshellarg($input)
+        . ($vf !== '' ? ' -vf ' . escapeshellarg($vf) : '') . ' -frames:v ' . $frames . ' -f rawvideo ' . escapeshellarg($raw)
+        . ' 2> ' . escapeshellarg($raw . '.err');
+    $ok = rateb_video_run_ffmpeg($cmd, 120);
+    $bytes = $ok ? (string) @file_get_contents($raw) : '';
+    if (!$ok) {
+        echo '    raw failed: ' . trim((string) @file_get_contents($raw . '.err')) . "\n";
+    }
+    @unlink($raw);
+    @unlink($raw . '.err');
+    return $bytes;
+}
+
+/** Luma of the last of $frames frames, or '' with the bytes-per-pixel reported. */
+function d_luma(string $bytes, int $w, int $h, int $frames): string
+{
+    $frame = intdiv(strlen($bytes), max(1, $frames));
+    printf('    bytes=%d per_px=%.2f', strlen($bytes), $frame / ($w * $h));
+    return $frame >= $w * $h && $frame * $frames === strlen($bytes) ? substr($bytes, ($frames - 1) * $frame, $w * $h) : '';
+}
+
+/** Mean |row - next row| (sampled), which stays near 0 for flat colour fields and soars for stripes. */
+function d_stripe(string $y, int $w, int $h): float
+{
+    $sum = 0;
+    $n = 0;
+    for ($r = 0; $r + 1 < $h; $r += 2) {
+        for ($c = 0; $c < $w; $c += 4) {
+            $sum += abs(ord($y[$r * $w + $c]) - ord($y[($r + 1) * $w + $c]));
+            $n++;
+        }
+    }
+    return $n > 0 ? $sum / $n : -1.0;
+}
+
+function d_mean(string $y): float
+{
+    $sum = 0;
+    foreach (count_chars($y, 1) as $value => $count) {
+        $sum += $value * $count;
+    }
+    return $sum / max(1, strlen($y));
+}
+
+/** @return array{0:float,1:float} mean absolute difference and % of samples differing by more than 32 */
+function d_diff(string $a, string $b): array
+{
+    if ($a === '' || strlen($a) !== strlen($b)) {
+        return [-1.0, -1.0];
+    }
+    $sum = 0;
+    $big = 0;
+    $n = 0;
+    for ($i = 0, $len = strlen($a); $i < $len; $i += 3) {
+        $d = abs(ord($a[$i]) - ord($b[$i]));
+        $sum += $d;
+        $big += $d > 32 ? 1 : 0;
+        $n++;
+    }
+    return [$sum / max(1, $n), 100 * $big / max(1, $n)];
+}
+
+$still = is_file($out . '/pinned-still.jpg') ? $out . '/pinned-still.jpg' : $out . '/system-still.jpg';
+if (isset($builds['pinned'], $builds['system']) && is_file($still)) {
+    $zoom = rateb_video_zoompan_filter(0, 25);
+    $stages = [
+        'decode' => ['', 1, 360, 640],
+        'scale' => ['scale=1440:2560', 1, 1440, 2560],
+        'zoompan' => [substr($zoom, 0, (int) strrpos($zoom, ',format=')), 13, 720, 1280],
+        'clip_filter' => [$zoom, 13, 720, 1280],
+        'libx264' => ['', 13, 720, 1280],
+    ];
+    $gd = imagecreatefromjpeg($still);
+    $ref = '';
+    for ($r = 0; $r < 640; $r++) {
+        for ($c = 0; $c < 360; $c++) {
+            $px = imagecolorat($gd, $c, $r);
+            $ref .= chr((int) round(0.299 * (($px >> 16) & 255) + 0.587 * (($px >> 8) & 255) + 0.114 * ($px & 255)));
+        }
+    }
+    $first = '';
+    foreach ($stages as $stage => [$vf, $frames, $w, $h]) {
+        $luma = [];
+        foreach (['system', 'pinned'] as $label) {
+            echo "DIAG stage={$stage} build={$label} vf=" . ($vf === '' ? '(none)' : $vf) . "\n";
+            if ($stage === 'libx264') {
+                $clip = $out . '/stage-' . $label . '.mp4';
+                if (!rateb_video_run_ffmpeg(rateb_video_clip_command($builds[$label], $still, 0, 25, $clip), 120)) {
+                    echo "    clip render failed\n";
+                    continue;
+                }
+                $bytes = d_raw($builds['system'], $clip, '', $frames, $out . '/stage.raw');
+                @unlink($clip);
+            } else {
+                $bytes = d_raw($builds[$label], $still, $vf, $frames, $out . '/stage.raw');
+            }
+            $y = d_luma($bytes, $w, $h, $frames);
+            $luma[$label] = $y;
+            if ($y === '') {
+                echo " (luma unreadable)\n";
+                continue;
+            }
+            printf(" %dx%d ymean=%.1f stripe=%.2f", $w, $h, d_mean($y), d_stripe($y, $w, $h));
+            if ($stage === 'decode') {
+                [$mean, $big] = d_diff($y, $ref);
+                printf(' vs_gd_luma=%.2f gt32_pct=%.2f', $mean, $big);
+            }
+            echo "\n";
+            d_png($y, $w, $h, 1, "{$out}/stage-{$stage}-{$label}-luma.png");
+        }
+        [$mean, $big] = d_diff($luma['pinned'] ?? '', $luma['system'] ?? '');
+        printf("DIAG stage=%s pinned_vs_system mean_abs=%.2f gt32_pct=%.2f\n", $stage, $mean, $big);
+        if ($first === '' && ($mean < 0 || $mean > 4 || $big > 0.5)) {
+            $first = $stage;
+        }
+    }
+    echo 'DIAG first divergent stage: ' . ($first === '' ? 'none' : $first) . "\n";
+}
+
 foreach (glob($out . '/*/*.{mp4,wav,png,jpg,txt}', GLOB_BRACE) ?: [] as $file) {
     if (!str_ends_with($file, '.mp4')) {
         @unlink($file);
