@@ -334,5 +334,40 @@ $scenario['events'][1]['age'] = 100;
 $fresh = run_endpoint($scenario, job_dir());
 check($fresh['events'][1]['status'] === 'reserved' && rows($fresh, 'saudi_voice_refund') === [] && balance($fresh) === 70, 'voice: a recent charged reservation is not swept');
 
+const CF_ACCOUNT = '0123456789abcdef0123456789abcdef';
+const CF_URL = 'https://api.cloudflare.com/client/v4/accounts/' . CF_ACCOUNT . '/ai/run/@cf/black-forest-labs/flux-1-schnell';
+
+function cloudflare_request(int $balance, array $provider, array $ai): array
+{
+    $scenario = image_request($balance, $provider);
+    $scenario['ai'] = $ai;
+    return $scenario;
+}
+
+$hordeOnly = pending_image();
+check(calls($hordeOnly[2], 'GET', HORDE) !== [] && calls($hordeOnly[2], 'POST', 'https://api.cloudflare.com/') === [], 'image: the default provider still calls only AI Horde');
+
+$missing = run_endpoint(cloudflare_request(100, [], ['image_provider' => 'cloudflare', 'cloudflare_account_id' => '', 'cloudflare_api_token' => '']), job_dir());
+check($missing['http'] === 503 && ($missing['json']['code'] ?? '') === 'image_workers' && $missing['calls'] === [] && $missing['unexpected'] === [], 'image: missing Cloudflare credentials make no provider call');
+check(balance($missing) === 100 && rows($missing, 'image') === [] && rows($missing, 'ai_image') === [], 'image: missing Cloudflare credentials reserve nothing');
+
+$quotaAi = ['image_provider' => 'cloudflare', 'cloudflare_account_id' => CF_ACCOUNT, 'cloudflare_api_token' => 'test-token'];
+$quota = run_endpoint(cloudflare_request(100, [['method' => 'POST', 'url' => CF_URL, 'http' => 429, 'body' => '{"success":false}']], $quotaAi), job_dir());
+check($quota['http'] === 429 && count($quota['calls']) === 1 && $quota['calls'][0]['url'] === CF_URL && $quota['unexpected'] === [], 'image: a Cloudflare quota response calls that endpoint once');
+check(balance($quota) === 100 && count(rows($quota, 'ai_image_refund')) === 1 && rows($quota, 'image')[0]['status'] === 'failed', 'image: a Cloudflare quota response refunds the reservation once');
+
+$saved = run_endpoint(cloudflare_request(100, [['method' => 'POST', 'url' => CF_URL, 'http' => 200, 'body_b64' => PNG_B64]], $quotaAi), job_dir());
+check($saved['http'] === 200 && ($saved['json']['ok'] ?? false) === true && $saved['stores'] === 1 && ($saved['json']['model'] ?? '') === '@cf/black-forest-labs/flux-1-schnell', 'image: a Cloudflare raw image is stored');
+check(balance($saved) === 90 && rows($saved, 'image')[0]['status'] === 'completed' && rows($saved, 'ai_image_refund') === [] && count($saved['calls']) === 1, 'image: a Cloudflare raw success settles the charge once');
+
+$envelope = json_encode(['success' => true, 'result' => ['image' => PNG_B64]], JSON_THROW_ON_ERROR);
+$jsonSaved = run_endpoint(cloudflare_request(100, [['method' => 'POST', 'url' => CF_URL, 'http' => 200, 'body' => $envelope]], $quotaAi), job_dir());
+check($jsonSaved['http'] === 200 && ($jsonSaved['json']['ok'] ?? false) === true && ($jsonSaved['json']['mime'] ?? '') === 'image/png' && $jsonSaved['stores'] === 1, 'image: a Cloudflare JSON base64 image is decoded and stored');
+check(balance($jsonSaved) === 90 && rows($jsonSaved, 'ai_image_refund') === [] && count($jsonSaved['calls']) === 1, 'image: a Cloudflare JSON success settles the charge once');
+
+$notImage = run_endpoint(cloudflare_request(100, [['method' => 'POST', 'url' => CF_URL, 'http' => 200, 'body' => '{"success":true,"result":{"image":"bm90LWFuLWltYWdl"}}']], $quotaAi), job_dir());
+check($notImage['http'] === 502 && $notImage['stores'] === 0 && count($notImage['calls']) === 1 && $notImage['unexpected'] === [], 'image: a Cloudflare JSON body that is not an image is not stored');
+check(balance($notImage) === 100 && count(rows($notImage, 'ai_image_refund')) === 1, 'image: an invalid Cloudflare image refunds once');
+
 echo $failures === 0 ? 'RESULT=PASS' : 'RESULT=FAIL failures=' . $failures, PHP_EOL;
 exit($failures === 0 ? 0 : 1);

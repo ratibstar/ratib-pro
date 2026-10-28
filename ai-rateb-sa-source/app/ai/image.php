@@ -63,6 +63,12 @@ if ($prompt === $ratioLead) {
     echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+$imageSettings = ai_image_settings();
+if ($imageSettings['provider'] === 'cloudflare' && !$imageSettings['configured']) {
+    http_response_code(503);
+    echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 $reservedId = 0;
 try {
     $decision = rateb_image_jobs_transaction($userId, static function (array $jobs) use ($userId, $campaignId, $postedJobId, $now, &$reservedId): array {
@@ -108,6 +114,10 @@ if ($usageId < 1 || !rateb_image_job_allows_new_reservation($decision)) {
     http_response_code(503);
     echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+if ($imageSettings['provider'] === 'cloudflare') {
+    ai_cloudflare_generate($campaign, $userId, $campaignId, $usageId, $prompt, $imageSettings);
 }
 
 $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image');
@@ -428,10 +438,129 @@ function ai_image_pending(string $jobId, int $wait = 0): void
     exit;
 }
 
-function ai_horde_request(string $method, string $url, ?string $body = null): array
+/** @return array{provider:string,configured:bool,account_id:string,token:string,model:string} */
+function ai_image_settings(): array
+{
+    $ai = require __DIR__ . '/../../config/ai.php';
+    $provider = strtolower(trim((string) ($ai['image_provider'] ?? 'horde')));
+    if (!in_array($provider, ['horde', 'cloudflare'], true)) {
+        $provider = 'horde';
+    }
+    $account = trim((string) ($ai['cloudflare_account_id'] ?? ''));
+    $token = trim((string) ($ai['cloudflare_api_token'] ?? ''));
+    $model = trim((string) ($ai['image_model'] ?? '@cf/black-forest-labs/flux-1-schnell'));
+    if ($model === '') {
+        $model = '@cf/black-forest-labs/flux-1-schnell';
+    }
+    $configured = $provider !== 'cloudflare'
+        || (preg_match('/^[a-f0-9]{32}$/', $account) === 1 && $token !== '' && preg_match('/^@cf\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/', $model) === 1);
+    return [
+        'provider' => $provider,
+        'configured' => $configured,
+        'account_id' => $account,
+        'token' => $token,
+        'model' => $model,
+    ];
+}
+
+/** @param array{account_id:string,token:string,model:string} $settings */
+function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, int $usageId, string $prompt, array $settings): void
+{
+    $charge = rateb_reservation_charge(db(), $usageId, $userId, 'ai_image', $campaignId);
+    if ($charge !== 'ok') {
+        ai_image_release($userId, '', $usageId, 'failed');
+        if ($charge === 'credits') {
+            rateb_credit_stop($userId, 'ai_image');
+        }
+        http_response_code(409);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $url = 'https://api.cloudflare.com/client/v4/accounts/' . $settings['account_id'] . '/ai/run/' . $settings['model'];
+    $response = ai_horde_request('POST', $url, json_encode(['prompt' => $prompt], JSON_UNESCAPED_UNICODE), [
+        'Authorization: Bearer ' . $settings['token'],
+    ]);
+    if ($response['http'] === 429) {
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(429);
+        echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $bytes = $response['http'] === 200 ? (ai_cloudflare_image_bytes($response['body']) ?? '') : '';
+    $mime = $bytes !== '' ? ai_image_mime($bytes) : null;
+    if ($mime === null || strlen($bytes) < 32 || strlen($bytes) > media_max_bytes('image')) {
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(502);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    ai_image_store($campaign, $userId, '', $usageId, $bytes, $mime, $settings['model']);
+}
+
+function ai_cloudflare_image_bytes(string $body): ?string
+{
+    if (ai_image_mime($body) !== null) {
+        return $body;
+    }
+    $trimmed = ltrim($body);
+    if ($trimmed === '' || ($trimmed[0] !== '{' && $trimmed[0] !== '[')) {
+        return null;
+    }
+    $decoded = json_decode($body, true);
+    if (!is_array($decoded) || array_key_exists('success', $decoded) && $decoded['success'] !== true) {
+        return null;
+    }
+    $image = is_array($decoded['result'] ?? null) ? ($decoded['result']['image'] ?? null) : null;
+    if (!is_string($image) || $image === '') {
+        return null;
+    }
+    if (str_starts_with($image, 'data:')) {
+        $comma = strpos($image, ',');
+        $image = $comma === false ? '' : substr($image, $comma + 1);
+    }
+    $bytes = base64_decode($image, true);
+    if (!is_string($bytes) || ai_image_mime($bytes) === null) {
+        return null;
+    }
+    return $bytes;
+}
+
+function ai_image_store(array $campaign, int $userId, string $jobId, int $usageId, string $bytes, string $mime, string $modelName): void
+{
+    if (rateb_watermark_required(db(), $userId)) {
+        try {
+            $marked = rateb_apply_watermark($bytes, $mime);
+            $bytes = $marked['bytes'];
+            $mime = $marked['mime'];
+        } catch (Throwable $error) {
+            ai_image_release($userId, $jobId, $usageId, 'failed');
+            rateb_deny('watermark');
+        }
+    }
+    try {
+        $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
+        media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
+    } catch (Throwable $error) {
+        ai_image_release($userId, $jobId, $usageId, 'failed');
+        http_response_code(500);
+        echo json_encode(['error' => rateb_ui_error('image_storage'), 'code' => 'image_storage', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    ai_image_release($userId, $jobId, $usageId, 'completed');
+    echo json_encode([
+        'ok' => true,
+        'state' => 'ready',
+        'model' => $modelName,
+        'mime' => $mime,
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+function ai_horde_request(string $method, string $url, ?string $body = null, array $extraHeaders = []): array
 {
     $ch = curl_init($url);
-    $headers = ['Accept: application/json, image/webp, image/jpeg, image/png', 'Client-Agent: rateb-ai-campaign:1.0:ai.rateb.sa'];
+    $headers = array_merge(['Accept: application/json, image/webp, image/jpeg, image/png', 'Client-Agent: rateb-ai-campaign:1.0:ai.rateb.sa'], $extraHeaders);
     if (strtolower((string) parse_url($url, PHP_URL_HOST)) === 'aihorde.net') {
         $ai = require __DIR__ . '/../../config/ai.php';
         $hordeKey = trim((string) ($ai['horde_api_key'] ?? ''));

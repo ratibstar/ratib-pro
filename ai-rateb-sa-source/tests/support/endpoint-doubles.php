@@ -98,7 +98,15 @@ function header(string $header, bool $replace = true, int $code = 0): void
 
 function ai_config(): array
 {
-    return ['horde_api_key' => 'test-horde-key', 'sawtak_api_key' => 'test-sawtak-key'];
+    $extra = Harness::$scenario['ai'] ?? [];
+    return array_merge([
+        'horde_api_key' => 'test-horde-key',
+        'sawtak_api_key' => 'test-sawtak-key',
+        'image_provider' => 'horde',
+        'cloudflare_account_id' => '',
+        'cloudflare_api_token' => '',
+        'image_model' => '@cf/black-forest-labs/flux-1-schnell',
+    ], is_array($extra) ? $extra : []);
 }
 
 function media_owned_campaign(int $campaignId): array
