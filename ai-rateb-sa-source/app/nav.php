@@ -16,12 +16,14 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
             ['/#create', 'nav_create', 'What it creates'],
         ],
     ];
+    $arabic = function_exists('ui_language') && ui_language() === 'ar';
     $credits = null;
-    if ($loggedIn && function_exists('rateb_account_credits') && !empty($_SESSION['user_id'])) {
-        $credits = (int) rateb_account_credits(db(), (int) $_SESSION['user_id'])['credits_balance'];
+    $creditPdo = function_exists('db') ? db() : ($GLOBALS['pdo'] ?? null);
+    if ($loggedIn && $creditPdo instanceof PDO && function_exists('rateb_account_credits') && !empty($_SESSION['user_id'])) {
+        $credits = (int) rateb_account_credits($creditPdo, (int) $_SESSION['user_id'])['credits_balance'];
     }
     echo '<header class="site-bar"><div class="site-shell">';
-    echo '<button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><span></span><span></span><span></span></button>';
+    echo '<button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="' . ($arabic ? 'القائمة' : 'Menu') . '"><span></span><span></span><span></span></button>';
     echo '<nav class="site-nav" id="site-nav">';
     foreach ($groups as $index => $group) {
         if ($index > 0) {
@@ -41,7 +43,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '<div class="edge-auth">';
     if ($credits !== null) {
         $chipTag = $here === '/dashboard.php' ? 'button type="button" data-pricing-open' : 'a href="/?pricing=1#pricing"';
-        echo '<' . $chipTag . ' class="credit-chip" title="Credits"><span aria-hidden="true">⚡</span>' . $credits . '</' . strtok($chipTag, ' ') . '>';
+        echo '<' . $chipTag . ' class="credit-chip" title="' . ($arabic ? 'النقاط' : 'Credits') . '"><span aria-hidden="true">⚡</span>' . $credits . '</' . strtok($chipTag, ' ') . '>';
     }
     echo '<button type="button" id="lang" class="icon">AR</button>';
     echo '<button type="button" id="theme" class="icon">☾</button>';

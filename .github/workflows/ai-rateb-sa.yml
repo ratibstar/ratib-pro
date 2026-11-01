@@ -132,6 +132,10 @@ jobs:
             "app/ai/video-status.php"
             "app/video/engine.php"
             "app/video/provider.php"
+            "app/video/worker.php"
+            "app/video/faces.php"
+            "app/video/face_detect.py"
+            "config/database.php"
             "public/assets/js/app.js"
             "public/assets/css/app.css"
             "app/media/upload.php"
@@ -155,7 +159,6 @@ jobs:
             "app/brand/library.php"
             "app/nav.php"
             "app/content/text-save.php"
-            "app/campaign/package.php"
             "app/campaign/package-lib.php"
           )
           for rel in "${files[@]}"; do
@@ -206,6 +209,8 @@ jobs:
           else
             echo "GITHUB_SECRET=not_set"
           fi
+          scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${REMOTE}:${TARGET}/config/ai.local.php" "${RUNNER_TEMP}/ai-local-existing.php" || true
           python3 - << 'PY'
           import os
           from pathlib import Path
@@ -215,7 +220,16 @@ jobs:
               "horde_api_key": os.environ.get("HORDE_API_KEY", ""),
               "moyasar_secret_key": os.environ.get("MOYASAR_SECRET_KEY", ""),
           }
-          present = {name: value for name, value in keys.items() if value}
+          present = {}
+          existing = Path(os.environ["RUNNER_TEMP"], "ai-local-existing.php")
+          if existing.is_file():
+              import re
+              text = existing.read_text(encoding="utf-8", errors="replace")
+              for name, value in re.findall(r"'([A-Za-z0-9_]+)'\s*=>\s*'((?:\\'|[^'])*)'", text):
+                  present[name] = value.replace("\\'", "'").replace("\\\\", "\\")
+          for name, value in keys.items():
+              if value:
+                  present[name] = value
           print("AI_LOCAL_KEYS=" + ",".join(present) if present else "AI_LOCAL_KEYS=none")
           if not present:
               raise SystemExit(0)
@@ -240,7 +254,7 @@ jobs:
           Path(os.environ["RUNNER_TEMP"], "opcache-reset.php").write_text(
               "<?php\n"
               "if (function_exists('opcache_invalidate')) {\n"
-              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/image-readiness.php','app/ai/voice.php','app/ai/video.php','app/ai/video-status.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/content/text-save.php','app/campaign/package.php','app/campaign/package-lib.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php'] as $rel) {\n"
+              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/image-readiness.php','app/ai/voice.php','app/ai/video.php','app/ai/video-status.php','app/video/engine.php','app/video/provider.php','app/video/worker.php','app/video/faces.php','config/database.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/content/text-save.php','app/campaign/package-lib.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php'] as $rel) {\n"
               "        opcache_invalidate(__DIR__ . '/' . $rel, true);\n"
               "    }\n"
               "}\n"

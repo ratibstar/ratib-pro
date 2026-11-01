@@ -91,7 +91,9 @@ if (function_exists('imagecreatetruecolor')) {
 }
 check(rateb_video_message('not_configured', true) === 'توليد الفيديو غير مُعد على الخادم.', 'arabic missing-provider message');
 check(rateb_video_message('not_configured', false) === 'Video generation is not configured.', 'english missing-provider message');
-check(str_contains(file_get_contents(__DIR__ . '/../app/vision.php'), 'return null;'), 'vision stays disabled without a provider');
+require_once __DIR__ . '/../app/vision.php';
+putenv('RATEB_VISION_PROVIDER');
+check(rateb_vision_provider() === null && rateb_vision_analyze("\x89PNG", 'image/png') === null, 'vision stays disabled without a provider');
 
 $status = (new ReflectionMethod(RunwayVideoProvider::class, 'getTaskStatus'));
 check($status->getNumberOfParameters() === 1, 'status operation exists');

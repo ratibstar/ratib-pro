@@ -296,6 +296,9 @@ final class RunwayVideoProvider implements RatebVideoProvider
     /** @param array<string,mixed>|null $payload @return array<string,mixed> */
     private function request(string $method, string $path, ?array $payload): array
     {
+        if (rateb_video_test_job_id() > 0) {
+            throw new RuntimeException('not_configured');
+        }
         $key = trim((string) getenv('RUNWAY_API_KEY'));
         if ($key === '') {
             throw new RuntimeException('not_configured');
