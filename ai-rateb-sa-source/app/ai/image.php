@@ -608,6 +608,75 @@ function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, i
     ai_image_store($campaign, $userId, '', $usageId, $bytes, $mime, $settings['model']);
 }
 
+function ai_ar_visual(string $text): string
+{
+    $text = preg_replace('/\p{M}/u', '', $text) ?? $text;
+    $chars = preg_split('//u', $text, -1, PREG_SPLIT_NO_EMPTY);
+    if ($chars === false) {
+        return $text;
+    }
+    $forms = [
+        'ا' => ['ﺍ', 'ﺎ'], 'أ' => ['ﺃ', 'ﺄ'], 'إ' => ['ﺇ', 'ﺈ'], 'آ' => ['ﺁ', 'ﺂ'],
+        'ب' => ['ﺏ', 'ﺐ', 'ﺑ', 'ﺒ'], 'ت' => ['ﺕ', 'ﺖ', 'ﺗ', 'ﺘ'], 'ث' => ['ﺙ', 'ﺚ', 'ﺛ', 'ﺜ'],
+        'ج' => ['ﺝ', 'ﺞ', 'ﺟ', 'ﺠ'], 'ح' => ['ﺡ', 'ﺢ', 'ﺣ', 'ﺤ'], 'خ' => ['ﺥ', 'ﺦ', 'ﺧ', 'ﺨ'],
+        'د' => ['ﺩ', 'ﺪ'], 'ذ' => ['ﺫ', 'ﺬ'], 'ر' => ['ﺭ', 'ﺮ'], 'ز' => ['ﺯ', 'ﺰ'],
+        'س' => ['ﺱ', 'ﺲ', 'ﺳ', 'ﺴ'], 'ش' => ['ﺵ', 'ﺶ', 'ﺷ', 'ﺸ'], 'ص' => ['ﺹ', 'ﺺ', 'ﺻ', 'ﺼ'],
+        'ض' => ['ﺽ', 'ﺾ', 'ﺿ', 'ﻀ'], 'ط' => ['ﻁ', 'ﻂ', 'ﻃ', 'ﻄ'], 'ظ' => ['ﻅ', 'ﻆ', 'ﻇ', 'ﻈ'],
+        'ع' => ['ﻉ', 'ﻊ', 'ﻋ', 'ﻌ'], 'غ' => ['ﻍ', 'ﻎ', 'ﻏ', 'ﻐ'], 'ف' => ['ﻑ', 'ﻒ', 'ﻓ', 'ﻔ'],
+        'ق' => ['ﻕ', 'ﻖ', 'ﻗ', 'ﻘ'], 'ك' => ['ﻙ', 'ﻚ', 'ﻛ', 'ﻜ'], 'ل' => ['ﻝ', 'ﻞ', 'ﻟ', 'ﻠ'],
+        'م' => ['ﻡ', 'ﻢ', 'ﻣ', 'ﻤ'], 'ن' => ['ﻥ', 'ﻦ', 'ﻧ', 'ﻨ'], 'ه' => ['ﻩ', 'ﻪ', 'ﻫ', 'ﻬ'],
+        'و' => ['ﻭ', 'ﻮ'], 'ؤ' => ['ﺅ', 'ﺆ'], 'ة' => ['ﺓ', 'ﺔ'], 'ى' => ['ﻯ', 'ﻰ'],
+        'ي' => ['ﻱ', 'ﻲ', 'ﻳ', 'ﻴ'], 'ئ' => ['ﺉ', 'ﺊ', 'ﺋ', 'ﺌ'],
+    ];
+    $lamAlef = ['ا' => ['ﻻ', 'ﻼ'], 'أ' => ['ﻷ', 'ﻸ'], 'إ' => ['ﻹ', 'ﻺ'], 'آ' => ['ﻵ', 'ﻶ']];
+    $joins = static function (string $char) use ($forms): bool {
+        return isset($forms[$char]) && count($forms[$char]) === 4;
+    };
+    $shaped = [];
+    $count = count($chars);
+    for ($i = 0; $i < $count; $i++) {
+        $char = $chars[$i];
+        if (!isset($forms[$char])) {
+            $shaped[] = $char;
+            continue;
+        }
+        $prev = $i > 0 ? $chars[$i - 1] : '';
+        $next = $i + 1 < $count ? $chars[$i + 1] : '';
+        $prevJoins = $joins($prev);
+        if ($char === 'ل' && isset($lamAlef[$next])) {
+            $shaped[] = $lamAlef[$next][$prevJoins ? 1 : 0];
+            $i++;
+            continue;
+        }
+        $nextJoins = isset($forms[$next]);
+        $form = $forms[$char];
+        if ($prevJoins && $nextJoins && isset($form[3])) {
+            $shaped[] = $form[3];
+        } elseif ($prevJoins && isset($form[1])) {
+            $shaped[] = $form[1];
+        } elseif ($nextJoins && isset($form[2])) {
+            $shaped[] = $form[2];
+        } else {
+            $shaped[] = $form[0];
+        }
+    }
+    return implode('', array_reverse($shaped));
+}
+
+function ai_draw_ar($image, int $size, int $x, int $y, string $text, int $color, string $font, int $centerWidth = 0): void
+{
+    if (!function_exists('imagettftext') || !is_file($font)) {
+        return;
+    }
+    $visual = ai_ar_visual($text);
+    if ($centerWidth > 0) {
+        $box = imagettfbbox($size, 0, $font, $visual);
+        $width = is_array($box) ? abs($box[2] - $box[0]) : 0;
+        $x += (int) (($centerWidth - $width) / 2);
+    }
+    imagettftext($image, $size, 0, $x, $y, $color, $font, $visual);
+}
+
 function ai_recruitment_dashboard_png(): string
 {
     if (!function_exists('imagecreatetruecolor') || !function_exists('imagepng')) {
@@ -631,26 +700,35 @@ function ai_recruitment_dashboard_png(): string
         [107, 77, 224], [240, 180, 41],
     ];
     $numbers = ['8', '5', '5', '0', '5', '36', '1', '1', '1', '0', '6', '0', '0', '0'];
+    $labels = ['عقود الاستقدام', 'عقود الضمان', 'عقود التأجير', 'نقل الكفالة', 'الإيواء', 'العمالة المتاحة', 'الوكلاء', 'طلبات الاستقدام', 'التأشيرات', 'المتابعة', 'الإقامة', 'الحسابات', 'طلبات الموقع', 'المعاملات المعلقة'];
+    $font = '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf';
+    $dark = $paint(31, 41, 55);
+    $white = $paint(255, 255, 255);
+    ai_draw_ar($image, 22, 28, 148, 'مرحباً بك في برنامج رتب لشركات الاستقدام', $white, $font, 734);
     for ($i = 0; $i < 14; $i++) {
         $col = $i % 4;
         $row = intdiv($i, 4);
         $x = 36 + $col * 186;
         $y = 196 + $row * 168;
-        imagefilledrectangle($image, $x, $y, $x + 170, $y + 150, $paint(255, 255, 255));
+        imagefilledrectangle($image, $x, $y, $x + 170, $y + 150, $white);
         $color = $colors[$i];
-        imagefilledellipse($image, $x + 85, $y + 58, 72, 72, $paint($color[0], $color[1], $color[2]));
-        $ink = $paint(255, 255, 255);
-        imagestring($image, 5, $x + (strlen($numbers[$i]) === 1 ? 78 : 72), $y + 50, $numbers[$i], $ink);
+        imagefilledellipse($image, $x + 85, $y + 48, 64, 64, $paint($color[0], $color[1], $color[2]));
+        imagestring($image, 5, $x + (strlen($numbers[$i]) === 1 ? 78 : 72), $y + 40, $numbers[$i], $white);
+        ai_draw_ar($image, 12, $x + 6, $y + 128, $labels[$i], $dark, $font, 158);
     }
-    imagefilledrectangle($image, 36, 820, 390, 990, $paint(255, 255, 255));
-    imagefilledrectangle($image, 408, 820, 762, 990, $paint(255, 255, 255));
+    imagefilledrectangle($image, 36, 860, 390, 990, $white);
+    imagefilledrectangle($image, 408, 860, 762, 990, $white);
+    ai_draw_ar($image, 13, 36, 888, 'عدد العقود حسب الأشهر', $dark, $font, 354);
+    ai_draw_ar($image, 13, 408, 888, 'عدد طلبات الاستقدام', $dark, $font, 354);
     $bars = [40, 70, 55, 90, 60, 110];
     foreach ($bars as $index => $height) {
-        imagefilledrectangle($image, 58 + $index * 52, 970 - $height, 90 + $index * 52, 970, $paint(47, 111, 237));
-        imagefilledrectangle($image, 430 + $index * 52, 970 - (int) ($height * 0.7), 462 + $index * 52, 970, $paint(34, 168, 85));
+        imagefilledrectangle($image, 58 + $index * 52, 978 - $height, 90 + $index * 52, 978, $paint(47, 111, 237));
+        imagefilledrectangle($image, 430 + $index * 52, 978 - (int) ($height * 0.7), 462 + $index * 52, 978, $paint(34, 168, 85));
     }
-    for ($i = 0; $i < 8; $i++) {
-        imagefilledrectangle($image, 812, 120 + $i * 78, 990, 164 + $i * 78, $paint(241, 245, 249));
+    $menu = ['لوحة التحكم', 'عقود الاستقدام', 'الإيواء', 'قسم التأجير', 'نقل الخدمات', 'طلبات الاستقدام', 'العمالة', 'الوكلاء'];
+    foreach ($menu as $i => $item) {
+        imagefilledrectangle($image, 808, 110 + $i * 78, 1004, 164 + $i * 78, $paint(241, 245, 249));
+        ai_draw_ar($image, 14, 808, 146 + $i * 78, $item, $dark, $font, 196);
     }
     ob_start();
     imagepng($image);
