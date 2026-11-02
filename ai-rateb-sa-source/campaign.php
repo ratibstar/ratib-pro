@@ -96,6 +96,7 @@ $imageCount = 0;
 $videoCount = 0;
 $uploadMedia = [];
 $campaignImages = [];
+$approvedImages = [];
 $campaignVoices = [];
 $campaignVideos = [];
 $uploadedVideos = [];
@@ -103,6 +104,9 @@ foreach ($media as $mediaItem) {
     $kind = (string) $mediaItem['kind'];
     if ($kind === 'image') {
         $campaignImages[] = $mediaItem;
+        if (!str_starts_with((string) ($mediaItem['original_name'] ?? ''), 'hold-')) {
+            $approvedImages[] = $mediaItem;
+        }
         if ((string) $mediaItem['source'] !== 'ai') {
             $imageCount++;
         }
@@ -138,7 +142,7 @@ $approvedVoiceScript = rateb_voice_script(db(), $id, (string) ($voiceDecision['s
 $voiceEnglishBlocked = $approvedVoiceScript !== '' && !rateb_voice_text_is_arabic($approvedVoiceScript);
 $shownVoiceScript = $storedVoiceScript !== '' ? $storedVoiceScript : $approvedVoiceScript;
 $readyDone = in_array((string) ($campaign['status'] ?? ''), ['ready', 'completed'], true);
-$priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($videoDone ? 1 : 0);
+$priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($approvedImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($videoDone ? 1 : 0);
 if ($readyDone && !rateb_campaign_requirements_met($ideaDone, $strategyApproved, $copyApproved, $campaignImages !== [], $campaignVoices !== [], $videoDone)) {
     db()->prepare("UPDATE campaigns SET status = 'in_progress', updated_at = NOW() WHERE id = ? AND user_id = ? AND status IN ('ready', 'completed')")->execute([$id, $userId]);
     $readyDone = false;
@@ -151,9 +155,9 @@ $stages = [
     'idea' => ['no' => '01', 'state' => $ideaDone ? 'done' : 'open'],
     'strategy' => ['no' => '02', 'state' => $strategyApproved ? 'done' : ($strategyDoc ? 'progress' : 'open')],
     'copy' => ['no' => '03', 'state' => $copyApproved ? 'done' : ($copyStarted ? 'progress' : ($strategyApproved ? 'open' : 'next'))],
-    'images' => ['no' => '04', 'state' => $campaignImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
-    'voice' => ['no' => '05', 'state' => $campaignVoices !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')],
-    'video' => ['no' => '06', 'state' => $videoDone ? 'done' : (($videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true)) || ($videoJob && (string) $videoJob['status'] === 'completed') ? 'progress' : ($campaignImages !== [] ? 'open' : 'next'))],
+    'images' => ['no' => '04', 'state' => $approvedImages !== [] ? 'done' : ($copyApproved ? 'open' : 'next')],
+    'voice' => ['no' => '05', 'state' => $campaignVoices !== [] ? 'done' : ($approvedImages !== [] ? 'open' : 'next')],
+    'video' => ['no' => '06', 'state' => $videoDone ? 'done' : (($videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true)) || ($videoJob && (string) $videoJob['status'] === 'completed') ? 'progress' : ($approvedImages !== [] ? 'open' : 'next'))],
     'ready' => ['no' => '07', 'state' => ($readyDone && $priorDone >= 6) ? 'done' : ($priorDone >= 6 ? 'open' : 'next')],
 ];
 $stageNames = $arabic
@@ -296,9 +300,9 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             </select>
             <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
-        <?php elseif ($key === 'voice' && $campaignImages !== []): ?>
+        <?php elseif ($key === 'voice' && $approvedImages !== []): ?>
           <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm"<?= $voiceEnglishBlocked ? ' disabled' : '' ?>><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
-        <?php elseif ($key === 'video' && $campaignImages !== [] && !$approvedVideo): ?>
+        <?php elseif ($key === 'video' && $approvedImages !== [] && !$approvedVideo): ?>
           <button class="primary stage-go" type="submit" form="videoGenerate"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ($arabic ? 'جاري إنشاء الفيديو...' : 'Creating the video...') : ($arabic ? 'إنشاء فيديو RATEB' : 'Create the RATEB video') ?></button>
         <?php endif; ?>
       </li>
@@ -553,6 +557,14 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <p class="badge"><?= (string) $item['source'] === 'ai' ? ($arabic ? 'مولّدة بالذكاء الاصطناعي' : 'AI-generated') : ($arabic ? 'مرفوعة' : 'Uploaded') ?></p>
             <?php if (preg_match('/ratio-(1x1|4x5|9x16)/', (string) ($item['original_name'] ?? ''), $ratioMatch)): ?>
               <p class="badge"><?= e(str_replace('x', ':', $ratioMatch[1])) ?></p>
+            <?php endif; ?>
+            <?php if (str_starts_with((string) ($item['original_name'] ?? ''), 'hold-')): ?>
+            <form method="post" action="/app/media/approve-image.php">
+              <input type="hidden" name="csrf" value="<?= $csrf ?>">
+              <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+              <input type="hidden" name="panel" value="images">
+              <button type="submit" class="primary"><?= $arabic ? 'اعتماد وخصم 10' : 'Approve and use 10 credits' ?></button>
+            </form>
             <?php endif; ?>
             <form method="post" action="/app/media/delete.php">
               <input type="hidden" name="csrf" value="<?= $csrf ?>">

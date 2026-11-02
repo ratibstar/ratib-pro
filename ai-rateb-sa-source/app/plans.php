@@ -28,6 +28,7 @@ function rateb_ui_error(string $code): string
         'edit_unclear' => $arabic ? 'اكتب التغيير الذي تبيه بصراحة. مثال: غيّر الفكرة إلى ترويج لبرنامج رتب.' : 'Write the change you want. Example: change the idea to a RATEB promotion.',
         'edit_empty' => $arabic ? 'اكتب التعديل أولًا.' : 'Write the change first.',
         'brief_missing' => $arabic ? 'أكمل ملخص الحملة قبل البدء.' : 'Complete the campaign brief before starting.',
+        'image_pending' => $arabic ? 'اعتمد الصورة الظاهرة أو احذفها قبل توليد صورة جديدة.' : 'Approve the image on screen, or delete it, before generating another.',
         'image_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.',
         'image_provider' => $arabic ? 'تعذر توليد الصورة. حاول مرة أخرى.' : 'The image could not be generated. Try again.',
         'image_workers' => $arabic ? 'مزود الصور غير متاح الآن. حاول بعد قليل.' : 'The image provider is not available right now. Try again shortly.',

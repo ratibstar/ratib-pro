@@ -364,7 +364,8 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
 
     try {
         $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
-        media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
+        $prefix = ai_image_settings()['provider'] === 'cloudflare' ? 'hold-' : '';
+        media_store_bytes($campaign, 'image', 'ai', $prefix . 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
     } catch (Throwable $error) {
         ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(500);
@@ -380,6 +381,25 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
     ], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+function ai_subject_lock(string $facts): string
+{
+    $locks = [
+        'استقدام' => 'recruitment agency staff in a Saudi office reviewing worker files on laptops',
+        'recruit' => 'recruitment agency staff in an office reviewing worker files on laptops',
+        'عقار' => 'a real estate agent showing a property to clients',
+        'مطعم' => 'a restaurant table with the dishes this business serves',
+        'عيادة' => 'a clinic consultation with a doctor and a patient',
+        'مدرسة' => 'a classroom with a teacher and students',
+        'متجر' => 'a shop counter with the products this business sells',
+    ];
+    foreach ($locks as $needle => $scene) {
+        if (mb_stripos($facts, $needle) !== false) {
+            return $scene;
+        }
+    }
+    return '';
 }
 
 function ai_english_photo_scene(array $facts): string
@@ -484,14 +504,15 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
         }
     }
     $scene = ai_english_photo_scene($facts);
+    $locked = ai_subject_lock(implode("\n", $facts));
     $prompt = rateb_visual_prompt(
         [
-            'Photorealistic photograph, ' . $scene,
-            'Blank screens, blank paper, blank walls',
-            'No letters, no words, no Arabic script, no English text, no signs, no logos, no captions',
+            'Photorealistic photograph of ' . ($locked !== '' ? $locked : $scene),
+            $locked !== '' ? $scene : '',
+            'No letters, no words, no signs, no logos',
         ],
         'Nothing in the picture is written.',
-        $limit
+        min($limit, 320)
     );
     if (trim($prompt) === '') {
         http_response_code(422);
@@ -542,15 +563,20 @@ function ai_image_settings(): array
 /** @param array{account_id:string,token:string,model:string} $settings */
 function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, int $usageId, string $prompt, array $settings): void
 {
-    $charge = rateb_reservation_charge(db(), $usageId, $userId, 'ai_image', $campaignId);
-    if ($charge !== 'ok') {
+    $waiting = db()->prepare('SELECT id FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ? AND source = ? AND original_name LIKE ? LIMIT 1');
+    $waiting->execute([$campaignId, $userId, 'image', 'ai', 'hold-%']);
+    if ($waiting->fetch()) {
         ai_image_release($userId, '', $usageId, 'failed');
-        if ($charge === 'credits') {
-            rateb_credit_stop($userId, 'ai_image');
-        }
         http_response_code(409);
-        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => rateb_ui_error('image_pending'), 'code' => 'image_pending'], JSON_UNESCAPED_UNICODE);
         exit;
+    }
+    $cost = rateb_get_feature_cost('ai_image');
+    $balance = db()->prepare('SELECT credits_balance FROM users WHERE id = ?');
+    $balance->execute([$userId]);
+    if ((int) $balance->fetchColumn() < $cost) {
+        ai_image_release($userId, '', $usageId, 'failed');
+        rateb_credit_stop($userId, 'ai_image');
     }
     $url = 'https://api.cloudflare.com/client/v4/accounts/' . $settings['account_id'] . '/ai/run/' . $settings['model'];
     $response = ai_horde_request('POST', $url, json_encode(['prompt' => $prompt], JSON_UNESCAPED_UNICODE), [
@@ -615,7 +641,8 @@ function ai_image_store(array $campaign, int $userId, string $jobId, int $usageI
     }
     try {
         $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
-        media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
+        $prefix = ai_image_settings()['provider'] === 'cloudflare' ? 'hold-' : '';
+        media_store_bytes($campaign, 'image', 'ai', $prefix . 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
     } catch (Throwable $error) {
         ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(500);
