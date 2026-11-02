@@ -226,7 +226,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav40">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav45">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -293,11 +293,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
           <form id="imageForm" class="stage-action" data-status="stage-status" data-job-ttl="<?= (int) rateb_image_job_ttl() ?>" data-latest-image="<?= (int) ($campaignImages[0]['id'] ?? 0) ?>">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
-            <select name="ratio">
-              <option value="1:1"><?= $arabic ? '1:1 مربع للمنشورات' : '1:1 square post' ?></option>
-              <option value="4:5"><?= $arabic ? '4:5 عمودي لإنستغرام' : '4:5 Instagram portrait' ?></option>
-              <option value="9:16"><?= $arabic ? '9:16 ستوري وسناب' : '9:16 story' ?></option>
-            </select>
+            <div class="ratio-picks">
+              <label><input type="radio" name="ratio" value="1:1" checked><strong>1:1</strong><span><?= $arabic ? 'إنستغرام' : 'Instagram' ?></span></label>
+              <label><input type="radio" name="ratio" value="9:16"><strong>9:16</strong><span><?= $arabic ? 'عمودي' : 'Vertical' ?></span></label>
+              <label><input type="radio" name="ratio" value="16:9"><strong>16:9</strong><span><?= $arabic ? 'أفقي' : 'Horizontal' ?></span></label>
+            </div>
             <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
         <?php elseif ($key === 'voice' && $approvedImages !== []): ?>

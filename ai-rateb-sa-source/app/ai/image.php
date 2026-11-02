@@ -60,11 +60,11 @@ ai_image_dispatch($campaign, $decision, $postedJobId, $now);
 
 $ratio = (string) ($_POST['ratio'] ?? '1:1');
 $ratioSize = match ($ratio) {
-    '4:5' => [512, 640],
     '9:16' => [576, 1024],
+    '16:9' => [1024, 576],
     default => [512, 512],
 };
-if (!in_array($ratio, ['1:1', '4:5', '9:16'], true)) {
+if (!in_array($ratio, ['1:1', '9:16', '16:9'], true)) {
     $ratio = '1:1';
 }
 $ratioLead = 'ratio ' . $ratio . '. ';
@@ -363,7 +363,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     }
 
     try {
-        $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
+        $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '9:16', '16:9'], true) ? (string) $_POST['ratio'] : '1:1');
         $prefix = ai_image_settings()['provider'] === 'cloudflare' ? 'hold-' : '';
         media_store_bytes($campaign, 'image', 'ai', $prefix . 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
     } catch (Throwable $error) {
@@ -749,27 +749,45 @@ function ai_recruitment_poster(string $personBytes): string
     if ($boardBytes === '' || !function_exists('imagecreatetruecolor') || !function_exists('imagecreatefromstring')) {
         return $boardBytes;
     }
-    $canvas = imagecreatetruecolor(1200, 1200);
+    $ratio = (string) ($_POST['ratio'] ?? '1:1');
+    [$width, $height] = match ($ratio) {
+        '9:16' => [720, 1280],
+        '16:9' => [1280, 720],
+        default => [1080, 1080],
+    };
+    $canvas = imagecreatetruecolor($width, $height);
     if ($canvas === false) {
         return $boardBytes;
     }
     $paint = static function (int $r, int $g, int $b) use ($canvas): int {
         return imagecolorallocate($canvas, $r, $g, $b);
     };
-    imagefilledrectangle($canvas, 0, 0, 1199, 1199, $paint(248, 250, 252));
-    imagefilledrectangle($canvas, 0, 0, 1199, 118, $paint(34, 168, 85));
+    imagefilledrectangle($canvas, 0, 0, $width - 1, $height - 1, $paint(248, 250, 252));
+    imagefilledrectangle($canvas, 0, 0, $width - 1, 92, $paint(34, 168, 85));
     $font = __DIR__ . '/../fonts/DejaVuSans.ttf';
-    ai_draw_ar($canvas, 28, 40, 76, 'برنامج رتب لشركات الاستقدام', $paint(255, 255, 255), $font, 1120);
+    ai_draw_ar($canvas, 26, 24, 60, 'برنامج رتب لشركات الاستقدام', $paint(255, 255, 255), $font, $width - 48);
     $photo = $personBytes !== '' ? @imagecreatefromstring($personBytes) : false;
-    imagefilledrectangle($canvas, 36, 156, 560, 1040, $paint(255, 255, 255));
+    $board = @imagecreatefromstring($boardBytes);
+    if ($height > $width) {
+        if ($photo !== false) {
+            imagecopyresampled($canvas, $photo, 36, 116, 0, 0, $width - 72, 460, imagesx($photo), imagesy($photo));
+        }
+        if ($board !== false) {
+            imagecopyresampled($canvas, $board, 36, 600, 0, 0, $width - 72, 640, imagesx($board), imagesy($board));
+        }
+    } else {
+        $photoWidth = (int) (($width - 72) * 0.38);
+        if ($photo !== false) {
+            imagecopyresampled($canvas, $photo, 24, 112, 0, 0, $photoWidth, $height - 148, imagesx($photo), imagesy($photo));
+        }
+        if ($board !== false) {
+            imagecopyresampled($canvas, $board, 40 + $photoWidth, 112, 0, 0, $width - $photoWidth - 64, $height - 148, imagesx($board), imagesy($board));
+        }
+    }
     if ($photo !== false) {
-        imagecopyresampled($canvas, $photo, 48, 168, 0, 0, 500, 760, imagesx($photo), imagesy($photo));
         imagedestroy($photo);
     }
-    ai_draw_ar($canvas, 18, 48, 990, 'فريق يشرح البرنامج', $paint(31, 41, 55), $font, 500);
-    $board = @imagecreatefromstring($boardBytes);
     if ($board !== false) {
-        imagecopyresampled($canvas, $board, 590, 156, 0, 0, 574, 860, imagesx($board), imagesy($board));
         imagedestroy($board);
     }
     ob_start();
@@ -820,7 +838,7 @@ function ai_image_store(array $campaign, int $userId, string $jobId, int $usageI
         }
     }
     try {
-        $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
+        $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '9:16', '16:9'], true) ? (string) $_POST['ratio'] : '1:1');
         $prefix = ai_image_settings()['provider'] === 'cloudflare' ? 'hold-' : '';
         media_store_bytes($campaign, 'image', 'ai', $prefix . 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
     } catch (Throwable $error) {
