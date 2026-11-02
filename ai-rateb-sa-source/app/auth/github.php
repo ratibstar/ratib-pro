@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../config/bootstrap.php';
 require __DIR__ . '/../plans.php';
+require __DIR__ . '/../welcome.php';
 
 $github = require __DIR__ . '/../../config/github.php';
 $local = __DIR__ . '/../../config/github.local.php';
@@ -16,18 +17,26 @@ $clientId = (string) ($github['client_id'] ?? '');
 $clientSecret = (string) ($github['client_secret'] ?? '');
 $redirect = 'https://ai.rateb.sa/app/auth/github.php';
 
-function rateb_github_user(PDO $pdo, string $email, string $name): void
+function rateb_github_user(PDO $pdo, string $email, string $name, bool $emailVerified): void
 {
     $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
     $stmt->execute([$email]);
     $existing = $stmt->fetch();
     if ($existing) {
         $userId = (int) $existing['id'];
+        try {
+            rateb_welcome_recover($pdo, $userId, $email, $emailVerified);
+        } catch (Throwable) {
+        }
     } else {
         $hash = password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT);
-        $insert = $pdo->prepare('INSERT INTO users (name, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())');
+        $insert = $pdo->prepare('INSERT INTO users (name, email, password_hash, credits_balance, created_at, updated_at) VALUES (?, ?, ?, 0, NOW(), NOW())');
         $insert->execute([$name, $email, $hash]);
         $userId = (int) $pdo->lastInsertId();
+        try {
+            rateb_welcome_apply($pdo, $userId, $email, $emailVerified);
+        } catch (Throwable) {
+        }
         rateb_user_plan($pdo, $userId);
     }
     session_regenerate_id(true);
@@ -96,10 +105,12 @@ $emailBody = curl_exec($ch);
 curl_close($ch);
 $emails = is_string($emailBody) ? json_decode($emailBody, true) : null;
 $email = '';
+$emailVerified = false;
 if (is_array($emails)) {
     foreach ($emails as $row) {
         if (!empty($row['primary']) && !empty($row['verified'])) {
             $email = strtolower((string) $row['email']);
+            $emailVerified = true;
             break;
         }
     }
@@ -124,4 +135,4 @@ $name = trim((string) (is_array($profile) ? ($profile['name'] ?? $profile['login
 if ($name === '') {
     $name = strstr($email, '@', true) ?: 'RATEB';
 }
-rateb_github_user($pdo, $email, $name);
+rateb_github_user($pdo, $email, $name, $emailVerified);

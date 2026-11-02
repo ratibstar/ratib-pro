@@ -142,7 +142,9 @@ function ensure_campaign_schema(PDO $pdo): void
         status VARCHAR(16) NOT NULL DEFAULT 'reserved',
         cost_sar DECIMAL(10,4) NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        idempotency_key VARCHAR(64) NULL,
         PRIMARY KEY (id),
+        UNIQUE KEY idempotency_key (idempotency_key),
         KEY user_operation (user_id, operation, status, created_at),
         KEY campaign_id (campaign_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
@@ -155,30 +157,6 @@ function ensure_campaign_schema(PDO $pdo): void
     }
     if (!isset($usageColumns['credits_deducted'])) {
         $pdo->exec('ALTER TABLE usage_events ADD COLUMN credits_deducted INT NOT NULL DEFAULT 0');
-    }
-    $extra = $pdo->query("SELECT e.user_id, e.campaign_id,
-            SUM(e.operation = 'text_campaign' AND e.credits_deducted > 0) - SUM(e.operation = 'text_campaign_refund') - 1 AS extra
-        FROM usage_events e
-        WHERE e.campaign_id IS NOT NULL
-          AND e.operation IN ('text_campaign', 'text_campaign_refund')
-          AND NOT EXISTS (SELECT 1 FROM usage_events r WHERE r.user_id = e.user_id AND r.campaign_id = e.campaign_id AND r.operation = 'text_campaign_repair')
-        GROUP BY e.user_id, e.campaign_id
-        HAVING extra > 0")->fetchAll();
-    foreach ($extra as $row) {
-        $back = (int) $row['extra'] * 5;
-        $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$back, (int) $row['user_id']]);
-        $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, 'text_campaign_repair', 1, 'completed', 'text_campaign_repair', ?)")
-            ->execute([(int) $row['user_id'], (int) $row['campaign_id'], -$back]);
-    }
-    $testOwner = (int) ($pdo->query('SELECT user_id FROM campaigns WHERE id = 72')->fetchColumn() ?: 0);
-    if ($testOwner > 0) {
-        $granted = $pdo->prepare("SELECT 1 FROM usage_events WHERE user_id = ? AND operation = 'test_credit_grant' LIMIT 1");
-        $granted->execute([$testOwner]);
-        if (!$granted->fetchColumn()) {
-            $pdo->prepare('UPDATE users SET credits_balance = credits_balance + 200 WHERE id = ?')->execute([$testOwner]);
-            $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, NULL, 'test_credit_grant', 1, 'completed', 'test_credit_grant', -200)")
-                ->execute([$testOwner]);
-        }
     }
     $pdo->exec("CREATE TABLE IF NOT EXISTS payment_receipts (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -278,11 +256,49 @@ function ensure_campaign_schema(PDO $pdo): void
         error_code VARCHAR(64) NOT NULL DEFAULT '',
         watermark TINYINT(1) NOT NULL DEFAULT 0,
         approval_status VARCHAR(16) NOT NULL DEFAULT 'draft',
+        lock_token CHAR(32) NULL,
+        locked_until DATETIME NULL,
+        attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
-        KEY campaign_user (campaign_id, user_id)
+        KEY campaign_user (campaign_id, user_id),
+        KEY status_lock (status, locked_until)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS welcome_grants (
+        user_id BIGINT UNSIGNED NOT NULL,
+        email_hash CHAR(64) NOT NULL,
+        device_hash CHAR(64) NULL,
+        status VARCHAR(16) NOT NULL,
+        credits INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id),
+        UNIQUE KEY email_hash (email_hash),
+        KEY device_status (device_hash, status, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS signup_audit (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT UNSIGNED NOT NULL,
+        email_hash CHAR(64) NOT NULL,
+        device_hash CHAR(64) NULL,
+        email_verified TINYINT(1) NOT NULL DEFAULT 0,
+        decision VARCHAR(16) NOT NULL,
+        detail VARCHAR(255) NOT NULL DEFAULT '',
+        admin_user_id BIGINT UNSIGNED NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_id (user_id),
+        KEY device_recent (device_hash, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $auditColumns = [];
+    foreach ($pdo->query('SHOW COLUMNS FROM signup_audit') as $row) {
+        $auditColumns[(string) $row['Field']] = true;
+    }
+    if (!isset($auditColumns['admin_user_id'])) {
+        $pdo->exec('ALTER TABLE signup_audit ADD COLUMN admin_user_id BIGINT UNSIGNED NULL');
+    }
 }
 
 function campaign_status_values(): array

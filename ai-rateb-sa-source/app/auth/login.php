@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../../config/bootstrap.php';
+require __DIR__ . '/../welcome.php';
 
 if (!empty($_SESSION['user_id'])) {
     header('Location: /dashboard.php');
@@ -42,6 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         session_regenerate_id(true);
         $_SESSION['user_id'] = (int)$user['id'];
+        try {
+            rateb_welcome_recover($pdo, (int) $user['id'], (string) $user['email'], false);
+        } catch (Throwable) {
+        }
         if ($authModal) {
             header('Content-Type: application/json');
             echo json_encode(['ok' => true, 'redirect' => rateb_safe_next((string) ($_POST['next'] ?? ''))]);

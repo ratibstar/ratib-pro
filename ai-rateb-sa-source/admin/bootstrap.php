@@ -22,6 +22,7 @@ function admin_start(string $title): void
     $links = [
         '/admin/' => $adminLang === 'ar' ? 'اللوحة' : 'Dashboard',
         '/admin/users.php' => $adminLang === 'ar' ? 'المستخدمون' : 'Users',
+        '/admin/signups.php' => $adminLang === 'ar' ? 'التسجيل' : 'Signups',
         '/admin/plans.php' => $adminLang === 'ar' ? 'الباقات' : 'Plans',
         '/admin/subscriptions.php' => $adminLang === 'ar' ? 'الاشتراكات' : 'Subscriptions',
         '/admin/usage.php' => $adminLang === 'ar' ? 'الاستخدام' : 'Usage',

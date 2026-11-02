@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../../config/bootstrap.php';
+require __DIR__ . '/../welcome.php';
 require __DIR__ . '/../plans.php';
 
 if (!empty($_SESSION['user_id'])) {
@@ -41,11 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $pdo->prepare(
-                'INSERT INTO users (name, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())'
+                'INSERT INTO users (name, email, password_hash, credits_balance, created_at, updated_at) VALUES (?, ?, ?, 0, NOW(), NOW())'
             );
             $stmt->execute([$oldName, $oldEmail, $hash]);
 
             $newUserId = (int) $pdo->lastInsertId();
+            try {
+                rateb_welcome_apply($pdo, $newUserId, $oldEmail, false);
+            } catch (Throwable) {
+            }
             rateb_user_plan($pdo, $newUserId);
             $_SESSION['user_id'] = $newUserId;
             session_regenerate_id(true);
