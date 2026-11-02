@@ -14,12 +14,13 @@ if ($selected === null) {
 
 $cfg = require __DIR__ . '/../../config/ai.php';
 $secret = (string) ($cfg['moyasar_secret_key'] ?? '');
-if ($secret === '') {
+$configured = rateb_moyasar_configured($cfg);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$configured) {
     http_response_code(503);
     exit(ui_language() === 'ar' ? 'الدفع غير مُعد على الخادم.' : 'Payment is not configured.');
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $configured) {
     verify_csrf();
     $pdo = db();
     $pdo->prepare('INSERT INTO payment_orders (user_id, package_code, amount, credits, currency, status) VALUES (?, ?, ?, ?, \'SAR\', \'pending\')')
@@ -73,6 +74,11 @@ echo '<!doctype html><html lang="' . ($arabic ? 'ar' : 'en') . '" dir="' . ($ara
 echo '<h1>' . e($title) . '</h1>';
 echo '<p>' . e($price) . ' SAR</p>';
 echo '<p>' . (int) $selected['credits'] . ' ' . ($arabic ? 'نقطة' : 'credits') . '</p>';
-echo '<form method="post"><input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"><input type="hidden" name="package" value="' . e($packageCode) . '">';
-echo '<button type="submit">' . ($arabic ? 'المتابعة إلى الدفع' : 'Continue to payment') . '</button></form>';
+if (!$configured) {
+    echo '<p>' . ($arabic ? 'الدفع الإلكتروني غير متاح مؤقتًا.' : 'Online payment is temporarily unavailable.') . '</p>';
+    echo '<button type="button" disabled>' . ($arabic ? 'تأكيد الشراء' : 'Confirm purchase') . '</button>';
+} else {
+    echo '<form method="post"><input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"><input type="hidden" name="package" value="' . e($packageCode) . '">';
+    echo '<button type="submit">' . ($arabic ? 'تأكيد الشراء عبر ميسر' : 'Confirm purchase with Moyasar') . '</button></form>';
+}
 echo '<p><a href="/dashboard.php">' . ($arabic ? 'رجوع' : 'Back') . '</a></p></body></html>';

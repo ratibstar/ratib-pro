@@ -24,6 +24,7 @@ function seed_order(FakeLedger $pdo, int $id, string $package, int $amount, int 
     $pdo->orders[$id] = ['user_id' => $userId, 'package_code' => $package, 'amount' => $amount, 'credits' => $credits, 'currency' => 'SAR', 'status' => $status];
 }
 
+check(!rateb_moyasar_configured(['moyasar_secret_key' => '']) && rateb_moyasar_configured(['moyasar_secret_key' => 'sk_test_example']), 'checkout stays disabled until a Moyasar key is configured');
 check(rateb_paid_package('starter')['amount'] === 9900 && rateb_paid_package('starter')['credits'] === 500, 'starter maps to 99 SAR and 500 credits');
 check(rateb_paid_package('pro')['amount'] === 24900 && rateb_paid_package('pro')['credits'] === 2500, 'pro maps to 249 SAR and 2500 credits');
 check(rateb_paid_package('growth') === null && rateb_paid_package('business') === null && rateb_paid_package('free') === null, 'unpublished packages stay blocked');

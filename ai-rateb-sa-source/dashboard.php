@@ -53,7 +53,7 @@ foreach ($campaigns as $row) {
 $wallet = !empty($_SESSION['user_id']) ? rateb_account_credits($pdo, (int) $_SESSION['user_id']) : ['package_type' => 'free', 'credits_balance' => 0];
 $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باقة الانطلاق', 'pro' => 'الباقة الاحترافية'];
 ?>
-<p class="muted" style="margin:12px 36px">الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
+<p class="muted" style="margin:12px 36px">الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?> · <a href="/credits.php">شراء رصيد</a></p>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>
     <p class="muted" data-i18n="campaign_deleted">Campaign deleted.</p>
@@ -226,8 +226,8 @@ $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باق�
     <p class="muted">الرصيد المتبقي: <?= (int) $wallet['credits_balance'] ?></p>
     <div class="price-grid">
       <article class="price-card"><p class="eyebrow">الباقة التجريبية</p><p class="price-amount"><b>0</b> <span>ر.س</span></p><p>50 نقطة</p><a class="button" href="/?pricing=1#pricing">الباقة الحالية</a></article>
-      <article class="price-card is-featured"><p class="eyebrow">باقة الانطلاق</p><p class="price-amount"><b>99</b> <span>ر.س / شهر</span></p><p>500 نقطة</p><a class="button" href="/app/payment/checkout.php?package=starter">ترقية الباقة</a></article>
-      <article class="price-card"><p class="eyebrow">الباقة الاحترافية</p><p class="price-amount"><b>249</b> <span>ر.س / شهر</span></p><p>2500 نقطة</p><a class="button" href="/app/payment/checkout.php?package=pro">ترقية الباقة</a></article>
+      <article class="price-card is-featured"><p class="eyebrow">باقة الانطلاق</p><p class="price-amount"><b>99</b> <span>ر.س</span></p><p>500 نقطة</p><a class="button" href="/credits.php">شراء الرصيد</a></article>
+      <article class="price-card"><p class="eyebrow">الباقة الاحترافية</p><p class="price-amount"><b>249</b> <span>ر.س</span></p><p>2500 نقطة</p><a class="button" href="/credits.php">شراء الرصيد</a></article>
     </div>
   </div>
 </dialog>

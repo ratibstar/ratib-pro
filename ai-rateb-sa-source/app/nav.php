@@ -8,6 +8,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
             ['/dashboard.php', 'dashboard', 'Dashboard'],
             ['/campaign-new.php', 'new_campaign', 'New Campaign'],
             ['/brand.php', 'brand_kit', 'Brand kit'],
+            ['/credits.php', 'buy_credits', 'Buy credits'],
         ],
         [
             ['/#workflow', 'nav_how', 'How it works'],
@@ -42,7 +43,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '<a class="logo" href="/">RATEB <span>AI</span></a>';
     echo '<div class="edge-auth">';
     if ($credits !== null) {
-        $chipTag = $here === '/dashboard.php' ? 'button type="button" data-pricing-open' : 'a href="/?pricing=1#pricing"';
+        $chipTag = 'a href="/credits.php"';
         echo '<' . $chipTag . ' class="credit-chip" title="' . ($arabic ? 'النقاط' : 'Credits') . '"><span aria-hidden="true">⚡</span>' . $credits . '</' . strtok($chipTag, ' ') . '>';
     }
     echo '<button type="button" id="lang" class="icon">AR</button>';

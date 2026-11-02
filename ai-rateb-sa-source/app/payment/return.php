@@ -47,12 +47,14 @@ if (preg_match('/^[a-f0-9-]{36}$/', $paymentId) === 1 && (string) $row['status']
 
 $arabic = ui_language() === 'ar';
 $labels = [
-    'paid' => $arabic ? 'تم الدفع وإضافة النقاط.' : 'Payment confirmed and credits added.',
-    'failed' => $arabic ? 'لم يكتمل الدفع. لم تُضف نقاط.' : 'Payment was not completed. No credits were added.',
-    'pending' => $arabic ? 'الدفع قيد التأكيد.' : 'Payment is still pending confirmation.',
+    'paid' => $arabic ? 'تم الدفع بنجاح' : 'Payment successful',
+    'failed' => $arabic ? 'لم يكتمل الدفع' : 'Payment failed or canceled',
+    'pending' => $arabic ? 'الدفع قيد التأكيد' : 'Payment pending',
 ];
 $status = (string) $row['status'];
-echo '<!doctype html><html lang="' . ($arabic ? 'ar' : 'en') . '" dir="' . ($arabic ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><title>RATEB AI</title></head><body>';
+$wallet = rateb_account_credits($pdo, $userId);
+echo '<!doctype html><html lang="' . ($arabic ? 'ar' : 'en') . '" dir="' . ($arabic ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RATEB AI</title></head><body>';
 echo '<h1>' . e($labels[$status] ?? $labels['pending']) . '</h1>';
-echo '<p>' . e((string) $row['package_code']) . ' — ' . number_format(((int) $row['amount']) / 100, 2) . ' SAR — ' . (int) $row['credits'] . '</p>';
+echo '<p>' . e((string) $row['package_code']) . ' — ' . number_format(((int) $row['amount']) / 100, 2) . ' SAR — ' . (int) $row['credits'] . ' ' . ($arabic ? 'نقطة' : 'credits') . '</p>';
+echo '<p>' . ($arabic ? 'الرصيد الحالي' : 'Current balance') . ': ' . (int) $wallet['credits_balance'] . '</p>';
 echo '<p><a href="/dashboard.php">' . ($arabic ? 'لوحة التحكم' : 'Dashboard') . '</a></p></body></html>';

@@ -312,6 +312,11 @@ function rateb_plan_feature_locked(array $plan, string $featureType): bool
  *
  * @return array{amount:int,currency:string,credits:int,plan_code:string}|null
  */
+function rateb_moyasar_configured(array $config): bool
+{
+    return trim((string) ($config['moyasar_secret_key'] ?? '')) !== '';
+}
+
 function rateb_paid_package(string $code): ?array
 {
     $packages = [
