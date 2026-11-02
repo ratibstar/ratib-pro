@@ -581,6 +581,12 @@ function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, i
         ai_image_release($userId, '', $usageId, 'failed');
         rateb_credit_stop($userId, 'ai_image');
     }
+    if (str_contains($prompt, 'recruitment company office')) {
+        $png = ai_recruitment_dashboard_png();
+        if ($png !== '') {
+            ai_image_store($campaign, $userId, '', $usageId, $png, 'image/png', 'rateb-dashboard');
+        }
+    }
     $url = 'https://api.cloudflare.com/client/v4/accounts/' . $settings['account_id'] . '/ai/run/' . $settings['model'];
     $response = ai_horde_request('POST', $url, json_encode(['prompt' => $prompt, 'steps' => 8], JSON_UNESCAPED_UNICODE), [
         'Authorization: Bearer ' . $settings['token'],
@@ -600,6 +606,57 @@ function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, i
         exit;
     }
     ai_image_store($campaign, $userId, '', $usageId, $bytes, $mime, $settings['model']);
+}
+
+function ai_recruitment_dashboard_png(): string
+{
+    if (!function_exists('imagecreatetruecolor') || !function_exists('imagepng')) {
+        return '';
+    }
+    $image = imagecreatetruecolor(1024, 1024);
+    if ($image === false) {
+        return '';
+    }
+    $paint = static function (int $r, int $g, int $b) use ($image): int {
+        return imagecolorallocate($image, $r, $g, $b);
+    };
+    imagefilledrectangle($image, 0, 0, 1023, 1023, $paint(241, 245, 249));
+    imagefilledrectangle($image, 790, 0, 1023, 1023, $paint(255, 255, 255));
+    imagefilledrectangle($image, 0, 0, 789, 72, $paint(255, 255, 255));
+    imagefilledrectangle($image, 28, 96, 762, 168, $paint(34, 168, 85));
+    $colors = [
+        [30, 58, 95], [197, 201, 214], [46, 158, 79], [46, 158, 79],
+        [240, 180, 41], [47, 111, 237], [226, 59, 59], [240, 138, 36],
+        [226, 59, 59], [47, 111, 237], [46, 158, 79], [232, 90, 173],
+        [107, 77, 224], [240, 180, 41],
+    ];
+    $numbers = ['8', '5', '5', '0', '5', '36', '1', '1', '1', '0', '6', '0', '0', '0'];
+    for ($i = 0; $i < 14; $i++) {
+        $col = $i % 4;
+        $row = intdiv($i, 4);
+        $x = 36 + $col * 186;
+        $y = 196 + $row * 168;
+        imagefilledrectangle($image, $x, $y, $x + 170, $y + 150, $paint(255, 255, 255));
+        $color = $colors[$i];
+        imagefilledellipse($image, $x + 85, $y + 58, 72, 72, $paint($color[0], $color[1], $color[2]));
+        $ink = $paint(255, 255, 255);
+        imagestring($image, 5, $x + (strlen($numbers[$i]) === 1 ? 78 : 72), $y + 50, $numbers[$i], $ink);
+    }
+    imagefilledrectangle($image, 36, 820, 390, 990, $paint(255, 255, 255));
+    imagefilledrectangle($image, 408, 820, 762, 990, $paint(255, 255, 255));
+    $bars = [40, 70, 55, 90, 60, 110];
+    foreach ($bars as $index => $height) {
+        imagefilledrectangle($image, 58 + $index * 52, 970 - $height, 90 + $index * 52, 970, $paint(47, 111, 237));
+        imagefilledrectangle($image, 430 + $index * 52, 970 - (int) ($height * 0.7), 462 + $index * 52, 970, $paint(34, 168, 85));
+    }
+    for ($i = 0; $i < 8; $i++) {
+        imagefilledrectangle($image, 812, 120 + $i * 78, 990, 164 + $i * 78, $paint(241, 245, 249));
+    }
+    ob_start();
+    imagepng($image);
+    $bytes = ob_get_clean();
+    imagedestroy($image);
+    return is_string($bytes) ? $bytes : '';
 }
 
 function ai_cloudflare_image_bytes(string $body): ?string
