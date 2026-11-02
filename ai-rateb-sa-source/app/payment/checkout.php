@@ -86,4 +86,5 @@ if (!$configured) {
     echo '<form method="post"><input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"><input type="hidden" name="package" value="' . e($packageCode) . '">';
     echo '<button class="button" type="submit">' . ($arabic ? 'تأكيد الشراء عبر ميسر' : 'Confirm purchase with Moyasar') . '</button></form>';
 }
-echo '</article></div><p><a href="/credits.php">' . ($arabic ? 'رجوع إلى الباقات' : 'Back to packages') . '</a></p></main></body></html>';
+echo '</article></div><p><a href="/credits.php">' . ($arabic ? 'رجوع إلى الباقات' : 'Back to packages') . '</a></p></main>';
+echo '<script src="/public/assets/js/app.js?v=nav42"></script></body></html>';

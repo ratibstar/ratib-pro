@@ -61,4 +61,5 @@ rateb_site_header('/credits.php', true);
 echo '<main class="container studio-page"><h1>' . e($labels[$status] ?? $labels['pending']) . '</h1>';
 echo '<p>' . e((string) $row['package_code']) . ' — ' . number_format(((int) $row['amount']) / 100, 2) . ' SAR — ' . (int) $row['credits'] . ' ' . ($arabic ? 'نقطة' : 'credits') . '</p>';
 echo '<p>' . ($arabic ? 'الرصيد الحالي' : 'Current balance') . ': ' . (int) $wallet['credits_balance'] . '</p>';
-echo '<p><a class="button" href="/dashboard.php">' . ($arabic ? 'لوحة التحكم' : 'Dashboard') . '</a></p></main></body></html>';
+echo '<p><a class="button" href="/dashboard.php">' . ($arabic ? 'لوحة التحكم' : 'Dashboard') . '</a></p></main>';
+echo '<script src="/public/assets/js/app.js?v=nav42"></script></body></html>';

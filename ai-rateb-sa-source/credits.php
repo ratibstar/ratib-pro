@@ -68,5 +68,6 @@ $events = [
   <?php endif; ?>
 </main>
 <?php rateb_auth_dialog('/credits.php'); ?>
+<script src="/public/assets/js/app.js?v=nav42"></script>
 </body>
 </html>
