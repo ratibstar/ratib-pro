@@ -32,9 +32,8 @@ $before = $pdo->balances[7];
 $first = rateb_credit_charge($pdo, 7, 'text_campaign', 3);
 $second = rateb_credit_charge($pdo, 7, 'text_campaign', 3);
 check($first > 0 && $second > 0 && $first !== $second && $pdo->balances[7] === $before - 10, 'two charges for the same user stay separate');
-check(rateb_refund_credits(7, 'text_campaign', 3) === true, 'the newest charge can be refunded');
-check(rateb_refund_credits(7, 'text_campaign', 3) === true, 'the older charge can still be refunded');
-check(rateb_refund_credits(7, 'text_campaign', 3) === false && $pdo->balances[7] === $before, 'both charges are refunded once and the balance is restored');
+check(rateb_refund_credits(7, 'text_campaign', 3) === true && $pdo->balances[7] === $before - 5, 'only the newest charge is refunded');
+check(rateb_refund_credits(7, 'text_campaign', 3) === false && $pdo->balances[7] === $before - 5, 'repeating the newest refund does not refund the older charge');
 
 $pdo->balances[8] = 40;
 $image = rateb_credit_charge($pdo, 8, 'ai_image', 9);

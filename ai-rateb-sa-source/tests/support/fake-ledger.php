@@ -168,7 +168,7 @@ final class FakeStatement extends PDOStatement
                 $db->events[$id] = ['user_id' => (int) $p[0], 'campaign_id' => $p[1], 'operation' => (string) $p[2], 'status' => 'completed', 'credits_deducted' => 0, 'age' => 0, 'idempotency_key' => $key];
                 $this->affected = 1;
                 return true;
-            case "SELECT id, credits_deducted FROM usage_events WHERE user_id = ? AND operation = ? AND status = 'completed' AND credits_deducted > 0 AND ((? IS NULL AND campaign_id IS NULL) OR campaign_id = ?) ORDER BY id DESC":
+            case "SELECT id, credits_deducted FROM usage_events WHERE user_id = ? AND operation = ? AND status = 'completed' AND credits_deducted > 0 AND ((? IS NULL AND campaign_id IS NULL) OR campaign_id = ?) ORDER BY id DESC LIMIT 1 FOR UPDATE":
                 $rows = [];
                 foreach ($db->events as $id => $row) {
                     $sameCampaign = ($p[2] === null && $row['campaign_id'] === null) || $row['campaign_id'] === $p[3];
@@ -177,7 +177,7 @@ final class FakeStatement extends PDOStatement
                     }
                 }
                 usort($rows, static fn (array $a, array $b): int => $b['id'] <=> $a['id']);
-                $this->result = $rows;
+                $this->result = array_slice($rows, 0, 1);
                 return true;
             case 'SELECT id FROM users WHERE id = ?':
                 if (isset($db->balances[(int) $p[0]])) {
@@ -219,6 +219,7 @@ final class FakeStatement extends PDOStatement
                 $this->affected = 1;
                 return true;
             case 'SELECT id FROM usage_events WHERE idempotency_key = ?':
+            case 'SELECT id FROM usage_events WHERE idempotency_key = ? FOR UPDATE':
                 foreach ($db->events as $id => $row) {
                     if (($row['idempotency_key'] ?? null) === (string) $p[0]) {
                         $this->result = [['id' => $id]];

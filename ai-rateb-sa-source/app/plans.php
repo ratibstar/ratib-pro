@@ -60,11 +60,8 @@ function rateb_lock_plan(PDO $pdo, int $userId): array
         FOR UPDATE");
     $stmt->execute([$userId]);
     $plan = $stmt->fetch();
-    if ($plan && rateb_subscription_current($plan, time())) {
-        return $plan;
-    }
     if ($plan) {
-        return rateb_free_plan_row($pdo);
+        return $plan;
     }
     $freeId = (int) $pdo->query("SELECT id FROM plans WHERE code = 'free' LIMIT 1")->fetchColumn();
     if ($freeId < 1) {
@@ -228,38 +225,43 @@ function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId
     $pdo = db();
     $pdo->beginTransaction();
     try {
-        $charges = $pdo->prepare('SELECT id, credits_deducted FROM usage_events WHERE user_id = ? AND operation = ? AND status = \'completed\' AND credits_deducted > 0 AND ((? IS NULL AND campaign_id IS NULL) OR campaign_id = ?) ORDER BY id DESC');
+        $charges = $pdo->prepare('SELECT id, credits_deducted FROM usage_events WHERE user_id = ? AND operation = ? AND status = \'completed\' AND credits_deducted > 0 AND ((? IS NULL AND campaign_id IS NULL) OR campaign_id = ?) ORDER BY id DESC LIMIT 1 FOR UPDATE');
         $charges->execute([$userId, $featureType, $campaignId, $campaignId]);
-        foreach ($charges->fetchAll() as $charge) {
-            $chargeId = (int) $charge['id'];
-            $amount = (int) $charge['credits_deducted'];
-            $key = $featureType . '_charge:' . $chargeId . ':refund';
-            $taken = $pdo->prepare('SELECT id FROM usage_events WHERE idempotency_key = ?');
-            $taken->execute([$key]);
-            if ($taken->fetchColumn() !== false) {
-                continue;
-            }
-            try {
-                $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, ?, ?, 1, \'completed\', ?, 0, ?)')->execute([
-                    $userId,
-                    $campaignId,
-                    $featureType . '_refund',
-                    $featureType . '_refund',
-                    $key,
-                ]);
-            } catch (Throwable $duplicate) {
-                $message = $duplicate->getMessage();
-                if (!str_contains($message, 'UNIQUE') && !str_contains($message, 'Duplicate') && !str_contains($message, 'constraint')) {
-                    throw $duplicate;
-                }
-                continue;
-            }
-            $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$amount, $userId]);
+        $charge = $charges->fetch();
+        if (!$charge) {
             $pdo->commit();
-            return true;
+            return false;
         }
+        $chargeId = (int) $charge['id'];
+        $amount = (int) $charge['credits_deducted'];
+        $key = $featureType . '_charge:' . $chargeId . ':refund';
+        $taken = $pdo->prepare('SELECT id FROM usage_events WHERE idempotency_key = ? FOR UPDATE');
+        $taken->execute([$key]);
+        if ($taken->fetchColumn() !== false) {
+            $pdo->commit();
+            return false;
+        }
+        try {
+            $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, ?, ?, 1, \'completed\', ?, 0, ?)')->execute([
+                $userId,
+                $campaignId,
+                $featureType . '_refund',
+                $featureType . '_refund',
+                $key,
+            ]);
+        } catch (Throwable $duplicate) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $message = $duplicate->getMessage();
+            if (str_contains($message, 'UNIQUE') || str_contains($message, 'Duplicate') || str_contains($message, 'constraint')) {
+                return false;
+            }
+            throw $duplicate;
+        }
+        $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$amount, $userId]);
         $pdo->commit();
-        return false;
+        return true;
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
