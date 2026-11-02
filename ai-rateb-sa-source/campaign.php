@@ -831,5 +831,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   <div id="demo-stage"></div>
 </dialog>
 <script src="/public/assets/js/app.js?v=nav43"></script>
+<?php if (($_GET['preview'] ?? '') === '1'): ?>
+<script>
+var freshImage = document.querySelector('#images [data-kind="image"]');
+if (freshImage) freshImage.click();
+</script>
+<?php endif; ?>
 </body>
 </html>

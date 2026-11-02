@@ -378,7 +378,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         'state' => 'ready',
         'model' => $modelName,
         'mime' => $mime,
-        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '&preview=1#images',
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -701,7 +701,7 @@ function ai_recruitment_dashboard_png(): string
     ];
     $numbers = ['8', '5', '5', '0', '5', '36', '1', '1', '1', '0', '6', '0', '0', '0'];
     $labels = ['عقود الاستقدام', 'عقود الضمان', 'عقود التأجير', 'نقل الكفالة', 'الإيواء', 'العمالة المتاحة', 'الوكلاء', 'طلبات الاستقدام', 'التأشيرات', 'المتابعة', 'الإقامة', 'الحسابات', 'طلبات الموقع', 'المعاملات المعلقة'];
-    $font = '/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf';
+    $font = __DIR__ . '/../fonts/DejaVuSans.ttf';
     $dark = $paint(31, 41, 55);
     $white = $paint(255, 255, 255);
     ai_draw_ar($image, 22, 28, 148, 'مرحباً بك في برنامج رتب لشركات الاستقدام', $white, $font, 734);
@@ -793,7 +793,7 @@ function ai_image_store(array $campaign, int $userId, string $jobId, int $usageI
         'state' => 'ready',
         'model' => $modelName,
         'mime' => $mime,
-        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '&preview=1#images',
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
