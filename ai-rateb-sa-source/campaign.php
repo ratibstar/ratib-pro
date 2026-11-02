@@ -226,7 +226,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav45">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav46">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -293,11 +293,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
           <form id="imageForm" class="stage-action" data-status="stage-status" data-job-ttl="<?= (int) rateb_image_job_ttl() ?>" data-latest-image="<?= (int) ($campaignImages[0]['id'] ?? 0) ?>">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
-            <div class="ratio-picks">
-              <label><input type="radio" name="ratio" value="1:1" checked><strong>1:1</strong><span><?= $arabic ? 'إنستغرام' : 'Instagram' ?></span></label>
-              <label><input type="radio" name="ratio" value="9:16"><strong>9:16</strong><span><?= $arabic ? 'عمودي' : 'Vertical' ?></span></label>
-              <label><input type="radio" name="ratio" value="16:9"><strong>16:9</strong><span><?= $arabic ? 'أفقي' : 'Horizontal' ?></span></label>
-            </div>
             <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
           </form>
         <?php elseif ($key === 'voice' && $approvedImages !== []): ?>
@@ -531,6 +526,13 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 
   <section class="panel" id="images" data-panel="images">
     <h2 data-i18n="stage_images"><?= $arabic ? 'الصور' : 'Images' ?></h2>
+    <?php if ($copyApproved): ?>
+      <div class="ratio-picks">
+        <label><input type="radio" name="ratio" value="1:1" form="imageForm" checked><i>1:1</i><span><?= $arabic ? 'إنستغرام' : 'Instagram' ?></span></label>
+        <label><input type="radio" name="ratio" value="9:16" form="imageForm"><i>9/16</i><span><?= $arabic ? 'عمودي' : 'Vertical' ?></span></label>
+        <label><input type="radio" name="ratio" value="16:9" form="imageForm"><i>16:9</i><span><?= $arabic ? 'أفقي' : 'Horizontal' ?></span></label>
+      </div>
+    <?php endif; ?>
     <?php if ($copyApproved || $campaignImages !== []): ?>
       <form class="attach-image" method="post" action="/app/media/upload.php" enctype="multipart/form-data">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
@@ -555,7 +557,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
               <img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt="">
             </button>
             <p class="badge"><?= (string) $item['source'] === 'ai' ? ($arabic ? 'مولّدة بالذكاء الاصطناعي' : 'AI-generated') : ($arabic ? 'مرفوعة' : 'Uploaded') ?></p>
-            <?php if (preg_match('/ratio-(1x1|4x5|9x16)/', (string) ($item['original_name'] ?? ''), $ratioMatch)): ?>
+            <?php if (preg_match('/ratio-(1x1|9x16|16x9)/', (string) ($item['original_name'] ?? ''), $ratioMatch)): ?>
               <p class="badge"><?= e(str_replace('x', ':', $ratioMatch[1])) ?></p>
             <?php endif; ?>
             <?php if (str_starts_with((string) ($item['original_name'] ?? ''), 'hold-')): ?>

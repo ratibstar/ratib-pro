@@ -637,9 +637,9 @@ body.studio .site-bar .edge-auth .register:hover{transform:translateY(-1px);box-
   body.studio .site-bar .edge-auth .register{padding:0 12px;font-size:13px}
   body.studio .site-bar .edge-auth #theme{display:none}
 }
-.ratio-picks{display:flex;gap:8px;align-items:stretch}
-.ratio-picks label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:78px;padding:8px 10px;border:1px solid rgba(196,181,253,.45);border-radius:14px;background:rgba(255,255,255,.08);cursor:pointer}
-.ratio-picks input{position:absolute;opacity:0;pointer-events:none}
-.ratio-picks strong{font-size:15px;letter-spacing:.02em}
-.ratio-picks span{font-size:12px;opacity:.8}
-.ratio-picks label:has(input:checked){background:#efeaff;color:#4c1d95;border-color:#7c3aed}
+#images .ratio-picks{display:flex;gap:18px;justify-content:center;margin:8px 0 22px;padding:22px;border-radius:22px;background:#f4f0ff}
+#images .ratio-picks label{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:92px;color:#7c6bb5;cursor:pointer}
+#images .ratio-picks input{position:absolute;opacity:0;pointer-events:none}
+#images .ratio-picks i{display:grid;place-items:center;width:74px;height:74px;border:2px solid #c4b5fd;border-radius:18px;background:#fff;color:#8b5cf6;font-style:normal;font-weight:700;font-size:18px}
+#images .ratio-picks span{font-size:15px;color:#7c6bb5}
+#images .ratio-picks label:has(input:checked) i{border-color:#7c3aed;box-shadow:0 0 0 4px rgba(124,58,237,.16);color:#6d28d9}
