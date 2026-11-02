@@ -339,7 +339,18 @@ function rateb_payment_accept(array $payment): string
     if ((int) ($payment['amount'] ?? 0) !== $package['amount']) {
         return 'amount';
     }
+    if ((int) ($meta['order_id'] ?? 0) < 1) {
+        return 'order';
+    }
     return '';
+}
+
+function rateb_moyasar_webhook_authorized(string $configured, string $provided): bool
+{
+    if ($configured === '' || $provided === '') {
+        return false;
+    }
+    return hash_equals($configured, $provided);
 }
 
 /** @param array<string,mixed> $payment @return string ok | unpaid | currency | package | amount | owner | duplicate */
@@ -364,6 +375,22 @@ function rateb_payment_record(PDO $pdo, array $payment): string
         if ($user->fetchColumn() === false) {
             $pdo->rollBack();
             return 'owner';
+        }
+        $orderId = (int) $meta['order_id'];
+        $order = $pdo->prepare('SELECT id, user_id, package_code, amount, credits, currency, status FROM payment_orders WHERE id = ? FOR UPDATE');
+        $order->execute([$orderId]);
+        $row = $order->fetch();
+        if (!$row || (int) $row['user_id'] !== $userId) {
+            $pdo->rollBack();
+            return 'order';
+        }
+        if ((string) $row['status'] === 'paid') {
+            $pdo->commit();
+            return 'duplicate';
+        }
+        if ((string) $row['status'] !== 'pending' || (string) $row['package_code'] !== $code || (int) $row['amount'] !== $package['amount'] || (int) $row['credits'] !== $package['credits'] || strtoupper((string) $row['currency']) !== 'SAR') {
+            $pdo->rollBack();
+            return 'amount';
         }
         $known = $pdo->prepare('SELECT id FROM payment_receipts WHERE moyasar_id = ?');
         $known->execute([$paymentId]);
@@ -401,6 +428,7 @@ function rateb_payment_record(PDO $pdo, array $payment): string
         }
         $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, NULL, ?, 1, \'completed\', ?, 0, ?)')
             ->execute([$userId, 'payment_' . $code, 'payment_' . $code, 'payment:' . $paymentId]);
+        $pdo->prepare("UPDATE payment_orders SET status = 'paid' WHERE id = ? AND status = 'pending'")->execute([$orderId]);
         $pdo->commit();
         return 'ok';
     } catch (Throwable $error) {
@@ -409,6 +437,14 @@ function rateb_payment_record(PDO $pdo, array $payment): string
         }
         throw $error;
     }
+}
+
+function rateb_payment_mark_failed(PDO $pdo, int $orderId, int $userId): void
+{
+    if ($orderId < 1 || $userId < 1) {
+        return;
+    }
+    $pdo->prepare("UPDATE payment_orders SET status = 'failed' WHERE id = ? AND user_id = ? AND status = 'pending'")->execute([$orderId, $userId]);
 }
 
 function rateb_credit_stop(int $userId = 0, string $featureType = ''): void

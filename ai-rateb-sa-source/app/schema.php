@@ -169,6 +169,20 @@ function ensure_campaign_schema(PDO $pdo): void
         UNIQUE KEY moyasar_id (moyasar_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS payment_orders (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT UNSIGNED NOT NULL,
+        package_code VARCHAR(32) NOT NULL,
+        amount INT UNSIGNED NOT NULL,
+        credits INT UNSIGNED NOT NULL,
+        currency CHAR(3) NOT NULL DEFAULT 'SAR',
+        status VARCHAR(16) NOT NULL DEFAULT 'pending',
+        moyasar_invoice_id VARCHAR(64) NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_status (user_id, status)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS campaign_briefs (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         campaign_id BIGINT UNSIGNED NOT NULL,

@@ -12,14 +12,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $cfg = require __DIR__ . '/../../config/ai.php';
 $secret = (string) ($cfg['moyasar_secret_key'] ?? '');
-$token = (string) ($_GET['token'] ?? ($_SERVER['HTTP_X_MOYASAR_TOKEN'] ?? ''));
-if ($secret === '' || $token === '' || !hash_equals($secret, $token)) {
+$webhookSecret = (string) ($cfg['moyasar_webhook_secret'] ?? '');
+$payload = json_decode((string) file_get_contents('php://input'), true);
+$provided = (string) ($_SERVER['HTTP_X_MOYASAR_TOKEN'] ?? '');
+if ($provided === '' && is_array($payload)) {
+    $provided = (string) ($payload['secret_token'] ?? '');
+}
+if (!rateb_moyasar_webhook_authorized($webhookSecret, $provided) || $secret === '') {
     http_response_code(401);
     exit('Unauthorized');
 }
 
-$payload = json_decode((string) file_get_contents('php://input'), true);
-$paymentId = is_array($payload) ? (string) ($payload['id'] ?? '') : '';
+$data = is_array($payload) && is_array($payload['data'] ?? null) ? $payload['data'] : $payload;
+$paymentId = is_array($data) ? (string) ($data['id'] ?? '') : '';
 if (!preg_match('/^[a-f0-9-]{36}$/', $paymentId)) {
     http_response_code(422);
     exit('Invalid payment');
@@ -43,6 +48,17 @@ if ($http !== 200 || !is_array($payment) || (string) ($payment['id'] ?? '') !== 
 
 $pdo = db();
 ensure_campaign_schema($pdo);
+$status = (string) ($payment['status'] ?? '');
+if ($status !== 'paid') {
+    $meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
+    if (in_array($status, ['failed', 'canceled', 'cancelled', 'expired', 'voided'], true)) {
+        rateb_payment_mark_failed($pdo, (int) ($meta['order_id'] ?? 0), (int) ($meta['user_id'] ?? 0));
+    }
+    http_response_code(200);
+    echo 'pending';
+    exit;
+}
+
 try {
     $result = rateb_payment_record($pdo, $payment);
 } catch (Throwable $error) {

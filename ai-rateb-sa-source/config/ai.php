@@ -25,4 +25,5 @@ return [
     'image_model' => trim((string) (getenv('RATEB_IMAGE_MODEL') ?: ($local['image_model'] ?? '@cf/black-forest-labs/flux-1-schnell'))),
     'sawtak_api_key' => trim((string) (getenv('SAWTAK_API_KEY') ?: ($local['sawtak_api_key'] ?? ''))),
     'moyasar_secret_key' => trim((string) (getenv('MOYASAR_SECRET_KEY') ?: ($local['moyasar_secret_key'] ?? ''))),
+    'moyasar_webhook_secret' => trim((string) getenv('MOYASAR_WEBHOOK_SECRET')),
 ];

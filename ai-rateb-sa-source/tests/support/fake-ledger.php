@@ -31,6 +31,8 @@ final class FakeLedger extends PDO
     public array $subscriptions = [];
     /** @var array<int,string> */
     public array $packages = [];
+    /** @var array<int,array{user_id:int,package_code:string,amount:int,credits:int,currency:string,status:string}> */
+    public array $orders = [];
     private ?array $snapshot = null;
     private int $lastId = 0;
 
@@ -182,6 +184,23 @@ final class FakeStatement extends PDOStatement
             case 'SELECT id FROM users WHERE id = ?':
                 if (isset($db->balances[(int) $p[0]])) {
                     $this->result = [['id' => (int) $p[0]]];
+                }
+                return true;
+            case 'SELECT id, user_id, package_code, amount, credits, currency, status FROM payment_orders WHERE id = ? FOR UPDATE':
+                if (isset($db->orders[(int) $p[0]])) {
+                    $this->result = [array_merge(['id' => (int) $p[0]], $db->orders[(int) $p[0]])];
+                }
+                return true;
+            case "UPDATE payment_orders SET status = 'paid' WHERE id = ? AND status = 'pending'":
+                if (isset($db->orders[(int) $p[0]]) && $db->orders[(int) $p[0]]['status'] === 'pending') {
+                    $db->orders[(int) $p[0]]['status'] = 'paid';
+                    $this->affected = 1;
+                }
+                return true;
+            case "UPDATE payment_orders SET status = 'failed' WHERE id = ? AND user_id = ? AND status = 'pending'":
+                if (isset($db->orders[(int) $p[0]]) && $db->orders[(int) $p[0]]['user_id'] === (int) $p[1] && $db->orders[(int) $p[0]]['status'] === 'pending') {
+                    $db->orders[(int) $p[0]]['status'] = 'failed';
+                    $this->affected = 1;
                 }
                 return true;
             case 'SELECT id FROM payment_receipts WHERE moyasar_id = ?':
