@@ -1443,6 +1443,9 @@
     videoGenerate.addEventListener('submit', function (event) {
       event.preventDefault();
       showVideoStatus(videoBusy, false);
+      var selectedSeconds = document.querySelector('[data-video-seconds]');
+      var secondsInput = document.getElementById('video-seconds');
+      if (selectedSeconds && secondsInput && selectedSeconds.value) secondsInput.value = selectedSeconds.value;
       document.querySelectorAll('[form="videoGenerate"], #videoGenerate button').forEach(function (node) {
         node.disabled = true;
       });
