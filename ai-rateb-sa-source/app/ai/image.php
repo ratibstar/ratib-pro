@@ -382,6 +382,55 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     exit;
 }
 
+function ai_english_photo_scene(array $facts): string
+{
+    $facts = array_values(array_filter(array_map(static fn (string $line): string => trim($line), $facts)));
+    if ($facts === []) {
+        http_response_code(422);
+        echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $cfg = require __DIR__ . '/../../config/ai.php';
+    if (trim((string) ($cfg['api_key'] ?? '')) === '') {
+        http_response_code(503);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $body = json_encode([
+        'model' => $cfg['model'],
+        'temperature' => 0.2,
+        'max_tokens' => 180,
+        'response_format' => ['type' => 'json_object'],
+        'messages' => [
+            ['role' => 'system', 'content' => 'Return JSON {"scene":"..."} only. scene is one English sentence, at most 35 words, describing a real photograph. Name the visible people, place, and objects that belong to this business. If it is software or a service, show staff using it in that workplace. Do not include any words that should be printed, any brand spelling, any slogan, or any letters.'],
+            ['role' => 'user', 'content' => implode("\n", $facts)],
+        ],
+    ], JSON_UNESCAPED_UNICODE);
+    $ch = curl_init(rtrim((string) ($cfg['base_url'] ?? ''), '/') . '/chat/completions');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $cfg['api_key']],
+        CURLOPT_POSTFIELDS => $body,
+        CURLOPT_TIMEOUT => 40,
+        CURLOPT_CONNECTTIMEOUT => 8,
+    ]);
+    $raw = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $data = json_decode((string) $raw, true);
+    $content = is_array($data) ? (string) ($data['choices'][0]['message']['content'] ?? '') : '';
+    $parsed = json_decode($content, true);
+    $scene = is_array($parsed) ? trim((string) ($parsed['scene'] ?? '')) : '';
+    $scene = trim(preg_replace('/\s+/u', ' ', $scene) ?? '');
+    if ($code < 200 || $code >= 300 || $scene === '' || preg_match('/\p{Arabic}/u', $scene) === 1 || preg_match('/[A-Za-z]/', $scene) !== 1) {
+        http_response_code(502);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    return $scene;
+}
+
 function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
 {
     $rows = db()->prepare('SELECT output_type, content, approval_status FROM campaign_outputs WHERE campaign_id = ? ORDER BY id DESC');
@@ -405,35 +454,43 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
         exit;
     }
     $document = rateb_strategy_document($strategy) ?? [];
-    $prefer = (string) (rateb_output_language(db(), $campaign)['speech'] ?? 'ar');
-    $copyLine = '';
-    foreach (array_merge(['headline'], rateb_copy_types()) as $type) {
+    $facts = [];
+    $product = trim((string) ($campaign['product_name'] ?? ''));
+    if ($product === '') {
+        $product = trim((string) ($campaign['title'] ?? ''));
+    }
+    if ($product !== '') {
+        $facts[] = 'Product: ' . $product;
+    }
+    foreach (['audience', 'core_message', 'creative_direction', 'positioning'] as $key) {
+        $english = rateb_prompt_plain($document[$key] ?? '', 'en');
+        $arabic = rateb_prompt_plain($document[$key] ?? '', 'ar');
+        $line = $english !== '' ? $english : $arabic;
+        if ($line !== '') {
+            $facts[] = $key . ': ' . $line;
+        }
+    }
+        foreach (['headline', 'ad_copy', 'product_description'] as $type) {
         if (empty($copy[$type])) {
             continue;
         }
-        $copyLine = rateb_prompt_plain($copy[$type], $prefer);
-        if ($copyLine !== '') {
+        $line = rateb_prompt_plain($copy[$type], 'en');
+        if ($line === '') {
+            $line = rateb_prompt_plain($copy[$type], 'ar');
+        }
+        if ($line !== '') {
+            $facts[] = $type . ': ' . $line;
             break;
         }
     }
-    $brand = [];
-    $brandStmt = db()->prepare('SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
-    $brandStmt->execute([(int) ($campaign['user_id'] ?? 0)]);
-    $brandRow = $brandStmt->fetch();
-    if ($brandRow) {
-        $brand = $brandRow;
-    }
-    $subject = trim((string) ($campaign['product_name'] ?? ''));
-    if ($subject === '') {
-        $subject = trim((string) ($campaign['title'] ?? ''));
-    }
+    $scene = ai_english_photo_scene($facts);
     $prompt = rateb_visual_prompt(
-        array_merge([
-            'Photorealistic commercial photograph of this exact subject: ' . $subject,
-            'Show the real business or service in a real place, with the people and tools that belong to it',
-            'Do not draw abstract art, toys, candy, or unrelated objects',
-        ], rateb_visual_lines($campaign, $document, $copyLine, $brand, $prefer)),
-        'No written text, no letters, and no logo.',
+        [
+            'Photorealistic photograph, ' . $scene,
+            'Blank screens, blank paper, blank walls',
+            'No letters, no words, no Arabic script, no English text, no signs, no logos, no captions',
+        ],
+        'Nothing in the picture is written.',
         $limit
     );
     if (trim($prompt) === '') {
