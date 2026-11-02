@@ -583,6 +583,20 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </section>
   <section class="panel" id="voice" data-panel="voice">
     <h2 data-i18n="stage_voice"><?= $arabic ? 'الصوت' : 'Voice' ?></h2>
+    <?php if ($campaignVoices): ?>
+      <?php foreach ($campaignVoices as $item): ?>
+        <article class="media-card">
+          <audio class="<?= $item === $campaignVoices[0] ? 'card-voice' : '' ?>" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"<?= $item === $campaignVoices[0] && (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
+          <p class="badge"><?= (string) $item['source'] === 'ai' ? ($arabic ? 'صوت مولّد من النص المعتمد' : 'Generated from the approved copy') : ($arabic ? 'صوت مرفوع' : 'Uploaded audio') ?></p>
+          <form method="post" action="/app/media/delete.php">
+            <input type="hidden" name="csrf" value="<?= $csrf ?>">
+            <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+            <input type="hidden" name="panel" value="voice">
+            <button type="submit" class="quiet" data-i18n="delete"><?= $arabic ? 'حذف' : 'Delete' ?></button>
+          </form>
+        </article>
+      <?php endforeach; ?>
+    <?php endif; ?>
     <form id="voiceForm" data-status="stage-status" data-voice-library data-voice-choose="1">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
         <input type="hidden" name="campaign_id" value="<?= $id ?>">
@@ -617,22 +631,9 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <?php if ($storedVoiceScript !== '' && $approvedVoiceScript === ''): ?>
       <p class="notice"><?= $arabic ? 'آخر تسجيل محفوظ:' : 'Last saved recording:' ?> <?= e($storedVoiceScript) ?></p>
     <?php endif; ?>
-    <?php if ($campaignVoices): ?>
-      <?php foreach ($campaignVoices as $item): ?>
-        <article class="media-card">
-          <audio class="<?= $item === $campaignVoices[0] ? 'card-voice' : '' ?>" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"<?= $item === $campaignVoices[0] && (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
-          <p class="badge"><?= (string) $item['source'] === 'ai' ? ($arabic ? 'صوت مولّد من النص المعتمد' : 'Generated from the approved copy') : ($arabic ? 'صوت مرفوع' : 'Uploaded audio') ?></p>
-          <form method="post" action="/app/media/delete.php">
-            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
-            <input type="hidden" name="panel" value="voice">
-            <button type="submit" class="quiet" data-i18n="delete"><?= $arabic ? 'حذف' : 'Delete' ?></button>
-          </form>
-        </article>
-      <?php endforeach; ?>
-    <?php elseif ($campaignImages === []): ?>
+    <?php if (!$campaignVoices && $campaignImages === []): ?>
       <p class="empty" data-i18n="voice_need_images"><?= $arabic ? 'أكمل الصور أولًا، ثم ابدأ الصوت.' : 'Finish the images first, then start the voice.' ?></p>
-    <?php else: ?>
+    <?php elseif (!$campaignVoices): ?>
       <p class="empty" data-i18n="voice_empty"><?= $arabic ? 'الصوت يُقرأ من النص المعتمد. ابدأ من بطاقة الصوت.' : 'The voice reads the approved copy. Start from the Voice card.' ?></p>
     <?php endif; ?>
   </section>
@@ -830,7 +831,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav43"></script>
+<script src="/public/assets/js/app.js?v=nav44"></script>
 <?php if (($_GET['preview'] ?? '') === '1'): ?>
 <script>
 var freshImage = document.querySelector('#images [data-kind="image"]');

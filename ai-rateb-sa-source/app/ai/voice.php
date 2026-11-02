@@ -75,7 +75,6 @@ if ($charge !== 'ok') {
     echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-session_write_close();
 
 $payload = json_encode([
     'model' => 'arabic-tts-1',

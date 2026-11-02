@@ -1221,7 +1221,10 @@
         try {
           payload = await response.json();
         } catch (parseError) {
-          throw new Error(dict[language].voice_provider || 'Voice generation failed');
+          stopped = true;
+          clearInterval(watch);
+          location.href = '/campaign.php?id=' + encodeURIComponent(campaignId) + '&play=1#voice';
+          return;
         }
         if (!response.ok || !payload.ok) throw new Error(payload.error || dict[language].voice_provider || 'Voice generation failed');
         stopped = true;
