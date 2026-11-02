@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../plans.php';
+require_once __DIR__ . '/../nav.php';
 require_login();
 
 $orderId = (int) ($_GET['order'] ?? 0);
@@ -53,8 +54,11 @@ $labels = [
 ];
 $status = (string) $row['status'];
 $wallet = rateb_account_credits($pdo, $userId);
-echo '<!doctype html><html lang="' . ($arabic ? 'ar' : 'en') . '" dir="' . ($arabic ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RATEB AI</title></head><body>';
-echo '<h1>' . e($labels[$status] ?? $labels['pending']) . '</h1>';
+echo '<!doctype html><html lang="' . ($arabic ? 'ar' : 'en') . '" dir="' . ($arabic ? 'rtl' : 'ltr') . '" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+echo '<title>RATEB AI</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap"><link rel="stylesheet" href="/public/assets/css/theme.css"><link rel="stylesheet" href="/public/assets/css/app.css?v=nav40"></head>';
+echo '<body class="studio">';
+rateb_site_header('/credits.php', true);
+echo '<main class="container studio-page"><h1>' . e($labels[$status] ?? $labels['pending']) . '</h1>';
 echo '<p>' . e((string) $row['package_code']) . ' — ' . number_format(((int) $row['amount']) / 100, 2) . ' SAR — ' . (int) $row['credits'] . ' ' . ($arabic ? 'نقطة' : 'credits') . '</p>';
 echo '<p>' . ($arabic ? 'الرصيد الحالي' : 'Current balance') . ': ' . (int) $wallet['credits_balance'] . '</p>';
-echo '<p><a href="/dashboard.php">' . ($arabic ? 'لوحة التحكم' : 'Dashboard') . '</a></p></body></html>';
+echo '<p><a class="button" href="/dashboard.php">' . ($arabic ? 'لوحة التحكم' : 'Dashboard') . '</a></p></main></body></html>';
