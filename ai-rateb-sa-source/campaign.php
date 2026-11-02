@@ -226,7 +226,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav46">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav47">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -303,6 +303,13 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
       </li>
     <?php endforeach; ?>
   </ol>
+  <?php if ($copyApproved): ?>
+    <div class="ratio-picks">
+      <label><input type="radio" name="ratio" value="1:1" form="imageForm" checked><i>1:1</i><span><?= $arabic ? 'إنستغرام' : 'Instagram' ?></span></label>
+      <label><input type="radio" name="ratio" value="9:16" form="imageForm"><i>9:16</i><span><?= $arabic ? 'عمودي' : 'Vertical' ?></span></label>
+      <label><input type="radio" name="ratio" value="16:9" form="imageForm"><i>16:9</i><span><?= $arabic ? 'أفقي' : 'Horizontal' ?></span></label>
+    </div>
+  <?php endif; ?>
   <p id="stage-status" class="stage-status"></p>
 
   <section class="panel is-active" id="idea" data-panel="idea">
@@ -526,13 +533,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 
   <section class="panel" id="images" data-panel="images">
     <h2 data-i18n="stage_images"><?= $arabic ? 'الصور' : 'Images' ?></h2>
-    <?php if ($copyApproved): ?>
-      <div class="ratio-picks">
-        <label><input type="radio" name="ratio" value="1:1" form="imageForm" checked><i>1:1</i><span><?= $arabic ? 'إنستغرام' : 'Instagram' ?></span></label>
-        <label><input type="radio" name="ratio" value="9:16" form="imageForm"><i>9/16</i><span><?= $arabic ? 'عمودي' : 'Vertical' ?></span></label>
-        <label><input type="radio" name="ratio" value="16:9" form="imageForm"><i>16:9</i><span><?= $arabic ? 'أفقي' : 'Horizontal' ?></span></label>
-      </div>
-    <?php endif; ?>
     <?php if ($copyApproved || $campaignImages !== []): ?>
       <form class="attach-image" method="post" action="/app/media/upload.php" enctype="multipart/form-data">
         <input type="hidden" name="csrf" value="<?= $csrf ?>">
