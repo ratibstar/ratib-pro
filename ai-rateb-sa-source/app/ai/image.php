@@ -386,8 +386,8 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
 function ai_subject_lock(string $facts): string
 {
     $locks = [
-        'استقدام' => 'recruitment agency staff in a Saudi office reviewing worker files on laptops',
-        'recruit' => 'recruitment agency staff in an office reviewing worker files on laptops',
+        'استقدام' => 'a recruitment company office in Riyadh, a consultant in a white thobe and red shemagh at a desk, an open laptop showing a hiring dashboard of blank cards and simple charts, stacks of beige applicant folders on the desk, daylight through office windows',
+        'recruit' => 'a recruitment company office, a consultant at a desk, an open laptop showing a hiring dashboard of blank cards and simple charts, stacks of applicant folders, daylight through office windows',
         'عقار' => 'a real estate agent showing a property to clients',
         'مطعم' => 'a restaurant table with the dishes this business serves',
         'عيادة' => 'a clinic consultation with a doctor and a patient',
@@ -505,15 +505,13 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
     }
     $locked = ai_subject_lock(implode("\n", $facts));
     $scene = $locked !== '' ? $locked : ai_english_photo_scene($facts);
-    $prompt = rateb_visual_prompt(
-        [
-            'Photorealistic photograph of ' . ($locked !== '' ? $locked : $scene),
-            $locked !== '' ? $scene : '',
-            'No letters, no words, no signs, no logos',
-        ],
-        'Nothing in the picture is written.',
-        min($limit, 320)
-    );
+    $prompt = $locked !== ''
+        ? 'Photorealistic photograph of ' . $locked . '. No written text.'
+        : rateb_visual_prompt(
+            ['Photorealistic photograph of ' . $scene, 'No letters, no words, no signs, no logos'],
+            'Nothing in the picture is written.',
+            min($limit, 320)
+        );
     if (trim($prompt) === '') {
         http_response_code(422);
         echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
@@ -563,13 +561,18 @@ function ai_image_settings(): array
 /** @param array{account_id:string,token:string,model:string} $settings */
 function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, int $usageId, string $prompt, array $settings): void
 {
-    $waiting = db()->prepare('SELECT id FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ? AND source = ? AND original_name LIKE ? LIMIT 1');
+    $waiting = db()->prepare('SELECT id, stored_name FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ? AND source = ? AND original_name LIKE ?');
     $waiting->execute([$campaignId, $userId, 'image', 'ai', 'hold-%']);
-    if ($waiting->fetch()) {
-        ai_image_release($userId, '', $usageId, 'failed');
-        http_response_code(409);
-        echo json_encode(['error' => rateb_ui_error('image_pending'), 'code' => 'image_pending'], JSON_UNESCAPED_UNICODE);
-        exit;
+    foreach ($waiting->fetchAll() as $old) {
+        $stored = (string) ($old['stored_name'] ?? '');
+        if (preg_match('/^[a-f0-9]{32}\.(jpg|png|webp|gif)$/', $stored) === 1) {
+            $path = MEDIA_ROOT . '/' . $campaignId . '/' . $stored;
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+        db()->prepare('DELETE FROM campaign_media WHERE id = ? AND user_id = ? AND original_name LIKE ?')
+            ->execute([(int) $old['id'], $userId, 'hold-%']);
     }
     $cost = rateb_get_feature_cost('ai_image');
     $balance = db()->prepare('SELECT credits_balance FROM users WHERE id = ?');
@@ -579,7 +582,7 @@ function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, i
         rateb_credit_stop($userId, 'ai_image');
     }
     $url = 'https://api.cloudflare.com/client/v4/accounts/' . $settings['account_id'] . '/ai/run/' . $settings['model'];
-    $response = ai_horde_request('POST', $url, json_encode(['prompt' => $prompt], JSON_UNESCAPED_UNICODE), [
+    $response = ai_horde_request('POST', $url, json_encode(['prompt' => $prompt, 'steps' => 8], JSON_UNESCAPED_UNICODE), [
         'Authorization: Bearer ' . $settings['token'],
     ]);
     if ($response['http'] === 429) {
