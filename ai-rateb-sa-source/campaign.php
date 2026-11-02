@@ -139,7 +139,7 @@ $voiceEnglishBlocked = $approvedVoiceScript !== '' && !rateb_voice_text_is_arabi
 $shownVoiceScript = $storedVoiceScript !== '' ? $storedVoiceScript : $approvedVoiceScript;
 $readyDone = in_array((string) ($campaign['status'] ?? ''), ['ready', 'completed'], true);
 $priorDone = ($ideaDone ? 1 : 0) + ($strategyApproved ? 1 : 0) + ($copyApproved ? 1 : 0) + ($campaignImages !== [] ? 1 : 0) + ($campaignVoices !== [] ? 1 : 0) + ($videoDone ? 1 : 0);
-if ($readyDone && !$videoDone) {
+if ($readyDone && !rateb_campaign_requirements_met($ideaDone, $strategyApproved, $copyApproved, $campaignImages !== [], $campaignVoices !== [], $videoDone)) {
     db()->prepare("UPDATE campaigns SET status = 'in_progress', updated_at = NOW() WHERE id = ? AND user_id = ? AND status IN ('ready', 'completed')")->execute([$id, $userId]);
     $readyDone = false;
     $status = 'in_progress';
@@ -550,6 +550,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <button type="button" class="image-preview" data-kind="image" data-src="/app/media/file.php?id=<?= (int) $item['id'] ?>">
               <img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt="">
             </button>
+            <p class="badge"><?= (string) $item['source'] === 'ai' ? ($arabic ? 'مولّدة بالذكاء الاصطناعي' : 'AI-generated') : ($arabic ? 'مرفوعة' : 'Uploaded') ?></p>
             <?php if (preg_match('/ratio-(1x1|4x5|9x16)/', (string) ($item['original_name'] ?? ''), $ratioMatch)): ?>
               <p class="badge"><?= e(str_replace('x', ':', $ratioMatch[1])) ?></p>
             <?php endif; ?>
@@ -608,6 +609,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
       <?php foreach ($campaignVoices as $item): ?>
         <article class="media-card">
           <audio class="<?= $item === $campaignVoices[0] ? 'card-voice' : '' ?>" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"<?= $item === $campaignVoices[0] && (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
+          <p class="badge"><?= (string) $item['source'] === 'ai' ? ($arabic ? 'صوت مولّد من النص المعتمد' : 'Generated from the approved copy') : ($arabic ? 'صوت مرفوع' : 'Uploaded audio') ?></p>
           <form method="post" action="/app/media/delete.php">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
@@ -636,13 +638,16 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
           }
       }
       if ($board === [] && $campaignImages !== []) {
-          $boardLines = [];
-          foreach (['social_posts', 'ad_copy'] as $copyType) {
-              if (isset($copyRows[$copyType])) {
-                  $boardLines[] = (string) $copyRows[$copyType]['content'];
-              }
-          }
-          $board = rateb_video_storyboard($campaign, is_array($strategyDoc) ? $strategyDoc : [], $boardLines, $campaignImages, 10, [], $arabic ? 'ar' : 'en');
+          $boardSpeech = (string) ($voiceDecision['speech'] ?? 'ar') === 'en' ? 'en' : 'ar';
+          $board = rateb_video_storyboard(
+              $campaign,
+              $strategyApproved ? $strategyDoc : [],
+              rateb_video_copy_parts(array_values($copyRows), $boardSpeech),
+              rateb_video_apply_vision(rateb_video_images_product_first($campaignImages), (string) ($brief['source_media'] ?? '')),
+              10,
+              rateb_video_brand(db(), $userId),
+              $boardSpeech
+          );
       }
     ?>
     <?php if ($board !== []): ?>
@@ -789,6 +794,8 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
               <?php endforeach; ?>
             </div>
           <?php endif; ?>
+          <a class="button quiet" href="/app/campaign/package.php?id=<?= $id ?>" download><?= $arabic ? 'تنزيل ملف الحملة (ZIP)' : 'Download the campaign package (ZIP)' ?></a>
+          <p class="muted"><?= $arabic ? 'يضم الاستراتيجية والنصوص المعتمدة فقط، مع الصور والتسجيلات الصوتية والفيديو المعتمد أو المرفوع.' : 'Includes only the approved strategy and copy, plus the images, voice recordings, and the approved or uploaded video.' ?></p>
           <?php if (!$readyDone): ?>
             <form method="post" action="/app/campaign/ready.php">
               <input type="hidden" name="csrf" value="<?= $csrf ?>">
@@ -811,6 +818,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav40"></script>
+<script src="/public/assets/js/app.js?v=nav41"></script>
 </body>
 </html>

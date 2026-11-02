@@ -23,6 +23,14 @@ final class FakeLedger extends PDO
     public array $writable = [];
     /** @var array<int,array{sql:string,params:array<int,mixed>}> */
     public array $writes = [];
+    /** @var array<string,array{user_id:int,package:string,amount:int}> */
+    public array $receipts = [];
+    /** @var array<string,int> */
+    public array $planIds = [];
+    /** @var array<int,int> */
+    public array $subscriptions = [];
+    /** @var array<int,string> */
+    public array $packages = [];
     private ?array $snapshot = null;
     private int $lastId = 0;
 
@@ -50,7 +58,7 @@ final class FakeLedger extends PDO
 
     public function beginTransaction(): bool
     {
-        $this->snapshot = [$this->balances, $this->events, $this->nextId];
+        $this->snapshot = [$this->balances, $this->events, $this->nextId, $this->receipts, $this->subscriptions, $this->packages];
         return true;
     }
 
@@ -63,7 +71,7 @@ final class FakeLedger extends PDO
     public function rollBack(): bool
     {
         if ($this->snapshot !== null) {
-            [$this->balances, $this->events, $this->nextId] = $this->snapshot;
+            [$this->balances, $this->events, $this->nextId, $this->receipts, $this->subscriptions, $this->packages] = $this->snapshot;
         }
         $this->snapshot = null;
         return true;
@@ -131,8 +139,92 @@ final class FakeStatement extends PDOStatement
                 return true;
             case "INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, 'completed', ?, ?)":
             case "INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, 'completed', ?, 0)":
-                $db->events[$db->nextId++] = ['user_id' => (int) $p[0], 'campaign_id' => $p[1], 'operation' => (string) $p[2], 'status' => 'completed', 'credits_deducted' => (int) ($p[4] ?? 0), 'age' => 0];
+                $id = $db->nextId++;
+                $db->setLastId($id);
+                $db->events[$id] = ['user_id' => (int) $p[0], 'campaign_id' => $p[1], 'operation' => (string) $p[2], 'status' => 'completed', 'credits_deducted' => (int) ($p[4] ?? 0), 'age' => 0, 'idempotency_key' => null];
                 $this->affected = 1;
+                return true;
+            case "INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, NULL, ?, 1, 'completed', ?, 0, ?)":
+                $key = (string) $p[3];
+                foreach ($db->events as $event) {
+                    if (($event['idempotency_key'] ?? null) === $key) {
+                        throw new PDOException('UNIQUE constraint failed: usage_events.idempotency_key');
+                    }
+                }
+                $id = $db->nextId++;
+                $db->setLastId($id);
+                $db->events[$id] = ['user_id' => (int) $p[0], 'campaign_id' => null, 'operation' => (string) $p[1], 'status' => 'completed', 'credits_deducted' => 0, 'age' => 0, 'idempotency_key' => $key];
+                $this->affected = 1;
+                return true;
+            case "INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, ?, ?, 1, 'completed', ?, 0, ?)":
+                $key = (string) $p[4];
+                foreach ($db->events as $event) {
+                    if (($event['idempotency_key'] ?? null) === $key) {
+                        throw new PDOException('UNIQUE constraint failed: usage_events.idempotency_key');
+                    }
+                }
+                $id = $db->nextId++;
+                $db->setLastId($id);
+                $db->events[$id] = ['user_id' => (int) $p[0], 'campaign_id' => $p[1], 'operation' => (string) $p[2], 'status' => 'completed', 'credits_deducted' => 0, 'age' => 0, 'idempotency_key' => $key];
+                $this->affected = 1;
+                return true;
+            case "SELECT id, credits_deducted FROM usage_events WHERE user_id = ? AND operation = ? AND status = 'completed' AND credits_deducted > 0 AND ((? IS NULL AND campaign_id IS NULL) OR campaign_id = ?) ORDER BY id DESC":
+                $rows = [];
+                foreach ($db->events as $id => $row) {
+                    $sameCampaign = ($p[2] === null && $row['campaign_id'] === null) || $row['campaign_id'] === $p[3];
+                    if ($row['user_id'] === (int) $p[0] && $row['operation'] === (string) $p[1] && $row['status'] === 'completed' && (int) $row['credits_deducted'] > 0 && $sameCampaign) {
+                        $rows[] = ['id' => $id, 'credits_deducted' => (int) $row['credits_deducted']];
+                    }
+                }
+                usort($rows, static fn (array $a, array $b): int => $b['id'] <=> $a['id']);
+                $this->result = $rows;
+                return true;
+            case 'SELECT id FROM users WHERE id = ?':
+                if (isset($db->balances[(int) $p[0]])) {
+                    $this->result = [['id' => (int) $p[0]]];
+                }
+                return true;
+            case 'SELECT id FROM payment_receipts WHERE moyasar_id = ?':
+                if (isset($db->receipts[(string) $p[0]])) {
+                    $this->result = [['id' => 1]];
+                }
+                return true;
+            case 'INSERT INTO payment_receipts (moyasar_id, user_id, package_type, amount) VALUES (?, ?, ?, ?)':
+                if (isset($db->receipts[(string) $p[0]])) {
+                    throw new PDOException('UNIQUE constraint failed: payment_receipts.moyasar_id');
+                }
+                $db->receipts[(string) $p[0]] = ['user_id' => (int) $p[1], 'package' => (string) $p[2], 'amount' => (int) $p[3]];
+                $this->affected = 1;
+                return true;
+            case 'SELECT id FROM plans WHERE code = ? AND is_active = 1':
+                if (isset($db->planIds[(string) $p[0]])) {
+                    $this->result = [['id' => $db->planIds[(string) $p[0]]]];
+                }
+                return true;
+            case 'UPDATE users SET package_type = ?, credits_balance = credits_balance + ? WHERE id = ?':
+                if (isset($db->balances[(int) $p[2]])) {
+                    $db->packages[(int) $p[2]] = (string) $p[0];
+                    $db->balances[(int) $p[2]] += (int) $p[1];
+                    $this->affected = 1;
+                }
+                return true;
+            case "UPDATE subscriptions SET plan_id = ?, status = 'active', period_start = ?, period_end = ? WHERE user_id = ? AND status = 'active'":
+                if (isset($db->subscriptions[(int) $p[3]])) {
+                    $db->subscriptions[(int) $p[3]] = (int) $p[0];
+                    $this->affected = 1;
+                }
+                return true;
+            case "INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end) VALUES (?, ?, 'active', ?, ?)":
+                $db->subscriptions[(int) $p[0]] = (int) $p[1];
+                $this->affected = 1;
+                return true;
+            case 'SELECT id FROM usage_events WHERE idempotency_key = ?':
+                foreach ($db->events as $id => $row) {
+                    if (($row['idempotency_key'] ?? null) === (string) $p[0]) {
+                        $this->result = [['id' => $id]];
+                        break;
+                    }
+                }
                 return true;
             case "INSERT INTO usage_events (user_id, campaign_id, operation, units, seconds, status) VALUES (?, ?, ?, 1, ?, 'reserved')":
                 $id = $db->reserve((int) $p[0], $p[1] === null ? null : (int) $p[1], (string) $p[2]);
@@ -166,7 +258,7 @@ final class FakeStatement extends PDOStatement
                     }
                 }
                 return true;
-            case "SELECT s.id AS subscription_id, s.plan_id, p.code, p.name_ar, p.name_en, p.price_sar, p.video_limit, p.video_max_seconds, p.image_limit, p.watermark, p.is_active FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.user_id = ? AND s.status = 'active' ORDER BY s.id DESC LIMIT 1 FOR UPDATE":
+            case "SELECT s.id AS subscription_id, s.plan_id, s.period_end, p.code, p.name_ar, p.name_en, p.price_sar, p.video_limit, p.video_max_seconds, p.image_limit, p.watermark, p.is_active FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.user_id = ? AND s.status = 'active' ORDER BY s.id DESC LIMIT 1 FOR UPDATE":
                 if ($db->plan !== null) {
                     $this->result = [$db->plan];
                 }

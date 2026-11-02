@@ -658,7 +658,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
             }
             $taskId = (string) ($scene['task_id'] ?? '');
             if ($taskId === '') {
-                $image = db()->prepare('SELECT * FROM campaign_media WHERE id = ? AND campaign_id = ? AND user_id = ? AND kind = \'image\'');
+                $image = $pdo->prepare('SELECT * FROM campaign_media WHERE id = ? AND campaign_id = ? AND user_id = ? AND kind = \'image\'');
                 $image->execute([(int) $scene['image_id'], (int) $campaign['id'], (int) $campaign['user_id']]);
                 $row = $image->fetch();
                 if (!$row) {
@@ -807,14 +807,28 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     $audio = $voice->fetch();
     $audioPath = $audio ? media_absolute_path($audio) : '';
     $filter = 'scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p';
+    $wmPng = '';
     if ((int) $job['watermark'] === 1) {
-        $filter .= rateb_video_watermark_filter();
+        if (rateb_video_ffmpeg_has_filter('drawtext')) {
+            $filter .= rateb_video_watermark_filter();
+        } else {
+            $wmPng = $dir . '/wm-' . (int) $job['id'] . '.png';
+            rateb_video_watermark_png($wmPng);
+        }
     }
     $cmd = escapeshellarg($ffmpeg) . ' -y -f concat -safe 0 -i ' . escapeshellarg($list);
+    if ($wmPng !== '') {
+        $cmd .= ' -i ' . escapeshellarg($wmPng);
+    }
+    $audioIndex = $wmPng !== '' ? 2 : 1;
     if ($audioPath !== '' && is_file($audioPath)) {
         $cmd .= ' -i ' . escapeshellarg($audioPath);
-        $cmd .= ' -filter_complex ' . escapeshellarg('[0:v]' . $filter . '[v]');
-        $cmd .= ' -map [v] -map 1:a -shortest';
+        $videoFilter = $wmPng !== '' ? '[0:v]' . $filter . '[base];[base][1:v]overlay=W-w-24:H-h-24[v]' : '[0:v]' . $filter . '[v]';
+        $cmd .= ' -filter_complex ' . escapeshellarg($videoFilter);
+        $cmd .= ' -map [v] -map ' . $audioIndex . ':a -shortest';
+    } elseif ($wmPng !== '') {
+        $cmd .= ' -filter_complex ' . escapeshellarg('[0:v]' . $filter . '[base];[base][1:v]overlay=W-w-24:H-h-24[v]');
+        $cmd .= ' -map [v] -an';
     } else {
         $cmd .= ' -vf ' . escapeshellarg($filter) . ' -an';
     }
@@ -920,6 +934,29 @@ function rateb_video_watermark_filter(): string
         throw new RuntimeException('watermark');
     }
     return ",drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
+}
+
+function rateb_video_watermark_png(string $path): void
+{
+    if (!function_exists('imagecreatetruecolor') || !function_exists('imagepng')) {
+        throw new RuntimeException('watermark');
+    }
+    $image = imagecreatetruecolor(180, 48);
+    if ($image === false) {
+        throw new RuntimeException('watermark');
+    }
+    imagealphablending($image, false);
+    imagesavealpha($image, true);
+    $background = imagecolorallocatealpha($image, 24, 16, 48, 60);
+    $foreground = imagecolorallocate($image, 255, 255, 255);
+    imagefilledrectangle($image, 0, 0, 179, 47, $background);
+    imagestring($image, 5, 28, 16, 'RATEB AI', $foreground);
+    $saved = imagepng($image, $path);
+    imagedestroy($image);
+    if ($saved !== true) {
+        throw new RuntimeException('watermark');
+    }
+    chmod($path, 0600);
 }
 
 function rateb_video_worker_next(PDO $pdo, int $now): ?array

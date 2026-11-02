@@ -31,8 +31,25 @@ if (PHP_SAPI !== 'cli') {
     http_response_code(404);
     exit;
 }
+$hold = getenv('RATEB_VIDEO_WORKER_HOLD');
+$holdFile = is_string($hold) && $hold !== '' ? $hold : '/home/admin/.rateb-ai/video-worker.hold';
+if (is_file($holdFile)) {
+    echo "held\n";
+    exit(0);
+}
 
 require_once __DIR__ . '/engine.php';
+if (!function_exists('db')) {
+    function db(): PDO
+    {
+        static $pdo;
+        if (!$pdo instanceof PDO) {
+            $pdo = rateb_video_worker_pdo();
+        }
+        return $pdo;
+    }
+}
+require_once __DIR__ . '/../media/library.php';
 
 $requestedJob = getenv('RATEB_VIDEO_TEST_JOB');
 rateb_video_test_job_id(is_string($requestedJob) && preg_match('/^[1-9][0-9]*$/', trim($requestedJob)) === 1 ? (int) trim($requestedJob) : 0);

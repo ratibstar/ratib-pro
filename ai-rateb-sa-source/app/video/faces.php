@@ -87,7 +87,7 @@ function rateb_video_face_tracks(array $samples): array
             $count = count($faces);
         }
         if (count($faces) !== $count) {
-            throw new RuntimeException('face_protection');
+            return rateb_video_face_union_track($samples);
         }
         foreach ($faces as $face) {
             if ($face['w'] < 8 || $face['h'] < 8 || $face['x'] < 0 || $face['y'] < 0 || $face['x'] + $face['w'] > $sample['w'] || $face['y'] + $face['h'] > $sample['h']) {
@@ -126,13 +126,52 @@ function rateb_video_face_tracks(array $samples): array
                 }
             }
             if ($best === null || $bestDistance === null || $bestDistance > $limit) {
-                throw new RuntimeException('face_protection');
+                return rateb_video_face_union_track($samples);
             }
             $used[$best] = true;
             $tracks[$index][] = ['n' => $next['n']] + $next['faces'][$best];
         }
     }
     return $tracks;
+}
+
+/** @param array<int,array{n:int,w:int,h:int,faces:array<int,array{x:int,y:int,w:int,h:int}>}> $samples
+ *  @return array<int,array<int,array{n:int,x:int,y:int,w:int,h:int}>>
+ */
+function rateb_video_face_union_track(array $samples): array
+{
+    $minX = null;
+    $minY = null;
+    $maxX = null;
+    $maxY = null;
+    $lastN = 0;
+    foreach ($samples as $sample) {
+        $lastN = (int) $sample['n'];
+        $width = (int) $sample['w'];
+        $height = (int) $sample['h'];
+        foreach ($sample['faces'] as $face) {
+            $x1 = max(0, (int) $face['x']);
+            $y1 = max(0, (int) $face['y']);
+            $x2 = min($width, $x1 + max(0, (int) $face['w']));
+            $y2 = min($height, $y1 + max(0, (int) $face['h']));
+            if ($x2 - $x1 < 8 || $y2 - $y1 < 8) {
+                continue;
+            }
+            $minX = $minX === null ? $x1 : min($minX, $x1);
+            $minY = $minY === null ? $y1 : min($minY, $y1);
+            $maxX = $maxX === null ? $x2 : max($maxX, $x2);
+            $maxY = $maxY === null ? $y2 : max($maxY, $y2);
+        }
+    }
+    if ($minX === null || $minY === null || $maxX === null || $maxY === null) {
+        return [];
+    }
+    $box = ['x' => $minX, 'y' => $minY, 'w' => $maxX - $minX, 'h' => $maxY - $minY];
+    $track = [['n' => 0] + $box];
+    if ($lastN > 0) {
+        $track[] = ['n' => $lastN] + $box;
+    }
+    return [$track];
 }
 
 /** @param array<int,array{n:int,x:int,y:int,w:int,h:int}> $points */

@@ -51,7 +51,7 @@ function rateb_deny(string $code): void
 
 function rateb_lock_plan(PDO $pdo, int $userId): array
 {
-    $stmt = $pdo->prepare("SELECT s.id AS subscription_id, s.plan_id, p.code, p.name_ar, p.name_en, p.price_sar, p.video_limit, p.video_max_seconds, p.image_limit, p.watermark, p.is_active
+    $stmt = $pdo->prepare("SELECT s.id AS subscription_id, s.plan_id, s.period_end, p.code, p.name_ar, p.name_en, p.price_sar, p.video_limit, p.video_max_seconds, p.image_limit, p.watermark, p.is_active
         FROM subscriptions s
         INNER JOIN plans p ON p.id = s.plan_id
         WHERE s.user_id = ? AND s.status = 'active'
@@ -60,8 +60,11 @@ function rateb_lock_plan(PDO $pdo, int $userId): array
         FOR UPDATE");
     $stmt->execute([$userId]);
     $plan = $stmt->fetch();
-    if ($plan) {
+    if ($plan && rateb_subscription_current($plan, time())) {
         return $plan;
+    }
+    if ($plan) {
+        return rateb_free_plan_row($pdo);
     }
     $freeId = (int) $pdo->query("SELECT id FROM plans WHERE code = 'free' LIMIT 1")->fetchColumn();
     if ($freeId < 1) {
@@ -99,6 +102,30 @@ function rateb_user_plan(PDO $pdo, int $userId): array
 function rateb_video_is_free(array $plan): bool
 {
     return (string) ($plan['code'] ?? '') === 'free' || (float) ($plan['price_sar'] ?? 1) <= 0;
+}
+
+/** An active paid row whose period_end is still ahead keeps its own limits. A missing end is not treated as expired. */
+function rateb_subscription_current(array $plan, int $now): bool
+{
+    if ((int) ($plan['is_active'] ?? 0) !== 1) {
+        return false;
+    }
+    $end = strtotime((string) ($plan['period_end'] ?? ''));
+    if ($end === false) {
+        return true;
+    }
+    return $end >= $now;
+}
+
+/** @return array<string,mixed> */
+function rateb_free_plan_row(PDO $pdo): array
+{
+    $stmt = $pdo->query("SELECT 0 AS subscription_id, id AS plan_id, NULL AS period_end, code, name_ar, name_en, price_sar, video_limit, video_max_seconds, image_limit, watermark, is_active FROM plans WHERE code = 'free' LIMIT 1");
+    $plan = $stmt->fetch();
+    if (!$plan) {
+        throw new RuntimeException('Missing free plan');
+    }
+    return $plan;
 }
 
 function rateb_video_duration_code(array $plan, int $seconds): string
@@ -152,23 +179,28 @@ function rateb_account_credits(PDO $pdo, int $userId): array
 
 function rateb_check_and_deduct_credits(int $userId, string $featureType, ?int $campaignId = null): bool
 {
+    return rateb_credit_charge(db(), $userId, $featureType, $campaignId) > 0;
+}
+
+function rateb_credit_charge(PDO $pdo, int $userId, string $featureType, ?int $campaignId = null): int
+{
     $cost = rateb_get_feature_cost($featureType);
     if ($userId < 1 || $cost < 1) {
-        return false;
+        return 0;
     }
-    $pdo = db();
     $pdo->beginTransaction();
     try {
         $update = $pdo->prepare('UPDATE users SET credits_balance = credits_balance - ? WHERE id = ? AND credits_balance >= ?');
         $update->execute([$cost, $userId, $cost]);
         if ($update->rowCount() !== 1) {
             $pdo->rollBack();
-            return false;
+            return 0;
         }
         $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, \'completed\', ?, ?)')
             ->execute([$userId, $campaignId, $featureType, $featureType, $cost]);
+        $chargeId = (int) $pdo->lastInsertId();
         $pdo->commit();
-        return true;
+        return $chargeId;
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
@@ -188,21 +220,193 @@ function rateb_campaign_feature_paid(int $userId, string $featureType, int $camp
     return ((int) ($row['charged'] ?? 0)) - ((int) ($row['refunded'] ?? 0)) > 0;
 }
 
-function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId = null): void
+function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId = null): bool
 {
-    $cost = rateb_get_feature_cost($featureType);
-    if ($userId < 1 || $cost < 1) {
-        return;
+    if ($userId < 1 || rateb_get_feature_cost($featureType) < 1) {
+        return false;
     }
     $pdo = db();
-    $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$cost, $userId]);
-    $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, ?, ?, 1, \'completed\', ?, 0)')
-        ->execute([$userId, $campaignId, $featureType . '_refund', $featureType . '_refund']);
+    $pdo->beginTransaction();
+    try {
+        $charges = $pdo->prepare('SELECT id, credits_deducted FROM usage_events WHERE user_id = ? AND operation = ? AND status = \'completed\' AND credits_deducted > 0 AND ((? IS NULL AND campaign_id IS NULL) OR campaign_id = ?) ORDER BY id DESC');
+        $charges->execute([$userId, $featureType, $campaignId, $campaignId]);
+        foreach ($charges->fetchAll() as $charge) {
+            $chargeId = (int) $charge['id'];
+            $amount = (int) $charge['credits_deducted'];
+            $key = $featureType . '_charge:' . $chargeId . ':refund';
+            $taken = $pdo->prepare('SELECT id FROM usage_events WHERE idempotency_key = ?');
+            $taken->execute([$key]);
+            if ($taken->fetchColumn() !== false) {
+                continue;
+            }
+            try {
+                $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, ?, ?, 1, \'completed\', ?, 0, ?)')->execute([
+                    $userId,
+                    $campaignId,
+                    $featureType . '_refund',
+                    $featureType . '_refund',
+                    $key,
+                ]);
+            } catch (Throwable $duplicate) {
+                $message = $duplicate->getMessage();
+                if (!str_contains($message, 'UNIQUE') && !str_contains($message, 'Duplicate') && !str_contains($message, 'constraint')) {
+                    throw $duplicate;
+                }
+                continue;
+            }
+            $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$amount, $userId]);
+            $pdo->commit();
+            return true;
+        }
+        $pdo->commit();
+        return false;
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
 }
 
 function rateb_feature_locked(int $userId, string $featureType): bool
 {
+    if ($userId < 1 || !function_exists('db')) {
+        return false;
+    }
+    try {
+        $plan = rateb_user_plan(db(), $userId);
+    } catch (Throwable) {
+        return false;
+    }
+    return rateb_plan_feature_locked($plan, $featureType);
+}
+
+/**
+ * A feature is locked only when this plan turns it off. Free video stays available
+ * through the existing monthly cap. Text and voice have no zero-limit column.
+ */
+function rateb_plan_feature_locked(array $plan, string $featureType): bool
+{
+    if ((int) ($plan['is_active'] ?? 1) !== 1) {
+        return true;
+    }
+    if ($featureType === 'ai_image' || $featureType === 'image') {
+        return (int) ($plan['image_limit'] ?? 0) < 1;
+    }
+    if ($featureType === 'video_storyboard' || $featureType === 'video') {
+        if (rateb_video_is_free($plan)) {
+            return false;
+        }
+        return (int) ($plan['video_limit'] ?? 0) < 1;
+    }
     return false;
+}
+
+/**
+ * Paid checkout amounts that are already published on the pricing page and in checkout.
+ * 99 SAR = 9900 halalas with 500 credits. 249 SAR = 24900 halalas with 2500 credits.
+ * plans.price_sar (79 / 199 / 399 / 799) is a different catalog and is not used here.
+ * growth and business have no published charge amount or credit grant, so they are refused.
+ *
+ * @return array{amount:int,currency:string,credits:int,plan_code:string}|null
+ */
+function rateb_paid_package(string $code): ?array
+{
+    $packages = [
+        'starter' => ['amount' => 9900, 'currency' => 'SAR', 'credits' => 500, 'plan_code' => 'starter'],
+        'pro' => ['amount' => 24900, 'currency' => 'SAR', 'credits' => 2500, 'plan_code' => 'pro'],
+    ];
+    return $packages[$code] ?? null;
+}
+
+/** @param array<string,mixed> $payment Moyasar payment object, already fetched from Moyasar */
+function rateb_payment_accept(array $payment): string
+{
+    if ((string) ($payment['status'] ?? '') !== 'paid') {
+        return 'unpaid';
+    }
+    if (strtoupper((string) ($payment['currency'] ?? '')) !== 'SAR') {
+        return 'currency';
+    }
+    $meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
+    $userId = (int) ($meta['user_id'] ?? 0);
+    $package = rateb_paid_package((string) ($meta['package'] ?? ''));
+    if ($userId < 1 || $package === null) {
+        return 'package';
+    }
+    if ((int) ($payment['amount'] ?? 0) !== $package['amount']) {
+        return 'amount';
+    }
+    return '';
+}
+
+/** @param array<string,mixed> $payment @return string ok | unpaid | currency | package | amount | owner | duplicate */
+function rateb_payment_record(PDO $pdo, array $payment): string
+{
+    $decision = rateb_payment_accept($payment);
+    if ($decision !== '') {
+        return $decision;
+    }
+    $meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
+    $userId = (int) $meta['user_id'];
+    $code = (string) $meta['package'];
+    $package = rateb_paid_package($code);
+    $paymentId = (string) ($payment['id'] ?? '');
+    if ($package === null || preg_match('/^[a-f0-9-]{36}$/', $paymentId) !== 1) {
+        return 'package';
+    }
+    $pdo->beginTransaction();
+    try {
+        $user = $pdo->prepare('SELECT id FROM users WHERE id = ?');
+        $user->execute([$userId]);
+        if ($user->fetchColumn() === false) {
+            $pdo->rollBack();
+            return 'owner';
+        }
+        $known = $pdo->prepare('SELECT id FROM payment_receipts WHERE moyasar_id = ?');
+        $known->execute([$paymentId]);
+        if ($known->fetchColumn() !== false) {
+            $pdo->commit();
+            return 'duplicate';
+        }
+        try {
+            $pdo->prepare('INSERT INTO payment_receipts (moyasar_id, user_id, package_type, amount) VALUES (?, ?, ?, ?)')
+                ->execute([$paymentId, $userId, $code, $package['amount']]);
+        } catch (Throwable $duplicate) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $message = $duplicate->getMessage();
+            if (str_contains($message, 'UNIQUE') || str_contains($message, 'Duplicate') || str_contains($message, 'constraint')) {
+                return 'duplicate';
+            }
+            throw $duplicate;
+        }
+        $planId = $pdo->prepare('SELECT id FROM plans WHERE code = ? AND is_active = 1');
+        $planId->execute([$package['plan_code']]);
+        $selectedPlan = (int) ($planId->fetchColumn() ?: 0);
+        $pdo->prepare('UPDATE users SET package_type = ?, credits_balance = credits_balance + ? WHERE id = ?')
+            ->execute([$code, $package['credits'], $userId]);
+        if ($selectedPlan > 0) {
+            $start = date('Y-m-d H:i:s');
+            $end = date('Y-m-d H:i:s', strtotime('+1 month'));
+            $switch = $pdo->prepare("UPDATE subscriptions SET plan_id = ?, status = 'active', period_start = ?, period_end = ? WHERE user_id = ? AND status = 'active'");
+            $switch->execute([$selectedPlan, $start, $end, $userId]);
+            if ($switch->rowCount() < 1) {
+                $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end) VALUES (?, ?, 'active', ?, ?)")
+                    ->execute([$userId, $selectedPlan, $start, $end]);
+            }
+        }
+        $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, NULL, ?, 1, \'completed\', ?, 0, ?)')
+            ->execute([$userId, 'payment_' . $code, 'payment_' . $code, 'payment:' . $paymentId]);
+        $pdo->commit();
+        return 'ok';
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
 }
 
 function rateb_credit_stop(int $userId = 0, string $featureType = ''): void

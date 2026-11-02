@@ -2,14 +2,15 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/../plans.php';
 require_login();
 
-$package = (string) ($_GET['package'] ?? '');
-$prices = ['starter' => 9900, 'pro' => 24900];
-if (!isset($prices[$package])) {
+$selected = rateb_paid_package((string) ($_GET['package'] ?? ''));
+if ($selected === null) {
     http_response_code(404);
     exit('Unknown package');
 }
+$package = (string) $_GET['package'];
 
 $cfg = require __DIR__ . '/../../config/ai.php';
 $secret = (string) ($cfg['moyasar_secret_key'] ?? '');
@@ -19,7 +20,7 @@ if ($secret === '') {
 }
 
 $body = json_encode([
-    'amount' => $prices[$package],
+    'amount' => $selected['amount'],
     'currency' => 'SAR',
     'description' => 'RATEB AI ' . $package,
     'callback_url' => 'https://ai.rateb.sa/app/payment/webhook.php?token=' . rawurlencode($secret),
