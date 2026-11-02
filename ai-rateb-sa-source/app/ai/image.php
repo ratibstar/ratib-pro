@@ -8,6 +8,17 @@ require_once __DIR__ . '/../watermark.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $campaign = media_owned_campaign((int) ($_GET['campaign_id'] ?? 0));
+    $since = (int) ($_GET['since_id'] ?? 0);
+    $latest = db()->prepare('SELECT id FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = ? AND source = ? AND id > ? ORDER BY id DESC LIMIT 1');
+    $latest->execute([(int) $campaign['id'], (int) $_SESSION['user_id'], 'image', 'ai', $since]);
+    $mediaId = (int) $latest->fetchColumn();
+    echo json_encode($mediaId > 0
+        ? ['ok' => true, 'ready' => true, 'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images']
+        : ['ready' => false], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Method not allowed']);
@@ -21,7 +32,7 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
     exit;
 }
 
-set_time_limit(45);
+set_time_limit(120);
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
 $now = time();
 $userId = (int) $_SESSION['user_id'];
@@ -57,7 +68,7 @@ if (!in_array($ratio, ['1:1', '4:5', '9:16'], true)) {
     $ratio = '1:1';
 }
 $ratioLead = 'ratio ' . $ratio . '. ';
-$prompt = $ratioLead . ai_campaign_image_prompt($campaign, 400 - mb_strlen($ratioLead));
+$prompt = $ratioLead . ai_campaign_image_prompt($campaign, 900 - mb_strlen($ratioLead));
 if ($prompt === $ratioLead) {
     http_response_code(422);
     echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
@@ -412,9 +423,17 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
     if ($brandRow) {
         $brand = $brandRow;
     }
+    $subject = trim((string) ($campaign['product_name'] ?? ''));
+    if ($subject === '') {
+        $subject = trim((string) ($campaign['title'] ?? ''));
+    }
     $prompt = rateb_visual_prompt(
-        array_merge(['Advertising photograph'], rateb_visual_lines($campaign, $document, $copyLine, $brand, $prefer)),
-        'No written text and no logo.',
+        array_merge([
+            'Photorealistic commercial photograph of this exact subject: ' . $subject,
+            'Show the real business or service in a real place, with the people and tools that belong to it',
+            'Do not draw abstract art, toys, candy, or unrelated objects',
+        ], rateb_visual_lines($campaign, $document, $copyLine, $brand, $prefer)),
+        'No written text, no letters, and no logo.',
         $limit
     );
     if (trim($prompt) === '') {

@@ -1135,7 +1135,7 @@
     var body = new FormData(form);
     if (jobId) body.set('job_id', jobId);
     var controller = new AbortController();
-    var timer = setTimeout(function () { controller.abort(); }, 30000);
+    var timer = setTimeout(function () { controller.abort(); }, 110000);
     try {
       var response = await fetch('/app/ai/image.php', { method: 'POST', body: body, signal: controller.signal });
       clearTimeout(timer);
@@ -1157,6 +1157,17 @@
         return { pending: true, state: 'pending', job_id: jobId };
       }
       if (error.name === 'AbortError') {
+        var since = form.getAttribute('data-latest-image') || '0';
+        var campaignId = (form.querySelector('[name="campaign_id"]') || {}).value || '';
+        var until = Date.now() + 90000;
+        while (Date.now() < until) {
+          await new Promise(function (resolve) { setTimeout(resolve, 2000); });
+          try {
+            var watch = await fetch('/app/ai/image.php?campaign_id=' + encodeURIComponent(campaignId) + '&since_id=' + encodeURIComponent(since));
+            var watched = await watch.json();
+            if (watched && watched.ready && watched.redirect) return watched;
+          } catch (watchError) {}
+        }
         var waiting = new Error(dict[language].image_queued);
         waiting.code = 'image_queued';
         throw waiting;

@@ -286,7 +286,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <button class="primary stage-go" type="submit" data-i18n="start_copy"><?= $arabic ? 'ابدأ كتابة الإعلان' : 'Generate Copy' ?></button>
           </form>
         <?php elseif ($key === 'images' && $copyApproved): ?>
-          <form id="imageForm" class="stage-action" data-status="stage-status" data-job-ttl="<?= (int) rateb_image_job_ttl() ?>">
+          <form id="imageForm" class="stage-action" data-status="stage-status" data-job-ttl="<?= (int) rateb_image_job_ttl() ?>" data-latest-image="<?= (int) ($campaignImages[0]['id'] ?? 0) ?>">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <select name="ratio">
@@ -818,6 +818,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav41"></script>
+<script src="/public/assets/js/app.js?v=nav43"></script>
 </body>
 </html>
