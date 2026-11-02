@@ -582,9 +582,15 @@ function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, i
         rateb_credit_stop($userId, 'ai_image');
     }
     if (str_contains($prompt, 'recruitment company office')) {
-        $png = ai_recruitment_dashboard_png();
-        if ($png !== '') {
-            ai_image_store($campaign, $userId, '', $usageId, $png, 'image/png', 'rateb-dashboard');
+        $personPrompt = 'Professional photograph of two presenters explaining a business program in a bright Riyadh office: a Saudi man in a white thobe and red shemagh and a woman in a navy blazer, waist up, one hand gesturing, both looking at the camera, soft daylight, plain wall, no text, no logos, no screens';
+        $personUrl = 'https://api.cloudflare.com/client/v4/accounts/' . $settings['account_id'] . '/ai/run/' . $settings['model'];
+        $personResponse = ai_horde_request('POST', $personUrl, json_encode(['prompt' => $personPrompt, 'steps' => 8], JSON_UNESCAPED_UNICODE), [
+            'Authorization: Bearer ' . $settings['token'],
+        ], 55);
+        $person = $personResponse['http'] === 200 ? (ai_cloudflare_image_bytes($personResponse['body']) ?? '') : '';
+        $poster = ai_recruitment_poster($person);
+        if ($poster !== '') {
+            ai_image_store($campaign, $userId, '', $usageId, $poster, 'image/png', 'rateb-dashboard');
         }
     }
     $url = 'https://api.cloudflare.com/client/v4/accounts/' . $settings['account_id'] . '/ai/run/' . $settings['model'];
@@ -737,6 +743,42 @@ function ai_recruitment_dashboard_png(): string
     return is_string($bytes) ? $bytes : '';
 }
 
+function ai_recruitment_poster(string $personBytes): string
+{
+    $boardBytes = ai_recruitment_dashboard_png();
+    if ($boardBytes === '' || !function_exists('imagecreatetruecolor') || !function_exists('imagecreatefromstring')) {
+        return $boardBytes;
+    }
+    $canvas = imagecreatetruecolor(1200, 1200);
+    if ($canvas === false) {
+        return $boardBytes;
+    }
+    $paint = static function (int $r, int $g, int $b) use ($canvas): int {
+        return imagecolorallocate($canvas, $r, $g, $b);
+    };
+    imagefilledrectangle($canvas, 0, 0, 1199, 1199, $paint(248, 250, 252));
+    imagefilledrectangle($canvas, 0, 0, 1199, 118, $paint(34, 168, 85));
+    $font = __DIR__ . '/../fonts/DejaVuSans.ttf';
+    ai_draw_ar($canvas, 28, 40, 76, 'برنامج رتب لشركات الاستقدام', $paint(255, 255, 255), $font, 1120);
+    $photo = $personBytes !== '' ? @imagecreatefromstring($personBytes) : false;
+    imagefilledrectangle($canvas, 36, 156, 560, 1040, $paint(255, 255, 255));
+    if ($photo !== false) {
+        imagecopyresampled($canvas, $photo, 48, 168, 0, 0, 500, 760, imagesx($photo), imagesy($photo));
+        imagedestroy($photo);
+    }
+    ai_draw_ar($canvas, 18, 48, 990, 'فريق يشرح البرنامج', $paint(31, 41, 55), $font, 500);
+    $board = @imagecreatefromstring($boardBytes);
+    if ($board !== false) {
+        imagecopyresampled($canvas, $board, 590, 156, 0, 0, 574, 860, imagesx($board), imagesy($board));
+        imagedestroy($board);
+    }
+    ob_start();
+    imagepng($canvas);
+    $bytes = ob_get_clean();
+    imagedestroy($canvas);
+    return is_string($bytes) && $bytes !== '' ? $bytes : $boardBytes;
+}
+
 function ai_cloudflare_image_bytes(string $body): ?string
 {
     if (ai_image_mime($body) !== null) {
@@ -798,7 +840,7 @@ function ai_image_store(array $campaign, int $userId, string $jobId, int $usageI
     exit;
 }
 
-function ai_horde_request(string $method, string $url, ?string $body = null, array $extraHeaders = []): array
+function ai_horde_request(string $method, string $url, ?string $body = null, array $extraHeaders = [], int $timeout = 12): array
 {
     $ch = curl_init($url);
     $headers = array_merge(['Accept: application/json, image/webp, image/jpeg, image/png', 'Client-Agent: rateb-ai-campaign:1.0:ai.rateb.sa'], $extraHeaders);
@@ -818,7 +860,7 @@ function ai_horde_request(string $method, string $url, ?string $body = null, arr
         CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => $headers,
-        CURLOPT_TIMEOUT => 12,
+        CURLOPT_TIMEOUT => max(1, $timeout),
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS => 2,
         CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
