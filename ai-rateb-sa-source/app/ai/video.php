@@ -51,7 +51,8 @@ $images = db()->prepare("SELECT * FROM campaign_media WHERE campaign_id = ? AND 
 $images->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
 $seconds = (int) ($_POST['seconds'] ?? 5);
 try {
-    $result = rateb_video_start(db(), $campaign, $strategy ?: [], $copy, $images->fetchAll(), $seconds);
+    $direction = trim(mb_substr((string) ($_POST['video_brief'] ?? ''), 0, 400));
+    $result = rateb_video_start(db(), $campaign, $strategy ?: [], $copy, $images->fetchAll(), $seconds, $direction);
 } catch (Throwable $error) {
     $code = $error->getMessage();
     $known = ['not_configured', 'auth', 'rejected', 'rejected_image', 'rejected_model', 'rejected_credit', 'timeout', 'provider', 'invalid', 'missing_image', 'missing_copy', 'storage', 'watermark', 'face_protection', 'credits', 'package'];

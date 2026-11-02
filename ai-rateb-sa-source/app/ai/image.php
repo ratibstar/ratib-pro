@@ -581,7 +581,11 @@ function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, i
         ai_image_release($userId, '', $usageId, 'failed');
         rateb_credit_stop($userId, 'ai_image');
     }
-    if (str_contains($prompt, 'recruitment company office')) {
+    $customerImage = trim(mb_substr((string) ($_POST['image_brief'] ?? ''), 0, 400));
+    $customerImage = trim(preg_replace('/\s+/u', ' ', $customerImage) ?? '');
+    if ($customerImage !== '') {
+        $prompt = 'Photorealistic advertising image. Follow this direction exactly and do not paint any letters: ' . $customerImage;
+    } elseif (str_contains($prompt, 'recruitment company office')) {
         $personPrompt = 'Professional photograph of two presenters explaining a business program in a bright Riyadh office: a Saudi man in a white thobe and red shemagh and a woman in a navy blazer, waist up, one hand gesturing, both looking at the camera, soft daylight, plain wall, no text, no logos, no screens';
         $personUrl = 'https://api.cloudflare.com/client/v4/accounts/' . $settings['account_id'] . '/ai/run/' . $settings['model'];
         $personResponse = ai_horde_request('POST', $personUrl, json_encode(['prompt' => $personPrompt, 'steps' => 8], JSON_UNESCAPED_UNICODE), [
@@ -596,7 +600,7 @@ function ai_cloudflare_generate(array $campaign, int $userId, int $campaignId, i
     $url = 'https://api.cloudflare.com/client/v4/accounts/' . $settings['account_id'] . '/ai/run/' . $settings['model'];
     $response = ai_horde_request('POST', $url, json_encode(['prompt' => $prompt, 'steps' => 8], JSON_UNESCAPED_UNICODE), [
         'Authorization: Bearer ' . $settings['token'],
-    ]);
+    ], 55);
     if ($response['http'] === 429) {
         ai_image_release($userId, '', $usageId, 'failed');
         http_response_code(429);

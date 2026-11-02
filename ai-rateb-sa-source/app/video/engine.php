@@ -106,7 +106,7 @@ function rateb_video_copy_parts(array $rows, string $prefer = 'ar'): array
 }
 
 /** @param array<int,array<string,mixed>> $images @param array<string,mixed> $brand */
-function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar'): array
+function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar', string $direction = ''): array
 {
     $clips = rateb_video_clips($planSeconds);
     if ($clips === [] || $images === []) {
@@ -143,10 +143,11 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
         $motion = $motions[$i % count($motions)];
         $reference = (string) ($image['source'] ?? '');
         $vision = $reference === 'upload' && is_array($image['vision'] ?? null) ? $image['vision'] : [];
+        $directionLine = trim(preg_replace('/\s+/u', ' ', mb_substr($direction, 0, 240)) ?? '');
         $visual = rateb_visual_prompt(
-            array_merge([$motion], rateb_video_scene_lines($vision), rateb_visual_lines($campaign, $strategy, $copyLine, $brand, $prefer)),
+            array_merge($directionLine === '' ? [] : ['Customer direction: ' . $directionLine], [$motion], rateb_video_scene_lines($vision), rateb_visual_lines($campaign, $strategy, $copyLine, $brand, $prefer)),
             'No written text and no logo.',
-            400
+            500
         );
         $scenes[] = [
             'scene' => $i + 1,
@@ -365,7 +366,7 @@ function rateb_video_approved(PDO $pdo, int $campaignId, int $userId): ?array
 }
 
 /** @return array{ok:bool,code:string,job_id:int} */
-function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array $copyRows, array $images, int $seconds = 5): array
+function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array $copyRows, array $images, int $seconds = 5, string $direction = ''): array
 {
     $provider = rateb_video_provider();
     if (!$provider->configured()) {
@@ -402,7 +403,7 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     $brief = $pdo->prepare('SELECT source_media FROM campaign_briefs WHERE campaign_id = ? AND user_id = ?');
     $brief->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
     $images = rateb_video_apply_vision($images, (string) ($brief->fetchColumn() ?: ''));
-    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, rateb_video_brand($pdo, (int) $campaign['user_id']), $prefer);
+    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, rateb_video_brand($pdo, (int) $campaign['user_id']), $prefer, $direction);
     if ($scenes === []) {
         return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
     }

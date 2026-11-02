@@ -226,7 +226,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav48">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav49">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -527,7 +527,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   <section class="panel" id="images" data-panel="images">
     <h2 data-i18n="stage_images"><?= $arabic ? 'الصور' : 'Images' ?></h2>
     <?php if ($copyApproved): ?>
-      <p class="muted"><?= $arabic ? 'اختر المقاس، ثم اضغط صورة أخرى في بطاقة الصور.' : 'Choose a size, then press Another image on the Images card.' ?></p>
+      <label class="spec-box">
+        <span><?= $arabic ? 'نوع الصورة ومواصفاتها' : 'Image type and details' ?></span>
+        <textarea name="image_brief" form="imageForm" rows="3" maxlength="400" placeholder="<?= $arabic ? 'مثال: صورة أفقية لمستشار استقدام يشرح لوحة رتب في مكتب بالرياض، إضاءة نهارية، بدون كتابة' : 'Example: a wide photo of a recruitment consultant explaining the RATEB screen in a Riyadh office, daylight, no writing' ?>"></textarea>
+      </label>
+      <p class="muted"><?= $arabic ? 'اكتب الوصف، اختر المقاس، ثم اضغط صورة أخرى.' : 'Write the description, choose a size, then press Another image.' ?></p>
       <div class="ratio-picks">
         <label><input type="radio" name="ratio" value="1:1" form="imageForm" checked><i>1:1</i><span><?= $arabic ? 'إنستغرام' : 'Instagram' ?></span></label>
         <label><input type="radio" name="ratio" value="9:16" form="imageForm"><i>9:16</i><span><?= $arabic ? 'عمودي' : 'Vertical' ?></span></label>
@@ -686,6 +690,10 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
       <input type="hidden" name="csrf" value="<?= $csrf ?>">
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
       <input type="hidden" name="seconds" id="video-seconds" value="5">
+      <label class="spec-box">
+        <span><?= $arabic ? 'نوع الفيديو ومواصفاته' : 'Video type and details' ?></span>
+        <textarea name="video_brief" rows="3" maxlength="400" placeholder="<?= $arabic ? 'مثال: فيديو قصير يشرح برنامج رتب لشركات الاستقدام، حركة كاميرا هادئة، مكتب سعودي، بدون كتابة على الشاشة' : 'Example: a short video explaining RATEB for recruitment companies, calm camera move, Saudi office, no on-screen writing' ?>"></textarea>
+      </label>
       <?php rateb_campaign_duration_select($videoDurations, $arabic); ?>
       <p class="muted"><?= $arabic ? '٥ و١٠ ثوانٍ مجاناً لفيديوين في الشهر. ١٥ و٢٠ و٣٠ ثانية في الباقات المدفوعة.' : '5 and 10 seconds are free for two videos a month. 15, 20, and 30 seconds are on paid plans.' ?></p>
       <button class="primary" type="submit"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && (string) $videoJob['status'] === 'completed' ? ($arabic ? 'إعادة التوليد' : 'Regenerate') : ($arabic ? 'إنشاء الفيديو' : 'Create video') ?></button>
