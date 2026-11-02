@@ -422,7 +422,7 @@ function ai_english_photo_scene(array $facts): string
         'max_tokens' => 180,
         'response_format' => ['type' => 'json_object'],
         'messages' => [
-            ['role' => 'system', 'content' => 'Return JSON {"scene":"..."} only. scene is one English sentence, at most 35 words, describing a real photograph. Name the visible people, place, and objects that belong to this business. If it is software or a service, show staff using it in that workplace. Do not include any words that should be printed, any brand spelling, any slogan, or any letters.'],
+            ['role' => 'system', 'content' => 'Return JSON {"scene":"..."} only. scene is one English sentence, at most 35 words, describing a real photograph. Name the visible people, place, and objects that belong to this business. If it is software or a service, show staff using it in that workplace. Do not ask for printed words, signs, or logos.'],
             ['role' => 'user', 'content' => implode("\n", $facts)],
         ],
     ], JSON_UNESCAPED_UNICODE);
@@ -503,8 +503,8 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
             break;
         }
     }
-    $scene = ai_english_photo_scene($facts);
     $locked = ai_subject_lock(implode("\n", $facts));
+    $scene = $locked !== '' ? $locked : ai_english_photo_scene($facts);
     $prompt = rateb_visual_prompt(
         [
             'Photorealistic photograph of ' . ($locked !== '' ? $locked : $scene),
