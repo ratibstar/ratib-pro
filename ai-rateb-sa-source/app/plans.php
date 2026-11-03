@@ -318,6 +318,26 @@ function rateb_moyasar_configured(array $config): bool
     return trim((string) ($config['moyasar_secret_key'] ?? '')) !== '';
 }
 
+function rateb_credit_halala(int $credits): int
+{
+    if ($credits < 1) {
+        return 0;
+    }
+    return max(100, (int) round($credits * 9900 / 500));
+}
+
+/** @return array{credits:int,amount:int} */
+function rateb_campaign_credit_bill(PDO $pdo, int $userId, int $campaignId): array
+{
+    if ($userId < 1 || $campaignId < 1) {
+        return ['credits' => 0, 'amount' => 0];
+    }
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(credits_deducted), 0) FROM usage_events WHERE user_id = ? AND campaign_id = ? AND status = 'completed' AND operation IN ('text_campaign', 'ai_image', 'saudi_voice', 'video_storyboard')");
+    $stmt->execute([$userId, $campaignId]);
+    $credits = (int) $stmt->fetchColumn();
+    return ['credits' => $credits, 'amount' => rateb_credit_halala($credits)];
+}
+
 function rateb_paid_package(string $code): ?array
 {
     $packages = [
@@ -338,6 +358,16 @@ function rateb_payment_accept(array $payment): string
     }
     $meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
     $userId = (int) ($meta['user_id'] ?? 0);
+    if ((string) ($meta['package'] ?? '') === 'usage') {
+        $credits = (int) ($meta['credits'] ?? 0);
+        if ($userId < 1 || $credits < 1 || (int) ($payment['amount'] ?? 0) !== rateb_credit_halala($credits)) {
+            return 'amount';
+        }
+        if ((int) ($meta['order_id'] ?? 0) < 1) {
+            return 'order';
+        }
+        return '';
+    }
     $package = rateb_paid_package((string) ($meta['package'] ?? ''));
     if ($userId < 1 || $package === null) {
         return 'package';
@@ -369,7 +399,9 @@ function rateb_payment_record(PDO $pdo, array $payment): string
     $meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
     $userId = (int) $meta['user_id'];
     $code = (string) $meta['package'];
-    $package = rateb_paid_package($code);
+    $package = $code === 'usage'
+        ? ['amount' => rateb_credit_halala((int) ($meta['credits'] ?? 0)), 'credits' => (int) ($meta['credits'] ?? 0), 'plan_code' => '']
+        : rateb_paid_package($code);
     $paymentId = (string) ($payment['id'] ?? '');
     if ($package === null || preg_match('/^[a-f0-9-]{36}$/', $paymentId) !== 1) {
         return 'package';
@@ -406,7 +438,7 @@ function rateb_payment_record(PDO $pdo, array $payment): string
         }
         try {
             $pdo->prepare('INSERT INTO payment_receipts (moyasar_id, user_id, package_type, amount) VALUES (?, ?, ?, ?)')
-                ->execute([$paymentId, $userId, $code, $package['amount']]);
+                ->execute([$paymentId, $userId, $code === 'usage' ? 'free' : $code, $package['amount']]);
         } catch (Throwable $duplicate) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
@@ -417,19 +449,23 @@ function rateb_payment_record(PDO $pdo, array $payment): string
             }
             throw $duplicate;
         }
-        $planId = $pdo->prepare('SELECT id FROM plans WHERE code = ? AND is_active = 1');
-        $planId->execute([$package['plan_code']]);
-        $selectedPlan = (int) ($planId->fetchColumn() ?: 0);
-        $pdo->prepare('UPDATE users SET package_type = ?, credits_balance = credits_balance + ? WHERE id = ?')
-            ->execute([$code, $package['credits'], $userId]);
-        if ($selectedPlan > 0) {
-            $start = date('Y-m-d H:i:s');
-            $end = date('Y-m-d H:i:s', strtotime('+1 month'));
-            $switch = $pdo->prepare("UPDATE subscriptions SET plan_id = ?, status = 'active', period_start = ?, period_end = ? WHERE user_id = ? AND status = 'active'");
-            $switch->execute([$selectedPlan, $start, $end, $userId]);
-            if ($switch->rowCount() < 1) {
-                $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end) VALUES (?, ?, 'active', ?, ?)")
-                    ->execute([$userId, $selectedPlan, $start, $end]);
+        if ($code === 'usage') {
+            $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([$package['credits'], $userId]);
+        } else {
+            $planId = $pdo->prepare('SELECT id FROM plans WHERE code = ? AND is_active = 1');
+            $planId->execute([$package['plan_code']]);
+            $selectedPlan = (int) ($planId->fetchColumn() ?: 0);
+            $pdo->prepare('UPDATE users SET package_type = ?, credits_balance = credits_balance + ? WHERE id = ?')
+                ->execute([$code, $package['credits'], $userId]);
+            if ($selectedPlan > 0) {
+                $start = date('Y-m-d H:i:s');
+                $end = date('Y-m-d H:i:s', strtotime('+1 month'));
+                $switch = $pdo->prepare("UPDATE subscriptions SET plan_id = ?, status = 'active', period_start = ?, period_end = ? WHERE user_id = ? AND status = 'active'");
+                $switch->execute([$selectedPlan, $start, $end, $userId]);
+                if ($switch->rowCount() < 1) {
+                    $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end) VALUES (?, ?, 'active', ?, ?)")
+                        ->execute([$userId, $selectedPlan, $start, $end]);
+                }
             }
         }
         $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, NULL, ?, 1, \'completed\', ?, 0, ?)')

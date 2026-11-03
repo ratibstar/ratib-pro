@@ -8,7 +8,25 @@ require_login();
 
 $packageCode = (string) ($_POST['package'] ?? $_GET['package'] ?? '');
 $campaignId = (int) ($_POST['campaign'] ?? $_GET['campaign'] ?? 0);
-$selected = rateb_paid_package($packageCode);
+$usageBill = null;
+if ($packageCode === 'usage' && $campaignId > 0) {
+    require_once __DIR__ . '/../media/library.php';
+    $campaign = media_owned_campaign($campaignId);
+    $balance = db()->prepare('SELECT credits_balance FROM users WHERE id = ?');
+    $balance->execute([(int) $_SESSION['user_id']]);
+    if ((int) $balance->fetchColumn() > 0) {
+        header('Location: /app/campaign/package.php?id=' . $campaignId);
+        exit;
+    }
+    $usageBill = rateb_campaign_credit_bill(db(), (int) $campaign['user_id'], $campaignId);
+    if ($usageBill['credits'] < 1) {
+        header('Location: /app/campaign/package.php?id=' . $campaignId);
+        exit;
+    }
+    $selected = ['amount' => $usageBill['amount'], 'currency' => 'SAR', 'credits' => $usageBill['credits'], 'plan_code' => ''];
+} else {
+    $selected = rateb_paid_package($packageCode);
+}
 if ($selected === null) {
     http_response_code(404);
     exit('Unknown package');
@@ -39,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $configured) {
             'user_id' => (string) (int) $_SESSION['user_id'],
             'package' => $packageCode,
             'order_id' => (string) $orderId,
+            'credits' => (string) $selected['credits'],
         ],
     ], JSON_UNESCAPED_UNICODE);
     $ch = curl_init('https://api.moyasar.com/v1/invoices');
@@ -70,22 +89,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $configured) {
 }
 
 $arabic = ui_language() === 'ar';
-$price = number_format($selected['amount'] / 100, 0);
-$title = $packageCode === 'starter' ? ($arabic ? 'باقة الانطلاق' : 'Starter') : ($arabic ? 'الباقة الاحترافية' : 'Pro');
+$price = number_format($selected['amount'] / 100, $packageCode === 'usage' ? 2 : 0);
+$title = $packageCode === 'usage' ? ($arabic ? 'النقاط المستخدمة' : 'Credits used') : ($packageCode === 'starter' ? ($arabic ? 'باقة الانطلاق' : 'Starter') : ($arabic ? 'الباقة الاحترافية' : 'Pro'));
 echo '<!doctype html><html lang="' . ($arabic ? 'ar' : 'en') . '" dir="' . ($arabic ? 'rtl' : 'ltr') . '" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
 echo '<title>RATEB AI</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap"><link rel="stylesheet" href="/public/assets/css/theme.css"><link rel="stylesheet" href="/public/assets/css/app.css?v=nav40"></head>';
 echo '<body class="studio">';
 rateb_site_header('/credits.php', true);
 echo '<main class="container studio-page"><p class="eyebrow">' . ($arabic ? 'الدفع عبر ميسر' : 'Payments by Moyasar') . '</p>';
-echo '<h1>' . ($campaignId > 0 ? ($arabic ? 'ادفع لتنزيل ملف الحملة' : 'Pay to download the campaign file') : e($title)) . '</h1><div class="price-grid"><article class="price-card is-featured">';
+echo '<h1>' . ($packageCode === 'usage' ? e($title) : ($campaignId > 0 ? ($arabic ? 'ادفع لتنزيل ملف الحملة' : 'Pay to download the campaign file') : e($title))) . '</h1><div class="price-grid"><article class="price-card is-featured">';
 echo '<p class="price-amount"><b>' . e($price) . '</b> <span>' . ($arabic ? 'ر.س' : 'SAR') . '</span></p>';
-echo '<p>' . (int) $selected['credits'] . ' ' . ($arabic ? 'نقطة' : 'credits') . '</p>';
+echo '<p>' . (int) $selected['credits'] . ' ' . ($arabic ? ($packageCode === 'usage' ? 'نقطة مستخدمة' : 'نقطة') : ($packageCode === 'usage' ? 'credits used' : 'credits')) . '</p>';
 if (!$configured) {
     echo '<p class="alert">' . ($arabic ? 'الدفع الإلكتروني غير متاح مؤقتًا.' : 'Online payment is temporarily unavailable.') . '</p>';
     echo '<button class="button" type="button" disabled>' . ($arabic ? 'تأكيد الشراء' : 'Confirm purchase') . '</button>';
 } else {
     echo '<form method="post"><input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"><input type="hidden" name="package" value="' . e($packageCode) . '"><input type="hidden" name="campaign" value="' . $campaignId . '">';
-    echo '<button class="button" type="submit">' . ($arabic ? 'تأكيد الشراء عبر ميسر' : 'Confirm purchase with Moyasar') . '</button></form>';
+    echo '<button class="button" type="submit">' . ($arabic ? ($packageCode === 'usage' ? 'ادفع قيمة النقاط' : 'تأكيد الشراء عبر ميسر') : ($packageCode === 'usage' ? 'Pay for the credits used' : 'Confirm purchase with Moyasar')) . '</button></form>';
 }
 echo '</article></div><p><a href="/credits.php">' . ($arabic ? 'رجوع إلى الباقات' : 'Back to packages') . '</a></p></main>';
 echo '<script src="/public/assets/js/app.js?v=nav42"></script></body></html>';

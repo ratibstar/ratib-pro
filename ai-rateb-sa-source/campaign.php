@@ -835,7 +835,17 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
               <?php endforeach; ?>
             </div>
           <?php endif; ?>
-          <a class="button quiet" href="/app/payment/checkout.php?package=starter&amp;campaign=<?= $id ?>"><?= $arabic ? 'تنزيل ملف الحملة (ZIP)' : 'Download the campaign package (ZIP)' ?></a>
+          <?php
+            $creditBalance = (int) (db()->query('SELECT credits_balance FROM users WHERE id = ' . (int) $userId)->fetchColumn() ?: 0);
+            $creditBill = $creditBalance < 1 ? rateb_campaign_credit_bill(db(), $userId, $id) : ['credits' => 0, 'amount' => 0];
+          ?>
+          <?php if ($creditBalance < 1 && $creditBill['credits'] > 0): ?>
+            <p><?= $arabic ? 'الرصيد استُهلك. النقاط المستخدمة في الحملة' : 'The balance is used up. Credits used in this campaign' ?>: <strong><?= (int) $creditBill['credits'] ?></strong></p>
+            <p class="price-amount"><b><?= e(number_format($creditBill['amount'] / 100, 2)) ?></b> <span><?= $arabic ? 'ر.س' : 'SAR' ?></span></p>
+            <a class="button primary" href="/app/payment/checkout.php?package=usage&amp;campaign=<?= $id ?>"><?= $arabic ? 'ادفع قيمة النقاط' : 'Pay for the credits used' ?></a>
+          <?php else: ?>
+            <a class="button quiet" href="/app/campaign/package.php?id=<?= $id ?>"><?= $arabic ? 'تنزيل ملف الحملة (ZIP)' : 'Download the campaign package (ZIP)' ?></a>
+          <?php endif; ?>
           <p class="muted"><?= $arabic ? 'يضم الاستراتيجية والنصوص المعتمدة فقط، مع الصور والتسجيلات الصوتية والفيديو المعتمد أو المرفوع.' : 'Includes only the approved strategy and copy, plus the images, voice recordings, and the approved or uploaded video.' ?></p>
           <?php if (!$readyDone): ?>
             <form method="post" action="/app/campaign/ready.php">

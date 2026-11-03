@@ -16,10 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $viewerId = (int) $_SESSION['user_id'];
 $campaign = media_owned_campaign((int) ($_GET['id'] ?? 0));
 $campaignId = (int) $campaign['id'];
-$paid = db()->prepare("SELECT id FROM payment_orders WHERE user_id = ? AND status = 'paid' LIMIT 1");
-$paid->execute([$viewerId]);
-if (!$paid->fetch()) {
-    header('Location: /app/payment/checkout.php?package=starter&campaign=' . $campaignId);
+$balance = db()->prepare('SELECT credits_balance FROM users WHERE id = ?');
+$balance->execute([$viewerId]);
+$bill = rateb_campaign_credit_bill(db(), (int) $campaign['user_id'], $campaignId);
+if ((int) $balance->fetchColumn() < 1 && $bill['credits'] > 0) {
+    header('Location: /app/payment/checkout.php?package=usage&campaign=' . $campaignId);
     exit;
 }
 $userId = (int) $campaign['user_id'];
