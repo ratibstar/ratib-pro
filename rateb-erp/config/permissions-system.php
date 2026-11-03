@@ -56,6 +56,7 @@ return [
         'website',
         'logistics',
         'marketplace',
+        'automotive',
         'module_addons',
         'plans',
         'ai',
@@ -92,6 +93,7 @@ return [
         'website' => 'website',
         'logistics' => 'logistics_platform',
         'marketplace' => 'marketplace_platform',
+        'automotive' => 'automotive_platform',
         'module_addons' => 'module_addon_catalog',
         'plans' => 'plans',
         'ai' => 'rateb_ai',
@@ -337,6 +339,9 @@ return [
             'marketplace.create',
             'marketplace.update',
             'marketplace.delete',
+        ],
+        'automotive.manage' => [
+            'automotive.view',
         ],
         'crm.admin' => [
             'crm.view',

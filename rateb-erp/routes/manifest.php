@@ -24,4 +24,5 @@ return [
     ['id' => 'guest_menu', 'file' => 'routes/modules/guest-menu.php', 'optional' => true],
     ['id' => 'logistics', 'file' => 'routes/modules/logistics.php', 'optional' => true],
     ['id' => 'marketplace', 'file' => 'routes/modules/marketplace.php', 'optional' => true],
+    ['id' => 'automotive', 'file' => 'routes/modules/automotive.php', 'optional' => true],
 ];
