@@ -29,6 +29,9 @@ if ($kind === 'strategy') {
         http_response_code(409);
         exit(ui_language() === 'ar' ? 'لا توجد استراتيجية لاعتمادها.' : 'There is no strategy to approve.');
     }
+    if (!rateb_campaign_feature_paid($userId, 'text_campaign', $id) && rateb_credit_charge(db(), $userId, 'text_campaign', $id) < 1) {
+        rateb_credit_stop($userId, 'text_campaign');
+    }
     db()->prepare("UPDATE campaign_outputs SET approval_status = 'approved' WHERE id = ? AND campaign_id = ?")->execute([(int) $strategy['id'], $id]);
     header('Location: /campaign.php?id=' . $id . '#strategy');
     exit;

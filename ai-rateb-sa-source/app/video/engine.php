@@ -415,11 +415,15 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     if ($scenes === []) {
         return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
     }
-    $chargeId = rateb_credit_charge($pdo, (int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id']);
-    if ($chargeId < 1) {
-        $lockCode = rateb_feature_locked((int) $campaign['user_id'], 'video_storyboard') ? 'package' : 'credits';
-        return ['ok' => false, 'code' => $lockCode, 'job_id' => 0];
+    if (rateb_feature_locked((int) $campaign['user_id'], 'video_storyboard')) {
+        return ['ok' => false, 'code' => 'package', 'job_id' => 0];
     }
+    $balance = $pdo->prepare('SELECT credits_balance FROM users WHERE id = ?');
+    $balance->execute([(int) $campaign['user_id']]);
+    if ((int) $balance->fetchColumn() < rateb_get_feature_cost('video_storyboard')) {
+        return ['ok' => false, 'code' => 'credits', 'job_id' => 0];
+    }
+    $chargeId = 0;
     $seconds = 0;
     foreach ($scenes as $scene) {
         $seconds += (int) $scene['duration'];
@@ -495,13 +499,18 @@ function rateb_video_save_storyboard(PDO $pdo, array $job, array $scenes): bool
 
 function rateb_video_output_name(int $jobId): string
 {
-    return 'video-job-' . $jobId . '.mp4';
+    return 'hold-video-job-' . $jobId . '.mp4';
 }
 
 function rateb_video_find_output(PDO $pdo, int $campaignId, int $userId, int $jobId): int
 {
     $stmt = $pdo->prepare("SELECT id FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = 'video' AND source = 'ai' AND original_name = ? ORDER BY id DESC LIMIT 1");
     $stmt->execute([$campaignId, $userId, rateb_video_output_name($jobId)]);
+    $found = (int) ($stmt->fetchColumn() ?: 0);
+    if ($found > 0) {
+        return $found;
+    }
+    $stmt->execute([$campaignId, $userId, 'video-job-' . $jobId . '.mp4']);
     return (int) ($stmt->fetchColumn() ?: 0);
 }
 
@@ -811,7 +820,7 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     rateb_video_face_marks_ready($clips);
     file_put_contents($list, $lines);
     $out = $dir . '/final-' . (int) $job['id'] . '.mp4';
-    $voice = $pdo->prepare('SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = \'audio\' ORDER BY id DESC LIMIT 1');
+    $voice = $pdo->prepare('SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = \'audio\' AND original_name NOT LIKE \'hold-%\' ORDER BY id DESC LIMIT 1');
     $voice->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
     $audio = $voice->fetch();
     $audioPath = $audio ? media_absolute_path($audio) : '';

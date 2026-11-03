@@ -17,14 +17,16 @@ $row = media_owned_row($id);
 $campaignId = (int) $row['campaign_id'];
 $userId = (int) $_SESSION['user_id'];
 $name = (string) ($row['original_name'] ?? '');
-if ((string) $row['kind'] !== 'image' || (string) $row['source'] !== 'ai' || !str_starts_with($name, 'hold-')) {
+$kind = (string) $row['kind'];
+$feature = $kind === 'audio' ? 'saudi_voice' : 'ai_image';
+if (!in_array($kind, ['image', 'audio'], true) || (string) $row['source'] !== 'ai' || !str_starts_with($name, 'hold-')) {
     media_redirect($campaignId);
 }
-$cost = rateb_get_feature_cost('ai_image');
+$cost = rateb_get_feature_cost($feature);
 $balance = db()->prepare('SELECT credits_balance FROM users WHERE id = ?');
 $balance->execute([$userId]);
 if ((int) $balance->fetchColumn() < $cost) {
-    rateb_credit_stop($userId, 'ai_image');
+    rateb_credit_stop($userId, $feature);
 }
 $paid = 'paid-' . substr($name, 5);
 $mark = db()->prepare('UPDATE campaign_media SET original_name = ? WHERE id = ? AND user_id = ? AND original_name = ?');
@@ -32,10 +34,10 @@ $mark->execute([$paid, $id, $userId, $name]);
 if ($mark->rowCount() !== 1) {
     media_redirect($campaignId);
 }
-$charge = rateb_credit_charge(db(), $userId, 'ai_image', $campaignId);
+$charge = rateb_credit_charge(db(), $userId, $feature, $campaignId);
 if ($charge < 1) {
     db()->prepare('UPDATE campaign_media SET original_name = ? WHERE id = ? AND user_id = ? AND original_name = ?')
         ->execute([$name, $id, $userId, $paid]);
-    rateb_credit_stop($userId, 'ai_image');
+    rateb_credit_stop($userId, $feature);
 }
 media_redirect($campaignId);

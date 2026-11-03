@@ -304,6 +304,12 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <?php endforeach; ?>
   </ol>
   <p id="stage-status" class="stage-status"></p>
+  <form method="post" action="/app/campaign/approve-pending.php" class="action-row">
+    <input type="hidden" name="csrf" value="<?= $csrf ?>">
+    <input type="hidden" name="campaign_id" value="<?= $id ?>">
+    <button class="primary" type="submit"><?= $arabic ? 'اعتماد الكل' : 'Approve all' ?></button>
+  </form>
+  <p class="muted"><?= $arabic ? 'لا يُخصم الرصيد إلا عند الاعتماد: الاستراتيجية 5، كل صورة 10، كل صوت 15، وكل فيديو 20. النصوص تُعتمد منفردة بدون خصم إضافي.' : 'Credits are used only when you approve: strategy 5, each image 10, each voice 15, and each video 20. Copy approvals have no extra charge.' ?></p>
 
   <section class="panel is-active" id="idea" data-panel="idea">
     <h2 data-i18n="brief_title"><?= $arabic ? 'ملخص الحملة' : 'Campaign brief' ?></h2>
@@ -398,7 +404,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
           <input type="hidden" name="csrf" value="<?= $csrf ?>">
           <input type="hidden" name="campaign_id" value="<?= $id ?>">
           <input type="hidden" name="kind" value="strategy">
-          <button class="primary" type="submit" data-i18n="approve_strategy"><?= $arabic ? 'اعتماد الاستراتيجية' : 'Approve Strategy' ?></button>
+          <button class="primary" type="submit" data-i18n="approve_strategy"><?= $arabic ? (rateb_campaign_feature_paid($userId, 'text_campaign', $id) ? 'اعتماد الاستراتيجية' : 'اعتماد الاستراتيجية وخصم 5') : (rateb_campaign_feature_paid($userId, 'text_campaign', $id) ? 'Approve Strategy' : 'Approve strategy and use 5 credits') ?></button>
         </form>
       <?php endif; ?>
       <form id="strategy-form" data-ai="1" data-status="strategy-status" data-busy="generating_strategy" data-locked="<?= $strategyApproved ? '1' : '0' ?>">
@@ -595,6 +601,16 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <article class="media-card">
           <audio class="<?= $item === $campaignVoices[0] ? 'card-voice' : '' ?>" controls preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"<?= $item === $campaignVoices[0] && (string) ($_GET['play'] ?? '') === '1' ? ' autoplay' : '' ?>></audio>
           <p class="badge"><?= (string) $item['source'] === 'ai' ? ($arabic ? 'صوت مولّد من النص المعتمد' : 'Generated from the approved copy') : ($arabic ? 'صوت مرفوع' : 'Uploaded audio') ?></p>
+          <?php if (str_starts_with((string) ($item['original_name'] ?? ''), 'hold-')): ?>
+            <form method="post" action="/app/media/approve-image.php">
+              <input type="hidden" name="csrf" value="<?= $csrf ?>">
+              <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+              <input type="hidden" name="panel" value="voice">
+              <button type="submit" class="primary"><?= $arabic ? 'اعتماد وخصم 15' : 'Approve and use 15 credits' ?></button>
+            </form>
+          <?php else: ?>
+            <p class="badge"><?= $arabic ? 'معتمد' : 'Approved' ?></p>
+          <?php endif; ?>
           <form method="post" action="/app/media/delete.php">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
@@ -710,11 +726,12 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <?php if ($localVideo): ?><p class="badge"><?= $arabic ? 'فيديو من صور الحملة بحركة كاميرا، لأن رصيد مزوّد الفيديو غير كافٍ' : 'Built from campaign images with camera motion because the video provider has no credit' ?></p><?php if ($campaignVoices === []): ?><p class="notice"><?= $arabic ? 'لا يوجد صوت محفوظ. ولّد التعليق من قسم الصوت، ثم اضغط إعادة التوليد ليُدمج مع الفيديو.' : 'No saved voice yet. Generate the voice, then regenerate the video so the voice is included.' ?></p><?php endif; ?><?php endif; ?>
         <video controls playsinline src="/app/media/file.php?id=<?= (int) $videoJob['output_media_id'] ?>"></video>
         <?php if ((string) $videoJob['approval_status'] !== 'approved'): ?>
+          <?php $videoHold = db()->prepare('SELECT original_name FROM campaign_media WHERE id = ? AND user_id = ?'); $videoHold->execute([(int) $videoJob['output_media_id'], $userId]); $videoUnpaid = str_starts_with((string) ($videoHold->fetchColumn() ?: ''), 'hold-'); ?>
           <form method="post" action="/app/ai/video-approve.php">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <input type="hidden" name="job_id" value="<?= (int) $videoJob['id'] ?>">
-            <button class="primary" type="submit"><?= $arabic ? 'اعتماد الفيديو' : 'Approve Video' ?></button>
+            <button class="primary" type="submit"><?= $arabic ? ($videoUnpaid ? 'اعتماد الفيديو وخصم 20' : 'اعتماد الفيديو') : ($videoUnpaid ? 'Approve video and use 20 credits' : 'Approve Video') ?></button>
           </form>
         <?php endif; ?>
       </article>
