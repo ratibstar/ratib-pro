@@ -20,7 +20,7 @@ $balance = db()->prepare('SELECT credits_balance FROM users WHERE id = ?');
 $balance->execute([$viewerId]);
 $bill = rateb_campaign_credit_bill(db(), (int) $campaign['user_id'], $campaignId);
 if ((int) $balance->fetchColumn() < 1 && $bill['credits'] > 0) {
-    header('Location: /app/payment/checkout.php?package=usage&campaign=' . $campaignId);
+    header('Location: /campaign.php?id=' . $campaignId . '#ready');
     exit;
 }
 $userId = (int) $campaign['user_id'];

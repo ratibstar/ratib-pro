@@ -840,9 +840,18 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             $creditBill = $creditBalance < 1 ? rateb_campaign_credit_bill(db(), $userId, $id) : ['credits' => 0, 'amount' => 0];
           ?>
           <?php if ($creditBalance < 1 && $creditBill['credits'] > 0): ?>
-            <p><?= $arabic ? 'الرصيد استُهلك. النقاط المستخدمة في الحملة' : 'The balance is used up. Credits used in this campaign' ?>: <strong><?= (int) $creditBill['credits'] ?></strong></p>
-            <p class="price-amount"><b><?= e(number_format($creditBill['amount'] / 100, 2)) ?></b> <span><?= $arabic ? 'ر.س' : 'SAR' ?></span></p>
-            <a class="button primary" href="/app/payment/checkout.php?package=usage&amp;campaign=<?= $id ?>"><?= $arabic ? 'ادفع قيمة النقاط' : 'Pay for the credits used' ?></a>
+            <p><?= $arabic ? 'الرصيد استُهلك. اختر الباقة لإتمام الدفع ثم تنزيل الملف.' : 'The balance is used up. Choose a package to pay, then download the file.' ?></p>
+            <p class="muted"><?= $arabic ? 'النقاط المستخدمة في هذه الحملة' : 'Credits used in this campaign' ?>: <strong><?= (int) $creditBill['credits'] ?></strong></p>
+            <div class="price-grid">
+              <?php foreach (['starter' => [$arabic ? 'باقة الانطلاق' : 'Starter', 99, 500], 'pro' => [$arabic ? 'الباقة الاحترافية' : 'Pro', 249, 2500]] as $code => $pack): ?>
+                <article class="price-card<?= $code === 'pro' ? ' is-featured' : '' ?>">
+                  <p class="eyebrow"><?= e($pack[0]) ?></p>
+                  <p class="price-amount"><b><?= (int) $pack[1] ?></b> <span><?= $arabic ? 'ر.س' : 'SAR' ?></span></p>
+                  <p><?= (int) $pack[2] ?> <?= $arabic ? 'نقطة' : 'credits' ?></p>
+                  <a class="button" href="/app/payment/checkout.php?package=<?= e($code) ?>&amp;campaign=<?= $id ?>"><?= $arabic ? 'ادفع هذه الباقة' : 'Pay for this package' ?></a>
+                </article>
+              <?php endforeach; ?>
+            </div>
           <?php else: ?>
             <a class="button quiet" href="/app/campaign/package.php?id=<?= $id ?>"><?= $arabic ? 'تنزيل ملف الحملة (ZIP)' : 'Download the campaign package (ZIP)' ?></a>
           <?php endif; ?>
