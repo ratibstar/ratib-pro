@@ -19,6 +19,15 @@ function rateb_video_ratio(): string
     return '720:1280';
 }
 
+function rateb_video_frame(string $ratio): array
+{
+    return match ($ratio) {
+        '16:9' => [1280, 720, '1280:720'],
+        '1:1' => [720, 720, '720:720'],
+        default => [720, 1280, '720:1280'],
+    };
+}
+
 function rateb_video_clip_seconds(): int
 {
     return 5;
@@ -106,7 +115,7 @@ function rateb_video_copy_parts(array $rows, string $prefer = 'ar'): array
 }
 
 /** @param array<int,array<string,mixed>> $images @param array<string,mixed> $brand */
-function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar', string $direction = ''): array
+function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar', string $direction = '', string $ratio = '9:16'): array
 {
     $clips = rateb_video_clips($planSeconds);
     if ($clips === [] || $images === []) {
@@ -130,12 +139,8 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
     }
     $purpose = mb_substr($purpose, 0, 180);
     $voiceLines = rateb_video_split_lines($spokenCopy !== '' ? $spokenCopy : $purpose, count($clips));
-    $ratio = '1:1';
-    foreach ($images as $imageRow) {
-        if (str_contains((string) ($imageRow['original_name'] ?? ''), '9x16')) {
-            $ratio = '9:16';
-            break;
-        }
+    if (!in_array($ratio, ['1:1', '9:16', '16:9'], true)) {
+        $ratio = '9:16';
     }
     $scenes = [];
     foreach ($clips as $i => $clip) {
@@ -366,7 +371,7 @@ function rateb_video_approved(PDO $pdo, int $campaignId, int $userId): ?array
 }
 
 /** @return array{ok:bool,code:string,job_id:int} */
-function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array $copyRows, array $images, int $seconds = 5, string $direction = ''): array
+function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array $copyRows, array $images, int $seconds = 5, string $direction = '', string $ratio = '9:16'): array
 {
     $provider = rateb_video_provider();
     if (!$provider->configured()) {
@@ -403,7 +408,7 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     $brief = $pdo->prepare('SELECT source_media FROM campaign_briefs WHERE campaign_id = ? AND user_id = ?');
     $brief->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
     $images = rateb_video_apply_vision($images, (string) ($brief->fetchColumn() ?: ''));
-    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, rateb_video_brand($pdo, (int) $campaign['user_id']), $prefer, $direction);
+    $scenes = rateb_video_storyboard($campaign, $strategy, $parts, $images, $seconds, rateb_video_brand($pdo, (int) $campaign['user_id']), $prefer, $direction, $ratio);
     if ($scenes === []) {
         return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
     }
@@ -675,11 +680,12 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                     throw new RuntimeException('missing_image');
                 }
                 try {
+                    $frame = rateb_video_frame((string) ($scene['ratio'] ?? '9:16'));
                     $created = $provider->generateFromImage(
                         rateb_video_image_data_uri($row),
                         (string) $scene['prompt'],
                         (int) $scene['duration'],
-                        rateb_video_ratio()
+                        $frame[2]
                     );
                 } catch (RuntimeException $providerError) {
                     if (!in_array($providerError->getMessage(), ['rejected_credit', 'rejected', 'rejected_model'], true)) {
@@ -688,7 +694,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                     $pictures = $pdo->prepare('SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = \'image\' ORDER BY id');
                     $pictures->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
                     $pictureRows = $pictures->fetchAll();
-                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $pictureRows === [] ? [$row] : $pictureRows);
+                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $pictureRows === [] ? [$row] : $pictureRows, (string) ($scene['ratio'] ?? '9:16'));
                     $scenes[$index]['status'] = 'ready';
                     $scenes[$index]['local'] = true;
                     if (!rateb_video_save_storyboard($pdo, $job, $scenes)) {
@@ -753,7 +759,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
     }
 }
 
-function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds, array $imageRows = []): void
+function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds, array $imageRows = [], string $ratio = '9:16'): void
 {
     $rows = [];
     foreach ($imageRows === [] ? [$imageRow] : $imageRows as $candidate) {
@@ -775,7 +781,7 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
     foreach ($rows as $partIndex => $row) {
         $frames = $partIndex === count($rows) - 1 ? max(8, $totalFrames - ($share * (count($rows) - 1))) : $share;
         $part = $dir . '/' . (int) $job['id'] . '-' . $index . '-p' . $partIndex . '.mp4';
-        rateb_video_local_still($campaign, $job, $partIndex, $row, $frames, $part);
+        rateb_video_local_still($campaign, $job, $partIndex, $row, $frames, $part, $ratio);
         $parts[] = $part;
     }
     if (count($parts) === 1) {
@@ -812,7 +818,7 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
     rateb_video_face_mark($clip, 0, 'local');
 }
 
-function rateb_video_local_still(array $campaign, array $job, int $index, array $imageRow, int $frames, string $clip): void
+function rateb_video_local_still(array $campaign, array $job, int $index, array $imageRow, int $frames, string $clip, string $ratio = '9:16'): void
 {
     $bytes = file_get_contents(media_absolute_path($imageRow));
     $jpeg = is_string($bytes) ? rateb_video_prompt_jpeg($bytes) : null;
@@ -824,9 +830,12 @@ function rateb_video_local_still(array $campaign, array $job, int $index, array 
     if (file_put_contents($still, $jpeg, LOCK_EX) === false) {
         throw new RuntimeException('storage');
     }
+    $frame = rateb_video_frame($ratio);
+    $wide = $frame[0] * 2;
+    $tall = $frame[1] * 2;
     $zoom = $index % 2 === 0 ? "min(zoom+0.0009,1.15)" : "if(eq(on,0),1.15,max(zoom-0.0009,1))";
-    $filter = 'scale=1440:2560,zoompan=z=' . "'" . $zoom . "'" . ':d=' . $frames
-        . ":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280:fps=25,format=yuv420p";
+    $filter = 'scale=' . $wide . ':' . $tall . ',zoompan=z=' . "'" . $zoom . "'" . ':d=' . $frames
+        . ":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=" . $frame[0] . 'x' . $frame[1] . ':fps=25,format=yuv420p';
     $ffmpeg = rateb_video_ffmpeg();
     $cmd = escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($still) . ' -vf ' . escapeshellarg($filter)
         . ' -frames:v ' . $frames . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
@@ -873,7 +882,8 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     $voice->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
     $audio = $voice->fetch();
     $audioPath = $audio ? media_absolute_path($audio) : '';
-    $filter = 'scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p';
+    $frame = rateb_video_frame((string) (($scenes[0]['ratio'] ?? '9:16')));
+    $filter = 'scale=' . $frame[0] . ':' . $frame[1] . ':force_original_aspect_ratio=decrease,pad=' . $frame[0] . ':' . $frame[1] . ':(ow-iw)/2:(oh-ih)/2,format=yuv420p';
     $wmPng = '';
     if ((int) $job['watermark'] === 1) {
         if (rateb_video_ffmpeg_has_filter('drawtext')) {

@@ -537,12 +537,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <span><?= $arabic ? 'نوع الصورة ومواصفاتها' : 'Image type and details' ?></span>
         <textarea name="image_brief" form="imageForm" rows="3" maxlength="400" placeholder="<?= $arabic ? 'مثال: صورة أفقية لمستشار استقدام يشرح لوحة رتب في مكتب بالرياض، إضاءة نهارية، بدون كتابة' : 'Example: a wide photo of a recruitment consultant explaining the RATEB screen in a Riyadh office, daylight, no writing' ?>"></textarea>
       </label>
-      <p class="muted"><?= $arabic ? 'اكتب الوصف، اختر المقاس، ثم اضغط صورة أخرى.' : 'Write the description, choose a size, then press Another image.' ?></p>
-      <div class="ratio-picks">
-        <label><input type="radio" name="ratio" value="1:1" form="imageForm" checked><i>1:1</i><span><?= $arabic ? 'إنستغرام' : 'Instagram' ?></span></label>
-        <label><input type="radio" name="ratio" value="9:16" form="imageForm"><i>9:16</i><span><?= $arabic ? 'عمودي' : 'Vertical' ?></span></label>
-        <label><input type="radio" name="ratio" value="16:9" form="imageForm"><i>16:9</i><span><?= $arabic ? 'أفقي' : 'Horizontal' ?></span></label>
-      </div>
+      <p class="muted"><?= $arabic ? 'اكتب الوصف، ثم اضغط صورة أخرى.' : 'Write the description, then press Another image.' ?></p>
     <?php endif; ?>
     <?php if ($copyApproved || $campaignImages !== []): ?>
       <form class="attach-image" method="post" action="/app/media/upload.php" enctype="multipart/form-data">
@@ -710,6 +705,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <span><?= $arabic ? 'نوع الفيديو ومواصفاته' : 'Video type and details' ?></span>
         <textarea name="video_brief" rows="3" maxlength="400" placeholder="<?= $arabic ? 'مثال: فيديو قصير يشرح برنامج رتب لشركات الاستقدام، حركة كاميرا هادئة، مكتب سعودي، بدون كتابة على الشاشة' : 'Example: a short video explaining RATEB for recruitment companies, calm camera move, Saudi office, no on-screen writing' ?>"></textarea>
       </label>
+      <div class="ratio-picks">
+        <label><input type="radio" name="ratio" value="16:9"><i>16:9</i><span><?= $arabic ? 'أفقي' : 'Horizontal' ?></span></label>
+        <label><input type="radio" name="ratio" value="9:16" checked><i>9:16</i><span><?= $arabic ? 'عمودي' : 'Vertical' ?></span></label>
+        <label><input type="radio" name="ratio" value="1:1"><i>1:1</i><span><?= $arabic ? 'إنستغرام' : 'Instagram' ?></span></label>
+      </div>
       <?php rateb_campaign_duration_select($videoDurations, $arabic); ?>
       <p class="muted"><?= $arabic ? '٥ و١٠ ثوانٍ مجاناً لفيديوين في الشهر. ١٥ و٢٠ و٣٠ ثانية في الباقات المدفوعة.' : '5 and 10 seconds are free for two videos a month. 15, 20, and 30 seconds are on paid plans.' ?></p>
       <button class="primary" type="submit"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && (string) $videoJob['status'] === 'completed' ? ($arabic ? 'إعادة التوليد' : 'Regenerate') : ($arabic ? 'إنشاء الفيديو' : 'Create video') ?></button>
