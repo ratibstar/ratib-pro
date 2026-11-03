@@ -109,12 +109,12 @@ function rateb_video_copy_parts(array $rows, string $prefer = 'ar'): array
 function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar', string $direction = ''): array
 {
     $clips = rateb_video_clips($planSeconds);
-    if (count($clips) === 1 && count($images) > 1 && $planSeconds >= 10) {
-        $parts = min(4, count($images), intdiv($planSeconds, 2));
-        $base = $parts > 0 ? intdiv($planSeconds, $parts) : 0;
-        if ($parts >= 2 && $base >= 2) {
+    if (count($images) > count($clips) && $planSeconds >= 5) {
+        $parts = min(count($images), 12);
+        $base = max(1, intdiv($planSeconds, $parts));
+        if ($parts >= 2) {
             $clips = array_fill(0, $parts, $base);
-            $clips[$parts - 1] += $planSeconds - ($base * $parts);
+            $clips[$parts - 1] += max(0, $planSeconds - ($base * $parts));
         }
     }
     if ($clips === [] || $images === []) {
