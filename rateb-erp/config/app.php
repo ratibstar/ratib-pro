@@ -4025,6 +4025,9 @@ if (!function_exists('rateb_entity_perms')) {
             if (class_exists(\Rateb\App\Marketplace\MarketplaceModule::class)) {
                 $map = array_merge($map, \Rateb\App\Marketplace\MarketplaceModule::entityPermissions());
             }
+            if (class_exists(\Rateb\App\Automotive\AutomotiveModule::class)) {
+                $map = array_merge($map, \Rateb\App\Automotive\AutomotiveModule::entityPermissions());
+            }
         }
         $resource = ltrim(preg_replace('#^(company/|admin/ops/|admin/)#', '', trim($resource)), '/');
         $candidates = [$resource];
@@ -4240,6 +4243,12 @@ if (!function_exists('__')) {
             $mpText = \Rateb\App\Marketplace\MarketplaceModule::translate($key, $replace);
             if ($mpText !== null) {
                 return $mpText;
+            }
+        }
+        if ($text === $key && class_exists(\Rateb\App\Automotive\AutomotiveModule::class)) {
+            $autoText = \Rateb\App\Automotive\AutomotiveModule::translate($key, $replace);
+            if ($autoText !== null) {
+                return $autoText;
             }
         }
         foreach ($replace as $k => $v) {

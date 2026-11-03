@@ -25,6 +25,7 @@ return [
     'website' => 'website.view',
     'logistics' => 'logistics.manage',
     'marketplace' => 'marketplace.manage',
+    'automotive' => 'automotive.manage',
     'module_addons' => 'module_addons.manage',
     'ai' => 'ai.view',
 ];
