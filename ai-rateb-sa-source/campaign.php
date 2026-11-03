@@ -835,7 +835,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
               <?php endforeach; ?>
             </div>
           <?php endif; ?>
-          <a class="button quiet" href="/app/campaign/package.php?id=<?= $id ?>" download><?= $arabic ? 'تنزيل ملف الحملة (ZIP)' : 'Download the campaign package (ZIP)' ?></a>
+          <a class="button quiet" href="/app/payment/checkout.php?package=starter&amp;campaign=<?= $id ?>"><?= $arabic ? 'تنزيل ملف الحملة (ZIP)' : 'Download the campaign package (ZIP)' ?></a>
           <p class="muted"><?= $arabic ? 'يضم الاستراتيجية والنصوص المعتمدة فقط، مع الصور والتسجيلات الصوتية والفيديو المعتمد أو المرفوع.' : 'Includes only the approved strategy and copy, plus the images, voice recordings, and the approved or uploaded video.' ?></p>
           <?php if (!$readyDone): ?>
             <form method="post" action="/app/campaign/ready.php">

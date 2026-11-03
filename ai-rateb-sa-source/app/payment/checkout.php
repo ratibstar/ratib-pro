@@ -7,6 +7,7 @@ require_once __DIR__ . '/../nav.php';
 require_login();
 
 $packageCode = (string) ($_POST['package'] ?? $_GET['package'] ?? '');
+$campaignId = (int) ($_POST['campaign'] ?? $_GET['campaign'] ?? 0);
 $selected = rateb_paid_package($packageCode);
 if ($selected === null) {
     http_response_code(404);
@@ -27,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $configured) {
     $pdo->prepare('INSERT INTO payment_orders (user_id, package_code, amount, credits, currency, status) VALUES (?, ?, ?, ?, \'SAR\', \'pending\')')
         ->execute([(int) $_SESSION['user_id'], $packageCode, $selected['amount'], $selected['credits']]);
     $orderId = (int) $pdo->lastInsertId();
-    $return = 'https://ai.rateb.sa/app/payment/return.php?order=' . $orderId;
+    $return = 'https://ai.rateb.sa/app/payment/return.php?order=' . $orderId . ($campaignId > 0 ? '&campaign=' . $campaignId : '');
     $body = json_encode([
         'amount' => $selected['amount'],
         'currency' => 'SAR',
@@ -76,14 +77,14 @@ echo '<title>RATEB AI</title><link rel="stylesheet" href="https://fonts.googleap
 echo '<body class="studio">';
 rateb_site_header('/credits.php', true);
 echo '<main class="container studio-page"><p class="eyebrow">' . ($arabic ? 'الدفع عبر ميسر' : 'Payments by Moyasar') . '</p>';
-echo '<h1>' . e($title) . '</h1><div class="price-grid"><article class="price-card is-featured">';
+echo '<h1>' . ($campaignId > 0 ? ($arabic ? 'ادفع لتنزيل ملف الحملة' : 'Pay to download the campaign file') : e($title)) . '</h1><div class="price-grid"><article class="price-card is-featured">';
 echo '<p class="price-amount"><b>' . e($price) . '</b> <span>' . ($arabic ? 'ر.س' : 'SAR') . '</span></p>';
 echo '<p>' . (int) $selected['credits'] . ' ' . ($arabic ? 'نقطة' : 'credits') . '</p>';
 if (!$configured) {
     echo '<p class="alert">' . ($arabic ? 'الدفع الإلكتروني غير متاح مؤقتًا.' : 'Online payment is temporarily unavailable.') . '</p>';
     echo '<button class="button" type="button" disabled>' . ($arabic ? 'تأكيد الشراء' : 'Confirm purchase') . '</button>';
 } else {
-    echo '<form method="post"><input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"><input type="hidden" name="package" value="' . e($packageCode) . '">';
+    echo '<form method="post"><input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '"><input type="hidden" name="package" value="' . e($packageCode) . '"><input type="hidden" name="campaign" value="' . $campaignId . '">';
     echo '<button class="button" type="submit">' . ($arabic ? 'تأكيد الشراء عبر ميسر' : 'Confirm purchase with Moyasar') . '</button></form>';
 }
 echo '</article></div><p><a href="/credits.php">' . ($arabic ? 'رجوع إلى الباقات' : 'Back to packages') . '</a></p></main>';
