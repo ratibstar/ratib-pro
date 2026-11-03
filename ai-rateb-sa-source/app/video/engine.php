@@ -809,7 +809,7 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
         }
     }
     chmod($clip, 0600);
-    rateb_video_protect_file($clip);
+    rateb_video_face_mark($clip, 0, 'local');
 }
 
 function rateb_video_local_still(array $campaign, array $job, int $index, array $imageRow, int $frames, string $clip): void
@@ -847,7 +847,7 @@ function rateb_video_local_still(array $campaign, array $job, int $index, array 
         throw new RuntimeException('storage');
     }
     chmod($clip, 0600);
-    rateb_video_protect_file($clip);
+    rateb_video_face_mark($clip, 0, 'local');
 }
 
 /** @param array<int,array<string,mixed>> $scenes */
@@ -916,7 +916,18 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     if ($code !== 0 || !is_file($out)) {
         throw new RuntimeException((int) $job['watermark'] === 1 ? 'watermark' : 'storage');
     }
-    rateb_video_protect_file($out);
+    $localOnly = $scenes !== [];
+    foreach ($scenes as $scene) {
+        if (empty($scene['local'])) {
+            $localOnly = false;
+            break;
+        }
+    }
+    if ($localOnly) {
+        rateb_video_face_mark($out, 0, 'local');
+    } else {
+        rateb_video_protect_file($out);
+    }
     $bytes = file_get_contents($out);
     if ($code !== 0 || !is_string($bytes) || !str_contains(substr($bytes, 0, 32), 'ftyp')) {
         if ((int) $job['watermark'] === 1) {
