@@ -65,16 +65,6 @@ $gate = rateb_usage_begin(db(), $userId, (int) $campaign['id'], 'voice');
 if (!$gate['ok']) {
     rateb_deny((string) $gate['code']);
 }
-$charge = rateb_reservation_charge(db(), (int) $gate['id'], $userId, 'saudi_voice', (int) $campaign['id']);
-if ($charge !== 'ok') {
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
-    if ($charge === 'credits') {
-        rateb_credit_stop($userId, 'saudi_voice');
-    }
-    http_response_code(409);
-    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
 
 $payload = json_encode([
     'model' => 'arabic-tts-1',
@@ -107,16 +97,33 @@ if ($audio !== false && $http >= 200 && $http < 300 && substr((string) $audio, 0
         $audio = rateb_wav_faster((string) $audio, $tempo) ?? $audio;
     }
 }
-if ($audio === false || $http < 200 || $http >= 300 || substr((string) $audio, 0, 4) !== 'RIFF') {
+$audioName = $lang === 'ar' ? 'voiceover-ar.wav' : 'voiceover-en.wav';
+$audioMime = 'audio/wav';
+if (is_string($audio) && $http >= 200 && $http < 300 && substr($audio, 0, 4) !== 'RIFF' && (str_starts_with($audio, 'ID3') || str_starts_with($audio, "\xFF\xFB"))) {
+    $audioName = $lang === 'ar' ? 'voiceover-ar.mp3' : 'voiceover-en.mp3';
+    $audioMime = 'audio/mpeg';
+}
+$audioReady = is_string($audio) && $http >= 200 && $http < 300 && ($audioMime === 'audio/mpeg' || substr($audio, 0, 4) === 'RIFF');
+if (!$audioReady) {
     $decoded = json_decode((string) $audio, true);
     $errorCode = is_array($decoded) ? (string) ($decoded['error']['code'] ?? '') : '';
-    rateb_reservation_settle(db(), (int) $gate['id'], $userId, 'failed', 'saudi_voice');
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
     if ($errorCode === 'model_terms_required') {
         http_response_code(403);
         echo json_encode(['error' => rateb_ui_error('voice_terms'), 'code' => 'voice_terms', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    http_response_code(502);
+    http_response_code($http >= 400 && $http < 500 ? 422 : 502);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'هذا الصوت غير متاح الآن. اختر صوتاً آخر من القائمة ثم أعد التوليد.' : 'This voice is not available right now. Choose another voice and try again.', 'code' => 'voice_rejected', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+$charge = rateb_reservation_charge(db(), (int) $gate['id'], $userId, 'saudi_voice', (int) $campaign['id']);
+if ($charge !== 'ok') {
+    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+    if ($charge === 'credits') {
+        rateb_credit_stop($userId, 'saudi_voice');
+    }
+    http_response_code(409);
     echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -126,8 +133,8 @@ try {
         $campaign,
         'audio',
         'ai',
-        $lang === 'ar' ? 'voiceover-ar.wav' : 'voiceover-en.wav',
-        'audio/wav',
+        $audioName,
+        $audioMime,
         (string) $audio
     );
 } catch (Throwable $error) {

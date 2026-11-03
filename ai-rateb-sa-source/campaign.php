@@ -707,7 +707,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <p><?= $arabic ? 'معاينة الفيديو' : 'Preview Video' ?></p>
         <?php $sceneSeconds = 0; $localVideo = false; foreach (json_decode((string) $videoJob['storyboard'], true) ?: [] as $scene) { $sceneSeconds += (int) ($scene['duration'] ?? 0); $localVideo = $localVideo || !empty($scene['local']); } ?>
         <p class="muted"><?= e((string) $sceneSeconds) ?>s · 9:16 · <?= (string) $videoJob['approval_status'] === 'approved' ? ($arabic ? 'معتمد' : 'Approved') : ($arabic ? 'بانتظار الاعتماد' : 'Waiting for approval') ?></p>
-        <?php if ($localVideo): ?><p class="badge"><?= $arabic ? 'فيديو من صور الحملة بحركة كاميرا، لأن رصيد مزوّد الفيديو غير كافٍ' : 'Built from campaign images with camera motion because the video provider has no credit' ?></p><?php endif; ?>
+        <?php if ($localVideo): ?><p class="badge"><?= $arabic ? 'فيديو من صور الحملة بحركة كاميرا، لأن رصيد مزوّد الفيديو غير كافٍ' : 'Built from campaign images with camera motion because the video provider has no credit' ?></p><?php if ($campaignVoices === []): ?><p class="notice"><?= $arabic ? 'لا يوجد صوت محفوظ. ولّد التعليق من قسم الصوت، ثم اضغط إعادة التوليد ليُدمج مع الفيديو.' : 'No saved voice yet. Generate the voice, then regenerate the video so the voice is included.' ?></p><?php endif; ?><?php endif; ?>
         <video controls playsinline src="/app/media/file.php?id=<?= (int) $videoJob['output_media_id'] ?>"></video>
         <?php if ((string) $videoJob['approval_status'] !== 'approved'): ?>
           <form method="post" action="/app/ai/video-approve.php">
