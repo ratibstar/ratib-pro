@@ -690,8 +690,8 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
       <div class="social-tabs">
         <?php foreach ($board as $scene): ?>
           <article class="social-card">
-            <span class="badge"><?= $arabic ? 'مشهد' : 'Scene' ?> <?= (int) ($scene['scene'] ?? 0) ?> · <?= (int) ($scene['duration'] ?? 0) ?>s<?= isset($scene['ratio']) ? ' · ' . e((string) $scene['ratio']) : '' ?></span>
-            <p><strong><?= $arabic ? 'الصورة' : 'Visual' ?></strong> <?= e((string) ($scene['visual'] ?? $scene['prompt'] ?? '')) ?></p>
+            <span class="badge"><?= $arabic ? 'مشهد' : 'Scene' ?> <?= (int) ($scene['scene'] ?? 0) ?> · <?= (int) ($scene['duration'] ?? 0) ?>s</span>
+            <p><?= $arabic ? 'يستخدم صور الحملة المرفوعة.' : 'Uses the campaign images.' ?></p>
             <p><strong><?= $arabic ? 'التعليق' : 'Voiceover' ?></strong> <?= e((string) ($scene['voiceover'] ?? '')) ?></p>
           </article>
         <?php endforeach; ?>

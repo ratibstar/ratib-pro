@@ -109,14 +109,6 @@ function rateb_video_copy_parts(array $rows, string $prefer = 'ar'): array
 function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar', string $direction = ''): array
 {
     $clips = rateb_video_clips($planSeconds);
-    if (count($images) > count($clips) && $planSeconds >= 5) {
-        $parts = min(count($images), 12);
-        $base = max(1, intdiv($planSeconds, $parts));
-        if ($parts >= 2) {
-            $clips = array_fill(0, $parts, $base);
-            $clips[$parts - 1] += max(0, $planSeconds - ($base * $parts));
-        }
-    }
     if ($clips === [] || $images === []) {
         return [];
     }
@@ -690,10 +682,13 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                         rateb_video_ratio()
                     );
                 } catch (RuntimeException $providerError) {
-                    if ($providerError->getMessage() !== 'rejected_credit') {
+                    if (!in_array($providerError->getMessage(), ['rejected_credit', 'rejected', 'rejected_model'], true)) {
                         throw $providerError;
                     }
-                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration']);
+                    $pictures = $pdo->prepare('SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = \'image\' ORDER BY id');
+                    $pictures->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
+                    $pictureRows = $pictures->fetchAll();
+                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $pictureRows === [] ? [$row] : $pictureRows);
                     $scenes[$index]['status'] = 'ready';
                     $scenes[$index]['local'] = true;
                     if (!rateb_video_save_storyboard($pdo, $job, $scenes)) {
@@ -758,23 +753,77 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
     }
 }
 
-function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds): void
+function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds, array $imageRows = []): void
 {
-    $bytes = file_get_contents(media_absolute_path($imageRow));
-    $jpeg = is_string($bytes) ? rateb_video_prompt_jpeg($bytes) : null;
-    if (!is_string($jpeg)) {
+    $rows = [];
+    foreach ($imageRows === [] ? [$imageRow] : $imageRows as $candidate) {
+        if (is_array($candidate)) {
+            $rows[] = $candidate;
+        }
+    }
+    if ($rows === []) {
         throw new RuntimeException('rejected_image');
     }
     $dir = MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips';
     if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
         throw new RuntimeException('storage');
     }
-    $still = $dir . '/still-' . (int) $job['id'] . '-' . $index . '.jpg';
     $clip = $dir . '/' . (int) $job['id'] . '-' . $index . '.mp4';
+    $parts = [];
+    $totalFrames = max(1, $seconds) * 25;
+    $share = max(8, intdiv($totalFrames, count($rows)));
+    foreach ($rows as $partIndex => $row) {
+        $frames = $partIndex === count($rows) - 1 ? max(8, $totalFrames - ($share * (count($rows) - 1))) : $share;
+        $part = $dir . '/' . (int) $job['id'] . '-' . $index . '-p' . $partIndex . '.mp4';
+        rateb_video_local_still($campaign, $job, $partIndex, $row, $frames, $part);
+        $parts[] = $part;
+    }
+    if (count($parts) === 1) {
+        if (!rename($parts[0], $clip) && !is_file($clip)) {
+            throw new RuntimeException('storage');
+        }
+    } else {
+        $list = $dir . '/slides-' . (int) $job['id'] . '-' . $index . '.txt';
+        $lines = '';
+        foreach ($parts as $part) {
+            $lines .= 'file ' . escapeshellarg($part) . "\n";
+        }
+        file_put_contents($list, $lines);
+        $ffmpeg = rateb_video_ffmpeg();
+        $cmd = escapeshellarg($ffmpeg) . ' -y -f concat -safe 0 -i ' . escapeshellarg($list) . ' -c copy ' . escapeshellarg($clip);
+        $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        if (!is_resource($process)) {
+            throw new RuntimeException('storage');
+        }
+        stream_get_contents($pipes[1]);
+        stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $code = proc_close($process);
+        @unlink($list);
+        foreach ($parts as $part) {
+            @unlink($part);
+        }
+        if ($code !== 0 || !is_file($clip) || filesize($clip) < 1000) {
+            throw new RuntimeException('storage');
+        }
+    }
+    chmod($clip, 0600);
+    rateb_video_protect_file($clip);
+}
+
+function rateb_video_local_still(array $campaign, array $job, int $index, array $imageRow, int $frames, string $clip): void
+{
+    $bytes = file_get_contents(media_absolute_path($imageRow));
+    $jpeg = is_string($bytes) ? rateb_video_prompt_jpeg($bytes) : null;
+    if (!is_string($jpeg)) {
+        throw new RuntimeException('rejected_image');
+    }
+    $dir = dirname($clip);
+    $still = $dir . '/still-' . (int) $job['id'] . '-' . $index . '.jpg';
     if (file_put_contents($still, $jpeg, LOCK_EX) === false) {
         throw new RuntimeException('storage');
     }
-    $frames = max(1, $seconds) * 25;
     $zoom = $index % 2 === 0 ? "min(zoom+0.0009,1.15)" : "if(eq(on,0),1.15,max(zoom-0.0009,1))";
     $filter = 'scale=1440:2560,zoompan=z=' . "'" . $zoom . "'" . ':d=' . $frames
         . ":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280:fps=25,format=yuv420p";

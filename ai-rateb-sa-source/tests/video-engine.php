@@ -57,7 +57,7 @@ putenv('RATEB_PRIVATE_VIDEO_TOKEN');
 
 $images = [['id' => 4], ['id' => 9]];
 $short = rateb_video_storyboard(['id' => 1], ['creative_direction' => 'Quiet premium reveal'], ['headline'], $images, 5);
-check(count($short) === 2 && $short[0]['duration'] === 2 && $short[1]['image_id'] === 9, 'five seconds walks through every supplied image');
+check(count($short) === 1 && $short[0]['duration'] === 5 && $short[0]['image_id'] === 4, 'five seconds is one provider scene');
 check(!str_contains($short[0]['prompt'], 'سعر') && str_contains($short[0]['prompt'], 'no text'), 'prompt asks for motion without rendered text');
 check(str_contains($short[0]['prompt'], 'Quiet premium reveal'), 'prompt keeps the approved creative direction');
 check(!str_contains($short[0]['prompt'], 'logo applied'), 'prompt does not claim a logo was applied');
