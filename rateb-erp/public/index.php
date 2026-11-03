@@ -157,6 +157,12 @@ try {
         \Rateb\App\Marketplace\MarketplaceModule::init();
     }
 
+    $automotiveModule = dirname(__FILE__, 2) . '/modules/automotive/AutomotiveModule.php';
+    if (is_file($automotiveModule)) {
+        require_once $automotiveModule;
+        \Rateb\App\Automotive\AutomotiveModule::init();
+    }
+
     // Soft-load: production must not fatal if offline/ not yet deployed.
     $offlineModule = dirname(__FILE__, 2) . '/offline/OfflineModule.php';
     if (is_file($offlineModule)) {

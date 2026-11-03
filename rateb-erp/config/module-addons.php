@@ -253,4 +253,19 @@ return [
             ['en' => 'Site settings', 'ar' => 'إعدادات الموقع'],
         ],
     ],
+    'automotive' => [
+        'name' => 'Automotive spare parts',
+        'name_ar' => 'قطع غيار السيارات',
+        'description' => 'Spare parts catalog for automotive companies. Sold only when a price is set.',
+        'description_ar' => 'كتالوج قطع الغيار لشركات السيارات. لا يُباع إلا بعد تحديد السعر.',
+        'icon' => 'automotive',
+        'monthly' => 0.0,
+        'yearly' => 0.0,
+        'enabled' => false,
+        'featured' => false,
+        'sort_order' => 140,
+        'features' => [
+            ['en' => 'Module access', 'ar' => 'الوصول إلى الوحدة'],
+        ],
+    ],
 ];

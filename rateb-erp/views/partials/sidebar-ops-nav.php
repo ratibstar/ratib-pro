@@ -33,6 +33,9 @@ $opsSection(__('inventory'), [
     ['stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
     ['product-categories', 'product_categories', 'fa-tags', 'inventory'],
 ], 'fa-boxes-stacked');
+if (is_file(RATEB_ROOT . '/modules/automotive/views/partials/sidebar-automotive-nav.php')) {
+    require RATEB_ROOT . '/modules/automotive/views/partials/sidebar-automotive-nav.php';
+}
 if (is_file(RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php')) {
     require RATEB_ROOT . '/modules/pos/views/partials/sidebar-pos-nav.php';
 }

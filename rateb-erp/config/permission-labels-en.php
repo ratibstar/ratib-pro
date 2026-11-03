@@ -215,4 +215,6 @@ return [
     'branch.financial.apaging' => ['Branch AP Aging', 'Accounts payable aging by branch'],
     'branch.financial.receivables' => ['Branch Receivables Summary', 'Receivables summary by branch'],
     'branch.financial.payables' => ['Branch Payables Summary', 'Payables summary by branch'],
+    'automotive.view' => ['View automotive spare parts', 'Open the automotive spare parts module'],
+    'automotive.manage' => ['Manage automotive spare parts', 'Manage the automotive spare parts module'],
 ];
