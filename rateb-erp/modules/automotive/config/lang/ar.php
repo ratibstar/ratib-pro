@@ -49,4 +49,11 @@ return [
     'auto_epc_role_distributor' => 'الموزع',
     'auto_epc_role_dealer' => 'الوكيل المعتمد',
     'auto_epc_role_branch' => 'الفرع',
+    'auto_epc_catalog' => 'بحث المرجع',
+    'auto_epc_selection' => 'اختيارات الشركة',
+    'auto_epc_search' => 'بحث',
+    'auto_epc_status' => 'الحالة',
+    'auto_epc_fitment' => 'التوافق',
+    'auto_epc_record_id' => 'رقم السجل',
+    'auto_epc_no_licensed_data' => 'لم يُستورد بعد أي مرجع مرخص.',
 ];

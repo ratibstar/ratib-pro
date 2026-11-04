@@ -15,7 +15,7 @@ use Rateb\App\Automotive\Controllers\AutomotiveVehiclesController;
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
 $autoApp = static fn (string $sub = '') => '/' . rateb_app_route($sub === '' ? 'automotive' : 'automotive/' . ltrim($sub, '/'));
-$autoMw = static fn (string $entity = 'automotive') => rateb_erp_mw('automotive', '', $entity);
+$autoMw = static fn (string $entity = 'automotive', string $permission = '') => rateb_erp_mw('automotive', $permission, $entity);
 
 $router->get($autoApp(''), [AutomotiveDashboardController::class, 'index'], $autoMw());
 $router->get($autoApp('dashboard'), [AutomotiveDashboardController::class, 'index'], $autoMw());
@@ -26,9 +26,19 @@ $router->post($autoApp('parts/{id}/numbers'), [AutomotivePartsController::class,
 $router->post($autoApp('parts/{id}/barcodes'), [AutomotivePartsController::class, 'storeBarcode'], $autoMw());
 $router->post($autoApp('parts/{id}/fitment'), [AutomotivePartsController::class, 'storeFitment'], $autoMw());
 $router->post($autoApp('parts/{id}/interchange'), [AutomotivePartsController::class, 'storeInterchange'], $autoMw());
-$router->get($autoApp('reference'), [AutomotiveReferenceController::class, 'index'], $autoMw());
-$router->post($autoApp('reference/markets'), [AutomotiveReferenceController::class, 'storeMarket'], $autoMw());
-$router->post($autoApp('reference/organizations'), [AutomotiveReferenceController::class, 'storeOrganization'], $autoMw());
-$router->post($autoApp('reference/brands'), [AutomotiveReferenceController::class, 'storeBrand'], $autoMw());
+$router->get($autoApp('reference'), [AutomotiveReferenceController::class, 'index'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/markets'), [AutomotiveReferenceController::class, 'storeMarket'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/organizations'), [AutomotiveReferenceController::class, 'storeOrganization'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/brands'), [AutomotiveReferenceController::class, 'storeBrand'], $autoMw('automotive_reference'));
+$router->get($autoApp('catalog'), [\Rateb\App\Automotive\Controllers\AutomotiveCatalogController::class, 'index'], $autoMw());
+$router->get($autoApp('selection'), [\Rateb\App\Automotive\Controllers\AutomotiveSelectionController::class, 'index'], $autoMw('automotive_selection'));
+$router->post($autoApp('selection'), [\Rateb\App\Automotive\Controllers\AutomotiveSelectionController::class, 'store'], $autoMw('automotive_selection'));
+$router->post($autoApp('selection/remove'), [\Rateb\App\Automotive\Controllers\AutomotiveSelectionController::class, 'remove'], $autoMw('automotive_selection'));
+$router->post($autoApp('links'), [\Rateb\App\Automotive\Controllers\AutomotiveSelectionController::class, 'link'], $autoMw('automotive_link'));
+$router->post($autoApp('supplier-maps'), [\Rateb\App\Automotive\Controllers\AutomotiveSelectionController::class, 'mapSupplier'], $autoMw('automotive_supplier'));
+$router->post($autoApp('reference/parts'), [\Rateb\App\Automotive\Controllers\AutomotiveCatalogController::class, 'storePart'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/parts/retire'), [\Rateb\App\Automotive\Controllers\AutomotiveCatalogController::class, 'retirePart'], $autoMw('', 'automotive.reference.retire'));
+$router->post($autoApp('reference/imports'), [\Rateb\App\Automotive\Controllers\AutomotiveCatalogController::class, 'previewImport'], $autoMw('', 'automotive.reference.import'));
+$router->post($autoApp('reference/imports/approve'), [\Rateb\App\Automotive\Controllers\AutomotiveCatalogController::class, 'approveImport'], $autoMw('', 'automotive.reference.approve'));
 $router->get($autoApp('vehicles'), [AutomotiveVehiclesController::class, 'index'], $autoMw());
 $router->post($autoApp('vehicles'), [AutomotiveVehiclesController::class, 'store'], $autoMw());
