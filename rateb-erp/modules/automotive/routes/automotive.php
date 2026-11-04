@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Rateb\App\Automotive\Controllers\AutomotiveDashboardController;
 use Rateb\App\Automotive\Controllers\AutomotivePartsController;
+use Rateb\App\Automotive\Controllers\AutomotiveReferenceController;
 use Rateb\App\Automotive\Controllers\AutomotiveVehiclesController;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
@@ -25,5 +26,9 @@ $router->post($autoApp('parts/{id}/numbers'), [AutomotivePartsController::class,
 $router->post($autoApp('parts/{id}/barcodes'), [AutomotivePartsController::class, 'storeBarcode'], $autoMw());
 $router->post($autoApp('parts/{id}/fitment'), [AutomotivePartsController::class, 'storeFitment'], $autoMw());
 $router->post($autoApp('parts/{id}/interchange'), [AutomotivePartsController::class, 'storeInterchange'], $autoMw());
+$router->get($autoApp('reference'), [AutomotiveReferenceController::class, 'index'], $autoMw());
+$router->post($autoApp('reference/markets'), [AutomotiveReferenceController::class, 'storeMarket'], $autoMw());
+$router->post($autoApp('reference/organizations'), [AutomotiveReferenceController::class, 'storeOrganization'], $autoMw());
+$router->post($autoApp('reference/brands'), [AutomotiveReferenceController::class, 'storeBrand'], $autoMw());
 $router->get($autoApp('vehicles'), [AutomotiveVehiclesController::class, 'index'], $autoMw());
 $router->post($autoApp('vehicles'), [AutomotiveVehiclesController::class, 'store'], $autoMw());
