@@ -26,6 +26,11 @@ $router->post($autoApp('parts/{id}/numbers'), [AutomotivePartsController::class,
 $router->post($autoApp('parts/{id}/barcodes'), [AutomotivePartsController::class, 'storeBarcode'], $autoMw());
 $router->post($autoApp('parts/{id}/fitment'), [AutomotivePartsController::class, 'storeFitment'], $autoMw());
 $router->post($autoApp('parts/{id}/interchange'), [AutomotivePartsController::class, 'storeInterchange'], $autoMw());
+$router->get($autoApp('gulf'), [\Rateb\App\Automotive\Controllers\AutomotiveGulfFoundationController::class, 'index'], $autoMw('automotive_reference'));
+$router->post($autoApp('gulf/providers'), [\Rateb\App\Automotive\Controllers\AutomotiveGulfFoundationController::class, 'storeProvider'], $autoMw('automotive_reference', 'automotive.reference.manage'));
+$router->post($autoApp('gulf/rights'), [\Rateb\App\Automotive\Controllers\AutomotiveGulfFoundationController::class, 'storeRights'], $autoMw('automotive_reference', 'automotive.reference.manage'));
+$router->post($autoApp('gulf/coverage'), [\Rateb\App\Automotive\Controllers\AutomotiveGulfFoundationController::class, 'storeCoverage'], $autoMw('automotive_reference', 'automotive.reference.manage'));
+$router->post($autoApp('gulf/import-dry-run'), [\Rateb\App\Automotive\Controllers\AutomotiveGulfFoundationController::class, 'dryRun'], $autoMw('automotive_reference', 'automotive.reference.import'));
 $router->get($autoApp('reference'), [AutomotiveReferenceController::class, 'index'], $autoMw('automotive_reference'));
 $router->post($autoApp('reference/markets'), [AutomotiveReferenceController::class, 'storeMarket'], $autoMw('automotive_reference'));
 $router->post($autoApp('reference/organizations'), [AutomotiveReferenceController::class, 'storeOrganization'], $autoMw('automotive_reference'));
