@@ -6,7 +6,7 @@ namespace Rateb\App\Automotive\Services;
 use PDO;
 use Rateb\App\Core\Database;
 
-/** Global EPC reference writes. No company_id and no inventory writes. */
+/** Global EPC reference writes. No tenant column and no inventory writes. */
 final class AutomotiveReferenceService
 {
     private const ROLES = [
