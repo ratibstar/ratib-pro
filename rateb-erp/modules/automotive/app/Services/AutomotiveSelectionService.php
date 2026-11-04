@@ -27,8 +27,17 @@ final class AutomotiveSelectionService
     public function select(string $entityType, int $entityId): int
     {
         $this->gate()->assert('automotive.selection.manage');
-        if (!in_array($entityType, ['market', 'brand', 'model', 'generation', 'vehicle', 'part'], true) || $entityId < 1) {
+        if (!in_array($entityType, ['market', 'brand', 'model', 'generation', 'vehicle', 'part', 'open_model'], true) || $entityId < 1) {
             throw new \InvalidArgumentException('Selection target is not allowed.');
+        }
+        if ($entityType === 'open_model') {
+            $exists = $this->db()->prepare(
+                'SELECT id FROM rateb_auto_ref_open_models WHERE id = :id LIMIT 1'
+            );
+            $exists->execute(['id' => $entityId]);
+            if (!$exists->fetch()) {
+                throw new \InvalidArgumentException('Selection target is not allowed.');
+            }
         }
         $stmt = $this->db()->prepare(
             'INSERT INTO rateb_auto_company_selections (company_id, entity_type, entity_id) VALUES (:cid, :type, :id)'
