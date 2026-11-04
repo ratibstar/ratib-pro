@@ -16,6 +16,13 @@ final class AutomotiveUsCatalogService
         return preg_match('/electric/i', $fuel) === 1 ? 'MPGe' : 'MPG';
     }
 
+    public static function attributionText(string $stored): string
+    {
+        $text = preg_replace('/\s*Public domain US government data\.?/i', '', $stored) ?? $stored;
+        $text = preg_replace('/\s{2,}/', ' ', $text) ?? $text;
+        return trim($text);
+    }
+
     public static function licenseText(string $stored): string
     {
         if (preg_match('/17 USC|public domain/i', $stored) === 1) {

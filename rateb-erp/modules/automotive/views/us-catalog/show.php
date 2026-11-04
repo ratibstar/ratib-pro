@@ -25,5 +25,5 @@ foreach ($fields as $label => $value): ?>
 <tr><th><?php echo View::escape(__($label)); ?></th><td><?php echo View::escape($value); ?></td></tr>
 <?php endforeach; ?>
 </tbody></table></div></div>
-<p class="mt-3"><?php echo View::escape((string) ($row['attribution'] ?? '')); ?></p>
+<p class="mt-3"><?php echo View::escape(\Rateb\App\Automotive\Services\AutomotiveUsCatalogService::attributionText((string) ($row['attribution'] ?? ''))); ?></p>
 </div>

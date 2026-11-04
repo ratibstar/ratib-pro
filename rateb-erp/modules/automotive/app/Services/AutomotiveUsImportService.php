@@ -90,7 +90,7 @@ final class AutomotiveUsImportService
     private function importEpa(string $dir, string $retrievedOn): void
     {
         $file = $dir . '/vehicles.csv';
-        $releaseId = $this->release('epa', 'vehicles', $retrievedOn, hash_file('sha256', $file) ?: '', 'US DOE/EPA FuelEconomy.gov vehicles.csv. Public domain US government data. MPG is miles per gallon. https://fueleconomy.gov/feg/download.shtml');
+        $releaseId = $this->release('epa', 'vehicles', $retrievedOn, hash_file('sha256', $file) ?: '', 'US DOE/EPA FuelEconomy.gov vehicles.csv. https://fueleconomy.gov/feg/download.shtml');
         $values = [];
         $q = fn (?string $value): string => $value === null ? 'NULL' : $this->pdo->quote($value);
         foreach ($this->readEpa($file) as $row) {
