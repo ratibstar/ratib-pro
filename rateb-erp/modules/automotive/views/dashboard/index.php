@@ -12,6 +12,7 @@ $phaseNote = (string) ($phase_note ?? '');
 <div class="alert alert-info"><?php echo View::escape($phaseNote); ?></div>
 <?php endif; ?>
 <div class="d-flex gap-2">
-    <a class="btn btn-primary" href="<?php echo rateb_app_url('automotive/parts'); ?>"><?php echo View::escape(__('auto_parts')); ?></a>
+    <a class="btn btn-primary" href="<?php echo rateb_app_url('automotive/reference'); ?>"><?php echo View::escape(__('auto_epc_reference')); ?></a>
+    <a class="btn btn-outline-primary" href="<?php echo rateb_app_url('automotive/parts'); ?>"><?php echo View::escape(__('auto_parts')); ?></a>
     <a class="btn btn-outline-primary" href="<?php echo rateb_app_url('automotive/vehicles'); ?>"><?php echo View::escape(__('auto_vehicles')); ?></a>
 </div>
