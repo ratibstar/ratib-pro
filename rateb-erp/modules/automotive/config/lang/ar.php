@@ -68,4 +68,8 @@ return [
     'auto_epc_assembly' => 'رمز المجموعة',
     'auto_epc_version' => 'الإصدار',
     'auto_epc_svg' => 'ترميز الرسم',
+    'auto_epc_coverage' => 'التغطية المتحقق منها',
+    'auto_epc_no_coverage' => 'لا توجد تغطية لأي سوق أو علامة أو موديل أو سنة قبل اعتماد ملف مرخص.',
+    'auto_epc_provider_not_loaded' => 'لا يوجد ملف محمّل من هذا المزود.',
+    'auto_epc_import_licensed' => 'ملف مرخص',
 ];

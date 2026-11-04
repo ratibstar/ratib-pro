@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace Rateb\App\Automotive\Controllers;
 
+use Rateb\App\Automotive\Services\AutomotiveCoverageService;
 use Rateb\App\Automotive\Services\AutomotiveGate;
 use Rateb\App\Automotive\Services\AutomotiveGlobalCatalogService;
 use Rateb\App\Automotive\Services\AutomotiveImportService;
+use Rateb\App\Automotive\Services\AutomotiveLicensedProviders;
 use Rateb\App\Core\SessionManager;
 
 final class AutomotiveCatalogController extends AutomotiveBaseController
@@ -24,11 +26,20 @@ final class AutomotiveCatalogController extends AutomotiveBaseController
                 $rows = [];
             }
         }
+        $coverage = [];
+        try {
+            $coverage = (new AutomotiveCoverageService())->summary();
+        } catch (\Throwable) {
+            $coverage = [];
+        }
         $this->automotiveView('catalog/index', [
             'title' => __('auto_epc_catalog'),
             'rows' => $rows,
             'q' => $term,
             'market' => $market,
+            'coverage' => $coverage,
+            'providers' => AutomotiveLicensedProviders::catalog(),
+            'can_import' => function_exists('rateb_can') && rateb_can('automotive.reference.import'),
         ]);
     }
 

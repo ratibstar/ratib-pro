@@ -68,4 +68,8 @@ return [
     'auto_epc_assembly' => 'Assembly code',
     'auto_epc_version' => 'Version',
     'auto_epc_svg' => 'SVG markup',
+    'auto_epc_coverage' => 'Verified coverage',
+    'auto_epc_no_coverage' => 'No market, brand, model, or year is covered until a licensed file is approved.',
+    'auto_epc_provider_not_loaded' => 'No file from this provider is loaded.',
+    'auto_epc_import_licensed' => 'Licensed file',
 ];

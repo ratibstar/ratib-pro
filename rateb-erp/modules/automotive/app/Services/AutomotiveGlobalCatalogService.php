@@ -24,8 +24,8 @@ final class AutomotiveGlobalCatalogService
                 LEFT JOIN rateb_auto_ref_part_numbers n ON n.part_id = p.id
                 LEFT JOIN rateb_auto_ref_fitment f ON f.part_id = p.id
                 LEFT JOIN rateb_auto_ref_markets m ON m.id = n.market_id
-                WHERE (p.normalized_name LIKE :q OR n.normalized_number LIKE :q)';
-        $params = ['q' => $like];
+                WHERE (p.normalized_name LIKE :q_name OR n.normalized_number LIKE :q_number)';
+        $params = ['q_name' => $like, 'q_number' => $like];
         if ($marketCode !== '') {
             $sql .= ' AND m.code = :market';
             $params['market'] = strtoupper($marketCode);

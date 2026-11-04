@@ -13,6 +13,28 @@ $rows = $rows ?? [];
     <div class="col-md-3"><input class="form-control" name="market" value="<?php echo View::escape((string) ($market ?? '')); ?>" placeholder="<?php echo View::escape(__('auto_epc_markets')); ?>"></div>
     <div class="col-md-3"><button class="btn btn-primary" type="submit"><?php echo View::escape(__('auto_epc_search')); ?></button></div>
 </form>
+<?php $localeAr = function_exists('rateb_locale') && rateb_locale() === 'ar'; ?>
+<h2 class="h6"><?php echo View::escape(__('auto_epc_coverage')); ?></h2>
+<?php if (($coverage ?? []) === []): ?>
+<p class="text-muted"><?php echo View::escape(__('auto_epc_no_coverage')); ?></p>
+<?php else: ?>
+<ul>
+<?php foreach ($coverage as $item): ?>
+<li><?php echo View::escape((string) $item['market_code'] . ' ' . (string) $item['brand'] . ' ' . (string) $item['year_from'] . '-' . (string) $item['year_to']); ?></li>
+<?php endforeach; ?>
+</ul>
+<?php endif; ?>
+<?php foreach (($providers ?? []) as $provider): ?>
+<p><?php echo View::escape($localeAr ? (string) $provider['name_ar'] : (string) $provider['name_en']); ?> — <?php echo View::escape(__('auto_epc_provider_not_loaded')); ?></p>
+<?php endforeach; ?>
+<?php if (!empty($can_import)): ?>
+<form method="post" action="<?php echo rateb_app_url('automotive/reference/imports'); ?>" class="mb-3">
+    <?php echo rateb_csrf_field(); ?>
+    <input class="form-control mb-2" name="source_id" required placeholder="<?php echo View::escape(__('auto_epc_record_id')); ?>">
+    <textarea class="form-control mb-2" name="csv" required placeholder="<?php echo View::escape(__('auto_epc_import_licensed')); ?>"></textarea>
+    <button class="btn btn-primary" type="submit"><?php echo View::escape(__('auto_epc_import_licensed')); ?></button>
+</form>
+<?php endif; ?>
 <?php if ($rows === []): ?>
 <p class="text-muted"><?php echo View::escape(__('auto_epc_no_licensed_data')); ?></p>
 <?php else: ?>
