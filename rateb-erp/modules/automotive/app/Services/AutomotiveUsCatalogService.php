@@ -11,6 +11,19 @@ final class AutomotiveUsCatalogService
 {
     public const PAGE_SIZE = 25;
 
+    public static function economyUnit(string $fuel): string
+    {
+        return preg_match('/electric/i', $fuel) === 1 ? 'MPGe' : 'MPG';
+    }
+
+    public static function licenseText(string $stored): string
+    {
+        if (preg_match('/17 USC|public domain/i', $stored) === 1) {
+            return 'FuelEconomy.gov vehicles.csv. Commercial redistribution rights have not been independently established. https://fueleconomy.gov/feg/download.shtml';
+        }
+        return $stored;
+    }
+
     public function __construct(private ?PDO $pdo = null, private ?AutomotiveGate $gate = null)
     {
     }

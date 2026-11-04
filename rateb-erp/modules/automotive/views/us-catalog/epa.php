@@ -38,7 +38,7 @@ $link = static function (int $target) use ($base, $year, $make, $model, $fuel, $
     <td><?php echo View::escape((string) $row['make_name']); ?></td>
     <td><a href="<?php echo rateb_app_url('automotive/us-catalog/' . (int) $row['id']); ?>"><?php echo View::escape((string) $row['model_name']); ?></a></td>
     <td><?php echo View::escape((string) $row['fuel_type1']); ?></td>
-    <td><?php echo View::escape((string) $row['comb_mpg']); ?> MPG</td>
+    <td><?php echo View::escape((string) $row['comb_mpg'] . ' ' . \Rateb\App\Automotive\Services\AutomotiveUsCatalogService::economyUnit((string) ($row['fuel_type1'] ?? ''))); ?></td>
 </tr>
 <?php endforeach; ?>
 </tbody></table></div></div>

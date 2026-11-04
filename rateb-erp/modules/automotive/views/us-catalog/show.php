@@ -17,9 +17,9 @@ $fields = [
     'auto_us_displ' => (string) ($row['displ'] ?? ''),
     'auto_us_trany' => (string) ($row['trany'] ?? ''),
     'auto_us_drive' => (string) ($row['drive'] ?? ''),
-    'auto_us_mpg' => (string) ($row['city_mpg'] ?? '') . ' / ' . (string) ($row['highway_mpg'] ?? '') . ' / ' . (string) ($row['comb_mpg'] ?? '') . ' MPG',
+    'auto_us_mpg' => (string) ($row['city_mpg'] ?? '') . ' / ' . (string) ($row['highway_mpg'] ?? '') . ' / ' . (string) ($row['comb_mpg'] ?? '') . ' ' . \Rateb\App\Automotive\Services\AutomotiveUsCatalogService::economyUnit((string) ($row['fuel_type1'] ?? '')),
     'auto_open_retrieved' => (string) ($row['retrieved_on'] ?? ''),
-    'auto_us_license' => (string) ($row['license_evidence'] ?? ''),
+    'auto_us_license' => \Rateb\App\Automotive\Services\AutomotiveUsCatalogService::licenseText((string) ($row['license_evidence'] ?? '')),
 ];
 foreach ($fields as $label => $value): ?>
 <tr><th><?php echo View::escape(__($label)); ?></th><td><?php echo View::escape($value); ?></td></tr>

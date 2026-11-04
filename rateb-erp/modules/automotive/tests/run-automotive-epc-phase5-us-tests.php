@@ -106,7 +106,7 @@ $nhtsaMake = (string) $pdo->query('SELECT make_name FROM rateb_auto_ref_us_nhtsa
 $nhtsa = $service->nhtsaModels($nhtsaMake, '', 1);
 p5($nhtsa['total'] > 0 && $nhtsa['rows'][0]['make_name'] === $nhtsaMake, 'NHTSA model search finds the official make without inventing a model year');
 $view = (string) file_get_contents(dirname(__DIR__) . '/views/us-catalog/show.php');
-p5(str_contains($view, 'dir="') && str_contains($view, 'MPG') && str_contains((string) file_get_contents(dirname(__DIR__) . '/config/lang/ar.php'), 'بيانات السوق الأمريكي فقط'), 'detail view keeps source units and Arabic labels');
+p5(str_contains($view, 'dir="') && str_contains($view, 'economyUnit') && str_contains((string) file_get_contents(dirname(__DIR__) . '/config/lang/ar.php'), 'بيانات السوق الأمريكي فقط'), 'detail view keeps source units and Arabic labels');
 
 echo "Phase 5 checks: {$passed} passed, {$failed} failed\n";
 exit($failed > 0 ? 1 : 0);

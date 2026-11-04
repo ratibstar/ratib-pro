@@ -157,5 +157,7 @@ return [
     'auto_gulf_invalid_coverage' => 'The coverage claim is not valid.',
     'auto_gulf_invalid_fixture' => 'The validation file is not valid.',
     'auto_gulf_rights_blocked' => 'Commercial import is blocked because the required right is unknown or insufficient.',
+    'auto_gulf_rights_conflict' => 'Overlapping license records disagree. Resolve them before import.',
+    'auto_gulf_checksum_mismatch' => 'The supplied checksum does not match the file.',
     'auto_gulf_failed' => 'The operation could not be completed.',
 ];

@@ -71,7 +71,9 @@ final class AutomotiveGulfFoundationController extends AutomotiveBaseController
                 ],
                 (string) $this->input('territory_codes', ''),
                 $this->dateOrNull('expires_on'),
-                $this->dateOrNull('terminated_on')
+                $this->dateOrNull('terminated_on'),
+                $this->dateOrNull('effective_on'),
+                (string) $this->input('data_category', '')
             );
         });
     }
@@ -107,7 +109,7 @@ final class AutomotiveGulfFoundationController extends AutomotiveBaseController
                 (int) $this->input('rights_id', 0),
                 (string) $this->input('market_code', ''),
                 (string) $this->input('payload', ''),
-                date('Y-m-d')
+                \Rateb\App\Automotive\Services\AutomotiveGulfFoundationService::businessDate()
             );
         });
     }
@@ -126,7 +128,7 @@ final class AutomotiveGulfFoundationController extends AutomotiveBaseController
             SessionManager::flash('success', __('auto_epc_saved'));
         } catch (\Throwable $e) {
             $code = $e->getMessage();
-            $safe = in_array($code, ['invalid_provider', 'invalid_rights', 'invalid_coverage', 'invalid_fixture', 'rights_blocked', 'forbidden'], true)
+            $safe = in_array($code, ['invalid_provider', 'invalid_rights', 'invalid_coverage', 'invalid_fixture', 'rights_blocked', 'rights_conflict', 'checksum_mismatch', 'forbidden'], true)
                 ? __($code === 'forbidden' ? 'auto_gulf_forbidden' : 'auto_gulf_' . $code)
                 : __('auto_gulf_failed');
             SessionManager::flash('error', $safe);

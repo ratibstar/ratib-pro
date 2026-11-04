@@ -133,7 +133,9 @@ final class AutomotiveUsImportService
             'version' => $retrievedOn,
             'retrieved' => $retrievedOn,
             'attribution' => $attribution,
-            'license' => $provider === 'epa' ? 'US government public domain, 17 USC 105' : 'NHTSA public open data, no registration required',
+            'license' => $provider === 'epa'
+                ? 'FuelEconomy.gov vehicles.csv. Commercial redistribution rights have not been independently established. https://fueleconomy.gov/feg/download.shtml'
+                : 'NHTSA vPIC public API. Commercial redistribution rights have not been independently established. https://vpic.nhtsa.dot.gov/api/',
             'hash' => $hash,
             'scope' => 'US',
         ]);

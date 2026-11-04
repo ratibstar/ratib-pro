@@ -157,5 +157,7 @@ return [
     'auto_gulf_invalid_coverage' => 'مطالبة التغطية غير صالحة.',
     'auto_gulf_invalid_fixture' => 'ملف التحقق غير صالح.',
     'auto_gulf_rights_blocked' => 'الاستيراد التجاري موقوف لأن الحق المطلوب غير معلوم أو غير كاف.',
+    'auto_gulf_rights_conflict' => 'سجلات الترخيص المتداخلة متعارضة. يجب حلها قبل الاستيراد.',
+    'auto_gulf_checksum_mismatch' => 'البصمة المرفقة لا تطابق الملف.',
     'auto_gulf_failed' => 'تعذر إكمال العملية.',
 ];
