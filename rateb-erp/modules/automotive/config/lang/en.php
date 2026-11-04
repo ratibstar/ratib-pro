@@ -85,6 +85,7 @@ return [
     'auto_open_retrieved' => 'Retrieved',
     'auto_open_select' => 'Select for this company',
     'auto_open_empty' => 'No matching records.',
+    'auto_open_no_release' => 'No vehicle release has been imported yet.',
     'auto_open_page' => 'Page',
     'auto_open_kind_car' => 'Car',
     'auto_open_kind_motorcycle' => 'Motorcycle',

@@ -3,6 +3,7 @@ declare(strict_types=1);
 use Rateb\App\Core\View;
 ?>
 <h1 class="h4 mb-3"><?php echo View::escape((string) ($title ?? '')); ?></h1>
+<?php if (!empty($missing_release)): ?><p class="text-muted"><?php echo View::escape(__('auto_open_no_release')); ?></p><?php return; ?><?php endif; ?>
 <form method="get" action="<?php echo rateb_app_url('automotive/open-catalog/makes'); ?>" class="row g-2 mb-3">
     <div class="col-md-4"><input class="form-control" name="q" value="<?php echo View::escape((string) ($q ?? '')); ?>"></div>
     <input type="hidden" name="kind" value="<?php echo View::escape((string) ($kind ?? '')); ?>">

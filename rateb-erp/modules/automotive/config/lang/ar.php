@@ -85,6 +85,7 @@ return [
     'auto_open_retrieved' => 'تاريخ الجلب',
     'auto_open_select' => 'اختيار لهذه الشركة',
     'auto_open_empty' => 'لا توجد سجلات مطابقة.',
+    'auto_open_no_release' => 'لم يُستورد إصدار المركبات بعد.',
     'auto_open_page' => 'الصفحة',
     'auto_open_kind_car' => 'سيارة',
     'auto_open_kind_motorcycle' => 'دراجة نارية',

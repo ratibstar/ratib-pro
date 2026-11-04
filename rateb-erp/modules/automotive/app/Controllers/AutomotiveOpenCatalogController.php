@@ -18,28 +18,36 @@ final class AutomotiveOpenCatalogController extends AutomotiveBaseController
     public function index(): void
     {
         $this->guardView();
-        $service = new AutomotiveOpenCatalogService();
+        $loaded = $this->openRelease();
         $this->automotiveView('open-catalog/index', [
             'title' => __('auto_open_catalog'),
-            'release' => $service->release(),
-            'kinds' => $service->kinds(),
+            'release' => $loaded['release'] ?? [],
+            'kinds' => $loaded ? $loaded['service']->kinds() : [],
+            'missing_release' => $loaded === null,
         ]);
     }
 
     public function types(): void
     {
         $this->guardView();
+        $loaded = $this->openRelease();
         $this->automotiveView('open-catalog/types', [
             'title' => __('auto_open_types'),
-            'kinds' => (new AutomotiveOpenCatalogService())->kinds(),
+            'kinds' => $loaded ? $loaded['service']->kinds() : [],
+            'missing_release' => $loaded === null,
         ]);
     }
 
     public function makes(): void
     {
         $this->guardView();
+        $loaded = $this->openRelease();
+        if ($loaded === null) {
+            $this->emptyListing('open-catalog/makes', __('auto_open_makes'));
+            return;
+        }
         $page = $this->page();
-        $result = (new AutomotiveOpenCatalogService())->makes(
+        $result = $loaded['service']->makes(
             (string) $this->input('kind', ''),
             (string) $this->input('q', ''),
             $page
@@ -57,7 +65,12 @@ final class AutomotiveOpenCatalogController extends AutomotiveBaseController
     public function models(): void
     {
         $this->guardView();
-        $result = (new AutomotiveOpenCatalogService())->models(
+        $loaded = $this->openRelease();
+        if ($loaded === null) {
+            $this->emptyListing('open-catalog/models', __('auto_open_models'));
+            return;
+        }
+        $result = $loaded['service']->models(
             (string) $this->input('kind', ''),
             (string) $this->input('make', ''),
             (string) $this->input('market', ''),
@@ -79,6 +92,9 @@ final class AutomotiveOpenCatalogController extends AutomotiveBaseController
     public function show(int $id): void
     {
         $this->guardView();
+        if ($this->openRelease() === null) {
+            $this->redirect(rateb_url(rateb_app_route('automotive/open-catalog')));
+        }
         $detail = (new AutomotiveOpenCatalogService())->detail($id);
         $this->automotiveView('open-catalog/show', [
             'title' => (string) $detail['model']['name_en'],
@@ -121,5 +137,34 @@ final class AutomotiveOpenCatalogController extends AutomotiveBaseController
     private function page(): int
     {
         return max(1, (int) $this->input('page', 1));
+    }
+
+    /** @return array{service:AutomotiveOpenCatalogService,release:array<string,mixed>}|null */
+    private function openRelease(): ?array
+    {
+        $service = new AutomotiveOpenCatalogService();
+        try {
+            return ['service' => $service, 'release' => $service->release()];
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() !== 'open_release_missing') {
+                throw $e;
+            }
+            return null;
+        }
+    }
+
+    private function emptyListing(string $view, string $title): void
+    {
+        $this->automotiveView($view, [
+            'title' => $title,
+            'rows' => [],
+            'total' => 0,
+            'page' => 1,
+            'missing_release' => true,
+            'kind' => '',
+            'make' => '',
+            'market' => '',
+            'q' => '',
+        ]);
     }
 }
