@@ -4,7 +4,9 @@ use Rateb\App\Core\View;
 $detail = $detail ?? [];
 $model = $detail['model'] ?? [];
 $release = $detail['release'] ?? [];
+$dir = function_exists('rateb_is_rtl') && rateb_is_rtl() ? 'rtl' : 'ltr';
 ?>
+<div dir="<?php echo View::escape($dir); ?>">
 <h1 class="h4 mb-3"><?php echo View::escape((string) ($model['name_en'] ?? '')); ?></h1>
 <p><?php echo View::escape(__('auto_open_kind_' . (string) ($model['kind'] ?? 'car'))); ?></p>
 <p><?php echo View::escape((string) ($model['make_slug'] ?? '') . ' / ' . (string) ($model['model_slug'] ?? '')); ?></p>
@@ -12,6 +14,8 @@ $release = $detail['release'] ?? [];
 <p><?php echo View::escape((string) ($release['provider_code'] ?? '') . ' ' . (string) ($release['version_label'] ?? '')); ?></p>
 <p><?php echo View::escape(__('auto_open_retrieved')); ?>: <?php echo View::escape((string) ($release['retrieved_on'] ?? '')); ?></p>
 <p><?php echo View::escape((string) ($release['attribution'] ?? '')); ?></p>
+<h2 class="h6"><?php echo View::escape(__('auto_open_sources')); ?></h2>
+<ul><?php foreach (($detail['sources'] ?? []) as $source): ?><li><?php echo View::escape((string) ($source['origin_code'] ?? '')); ?><?php if ((string) ($source['license_code'] ?? '') !== ''): ?> — <?php echo View::escape((string) $source['license_code']); ?><?php endif; ?></li><?php endforeach; ?></ul>
 <h2 class="h6"><?php echo View::escape(__('auto_open_license')); ?></h2>
 <ul><?php foreach (($detail['licenses'] ?? []) as $license): ?><li><?php echo View::escape((string) $license); ?></li><?php endforeach; ?></ul>
 <h2 class="h6"><?php echo View::escape(__('auto_open_market')); ?></h2>
@@ -23,3 +27,4 @@ $release = $detail['release'] ?? [];
     <button class="btn btn-primary" type="submit"><?php echo View::escape(__('auto_open_select')); ?></button>
 </form>
 <?php endif; ?>
+</div>

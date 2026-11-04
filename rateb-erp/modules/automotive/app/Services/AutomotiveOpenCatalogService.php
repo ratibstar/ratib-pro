@@ -61,6 +61,7 @@ final class AutomotiveOpenCatalogService
         $count = $this->db()->prepare("SELECT COUNT(DISTINCT make_slug) FROM rateb_auto_ref_open_models {$where}");
         $count->execute($params);
         $total = (int) $count->fetchColumn();
+        [$page, $limit, $offset] = $this->pageWindow($page, $total);
         $stmt = $this->db()->prepare(
             "SELECT make_slug, COUNT(*) AS models FROM rateb_auto_ref_open_models {$where}
              GROUP BY make_slug ORDER BY make_slug LIMIT {$limit} OFFSET {$offset}"
@@ -99,6 +100,7 @@ final class AutomotiveOpenCatalogService
         $count = $this->db()->prepare("SELECT COUNT(*) FROM rateb_auto_ref_open_models m {$where}");
         $count->execute($params);
         $total = (int) $count->fetchColumn();
+        [$page, $limit, $offset] = $this->pageWindow($page, $total);
         $stmt = $this->db()->prepare(
             "SELECT m.id, m.kind, m.make_slug, m.model_slug, m.name_en, m.name_ar, m.source_record_id
              FROM rateb_auto_ref_open_models m {$where}
@@ -150,8 +152,18 @@ final class AutomotiveOpenCatalogService
             $kind = '';
         }
         $page = max(1, $page);
-        $limit = self::PAGE_SIZE;
-        return [$kind, $this->like($term), $page, $limit, ($page - 1) * $limit];
+        return [$kind, $this->like($term), $page, self::PAGE_SIZE, 0];
+    }
+
+    /** @return array{0:int,1:int,2:int} */
+    private function pageWindow(int $page, int $total): array
+    {
+        $page = max(1, $page);
+        $pages = max(1, (int) ceil(max(0, $total) / self::PAGE_SIZE));
+        if ($page > $pages) {
+            $page = $pages;
+        }
+        return [$page, self::PAGE_SIZE, ($page - 1) * self::PAGE_SIZE];
     }
 
     private function token(string $value): string

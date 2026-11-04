@@ -32,7 +32,15 @@ final class AutomotiveSelectionService
         }
         if ($entityType === 'open_model') {
             $exists = $this->db()->prepare(
-                'SELECT id FROM rateb_auto_ref_open_models WHERE id = :id LIMIT 1'
+                'SELECT m.id
+                 FROM rateb_auto_ref_open_models m
+                 INNER JOIN rateb_auto_ref_open_releases r ON r.id = m.release_id
+                 WHERE m.id = :id
+                   AND r.provider_code <> \'\'
+                   AND r.version_label <> \'\'
+                   AND r.attribution <> \'\'
+                   AND CHAR_LENGTH(r.file_sha256) = 64
+                 LIMIT 1'
             );
             $exists->execute(['id' => $entityId]);
             if (!$exists->fetch()) {

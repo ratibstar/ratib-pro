@@ -7,9 +7,14 @@ use Rateb\App\Automotive\Services\AutomotiveGate;
 use Rateb\App\Automotive\Services\AutomotiveOpenCatalogService;
 use Rateb\App\Automotive\Services\AutomotiveSelectionService;
 use Rateb\App\Core\SessionManager;
+use Rateb\App\Services\Logger;
 
 final class AutomotiveOpenCatalogController extends AutomotiveBaseController
 {
+    public function __construct(private ?AutomotiveSelectionService $selections = null)
+    {
+    }
+
     public function index(): void
     {
         $this->guardView();
@@ -97,10 +102,18 @@ final class AutomotiveOpenCatalogController extends AutomotiveBaseController
             $this->redirect(rateb_url(rateb_app_route('automotive/open-catalog')));
         }
         try {
-            (new AutomotiveSelectionService())->select('open_model', (int) $this->input('model_id', 0));
+            ($this->selections ?? new AutomotiveSelectionService())->select('open_model', (int) $this->input('model_id', 0));
             SessionManager::flash('success', __('auto_epc_saved'));
-        } catch (\Throwable $e) {
-            SessionManager::flash('error', $e->getMessage());
+        } catch (\InvalidArgumentException $e) {
+            Logger::warning('open catalog selection rejected', ['class' => $e::class]);
+            SessionManager::flash('error', __('auto_open_select_failed'));
+        } catch (\PDOException $e) {
+            $duplicate = (string) $e->getCode() === '23000';
+            Logger::error('open catalog selection failed', ['class' => $e::class, 'code' => (string) $e->getCode()]);
+            SessionManager::flash('error', __($duplicate ? 'auto_open_select_duplicate' : 'auto_open_select_failed'));
+        } catch (\RuntimeException $e) {
+            Logger::error('open catalog selection failed', ['class' => $e::class]);
+            SessionManager::flash('error', __('auto_open_select_failed'));
         }
         $this->redirect(rateb_url(rateb_app_route('automotive/open-catalog')));
     }
