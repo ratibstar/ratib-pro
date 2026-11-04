@@ -30,6 +30,12 @@ $router->get($autoApp('reference'), [AutomotiveReferenceController::class, 'inde
 $router->post($autoApp('reference/markets'), [AutomotiveReferenceController::class, 'storeMarket'], $autoMw('automotive_reference'));
 $router->post($autoApp('reference/organizations'), [AutomotiveReferenceController::class, 'storeOrganization'], $autoMw('automotive_reference'));
 $router->post($autoApp('reference/brands'), [AutomotiveReferenceController::class, 'storeBrand'], $autoMw('automotive_reference'));
+$router->get($autoApp('structure'), [\Rateb\App\Automotive\Controllers\AutomotiveStructureController::class, 'index'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/structure/models'), [\Rateb\App\Automotive\Controllers\AutomotiveStructureController::class, 'storeModel'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/structure/generations'), [\Rateb\App\Automotive\Controllers\AutomotiveStructureController::class, 'storeGeneration'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/structure/engines'), [\Rateb\App\Automotive\Controllers\AutomotiveStructureController::class, 'storeEngine'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/structure/transmissions'), [\Rateb\App\Automotive\Controllers\AutomotiveStructureController::class, 'storeTransmission'], $autoMw('automotive_reference'));
+$router->post($autoApp('reference/structure/diagrams'), [\Rateb\App\Automotive\Controllers\AutomotiveStructureController::class, 'storeDiagram'], $autoMw('automotive_reference'));
 $router->get($autoApp('catalog'), [\Rateb\App\Automotive\Controllers\AutomotiveCatalogController::class, 'index'], $autoMw());
 $router->get($autoApp('selection'), [\Rateb\App\Automotive\Controllers\AutomotiveSelectionController::class, 'index'], $autoMw('automotive_selection'));
 $router->post($autoApp('selection'), [\Rateb\App\Automotive\Controllers\AutomotiveSelectionController::class, 'store'], $autoMw('automotive_selection'));

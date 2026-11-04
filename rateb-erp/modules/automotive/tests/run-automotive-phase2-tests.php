@@ -29,7 +29,52 @@ function auto2_assert(bool $cond, string $label): void
 
 $pdo = null;
 try {
-    if (extension_loaded('pdo_sqlite')) {
+    if (getenv('RATEB_EPC_DISPOSABLE_DB') === 'admin_rateb_epc_phase0') {
+        $pdo = new PDO(
+            (string) getenv('RATEB_EPC_DSN'),
+            (string) getenv('RATEB_EPC_USER'),
+            (string) getenv('RATEB_EPC_PASS'),
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        $actualDb = (string) $pdo->query('SELECT DATABASE()')->fetchColumn();
+        if ($actualDb !== 'admin_rateb_epc_phase0') {
+            echo "FAIL: catalog test refused database {$actualDb}\n";
+            exit(1);
+        }
+        $busy = (int) $pdo->query(
+            "SELECT COUNT(*) FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME IN (
+                 'rateb_auto_parts','rateb_auto_part_numbers','rateb_auto_barcodes',
+                 'rateb_auto_vehicles','rateb_auto_fitment','rateb_auto_interchange'
+               )"
+        )->fetchColumn();
+        if ($busy > 0) {
+            echo "NOT RUN: disposable database already contains catalog tables\n";
+            exit(2);
+        }
+        $heldInventory = (int) $pdo->query(
+            "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rateb_inventory'"
+        )->fetchColumn() > 0;
+        if ($heldInventory) {
+            $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+            $pdo->exec('RENAME TABLE rateb_inventory TO rateb_inventory_epc_hold');
+            $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+        }
+        register_shutdown_function(static function () use ($pdo, $heldInventory): void {
+            foreach ([
+                'rateb_auto_interchange', 'rateb_auto_fitment', 'rateb_auto_barcodes',
+                'rateb_auto_part_numbers', 'rateb_auto_vehicles', 'rateb_auto_parts', 'rateb_inventory',
+            ] as $table) {
+                $pdo->exec('DROP TABLE IF EXISTS `' . $table . '`');
+            }
+            if ($heldInventory) {
+                $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+                $pdo->exec('RENAME TABLE rateb_inventory_epc_hold TO rateb_inventory');
+                $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+            }
+        });
+    } elseif (extension_loaded('pdo_sqlite')) {
         $pdo = new PDO('sqlite::memory:');
     } else {
         $server = new PDO('mysql:host=127.0.0.1', 'root', '');

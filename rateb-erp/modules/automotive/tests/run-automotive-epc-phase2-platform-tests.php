@@ -19,7 +19,8 @@ function epc2(bool $ok, string $label): void
 
 $sql = (string) file_get_contents($root . '/migrations/292_auto_ref_catalog.sql');
 $perms = (string) file_get_contents($root . '/migrations/293_auto_ref_permissions.sql');
-epc2(!str_contains($perms, 'rateb_role_permissions'), 'new permissions are not assigned to roles');
+$executablePerms = preg_replace('/^\s*--.*$/m', '', $perms) ?? $perms;
+epc2(!str_contains($executablePerms, 'rateb_role_permissions'), 'new permissions are not assigned to roles');
 epc2(!preg_match('/CREATE TABLE IF NOT EXISTS rateb_auto_ref_\w+ \([^;]*company_id/s', $sql), 'global catalog tables are not company scoped');
 epc2(str_contains($sql, 'uq_auto_ref_part_number'), 'part numbers stay unique across issuer, brand, scheme, type, and market');
 epc2(!preg_match('/UPDATE\s+rateb_inventory/i', (string) file_get_contents($root . '/modules/automotive/app/Services/AutomotiveSelectionService.php')), 'inventory link service does not update inventory');
@@ -182,6 +183,93 @@ epc2($noApprove, 'approval requires the approve permission');
 epc2(\Rateb\App\Core\Csrf::validate('') === false, 'missing CSRF token is rejected');
 $token = \Rateb\App\Core\Csrf::token();
 epc2(\Rateb\App\Core\Csrf::validate($token) === true, 'matching CSRF token is accepted');
+$pdo->exec("INSERT INTO rateb_auto_ref_markets (code, name_en, name_ar) VALUES ('ZZ', 'Probe Market', 'سوق فحص')");
+$marketId = (int) $pdo->lastInsertId();
+$pdo->prepare("INSERT INTO rateb_auto_ref_orgs (org_role, home_market_id, name_en, name_ar, normalized_name) VALUES ('brand_owner', :market, 'Probe Org', 'جهة فحص', 'PROBE ORG')")->execute(['market' => $marketId]);
+$orgId = (int) $pdo->lastInsertId();
+$pdo->prepare("INSERT INTO rateb_auto_ref_sources (org_id, dataset_name, license_ref, market_id, permitted_use) VALUES (:org, 'probe', 'license-probe', :market, 'test')")->execute(['org' => $orgId, 'market' => $marketId]);
+$sourceId = (int) $pdo->lastInsertId();
+$pdo->exec('INSERT IGNORE INTO rateb_users (id, company_id, is_super_admin) VALUES (21, 7, 0)');
+$pdo->exec('INSERT IGNORE INTO rateb_user_roles (user_id, role_id) VALUES (21, 17)');
+epc2_as(17, 7);
+$csv = "name_en,name_ar\nProbe Part,قطعة فحص\n";
+$preview = $import->preview($sourceId, $csv);
+$duplicateBefore = false;
+try {
+    $import->preview($sourceId, $csv);
+} catch (InvalidArgumentException $e) {
+    $duplicateBefore = $e->getMessage() === 'duplicate_import';
+}
+epc2($duplicateBefore, 'the same file cannot be previewed twice');
+$held = tempnam(sys_get_temp_dir(), 'epc-import-');
+file_put_contents($held, <<<'PHP'
+<?php
+$pdo = new PDO(getenv('RATEB_EPC_DSN'), getenv('RATEB_EPC_USER'), getenv('RATEB_EPC_PASS'), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+if ((string) $pdo->query('SELECT DATABASE()')->fetchColumn() !== 'admin_rateb_epc_phase0') { exit(2); }
+$pdo->beginTransaction();
+$pdo->prepare("INSERT INTO rateb_auto_ref_import_batches (source_id, content_sha256, status, row_count) VALUES (:source, :hash, 'preview', 0)")
+    ->execute(['source' => (int) getenv('EPC_SOURCE'), 'hash' => getenv('EPC_HASH')]);
+file_put_contents(getenv('EPC_FLAG'), 'held');
+sleep(2);
+$pdo->commit();
+PHP);
+$hash = hash('sha256', 'concurrent-' . $preview['batch_id']);
+$flag = $held . '.flag';
+putenv('EPC_SOURCE=' . $sourceId);
+putenv('EPC_HASH=' . $hash);
+putenv('EPC_FLAG=' . $flag);
+$cmd = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($held);
+$proc = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+$deadline = microtime(true) + 5;
+while (!is_file($flag) && microtime(true) < $deadline) {
+    usleep(50000);
+}
+$other = new PDO(getenv('RATEB_EPC_DSN'), getenv('RATEB_EPC_USER'), getenv('RATEB_EPC_PASS'), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+$other->exec('SET innodb_lock_wait_timeout = 5');
+$concurrentRejected = false;
+try {
+    $other->prepare("INSERT INTO rateb_auto_ref_import_batches (source_id, content_sha256, status, row_count) VALUES (:source, :hash, 'applied', 0)")
+        ->execute(['source' => $sourceId, 'hash' => $hash]);
+} catch (PDOException $e) {
+    $concurrentRejected = str_contains($e->getMessage(), '1062');
+}
+$sawFlag = is_file($flag);
+fclose($pipes[1]);
+fclose($pipes[2]);
+proc_close($proc);
+unlink($held);
+if (is_file($flag)) {
+    unlink($flag);
+}
+epc2($sawFlag && $concurrentRejected, 'a concurrent duplicate file is rejected');
+$pdo->prepare('DELETE FROM rateb_auto_ref_import_batches WHERE content_sha256 = :hash')->execute(['hash' => $hash]);
+epc2_as(21, 7);
+$import->approve((int) $preview['batch_id']);
+$applied = (int) $pdo->query("SELECT COUNT(*) FROM rateb_auto_ref_parts WHERE normalized_name = 'PROBE PART'")->fetchColumn();
+$audit = (int) $pdo->query('SELECT COUNT(*) FROM rateb_auto_ref_audit WHERE batch_id = ' . (int) $preview['batch_id'])->fetchColumn();
+epc2($applied === 1 && $audit === 1, 'approved import applies the row and writes audit history');
+$second = false;
+try {
+    $import->approve((int) $preview['batch_id']);
+} catch (Throwable) {
+    $second = true;
+}
+epc2($second, 'an applied import cannot be approved again');
+$duplicateAfter = false;
+try {
+    epc2_as(17, 7);
+    $import->preview($sourceId, $csv);
+} catch (InvalidArgumentException $e) {
+    $duplicateAfter = $e->getMessage() === 'duplicate_import';
+}
+epc2($duplicateAfter, 'an applied file cannot be previewed again');
+$pdo->exec("DELETE FROM rateb_auto_ref_audit WHERE batch_id = " . (int) $preview['batch_id']);
+$pdo->exec("DELETE FROM rateb_auto_ref_parts WHERE normalized_name = 'PROBE PART'");
+$pdo->exec('DELETE FROM rateb_auto_ref_import_rows WHERE batch_id = ' . (int) $preview['batch_id']);
+$pdo->exec('DELETE FROM rateb_auto_ref_import_batches WHERE id = ' . (int) $preview['batch_id']);
+$pdo->exec('DELETE FROM rateb_auto_ref_sources WHERE id = ' . $sourceId);
+$pdo->exec('DELETE FROM rateb_auto_ref_orgs WHERE id = ' . $orgId);
+$pdo->exec('DELETE FROM rateb_auto_ref_markets WHERE id = ' . $marketId);
 
 echo "Phase 2 checks: {$passed} passed, {$failed} failed\n";
 exit($failed > 0 ? 1 : 0);
