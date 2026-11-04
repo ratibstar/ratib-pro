@@ -37,6 +37,7 @@ final class AutomotiveReferenceService
 
     public function createMarket(string $code, string $nameEn, string $nameAr, ?int $parentId): int
     {
+        (new AutomotiveGate())->assert('automotive.reference.manage');
         $code = strtoupper(trim($code));
         $nameEn = trim($nameEn);
         $nameAr = trim($nameAr);
@@ -69,6 +70,7 @@ final class AutomotiveReferenceService
         string $nameAr,
         ?int $parentId
     ): int {
+        (new AutomotiveGate())->assert('automotive.reference.manage');
         if (!in_array($role, self::ROLES, true)) {
             throw new \InvalidArgumentException('Organization role is not allowed.');
         }
@@ -100,6 +102,7 @@ final class AutomotiveReferenceService
         string $effectiveOn,
         string $expiresOn
     ): int {
+        (new AutomotiveGate())->assert('automotive.reference.manage');
         $sourceNote = trim($sourceNote);
         if ($orgId < 1 || $marketId < 1 || $sourceNote === '') {
             throw new \InvalidArgumentException('Authorization organization, market, and source are required.');
@@ -162,6 +165,7 @@ final class AutomotiveReferenceService
 
     public function createVehicleBrand(int $manufacturerOrgId, string $nameEn, string $nameAr): int
     {
+        (new AutomotiveGate())->assert('automotive.reference.manage');
         $nameEn = trim($nameEn);
         $nameAr = trim($nameAr);
         if ($manufacturerOrgId < 1 || $nameEn === '' || $nameAr === '') {

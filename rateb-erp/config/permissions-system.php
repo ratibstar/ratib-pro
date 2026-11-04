@@ -343,6 +343,18 @@ return [
         'automotive.manage' => [
             'automotive.view',
         ],
+        'automotive.reference.manage' => [
+            'automotive.reference.view',
+        ],
+        'automotive.selection.manage' => [
+            'automotive.selection.view',
+        ],
+        'automotive.inventory_link.manage' => [
+            'automotive.inventory_link.view',
+        ],
+        'automotive.supplier_map.manage' => [
+            'automotive.supplier_map.view',
+        ],
         'crm.admin' => [
             'crm.view',
             'crm.create',

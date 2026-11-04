@@ -49,4 +49,11 @@ return [
     'auto_epc_role_distributor' => 'Distributor',
     'auto_epc_role_dealer' => 'Authorized dealer',
     'auto_epc_role_branch' => 'Branch',
+    'auto_epc_catalog' => 'Reference search',
+    'auto_epc_selection' => 'Company selections',
+    'auto_epc_search' => 'Search',
+    'auto_epc_status' => 'Status',
+    'auto_epc_fitment' => 'Compatibility',
+    'auto_epc_record_id' => 'Record number',
+    'auto_epc_no_licensed_data' => 'No licensed reference data has been imported.',
 ];
