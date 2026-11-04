@@ -5,6 +5,7 @@ $opsSection(__('automotive_nav'), [
     ['automotive', 'automotive_dashboard', 'fa-car', 'automotive', 'automotive.view'],
     ['automotive/catalog', 'auto_epc_catalog', 'fa-search', 'automotive', 'automotive.view'],
     ['automotive/open-catalog', 'auto_open_catalog', 'fa-book', 'automotive', 'automotive.view'],
+    ['automotive/us-catalog', 'auto_us_epa', 'fa-flag-usa', 'automotive', 'automotive.view'],
     ['automotive/reference', 'auto_epc_reference', 'fa-globe', 'automotive', 'automotive.reference.view'],
     ['automotive/structure', 'auto_epc_structure', 'fa-sitemap', 'automotive', 'automotive.reference.view'],
     ['automotive/selection', 'auto_epc_selection', 'fa-check', 'automotive', 'automotive.selection.view'],

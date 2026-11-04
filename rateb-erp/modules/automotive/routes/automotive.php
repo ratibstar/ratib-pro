@@ -37,6 +37,9 @@ $router->post($autoApp('reference/structure/engines'), [\Rateb\App\Automotive\Co
 $router->post($autoApp('reference/structure/transmissions'), [\Rateb\App\Automotive\Controllers\AutomotiveStructureController::class, 'storeTransmission'], $autoMw('automotive_reference'));
 $router->post($autoApp('reference/structure/diagrams'), [\Rateb\App\Automotive\Controllers\AutomotiveStructureController::class, 'storeDiagram'], $autoMw('automotive_reference'));
 $router->get($autoApp('catalog'), [\Rateb\App\Automotive\Controllers\AutomotiveCatalogController::class, 'index'], $autoMw());
+$router->get($autoApp('us-catalog'), [\Rateb\App\Automotive\Controllers\AutomotiveUsCatalogController::class, 'epa'], $autoMw());
+$router->get($autoApp('us-catalog/nhtsa'), [\Rateb\App\Automotive\Controllers\AutomotiveUsCatalogController::class, 'nhtsa'], $autoMw());
+$router->get($autoApp('us-catalog/{id}'), [\Rateb\App\Automotive\Controllers\AutomotiveUsCatalogController::class, 'show'], $autoMw());
 $router->get($autoApp('open-catalog'), [\Rateb\App\Automotive\Controllers\AutomotiveOpenCatalogController::class, 'index'], $autoMw());
 $router->get($autoApp('open-catalog/types'), [\Rateb\App\Automotive\Controllers\AutomotiveOpenCatalogController::class, 'types'], $autoMw());
 $router->get($autoApp('open-catalog/makes'), [\Rateb\App\Automotive\Controllers\AutomotiveOpenCatalogController::class, 'makes'], $autoMw());
