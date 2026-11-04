@@ -263,9 +263,12 @@ CREATE TABLE IF NOT EXISTS rateb_auto_ref_import_batches (
     status VARCHAR(16) NOT NULL DEFAULT 'preview',
     row_count INT UNSIGNED NOT NULL DEFAULT 0,
     CONSTRAINT chk_auto_ref_import_status CHECK (status IN ('preview', 'approved', 'applied', 'rejected')),
-    UNIQUE KEY uq_auto_ref_import_hash (content_sha256, status),
+    UNIQUE KEY uq_auto_ref_import_hash (content_sha256),
     CONSTRAINT fk_auto_ref_import_source FOREIGN KEY (source_id) REFERENCES rateb_auto_ref_sources(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE rateb_auto_ref_import_batches DROP INDEX IF EXISTS uq_auto_ref_import_hash;
+ALTER TABLE rateb_auto_ref_import_batches ADD UNIQUE KEY uq_auto_ref_import_hash (content_sha256);
 
 CREATE TABLE IF NOT EXISTS rateb_auto_ref_import_rows (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
