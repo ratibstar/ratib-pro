@@ -19,6 +19,8 @@ final class CmsLeadNotificationService
     /** @param array<string, mixed> $lead */
     public function notifyStaff(int $leadId, string $type, array $lead): void
     {
+        // Public forms were filling the mailbox daily cap. Leads stay in admin; mail is manual.
+        return;
         $to = $this->staffInboxEmail();
         if ($to === '') {
             return;
@@ -71,6 +73,7 @@ final class CmsLeadNotificationService
     /** @param array<string, mixed> $lead */
     public function notifyCustomer(string $type, array $lead): void
     {
+        return;
         $email = trim((string) ($lead['email'] ?? ''));
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return;
