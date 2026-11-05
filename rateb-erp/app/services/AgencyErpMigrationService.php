@@ -331,7 +331,21 @@ final class AgencyErpMigrationService
             $agencyPass = (string) ($agency['db_pass'] ?? '');
         }
         $envUser = defined('DB_USER') ? (string) DB_USER : '';
+        if ($envUser === '' && defined('RATEB_DB_USER')) {
+            $envUser = (string) RATEB_DB_USER;
+        }
+        if ($envUser === '') {
+            $envUserFromEnv = getenv('DB_USER');
+            $envUser = $envUserFromEnv !== false ? (string) $envUserFromEnv : '';
+        }
         $envPass = defined('DB_PASS') ? (string) DB_PASS : '';
+        if ($envPass === '' && defined('RATEB_DB_PASS')) {
+            $envPass = (string) RATEB_DB_PASS;
+        }
+        if ($envPass === '') {
+            $envPassFromEnv = getenv('DB_PASS');
+            $envPass = $envPassFromEnv !== false ? (string) $envPassFromEnv : '';
+        }
         // Shared MySQL user: prefer .env password (agency row passwords go stale).
         $dbPass = ($dbUser !== '' && $dbUser === $envUser)
             ? $envPass
