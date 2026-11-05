@@ -28,7 +28,19 @@ $routePrefix = $routePrefix ?? 'admin/cms/newsletter';
 
 <?php if (!empty($campaigns)) { ?>
 <div class="rateb-card mb-4">
-    <div class="rateb-card-header"><?php echo __('cms_campaigns'); ?></div>
+    <div class="rateb-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span><?php echo __('cms_campaigns'); ?></span>
+        <span class="d-flex gap-2">
+            <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/pause-all'); ?>" class="d-inline">
+                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                <button type="submit" class="btn btn-sm btn-outline-warning" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_pause_all')); ?>"><?php echo __('cms_campaign_pause_all'); ?></button>
+            </form>
+            <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/resume-all'); ?>" class="d-inline">
+                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                <button type="submit" class="btn btn-sm btn-outline-success" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_resume_all')); ?>"><?php echo __('cms_campaign_resume_all'); ?></button>
+            </form>
+        </span>
+    </div>
     <div class="rateb-card-body table-responsive">
         <table class="table table-sm">
             <thead><tr><th><?php echo __('id'); ?></th><th><?php echo __('subject'); ?></th><th><?php echo __('status'); ?></th><th><?php echo __('cms_sent_count'); ?></th><th></th></tr></thead>
@@ -37,7 +49,7 @@ $routePrefix = $routePrefix ?? 'admin/cms/newsletter';
             <tr>
                 <td><?php echo (int) ($c['id'] ?? 0); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape((string) ($c['subject_en'] ?? '')); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape(rateb_enum_label((string) ($c['status'] ?? ''))); ?></td>
+                <td><?php echo Rateb\App\Core\View::escape(__('cms_nl_status_' . (string) ($c['status'] ?? ''))); ?></td>
                 <td><?php echo (int) ($c['sent_count'] ?? 0); ?></td>
                 <td class="text-nowrap">
                     <a href="<?php echo rateb_url($routePrefix . '/campaign?id=' . (int) $c['id']); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('edit'); ?></a>
@@ -47,8 +59,7 @@ $routePrefix = $routePrefix ?? 'admin/cms/newsletter';
                         <input type="hidden" name="id" value="<?php echo (int) ($c['id'] ?? 0); ?>">
                         <button type="submit" class="btn btn-sm btn-outline-success" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_resume')); ?>"><?php echo __('cms_campaign_resume'); ?></button>
                     </form>
-                    <?php } ?>
-                    <?php if (in_array(($c['status'] ?? ''), ['draft', 'scheduled', 'sending'], true)) { ?>
+                    <?php } else { ?>
                     <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/pause'); ?>" class="d-inline">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <input type="hidden" name="id" value="<?php echo (int) ($c['id'] ?? 0); ?>">

@@ -621,6 +621,30 @@ class CmsNewsletterController extends \Rateb\App\Controllers\CrudController
         $this->redirect(rateb_url($this->routePrefix));
     }
 
+    public function campaignPauseAll(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+        $count = (new \Rateb\App\Services\BulkCampaignService())->pauseAll();
+        SessionManager::flash('success', __('cms_campaign_paused_all') . ': ' . $count);
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function campaignResumeAll(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url($this->routePrefix));
+            return;
+        }
+        $count = (new \Rateb\App\Services\BulkCampaignService())->resumeAll();
+        SessionManager::flash('success', __('cms_campaign_resumed_all') . ': ' . $count);
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
     public function campaignResume(): void
     {
         $this->guardManage();

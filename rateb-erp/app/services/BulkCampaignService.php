@@ -206,11 +206,61 @@ final class BulkCampaignService
             return false;
         }
         $stmt = Database::connection()->prepare(
-            'UPDATE ' . self::CAMPAIGNS . " SET status = 'paused' WHERE id = :id AND status IN ('draft','scheduled','sending')"
+            'UPDATE ' . self::CAMPAIGNS . " SET status = 'paused' WHERE id = :id AND status IN ('draft','scheduled','sending','sent')"
         );
         $stmt->execute(['id' => $campaignId]);
+        $paused = $stmt->rowCount() > 0;
+        if ($paused) {
+            $this->holdQueuedMail($campaignId);
+        }
 
-        return $stmt->rowCount() > 0;
+        return $paused;
+    }
+
+    public function pauseAll(): int
+    {
+        $stmt = Database::connection()->query(
+            "SELECT id FROM " . self::CAMPAIGNS . " WHERE status IN ('draft','scheduled','sending','sent')"
+        );
+        $count = 0;
+        foreach ($stmt !== false ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [] as $row) {
+            if ($this->pauseCampaign((int) ($row['id'] ?? 0))) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    public function resumeAll(): int
+    {
+        $stmt = Database::connection()->query(
+            "SELECT id FROM " . self::CAMPAIGNS . " WHERE status = 'paused'"
+        );
+        $count = 0;
+        foreach ($stmt !== false ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [] as $row) {
+            if ($this->resumeCampaign((int) ($row['id'] ?? 0))) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    private function holdQueuedMail(int $campaignId): void
+    {
+        $db = Database::connection();
+        $db->prepare(
+            'UPDATE rateb_notification_queue q
+             JOIN ' . self::RECIPIENTS . ' r ON r.queue_id = q.id
+             SET q.status = \'failed\', q.error_code = \'campaign_paused\'
+             WHERE r.campaign_id = :id AND q.status = \'pending\''
+        )->execute(['id' => $campaignId]);
+        $db->prepare(
+            'UPDATE ' . self::RECIPIENTS . "
+             SET status = 'pending', queue_id = NULL
+             WHERE campaign_id = :id AND status = 'queued'"
+        )->execute(['id' => $campaignId]);
     }
 
     /** Restart a paused campaign: back to the schedule if never started, else resume sending. */
