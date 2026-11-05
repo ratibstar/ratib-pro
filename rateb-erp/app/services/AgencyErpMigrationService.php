@@ -544,10 +544,11 @@ final class AgencyErpMigrationService
         $names = [];
         if ($cfg['db'] !== '') {
             $names[$cfg['db']] = true;
-        }
-        $pro = trim((string) ($agency['db_name'] ?? ''));
-        if ($pro !== '') {
-            $names[$pro] = true;
+        } else {
+            $pro = trim((string) ($agency['db_name'] ?? ''));
+            if ($pro !== '') {
+                $names[$pro] = true;
+            }
         }
         foreach (array_keys($names) as $dbName) {
             try {
