@@ -1021,6 +1021,38 @@ final class ErpProvisioningService
         return str_replace('\\', '/', $candidates[0]);
     }
 
+    /**
+     * Dedicated agency sites do not read control_agencies on each request.
+     * Mirror suspend/inactive onto rateb_companies so the tenant lock closes the ERP.
+     *
+     * @param array<string, mixed> $agency
+     */
+    public static function syncTenantCompanyAccess(array $agency): void
+    {
+        $blocked = ((int) ($agency['is_suspended'] ?? 0) === 1) || ((int) ($agency['is_active'] ?? 1) === 0);
+        $status = $blocked ? 'suspended' : 'active';
+        $names = [];
+        foreach (['erp_db_name', 'db_name'] as $key) {
+            $name = trim((string) ($agency[$key] ?? ''));
+            if ($name !== '') {
+                $names[$name] = true;
+            }
+        }
+        if ($names === []) {
+            return;
+        }
+        $cred = self::resolveAgencyMysqlCredentials($agency);
+        foreach (array_keys($names) as $dbName) {
+            try {
+                $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $cred['host'], $cred['port'], $dbName);
+                $pdo = new PDO($dsn, $cred['user'], $cred['pass'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                $pdo->prepare('UPDATE rateb_companies SET status = :st')->execute(['st' => $status]);
+            } catch (Throwable $e) {
+                error_log('syncTenantCompanyAccess ' . $dbName . ': ' . $e->getMessage());
+            }
+        }
+    }
+
     /** Platform company row is SaaS oversight; Provision ERP is the approval. */
     private static function activatePlatformCompanyAfterProvision(array $agency): void
     {

@@ -618,10 +618,14 @@ if ($method === 'PUT') {
         $params[] = $id;
         $sql = "UPDATE control_agencies SET " . implode(', ', $set) . " WHERE id=?";
         qStmt($sql, $params);
+        require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
         if ($hasErpCompanyId && array_key_exists('erp_company_id', $input)) {
-            require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
             $erpCompanyId = (int) ($input['erp_company_id'] ?? 0);
             ErpProvisioningService::saveAgencyErpCompanyId($ctrl, $id, $erpCompanyId);
+        }
+        $savedAgency = agencyById($id);
+        if (is_array($savedAgency)) {
+            ErpProvisioningService::syncTenantCompanyAccess($savedAgency);
         }
         $tenantId = setTenantContextByAgencyId($id);
         emitEvent('AGENCY_UPDATED', 'info', 'Agency updated', eventMeta([
@@ -743,7 +747,15 @@ if ($method === 'PATCH') {
                 } else {
                     qStmt("UPDATE control_agencies SET is_active = 0 WHERE id = ?", [$agencyId]);
                 }
-            } elseif ($action === 'delete') {
+            }
+            if (in_array($action, ['activate', 'mark_paid', 'deactivate', 'suspend'], true)) {
+                $freshAgency = agencyById($agencyId);
+                if (is_array($freshAgency)) {
+                    require_once __DIR__ . '/../../includes/control/ErpProvisioningService.php';
+                    ErpProvisioningService::syncTenantCompanyAccess($freshAgency);
+                }
+            }
+            if ($action === 'delete') {
                 qStmt("DELETE FROM control_agencies WHERE id = ?", [$agencyId]);
             } elseif ($action === 'test_db_connection') {
                 $dbc = getAgencyDbConnection($agency, (int) ($agency['country_id'] ?? 0));
