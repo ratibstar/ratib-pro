@@ -35,6 +35,10 @@ $routePrefix = $routePrefix ?? 'admin/cms/newsletter';
                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                 <button type="submit" class="btn btn-sm btn-outline-warning" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_pause_all')); ?>"><?php echo __('cms_campaign_pause_all'); ?></button>
             </form>
+            <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/delete-all'); ?>" class="d-inline">
+                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                <button type="submit" class="btn btn-sm btn-outline-danger" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_delete_all')); ?>"><?php echo __('cms_campaign_delete_all'); ?></button>
+            </form>
             <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/resume-all'); ?>" class="d-inline">
                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                 <button type="submit" class="btn btn-sm btn-outline-success" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_resume_all')); ?>"><?php echo __('cms_campaign_resume_all'); ?></button>
@@ -66,6 +70,11 @@ $routePrefix = $routePrefix ?? 'admin/cms/newsletter';
                         <button type="submit" class="btn btn-sm btn-outline-warning" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_pause')); ?>"><?php echo __('cms_campaign_pause'); ?></button>
                     </form>
                     <?php } ?>
+                    <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/delete'); ?>" class="d-inline">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <input type="hidden" name="id" value="<?php echo (int) ($c['id'] ?? 0); ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('cms_confirm_delete')); ?>"><?php echo __('delete'); ?></button>
+                    </form>
                     <?php if (($c['status'] ?? '') !== 'sent') { ?>
                     <form method="post" action="<?php echo rateb_url($routePrefix . '/campaign/send'); ?>" class="d-inline">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

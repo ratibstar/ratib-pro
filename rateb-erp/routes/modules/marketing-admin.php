@@ -18,4 +18,6 @@ $router->post('/admin/marketing/newsletter/campaign/send', [MarketingNewsletterC
 $router->post('/admin/marketing/newsletter/campaign/pause', [MarketingNewsletterController::class, 'campaignPause'], rateb_platform_oversight_mw('marketing.newsletter.send'));
 $router->post('/admin/marketing/newsletter/campaign/resume', [MarketingNewsletterController::class, 'campaignResume'], rateb_platform_oversight_mw('marketing.newsletter.send'));
 $router->post('/admin/marketing/newsletter/campaign/pause-all', [MarketingNewsletterController::class, 'campaignPauseAll'], rateb_platform_oversight_mw('marketing.newsletter.send'));
+$router->post('/admin/marketing/newsletter/campaign/delete', [MarketingNewsletterController::class, 'campaignDelete'], rateb_platform_oversight_mw('marketing.newsletter.send'));
+$router->post('/admin/marketing/newsletter/campaign/delete-all', [MarketingNewsletterController::class, 'campaignDeleteAll'], rateb_platform_oversight_mw('marketing.newsletter.send'));
 $router->post('/admin/marketing/newsletter/campaign/resume-all', [MarketingNewsletterController::class, 'campaignResumeAll'], rateb_platform_oversight_mw('marketing.newsletter.send'));

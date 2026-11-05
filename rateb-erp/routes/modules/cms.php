@@ -121,6 +121,8 @@ $router->post('/admin/cms/newsletter/campaign/send', [CmsNewsletterController::c
 $router->post('/admin/cms/newsletter/campaign/pause', [CmsNewsletterController::class, 'campaignPause'], rateb_platform_oversight_mw('cms.manage'));
 $router->post('/admin/cms/newsletter/campaign/resume', [CmsNewsletterController::class, 'campaignResume'], rateb_platform_oversight_mw('cms.manage'));
 $router->post('/admin/cms/newsletter/campaign/pause-all', [CmsNewsletterController::class, 'campaignPauseAll'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/campaign/delete', [CmsNewsletterController::class, 'campaignDelete'], rateb_platform_oversight_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/campaign/delete-all', [CmsNewsletterController::class, 'campaignDeleteAll'], rateb_platform_oversight_mw('cms.manage'));
 $router->post('/admin/cms/newsletter/campaign/resume-all', [CmsNewsletterController::class, 'campaignResumeAll'], rateb_platform_oversight_mw('cms.manage'));
 
 $router->get('/admin/cms/page-builder', [CmsPageBuilderController::class, 'index'], rateb_platform_oversight_mw('cms.manage'));

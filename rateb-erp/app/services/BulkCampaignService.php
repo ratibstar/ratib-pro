@@ -232,6 +232,33 @@ final class BulkCampaignService
         return $count;
     }
 
+    public function deleteCampaign(int $campaignId): bool
+    {
+        if ($campaignId < 1 || $this->campaign($campaignId) === null) {
+            return false;
+        }
+        $this->holdQueuedMail($campaignId);
+        $db = Database::connection();
+        $db->prepare('DELETE FROM ' . self::RECIPIENTS . ' WHERE campaign_id = :id')->execute(['id' => $campaignId]);
+        $stmt = $db->prepare('DELETE FROM ' . self::CAMPAIGNS . ' WHERE id = :id');
+        $stmt->execute(['id' => $campaignId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function deleteAll(): int
+    {
+        $stmt = Database::connection()->query('SELECT id FROM ' . self::CAMPAIGNS);
+        $count = 0;
+        foreach ($stmt !== false ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [] as $row) {
+            if ($this->deleteCampaign((int) ($row['id'] ?? 0))) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
     public function resumeAll(): int
     {
         $stmt = Database::connection()->query(
