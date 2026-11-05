@@ -1083,7 +1083,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         }
         $id = (int) ($params['id'] ?? 0);
         $this->model->suspend($id);
-        $this->detachAndDeactivateAgencyForCompany($id);
+        (new \Rateb\App\Services\AgencyErpMigrationService())->applyCommercialAccess($id, true);
         (new AuditService())->log('suspend', 'company', $id);
         SessionManager::flash('success', __('save') . ' OK');
         Response::redirect(rateb_url('admin/companies'));
@@ -1221,6 +1221,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             Response::redirect(rateb_url('admin/companies'));
         }
         $this->model->activate($id);
+        (new \Rateb\App\Services\AgencyErpMigrationService())->applyCommercialAccess($id, false);
         \Rateb\App\Services\PlanLimitService::forgetCompanyLimits($id);
         (new AuditService())->log('activate', 'company', $id);
         SessionManager::flash('success', __('company_activated'));
@@ -1426,7 +1427,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         foreach ($this->parseBulkIds() as $id) {
             $id = (int) $id;
             $this->model->suspend($id);
-            $this->detachAndDeactivateAgencyForCompany($id);
+            (new \Rateb\App\Services\AgencyErpMigrationService())->applyCommercialAccess($id, true);
             (new AuditService())->log('bulk_suspend', 'company', $id);
             $count++;
         }
@@ -1456,6 +1457,7 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                 continue;
             }
             $this->model->activate($id);
+            (new \Rateb\App\Services\AgencyErpMigrationService())->applyCommercialAccess($id, false);
             \Rateb\App\Services\PlanLimitService::forgetCompanyLimits($id);
             (new AuditService())->log('bulk_activate', 'company', $id);
             $activated++;

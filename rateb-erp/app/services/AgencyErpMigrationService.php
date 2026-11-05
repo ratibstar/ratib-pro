@@ -501,6 +501,51 @@ final class AgencyErpMigrationService
         return 0;
     }
 
+    /** ERP suspend/activate: control-panel flag plus the agency domain company row. */
+    public function applyCommercialAccess(int $companyId, bool $suspended): void
+    {
+        if ($companyId < 1) {
+            return;
+        }
+        $this->ensureAgencyLookup();
+        $agencyId = $this->suggestedAgencyIdForCompany($companyId);
+        if ($agencyId < 1 || !function_exists('rateb_set_control_agency_access')) {
+            return;
+        }
+        rateb_set_control_agency_access($agencyId, $suspended);
+        if (!function_exists('rateb_lookup_agency_by_id')) {
+            return;
+        }
+        $agency = rateb_lookup_agency_by_id($agencyId);
+        if (!is_array($agency)) {
+            return;
+        }
+        $this->writeTenantCompanyStatus($agency, $suspended ? 'suspended' : 'active');
+    }
+
+    /** @param array<string, mixed> $agency */
+    private function writeTenantCompanyStatus(array $agency, string $status): void
+    {
+        $cfg = $this->agencyDatabaseConfig($agency);
+        $names = [];
+        if ($cfg['db'] !== '') {
+            $names[$cfg['db']] = true;
+        }
+        $pro = trim((string) ($agency['db_name'] ?? ''));
+        if ($pro !== '') {
+            $names[$pro] = true;
+        }
+        foreach (array_keys($names) as $dbName) {
+            try {
+                $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $cfg['host'], $cfg['port'], $dbName);
+                $pdo = new \PDO($dsn, $cfg['user'], $cfg['pass'], [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+                $pdo->prepare('UPDATE rateb_companies SET status = :st')->execute(['st' => $status]);
+            } catch (Throwable $e) {
+                error_log('writeTenantCompanyStatus ' . $dbName . ': ' . $e->getMessage());
+            }
+        }
+    }
+
     public function linkAgencyToCompany(int $agencyId, int $companyId): void
     {
         if ($agencyId < 1) {

@@ -579,6 +579,48 @@ if (!function_exists('rateb_deactivate_control_agency')) {
     }
 }
 
+if (!function_exists('rateb_set_control_agency_access')) {
+    /** Open or suspend a control agency without unlinking its ERP company. */
+    function rateb_set_control_agency_access(int $agencyId, bool $suspended): bool
+    {
+        if ($agencyId < 1) {
+            return false;
+        }
+        $conn = rateb_agency_lookup_connection();
+        if (!$conn) {
+            return false;
+        }
+        $active = $suspended ? 0 : 1;
+        $flag = $suspended ? 1 : 0;
+        $hasSusp = false;
+        $suspChk = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'is_suspended'");
+        if ($suspChk && $suspChk->num_rows > 0) {
+            $hasSusp = true;
+        }
+        if ($hasSusp) {
+            $stmt = $conn->prepare('UPDATE control_agencies SET is_active = ?, is_suspended = ? WHERE id = ?');
+            if ($stmt) {
+                $stmt->bind_param('iii', $active, $flag, $agencyId);
+            }
+        } else {
+            $stmt = $conn->prepare('UPDATE control_agencies SET is_active = ? WHERE id = ?');
+            if ($stmt) {
+                $stmt->bind_param('ii', $active, $agencyId);
+            }
+        }
+        if (!$stmt) {
+            $conn->close();
+
+            return false;
+        }
+        $ok = $stmt->execute();
+        $stmt->close();
+        $conn->close();
+
+        return (bool) $ok;
+    }
+}
+
 if (!function_exists('rateb_save_agency_erp_company_link')) {
     function rateb_save_agency_erp_company_link(int $agencyId, int $companyId): bool
     {

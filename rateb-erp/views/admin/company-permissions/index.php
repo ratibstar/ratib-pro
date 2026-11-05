@@ -66,10 +66,23 @@ $items = is_array($items ?? null) ? $items : [];
                     <span class="rateb-cp-status <?php echo $statusBadge; ?>"><?php echo __($status); ?></span>
                 </div>
                 <?php if ($canManage) { ?>
+                <span class="d-flex flex-wrap gap-2">
+                    <?php if ($status === 'suspended') { ?>
+                    <form method="post" action="<?php echo rateb_url('admin/companies/' . $cid . '/activate'); ?>">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf ?? ''); ?>">
+                        <button type="submit" class="btn btn-success"><?php echo __('company_activate_action'); ?></button>
+                    </form>
+                    <?php } elseif ($status === 'active') { ?>
+                    <form method="post" action="<?php echo rateb_url('admin/companies/' . $cid . '/suspend'); ?>">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf ?? ''); ?>">
+                        <button type="submit" class="btn btn-warning" data-rateb-confirm-click="<?php echo Rateb\App\Core\View::escape(__('company_suspend_confirm')); ?>"><?php echo __('company_suspend_action'); ?></button>
+                    </form>
+                    <?php } ?>
                 <a class="btn btn-primary rateb-cp-manage" href="<?php echo $editUrl; ?>">
                     <i class="fas fa-toggle-on" aria-hidden="true"></i>
                     <?php echo __('company_permissions_manage'); ?>
                 </a>
+                </span>
                 <?php } ?>
             </div>
 
