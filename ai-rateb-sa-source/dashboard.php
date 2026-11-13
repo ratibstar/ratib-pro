@@ -48,7 +48,7 @@ foreach ($campaigns as $row) {
 <link rel="stylesheet" href="/public/assets/css/app.css?v=nav44">
 </head>
 <body class="studio page-dash">
-<?php rateb_site_header('/dashboard.php', !empty($_SESSION['user_id'])); ?>
+<?php rateb_site_header('/dashboard', !empty($_SESSION['user_id'])); ?>
 <?php
 $wallet = !empty($_SESSION['user_id']) ? rateb_account_credits($pdo, (int) $_SESSION['user_id']) : ['package_type' => 'free', 'credits_balance' => 0];
 $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باقة الانطلاق', 'pro' => 'الباقة الاحترافية'];
@@ -238,7 +238,7 @@ $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باق�
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<?php rateb_auth_dialog('/dashboard.php'); ?>
+<?php rateb_auth_dialog('/dashboard'); ?>
 <script>
 document.querySelectorAll('[data-pricing-open]').forEach(function (node) {
   node.addEventListener('click', function () {
@@ -253,6 +253,6 @@ document.querySelectorAll('[data-pricing-close]').forEach(function (node) {
   });
 });
 </script>
-<script src="/public/assets/js/app.js?v=nav40"></script>
+<script src="/public/assets/js/app.js?v=nav43"></script>
 </body>
 </html>

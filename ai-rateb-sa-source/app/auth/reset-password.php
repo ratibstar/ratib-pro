@@ -5,7 +5,7 @@ require __DIR__ . '/../../config/bootstrap.php';
 require __DIR__ . '/reset-lib.php';
 
 if (!empty($_SESSION['user_id'])) {
-    header('Location: /dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 

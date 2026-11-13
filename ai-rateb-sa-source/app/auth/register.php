@@ -1,9 +1,13 @@
 <?php
 require __DIR__ . '/../../config/bootstrap.php';
+require_once __DIR__ . '/../public-gate.php';
+rateb_enforce_public_access($pdo);
+require __DIR__ . '/../welcome.php';
 require __DIR__ . '/../plans.php';
+require_once __DIR__ . '/account-state.php';
 
 if (!empty($_SESSION['user_id'])) {
-    header('Location: /dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 
@@ -41,20 +45,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $pdo->prepare(
-                'INSERT INTO users (name, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())'
+                'INSERT INTO users (name, email, password_hash, credits_balance, created_at, updated_at) VALUES (?, ?, ?, 0, NOW(), NOW())'
             );
             $stmt->execute([$oldName, $oldEmail, $hash]);
 
             $newUserId = (int) $pdo->lastInsertId();
+            try {
+                rateb_welcome_apply($pdo, $newUserId, $oldEmail, false);
+            } catch (Throwable) {
+            }
             rateb_user_plan($pdo, $newUserId);
             $_SESSION['user_id'] = $newUserId;
             session_regenerate_id(true);
+            rateb_stamp_login($pdo, $newUserId);
             if ($authModal) {
                 header('Content-Type: application/json');
                 echo json_encode(['ok' => true, 'redirect' => rateb_safe_next((string) ($_POST['next'] ?? ''))]);
                 exit;
             }
-            header('Location: /dashboard.php');
+            header('Location: /dashboard');
             exit;
         }
     }
@@ -74,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <title>RATEB AI — Register</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav44">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav40">
 </head>
 <body class="studio page-register">
 <div class="auth-shell">
@@ -98,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input type="password" name="password" minlength="8" required autocomplete="new-password">
       <button type="submit" data-i18n="create_button">Create Account</button>
     </form>
-    <p class="footer-link"><span data-i18n="have_account">Already have an account?</span> <a href="/login.php" data-i18n="login">Login</a></p>
+    <p class="footer-link"><span data-i18n="have_account">Already have an account?</span> <a href="/login" data-i18n="login">Login</a></p>
   </div>
 </div>
 <script src="/public/assets/js/app.js"></script>

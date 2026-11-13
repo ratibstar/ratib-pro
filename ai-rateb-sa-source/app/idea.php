@@ -313,6 +313,9 @@ function rateb_idea_accept_files(int $userId, array $plan, array $existing): arr
             if (is_array($vision) && trim((string) ($vision['summary'] ?? '')) !== '') {
                 $row['analysis'] = 'ready';
                 $row['summary'] = mb_substr(trim((string) $vision['summary']), 0, 500);
+                foreach (['subjects', 'colors', 'visible_text', 'products', 'setting', 'brand_cues'] as $detail) {
+                    $row[$detail] = $vision[$detail] ?? ($detail === 'setting' ? '' : []);
+                }
             }
         }
         $stored[] = $row;
@@ -379,6 +382,11 @@ function rateb_idea_commit(int $userId, array $draft): int
             ];
             if ($item['analysis'] === 'ready' && trim((string) ($file['summary'] ?? '')) !== '') {
                 $item['summary'] = (string) $file['summary'];
+                foreach (['subjects', 'colors', 'visible_text', 'products', 'setting', 'brand_cues'] as $detail) {
+                    if (isset($file[$detail])) {
+                        $item[$detail] = $file[$detail];
+                    }
+                }
             }
             $source[] = $item;
         }

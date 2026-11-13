@@ -32,7 +32,7 @@ if ($kind === 'copy') {
         exit;
     }
     $text = mb_substr($text, 0, 4000);
-    $row = db()->prepare('SELECT content FROM campaign_outputs WHERE id = ? AND campaign_id = ?');
+    $row = db()->prepare('SELECT content, approval_status FROM campaign_outputs WHERE id = ? AND campaign_id = ?');
     $row->execute([$outputId, $campaignId]);
     $current = $row->fetch();
     if (!$current) {
@@ -40,13 +40,13 @@ if ($kind === 'copy') {
         exit('Not found.');
     }
     $content = rateb_replace_speech_text((string) $current['content'], $text, $speech);
-    db()->prepare('UPDATE campaign_outputs SET content = ? WHERE id = ? AND campaign_id = ?')->execute([$content, $outputId, $campaignId]);
+    rateb_save_edited_output($current, $outputId, $campaignId, $userId, $content);
     header('Location: /campaign.php?id=' . $campaignId . '#copy');
     exit;
 }
 
 if ($kind === 'strategy') {
-    $row = db()->prepare("SELECT id, content FROM campaign_outputs WHERE campaign_id = ? AND output_type = 'strategy' ORDER BY id DESC LIMIT 1");
+    $row = db()->prepare("SELECT id, content, approval_status FROM campaign_outputs WHERE campaign_id = ? AND output_type = 'strategy' ORDER BY id DESC LIMIT 1");
     $row->execute([$campaignId]);
     $current = $row->fetch();
     if (!$current) {
@@ -74,17 +74,25 @@ if ($kind === 'strategy') {
         $decoded = json_decode((string) $document[$key], true);
         $document[$key] = is_array($decoded) ? $decoded : $document[$key];
     }
-    db()->prepare('UPDATE campaign_outputs SET content = ? WHERE id = ? AND campaign_id = ?')->execute([
-        json_encode($document, JSON_UNESCAPED_UNICODE),
-        (int) $current['id'],
-        $campaignId,
-    ]);
+    rateb_save_edited_output($current, (int) $current['id'], $campaignId, $userId, (string) json_encode($document, JSON_UNESCAPED_UNICODE));
     header('Location: /campaign.php?id=' . $campaignId . '#strategy');
     exit;
 }
 
 header('Location: /campaign.php?id=' . $campaignId);
 exit;
+
+/** @param array<string,mixed> $current */
+function rateb_save_edited_output(array $current, int $outputId, int $campaignId, int $userId, string $content): void
+{
+    $state = rateb_edited_output_state((string) $current['content'], $content, (string) ($current['approval_status'] ?? 'draft'));
+    db()->prepare('UPDATE campaign_outputs SET content = ?, approval_status = ? WHERE id = ? AND campaign_id = ?')
+        ->execute([$content, $state['status'], $outputId, $campaignId]);
+    if ($state['invalidate_ready']) {
+        db()->prepare("UPDATE campaigns SET status = 'in_progress', updated_at = NOW() WHERE id = ? AND user_id = ? AND status IN ('ready', 'completed')")
+            ->execute([$campaignId, $userId]);
+    }
+}
 
 function rateb_replace_speech_text(string $content, string $text, string $speech): string
 {

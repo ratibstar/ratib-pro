@@ -1,0 +1,77 @@
+<?php
+declare(strict_types=1);
+
+require dirname(__DIR__) . '/config/bootstrap.php';
+require __DIR__ . '/auth.php';
+
+if (!empty($_SESSION['admin_staff_id'])) {
+    header('Location: /admin/');
+    exit;
+}
+if (!empty($_SESSION['user_id'])) {
+    $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
+    $stmt->execute([(int) $_SESSION['user_id']]);
+    $role = (string) ($stmt->fetchColumn() ?: '');
+    if ($role === 'owner') {
+        header('Location: /admin/');
+        exit;
+    }
+}
+
+$adminLang = (($_COOKIE['rateb_admin_lang'] ?? '') === 'en') ? 'en' : 'ar';
+$dir = $adminLang === 'ar' ? 'rtl' : 'ltr';
+$message = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
+    $result = admin_staff_authenticate($pdo, (string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''));
+    if ($result['ok']) {
+        admin_staff_login_session($result['staff']);
+        admin_staff_touch_login($pdo, (int) $result['staff']['id']);
+        if (admin_table_has($pdo, 'admin_audit_log', 'id')) {
+            require __DIR__ . '/lib.php';
+            $actor = admin_actor_from_staff($result['staff']);
+            admin_audit($pdo, $actor, 'staff_login', 'staff', (int) $result['staff']['id'], '', '');
+        }
+        header('Location: /admin/');
+        exit;
+    }
+    $message = match ($result['code']) {
+        'disabled' => $adminLang === 'ar' ? 'الحساب معطّل.' : 'This staff account is disabled.',
+        'schema' => $adminLang === 'ar' ? 'الترحيل غير مطبّق.' : 'Staff schema is not applied.',
+        default => $adminLang === 'ar' ? 'بيانات الدخول غير صحيحة.' : 'Invalid login.',
+    };
+}
+
+function admin_login_h(string $value): string
+{
+    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+}
+
+$t = static fn (string $en, string $ar): string => $adminLang === 'ar' ? $ar : $en;
+?>
+<!doctype html>
+<html lang="<?= admin_login_h($adminLang) ?>" dir="<?= admin_login_h($dir) ?>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title><?= admin_login_h($t('Admin sign-in', 'دخول الإدارة')) ?> — RATEB AI</title>
+    <link rel="stylesheet" href="/admin/admin.css?v=6">
+</head>
+<body class="admin-app">
+<main style="max-width:420px;margin:48px auto;padding:0 16px">
+    <div class="card">
+        <h2><?= admin_login_h($t('Staff sign-in', 'دخول الموظفين')) ?></h2>
+        <p class="note"><?= admin_login_h($t('Owner accounts use the main site login.', 'حساب المالك يستخدم تسجيل الدخول الرئيسي للموقع.')) ?></p>
+        <?php if ($message !== ''): ?><p class="flash"><?= admin_login_h($message) ?></p><?php endif; ?>
+        <form class="stack" method="post" action="/admin/login.php">
+            <input type="hidden" name="csrf_token" value="<?= admin_login_h(csrf_token()) ?>">
+            <label><?= admin_login_h($t('Email', 'البريد')) ?><input type="email" name="email" required autocomplete="username"></label>
+            <label><?= admin_login_h($t('Password', 'كلمة المرور')) ?><input type="password" name="password" required autocomplete="current-password"></label>
+            <button type="submit"><?= admin_login_h($t('Sign in', 'دخول')) ?></button>
+        </form>
+        <p><a href="/login?next=/admin/"><?= admin_login_h($t('Owner login', 'دخول المالك')) ?></a></p>
+    </div>
+</main>
+</body>
+</html>

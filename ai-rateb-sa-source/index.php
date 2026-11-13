@@ -1,12 +1,13 @@
 <?php
-require __DIR__ . '/config/session.php';
-require __DIR__ . '/config/guard.php';
+require __DIR__ . '/config/bootstrap.php';
+require_once __DIR__ . '/app/public-gate.php';
+rateb_enforce_public_access($pdo);
 require __DIR__ . '/app/nav.php';
 $googleClient = (string) ((require __DIR__ . '/config/google.php')['client_id'] ?? '');
 
 $loggedIn = isset($_SESSION['user_id']);
 if ($loggedIn && !isset($_GET['pricing'])) {
-    header('Location: /dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 ?>
@@ -259,10 +260,10 @@ if ($loggedIn && !isset($_GET['pricing'])) {
 </dialog>
 <dialog class="auth-modal" id="auth-modal" data-google-client="<?= e($googleClient) ?>">
     <button type="button" class="auth-x" data-auth-close aria-label="Close">×</button>
-    <form class="auth-card" id="auth-login" action="/login.php" method="post">
+    <form class="auth-card" id="auth-login" action="/login" method="post">
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="auth_modal" value="1">
-        <input type="hidden" name="next" value="/dashboard.php">
+        <input type="hidden" name="next" value="/dashboard">
         <h2 data-i18n="welcome_back">Welcome back</h2>
         <p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p>
         <p class="alert" data-auth-error hidden></p>
@@ -272,17 +273,17 @@ if ($loggedIn && !isset($_GET['pricing'])) {
         </div>
         <p class="auth-or" data-i18n="auth_or">or</p>
         <label data-i18n="email">Email</label>
-        <input type="email" name="email" required autocomplete="email">
+        <input type="text" name="email" required autocomplete="username">
         <label data-i18n="password">Password</label>
         <input type="password" name="password" required autocomplete="current-password">
         <button type="submit" data-i18n="login_button">Login</button>
         <p class="footer-link"><a href="/forgot-password.php" data-i18n="forgot_password">Forgot password?</a></p>
         <p class="footer-link"><span data-i18n="no_account">Don't have an account?</span> <button type="button" data-auth="register" data-i18n="create_one">Create one</button></p>
     </form>
-    <form class="auth-card" id="auth-register" action="/register.php" method="post" hidden>
+    <form class="auth-card" id="auth-register" action="/register" method="post" hidden>
         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="auth_modal" value="1">
-        <input type="hidden" name="next" value="/dashboard.php">
+        <input type="hidden" name="next" value="/dashboard">
         <h2 data-i18n="create_title">Create your account</h2>
         <p class="muted" data-i18n="register_lead">Start creating AI-powered marketing campaigns.</p>
         <p class="alert" data-auth-error hidden></p>

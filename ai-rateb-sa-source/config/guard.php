@@ -15,11 +15,16 @@ function csrf_token(): string
     return $_SESSION['csrf_token'];
 }
 
+function csrf_matches(string $expected, string $token): bool
+{
+    return $expected !== '' && hash_equals($expected, $token);
+}
+
 function verify_csrf(): void
 {
     $token = (string) ($_POST['csrf_token'] ?? $_POST['csrf'] ?? '');
     $expected = (string) ($_SESSION['csrf_token'] ?? $_SESSION['csrf'] ?? '');
-    if ($expected === '' || !hash_equals($expected, $token)) {
+    if (!csrf_matches($expected, $token)) {
         http_response_code(419);
         exit('Invalid request.');
     }
@@ -30,18 +35,66 @@ function check_csrf(): void
     verify_csrf();
 }
 
-function rateb_safe_next(string $next): string
+function rateb_normalize_next_path(string $next): string
 {
-    $allowed = ['/dashboard.php', '/campaign-new.php', '/brand.php'];
-    return in_array($next, $allowed, true) ? $next : '/dashboard.php';
+    $next = trim($next);
+    if ($next === '/dashboard.php') {
+        $next = '/dashboard';
+    }
+    if ($next === '/admin') {
+        $next = '/admin/';
+    }
+    if ($next === '') {
+        return '';
+    }
+    if (str_contains($next, '://') || str_starts_with($next, '//') || str_contains($next, '\\')) {
+        return '';
+    }
+    if (str_contains($next, '?') || str_contains($next, '#')) {
+        return '';
+    }
+    if (str_contains($next, '..')) {
+        return '';
+    }
+    if (preg_match('#^/[A-Za-z0-9_./-]*$#', $next) !== 1) {
+        return '';
+    }
+    return $next;
+}
+
+function rateb_safe_next(string $next, ?string $role = null): string
+{
+    $next = rateb_normalize_next_path($next);
+    if ($next === '') {
+        return '/dashboard';
+    }
+    $allowed = ['/dashboard', '/campaign-new.php', '/brand.php'];
+    if ($role === 'owner') {
+        $allowed[] = '/admin/';
+    }
+    return in_array($next, $allowed, true) ? $next : '/dashboard';
+}
+
+function admin_role_allowed(?string $role): bool
+{
+    return $role === 'owner';
 }
 
 function require_login(): void
 {
     if (empty($_SESSION['user_id'])) {
-        header('Location: /login.php');
+        header('Location: /login');
         exit;
     }
+    $authPdo = $GLOBALS['pdo'] ?? null;
+    if (!$authPdo instanceof PDO && function_exists('db')) {
+        $authPdo = db();
+    }
+    if (!$authPdo instanceof PDO) {
+        return;
+    }
+    require_once __DIR__ . '/../app/auth/account-state.php';
+    rateb_block_disabled_session($authPdo);
 }
 
 function ui_language(): string
@@ -51,21 +104,7 @@ function ui_language(): string
 
 function require_admin(PDO $pdo): array
 {
-    if (empty($_SESSION['user_id'])) {
-        header('Location: /login.php');
-        exit;
-    }
-    $stmt = $pdo->prepare('SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1');
-    $stmt->execute([(int) $_SESSION['user_id']]);
-    $user = $stmt->fetch();
-    if (!$user || (string) ($user['role'] ?? '') !== 'owner') {
-        http_response_code(403);
-        $arabic = ui_language() === 'ar';
-        header('Content-Type: text/html; charset=utf-8');
-        echo $arabic
-            ? '<!doctype html><html lang="ar" dir="rtl"><body><p>هذه الصفحة للمالك فقط.</p></body></html>'
-            : '<!doctype html><html lang="en" dir="ltr"><body><p>This page is for the owner only.</p></body></html>';
-        exit;
-    }
-    return $user;
+    require_once __DIR__ . '/../admin/auth.php';
+    $actor = require_admin_access($pdo);
+    return admin_actor_legacy_user($actor);
 }

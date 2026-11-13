@@ -2,10 +2,12 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../../config/bootstrap.php';
+require_once __DIR__ . '/../public-gate.php';
+rateb_enforce_public_access($pdo);
 require __DIR__ . '/reset-lib.php';
 
 if (!empty($_SESSION['user_id'])) {
-    header('Location: /dashboard.php');
+    header('Location: /dashboard');
     exit;
 }
 

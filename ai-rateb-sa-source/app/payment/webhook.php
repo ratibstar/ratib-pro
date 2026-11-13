@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../schema.php';
+require_once __DIR__ . '/../plans.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -11,14 +12,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $cfg = require __DIR__ . '/../../config/ai.php';
 $secret = (string) ($cfg['moyasar_secret_key'] ?? '');
-$token = (string) ($_GET['token'] ?? ($_SERVER['HTTP_X_MOYASAR_TOKEN'] ?? ''));
-if ($secret === '' || $token === '' || !hash_equals($secret, $token)) {
+$webhookSecret = (string) ($cfg['moyasar_webhook_secret'] ?? '');
+$payload = json_decode((string) file_get_contents('php://input'), true);
+$provided = (string) ($_SERVER['HTTP_X_MOYASAR_TOKEN'] ?? '');
+if ($provided === '' && is_array($payload)) {
+    $provided = (string) ($payload['secret_token'] ?? '');
+}
+if (!rateb_moyasar_webhook_authorized($webhookSecret, $provided) || $secret === '') {
     http_response_code(401);
     exit('Unauthorized');
 }
 
-$payload = json_decode((string) file_get_contents('php://input'), true);
-$paymentId = is_array($payload) ? (string) ($payload['id'] ?? '') : '';
+$data = is_array($payload) && is_array($payload['data'] ?? null) ? $payload['data'] : $payload;
+$paymentId = is_array($data) ? (string) ($data['id'] ?? '') : '';
 if (!preg_match('/^[a-f0-9-]{36}$/', $paymentId)) {
     http_response_code(422);
     exit('Invalid payment');
@@ -35,47 +41,33 @@ $raw = curl_exec($ch);
 $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 $payment = json_decode((string) $raw, true);
-if ($http !== 200 || !is_array($payment) || (string) ($payment['status'] ?? '') !== 'paid') {
+if ($http !== 200 || !is_array($payment) || (string) ($payment['id'] ?? '') !== $paymentId) {
     http_response_code(422);
     exit('Unpaid');
 }
 
-$meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
-$userId = (int) ($meta['user_id'] ?? 0);
-$package = (string) ($meta['package'] ?? '');
-$amount = (int) ($payment['amount'] ?? 0);
-$expected = ['starter' => 9900, 'pro' => 24900];
-$credits = ['starter' => 500, 'pro' => 2500];
-if ($userId < 1 || !isset($expected[$package]) || $amount !== $expected[$package]) {
-    http_response_code(422);
-    exit('Unexpected payment');
-}
-
 $pdo = db();
 ensure_campaign_schema($pdo);
-$pdo->beginTransaction();
+$status = (string) ($payment['status'] ?? '');
+if ($status !== 'paid') {
+    $meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
+    if (in_array($status, ['failed', 'canceled', 'cancelled', 'expired', 'voided'], true)) {
+        rateb_payment_mark_failed($pdo, (int) ($meta['order_id'] ?? 0), (int) ($meta['user_id'] ?? 0));
+    }
+    http_response_code(200);
+    echo 'pending';
+    exit;
+}
+
 try {
-    $known = $pdo->prepare('SELECT id FROM payment_receipts WHERE moyasar_id = ?');
-    $known->execute([$paymentId]);
-    if ($known->fetch()) {
-        $pdo->commit();
-        http_response_code(200);
-        echo 'ok';
-        exit;
-    }
-    $pdo->prepare('INSERT INTO payment_receipts (moyasar_id, user_id, package_type, amount) VALUES (?, ?, ?, ?)')
-        ->execute([$paymentId, $userId, $package, $amount]);
-    $pdo->prepare('UPDATE users SET package_type = ?, credits_balance = credits_balance + ? WHERE id = ?')
-        ->execute([$package, $credits[$package], $userId]);
-    $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted) VALUES (?, NULL, ?, 1, \'completed\', ?, 0)')
-        ->execute([$userId, 'payment_' . $package, 'payment_' . $package]);
-    $pdo->commit();
+    $result = rateb_payment_record($pdo, $payment);
 } catch (Throwable $error) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
     http_response_code(500);
     exit('Could not record payment');
+}
+if ($result !== 'ok' && $result !== 'duplicate') {
+    http_response_code(422);
+    exit('Unexpected payment');
 }
 
 http_response_code(200);

@@ -62,7 +62,7 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    header('Location: /dashboard.php?copy_error=1');
+    header('Location: /dashboard?copy_error=1');
     exit;
 }
 

@@ -65,7 +65,7 @@ try {
 }
 
 $fileError = $unsafeFile || !campaign_delete_media_files($id, $paths);
-header('Location: /dashboard.php?' . ($fileError ? 'delete_error=1' : 'deleted=1'));
+header('Location: /dashboard?' . ($fileError ? 'delete_error=1' : 'deleted=1'));
 exit;
 
 function campaign_delete_media_path(array $row, int $campaignId): ?string

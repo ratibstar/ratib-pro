@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../config/bootstrap.php';
 require __DIR__ . '/../plans.php';
+require __DIR__ . '/../welcome.php';
+require_once __DIR__ . '/account-state.php';
 
 header('Content-Type: application/json');
 
@@ -64,14 +66,29 @@ $stmt->execute([$email]);
 $existing = $stmt->fetch();
 if ($existing) {
     $userId = (int) $existing['id'];
+    if (rateb_user_is_disabled($pdo, $userId)) {
+        rateb_google_fail('account_disabled', 403);
+    }
+    try {
+        rateb_welcome_recover($pdo, $userId, $email, true);
+    } catch (Throwable) {
+    }
 } else {
     $hash = password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT);
-    $insert = $pdo->prepare('INSERT INTO users (name, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())');
+    $insert = $pdo->prepare('INSERT INTO users (name, email, password_hash, credits_balance, created_at, updated_at) VALUES (?, ?, ?, 0, NOW(), NOW())');
     $insert->execute([$name, $email, $hash]);
     $userId = (int) $pdo->lastInsertId();
+    try {
+        rateb_welcome_apply($pdo, $userId, $email, true);
+    } catch (Throwable) {
+    }
     rateb_user_plan($pdo, $userId);
 }
 
 session_regenerate_id(true);
 $_SESSION['user_id'] = $userId;
-echo json_encode(['ok' => true, 'redirect' => rateb_safe_next((string) ($_POST['next'] ?? ''))]);
+rateb_stamp_login($pdo, $userId);
+$roleStmt = $pdo->prepare('SELECT role FROM users WHERE id = ? LIMIT 1');
+$roleStmt->execute([$userId]);
+$roleForNext = (string) ($roleStmt->fetchColumn() ?: 'user') === 'owner' ? 'owner' : null;
+echo json_encode(['ok' => true, 'redirect' => rateb_safe_next((string) ($_POST['next'] ?? ''), $roleForNext)]);

@@ -1,0 +1,20 @@
+--- a/admin/user.php
++++ b/admin/user.php
+@@ -102,11 +102,12 @@ foreach ($subs as $row) {
+ echo '</table>';
+ 
+ if (admin_table_has($pdo, 'admin_audit_log', 'id')) {
+-    $audit = $pdo->prepare("SELECT a.created_at, a.action, a.reason, a.detail, u.email FROM admin_audit_log a INNER JOIN users u ON u.id = a.admin_user_id WHERE a.target_type = 'user' AND a.target_id = ? ORDER BY a.id DESC LIMIT 50");
+-    $audit->execute([$id]);
+-    echo '<h2>' . admin_h(admin_t('Admin audit', 'سجل الإدارة')) . '</h2><table><tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Admin', 'المشرف')) . '</th><th>' . admin_h(admin_t('Action', 'الإجراء')) . '</th><th>' . admin_h(admin_t('Reason', 'السبب')) . '</th></tr>';
+-    foreach ($audit as $row) {
+-        echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) $row['email']) . '</td><td>' . admin_h((string) $row['action']) . '</td><td>' . admin_h((string) $row['reason']) . '</td></tr>';
++    $auditRows = admin_audit_rows_for_target($pdo, 'user', $id, 50);
++    $missingStaff = admin_t('Staff (removed)', 'موظف (محذوف)');
++    echo '<h2>' . admin_h(admin_t('Admin audit', 'سجل الإدارة')) . '</h2><table><tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Actor', 'الفاعل')) . '</th><th>' . admin_h(admin_t('Action', 'الإجراء')) . '</th><th>' . admin_h(admin_t('Reason', 'السبب')) . '</th></tr>';
++    foreach ($auditRows as $row) {
++        $actorLabel = admin_audit_actor_display($row, $missingStaff);
++        echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h($actorLabel) . '</td><td>' . admin_h((string) $row['action']) . '</td><td>' . admin_h((string) $row['reason']) . '</td></tr>';
+     }
+     echo '</table>';
+ }

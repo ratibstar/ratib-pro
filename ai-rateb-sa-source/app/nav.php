@@ -5,9 +5,10 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
 {
     $groups = [
         [
-            ['/dashboard.php', 'dashboard', 'Dashboard'],
+            ['/dashboard', 'dashboard', 'Dashboard'],
             ['/campaign-new.php', 'new_campaign', 'New Campaign'],
             ['/brand.php', 'brand_kit', 'Brand kit'],
+            ['/hr/', 'hr', 'HR'],
         ],
         [
             ['/#workflow', 'nav_how', 'How it works'],
@@ -32,7 +33,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
         }
         foreach ($group as $item) {
             $class = $item[0] === $here ? ' class="is-here" aria-current="page"' : '';
-            if ($loggedIn && $here === '/dashboard.php' && $item[1] === 'nav_pricing') {
+            if ($loggedIn && ($here === '/dashboard' || $here === '/dashboard.php') && $item[1] === 'nav_pricing') {
                 echo '<button type="button" data-pricing-open data-i18n="nav_pricing">Pricing</button>';
                 continue;
             }
@@ -43,7 +44,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '<a class="logo" href="/">RATEB <span>AI</span></a>';
     echo '<div class="edge-auth">';
     if ($credits !== null) {
-        $chipTag = $here === '/dashboard.php' ? 'button type="button" data-pricing-open' : 'a href="/?pricing=1#pricing"';
+        $chipTag = ($here === '/dashboard' || $here === '/dashboard.php') ? 'button type="button" data-pricing-open' : 'a href="/?pricing=1#pricing"';
         echo '<' . $chipTag . ' class="credit-chip" title="Credits"><span aria-hidden="true">⚡</span>' . $credits . '</' . strtok($chipTag, ' ') . '>';
     }
     echo '<button type="button" id="lang" class="icon">AR</button>';
@@ -64,14 +65,14 @@ function rateb_auth_dialog(string $next): void
     $token = e(csrf_token());
     echo '<dialog class="auth-modal" id="auth-modal" data-google-client="' . e($googleClient) . '">';
     echo '<button type="button" class="auth-x" data-auth-close aria-label="Close">×</button>';
-    echo '<form class="auth-card" id="auth-login" action="/login.php" method="post">';
+    echo '<form class="auth-card" id="auth-login" action="/login" method="post">';
     echo '<input type="hidden" name="csrf_token" value="' . $token . '"><input type="hidden" name="auth_modal" value="1"><input type="hidden" name="next" value="' . $next . '">';
     echo '<h2 data-i18n="welcome_back">Welcome back</h2><p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p><p class="alert" data-auth-error hidden></p>';
     echo rateb_social_buttons();
-    echo '<p class="auth-or" data-i18n="auth_or">or</p><label data-i18n="email">Email</label><input type="email" name="email" required autocomplete="email"><label data-i18n="password">Password</label><input type="password" name="password" required autocomplete="current-password"><button type="submit" data-i18n="login_button">Login</button>';
+    echo '<p class="auth-or" data-i18n="auth_or">or</p><label data-i18n="email">Email</label><input type="text" name="email" required autocomplete="username"><label data-i18n="password">Password</label><input type="password" name="password" required autocomplete="current-password"><button type="submit" data-i18n="login_button">Login</button>';
     echo '<p class="footer-link"><a href="/forgot-password.php" data-i18n="forgot_password">Forgot password?</a></p>';
     echo '<p class="footer-link"><span data-i18n="no_account">Don\'t have an account?</span> <button type="button" data-auth="register" data-i18n="create_one">Create one</button></p></form>';
-    echo '<form class="auth-card" id="auth-register" action="/register.php" method="post" hidden>';
+    echo '<form class="auth-card" id="auth-register" action="/register" method="post" hidden>';
     echo '<input type="hidden" name="csrf_token" value="' . $token . '"><input type="hidden" name="auth_modal" value="1"><input type="hidden" name="next" value="' . $next . '">';
     echo '<h2 data-i18n="create_title">Create your account</h2><p class="muted" data-i18n="register_lead">Start creating AI-powered marketing campaigns.</p><p class="alert" data-auth-error hidden></p>';
     echo rateb_social_buttons();

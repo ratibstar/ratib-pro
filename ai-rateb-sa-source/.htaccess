@@ -1,0 +1,43 @@
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<FilesMatch "^(database|bootstrap)\.php$">
+    Require all denied
+</FilesMatch>
+
+# rateb-ai-user-ini-deny
+<Files ".user.ini">
+Require all denied
+</Files>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # THE_REQUEST is the original browser line. An internal rewrite does not change it,
+    # so these 301s cannot fire again after [END]. GET only, so POST bodies stay put.
+    RewriteCond %{REQUEST_METHOD} =GET
+    RewriteCond %{THE_REQUEST} \s/+login\.php[\s?] [NC]
+    RewriteRule ^login\.php$ /login [R=301,L,QSA]
+    RewriteCond %{REQUEST_METHOD} =GET
+    RewriteCond %{THE_REQUEST} \s/+register\.php[\s?] [NC]
+    RewriteRule ^register\.php$ /register [R=301,L,QSA]
+    RewriteCond %{REQUEST_METHOD} =GET
+    RewriteCond %{THE_REQUEST} \s/+dashboard\.php[\s?] [NC]
+    RewriteRule ^dashboard\.php$ /dashboard [R=301,L,QSA]
+    RewriteCond %{REQUEST_METHOD} =GET
+    RewriteCond %{THE_REQUEST} \s/+admin/index\.php[\s?] [NC]
+    RewriteRule ^admin/index\.php$ /admin/ [R=301,L,QSA]
+    RewriteCond %{REQUEST_METHOD} =GET
+    RewriteCond %{THE_REQUEST} \s/+admin[\s?] [NC]
+    RewriteRule ^admin$ /admin/ [R=301,L,QSA]
+
+    # [END] stops Apache 2.4 from running this ruleset again on login.php.
+    RewriteRule ^login/?$ login.php [END,QSA]
+    RewriteRule ^register/?$ register.php [END,QSA]
+    RewriteRule ^dashboard/?$ dashboard.php [END,QSA]
+</IfModule>

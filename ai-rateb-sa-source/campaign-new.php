@@ -5,6 +5,8 @@ require_once __DIR__ . '/app/media/library.php';
 require_once __DIR__ . '/app/vision.php';
 require_once __DIR__ . '/app/idea.php';
 require_once __DIR__ . '/app/nav.php';
+require_once __DIR__ . '/app/auth/account-state.php';
+rateb_block_disabled_session(db());
 $userId = (int) ($_SESSION['user_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['draft'])) {

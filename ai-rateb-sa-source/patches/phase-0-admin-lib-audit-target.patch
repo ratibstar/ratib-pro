@@ -1,0 +1,10 @@
+--- a/admin/lib.php
++++ b/admin/lib.php
+@@ -68,6 +68,7 @@ function admin_audit_actor_display(array $row, string $missingStaffLabel): strin
+     return $ownerEmail !== '' ? $ownerEmail : '—';
+ }
+ 
++require_once __DIR__ . '/lib-audit-target.php';
+ 
+ function admin_audit(object $pdo, array $actor, string $action, string $targetType, ?int $targetId, string $reason, string $detail): void
+ {

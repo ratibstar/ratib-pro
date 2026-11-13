@@ -2,11 +2,13 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/../auth/account-state.php';
 
 const BRAND_ROOT = '/home/admin/.brand-kits';
 
 function brand_owned(): array
 {
+    rateb_block_disabled_session(db());
     if (empty($_SESSION['user_id'])) {
         return [
             'brand_name' => '',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/guard.php';
 require_once __DIR__ . '/../app/schema.php';
+require_once __DIR__ . '/../app/auth/account-state.php';
 
 $config = require __DIR__ . '/database.php';
 
@@ -22,6 +23,7 @@ ensure_campaign_schema($pdo);
 
 function current_user(PDO $pdo): ?array
 {
+    rateb_block_disabled_session($pdo);
     if (empty($_SESSION['user_id'])) {
         return null;
     }
@@ -30,3 +32,5 @@ function current_user(PDO $pdo): ?array
     $user = $stmt->fetch();
     return $user ?: null;
 }
+
+rateb_block_disabled_session($pdo);
