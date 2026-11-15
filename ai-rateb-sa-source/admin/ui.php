@@ -83,7 +83,7 @@ function admin_nav_glyph(string $href): string
 {
     $path = parse_url($href, PHP_URL_PATH) ?: $href;
   return match ($path) {
-        '/admin/', '/admin/index.php' => '▣',
+        '/admin', '/admin/', '/admin/index.php' => '▣',
         '/admin/users.php' => '◎',
         '/admin/hr-overview.php' => '◈',
         '/admin/finance.php' => '◆',

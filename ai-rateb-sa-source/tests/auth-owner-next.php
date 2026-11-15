@@ -15,10 +15,10 @@ $check = static function (bool $ok, string $name) use (&$failures): void {
     echo "FAIL {$name}\n";
 };
 
-$check(rateb_safe_next('/admin/', 'owner') === '/admin/', 'owner may use /admin/');
-$check(rateb_safe_next('/admin/', 'user') === '/dashboard', 'customer cannot use /admin/');
-$check(rateb_safe_next('/admin/', null) === '/dashboard', 'anonymous cannot use /admin/');
-$check(rateb_safe_next('/admin', 'owner') === '/admin/', 'owner /admin normalizes to /admin/');
+$check(rateb_safe_next('/admin', 'owner') === '/admin', 'owner may use /admin');
+$check(rateb_safe_next('/admin/', 'owner') === '/admin/', 'owner trailing slash still allowed');
+$check(rateb_safe_next('/admin', 'user') === '/dashboard', 'customer cannot use /admin');
+$check(rateb_safe_next('/admin', null) === '/dashboard', 'anonymous cannot use /admin');
 $check(rateb_safe_next('https://evil.example/', 'owner') === '/dashboard', 'reject absolute URL');
 $check(rateb_safe_next('//evil.example/', 'owner') === '/dashboard', 'reject protocol-relative URL');
 $check(rateb_safe_next('/admin\\foo', 'owner') === '/dashboard', 'reject backslashes');
@@ -27,7 +27,7 @@ $check(rateb_safe_next('/dashboard#x', 'owner') === '/dashboard', 'reject fragme
 $check(rateb_safe_next('/../admin/', 'owner') === '/dashboard', 'reject parent segments');
 $check(rateb_safe_next('/dashboard', 'user') === '/dashboard', 'customer dashboard allowed');
 $check(rateb_safe_next('/campaign-new.php', 'user') === '/campaign-new.php', 'customer campaign-new allowed');
-$check(rateb_normalize_next_path('/admin/') === '/admin/', 'normalize preserves owner path candidate');
+$check(rateb_normalize_next_path('/admin') === '/admin', 'normalize preserves /admin');
 
 $staffRow = [
     'admin_staff_id' => 5,

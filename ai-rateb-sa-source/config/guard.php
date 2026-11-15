@@ -41,9 +41,6 @@ function rateb_normalize_next_path(string $next): string
     if ($next === '/dashboard.php') {
         $next = '/dashboard';
     }
-    if ($next === '/admin') {
-        $next = '/admin/';
-    }
     if ($next === '') {
         return '';
     }
@@ -70,6 +67,7 @@ function rateb_safe_next(string $next, ?string $role = null): string
     }
     $allowed = ['/dashboard', '/campaign-new.php', '/brand.php'];
     if ($role === 'owner') {
+        $allowed[] = '/admin';
         $allowed[] = '/admin/';
     }
     return in_array($next, $allowed, true) ? $next : '/dashboard';

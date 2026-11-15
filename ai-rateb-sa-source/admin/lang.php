@@ -13,9 +13,9 @@ if ($lang === 'ar' || $lang === 'en') {
         'samesite' => 'Lax',
     ]);
 }
-$back = (string) ($_SERVER['HTTP_REFERER'] ?? '/admin/');
-if (!str_starts_with($back, '/admin')) {
-    $back = '/admin/';
+$back = (string) ($_SERVER['HTTP_REFERER'] ?? '/admin');
+    if (!str_starts_with($back, '/admin')) {
+        $back = '/admin';
 }
 header('Location: ' . $back);
 exit;

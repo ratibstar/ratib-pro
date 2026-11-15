@@ -126,7 +126,7 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     echo '<div class="box"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p>';
     echo '<p><a href="/login">' . ($ar ? 'تسجيل الدخول' : 'Sign in') . '</a>';
     if ($mode === 'maintenance') {
-        echo ' · <a href="/admin/login.php">' . ($ar ? 'دخول الموظفين' : 'Staff sign-in') . '</a>';
+        echo ' · <a href="/admin">' . ($ar ? 'لوحة الإدارة' : 'Admin console') . '</a>';
     }
     echo '</p></div></body></html>';
     exit;

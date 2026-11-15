@@ -31,13 +31,14 @@ Require all denied
     RewriteRule ^dashboard\.php$ /dashboard [R=301,L,QSA]
     RewriteCond %{REQUEST_METHOD} =GET
     RewriteCond %{THE_REQUEST} \s/+admin/index\.php[\s?] [NC]
-    RewriteRule ^admin/index\.php$ /admin/ [R=301,L,QSA]
+    RewriteRule ^admin/index\.php$ /admin [R=301,L,QSA]
     RewriteCond %{REQUEST_METHOD} =GET
-    RewriteCond %{THE_REQUEST} \s/+admin[\s?] [NC]
-    RewriteRule ^admin$ /admin/ [R=301,L,QSA]
+    RewriteCond %{THE_REQUEST} \s/+admin/[\s?] [NC]
+    RewriteRule ^admin/$ /admin [R=301,L,QSA]
 
     # [END] stops Apache 2.4 from running this ruleset again on login.php.
     RewriteRule ^login/?$ login.php [END,QSA]
     RewriteRule ^register/?$ register.php [END,QSA]
     RewriteRule ^dashboard/?$ dashboard.php [END,QSA]
+    RewriteRule ^admin/?$ admin/index.php [END,QSA]
 </IfModule>

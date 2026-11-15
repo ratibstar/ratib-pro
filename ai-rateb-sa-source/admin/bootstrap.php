@@ -24,8 +24,8 @@ function admin_h(string $value): string
 
 function admin_nav_on(string $here, string $href): bool
 {
-    if ($href === '/admin/') {
-        return $here === '/admin/' || $here === '/admin/index.php';
+    if ($href === '/admin') {
+        return $here === '/admin' || $here === '/admin/' || $here === '/admin/index.php';
     }
     $path = parse_url($href, PHP_URL_PATH) ?: $href;
     $query = (string) (parse_url($href, PHP_URL_QUERY) ?? '');
@@ -79,7 +79,7 @@ function admin_start(string $title): void
 {
     global $adminLang, $adminUser, $adminActor;
     $dir = $adminLang === 'ar' ? 'rtl' : 'ltr';
-    $here = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/admin/'), PHP_URL_PATH) ?: '/admin/';
+    $here = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/admin'), PHP_URL_PATH) ?: '/admin';
     $email = (string) ($adminUser['email'] ?? '');
     $initial = strtoupper(substr($email, 0, 1) ?: 'R');
     $console = admin_actor_is_owner($adminActor) ? admin_t('Owner console', 'وحدة المالك') : admin_t('Staff console', 'وحدة الموظف');

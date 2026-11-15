@@ -30,7 +30,7 @@ $rows = $list->fetchAll();
 
 admin_start(admin_t('Campaigns', 'الحملات'));
 admin_toolbar([
-    ['href' => '/admin/', 'label' => admin_t('Dashboard', 'اللوحة')],
+    ['href' => '/admin', 'label' => admin_t('Dashboard', 'اللوحة')],
     ['href' => '/admin/users.php', 'label' => admin_t('Customers', 'العملاء')],
 ]);
 admin_panel_open(admin_t('All campaigns', 'كل الحملات'), admin_t('Open a row to inspect content and media.', 'افتح الصف لمراجعة المحتوى والوسائط.'));

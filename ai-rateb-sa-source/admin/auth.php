@@ -160,7 +160,7 @@ function admin_actor_legacy_user(array $actor): array
 function admin_nav_items(): array
 {
     return [
-        ['permission' => 'dashboard.view', 'group' => 'overview', 'href' => '/admin/', 'en' => 'Dashboard & analytics', 'ar' => 'لوحة التحليلات'],
+        ['permission' => 'dashboard.view', 'group' => 'overview', 'href' => '/admin', 'en' => 'Dashboard & analytics', 'ar' => 'لوحة التحليلات'],
         ['permission' => 'customers.view', 'group' => 'customers', 'href' => '/admin/users.php', 'en' => 'Customer accounts', 'ar' => 'حسابات العملاء'],
         ['permission' => 'customers.view', 'group' => 'customers', 'href' => '/admin/hr-overview.php', 'en' => 'Customer HR overview', 'ar' => 'موارد بشرية العملاء'],
         ['permission' => 'finance.view', 'group' => 'customers', 'href' => '/admin/finance.php?tab=customers', 'en' => 'Customer finances', 'ar' => 'مالية العملاء'],
