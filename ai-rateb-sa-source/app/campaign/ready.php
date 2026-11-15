@@ -50,5 +50,7 @@ if (!rateb_campaign_requirements_met($idea, $strategy, $copy, !empty($kinds['ima
 }
 
 db()->prepare("UPDATE campaigns SET status = 'ready', updated_at = NOW() WHERE id = ? AND user_id = ?")->execute([$campaignId, $userId]);
+require_once __DIR__ . '/../notify/events.php';
+rateb_notify_campaign_ready(db(), $userId, $campaignId, (string) ($campaign['title'] ?? $campaign['product_name'] ?? 'Campaign'));
 header('Location: /campaign.php?id=' . $campaignId . '#ready');
 exit;

@@ -316,8 +316,10 @@ function ensure_campaign_schema(PDO $pdo): void
 
     require_once __DIR__ . '/../migrations/platform_settings_schema.php';
     require_once __DIR__ . '/../migrations/company_hr_schema.php';
+    require_once __DIR__ . '/../migrations/payment_commerce_schema.php';
     ensure_platform_settings_schema($pdo);
     ensure_company_hr_schema($pdo);
+    ensure_payment_commerce_schema($pdo);
 }
 
 function campaign_status_values(): array

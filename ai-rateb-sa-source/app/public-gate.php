@@ -4,12 +4,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/../migrations/platform_settings_schema.php';
 
 /**
- * Platform access gate from admin → System → Public website.
- *
- * Maintenance: blocks the whole customer product (dashboard, HR, campaigns, APIs)
- * except sign-in, sign-out, payments webhooks, and /admin.
- *
- * Public disabled (without maintenance): blocks marketing entry pages only.
+ * Public website gate: landing, registration, and marketing entry points.
+ * Customer workspace (/dashboard, /hr, campaigns) stays available when logged in.
+ * Admin console is always available.
  */
 function rateb_enforce_public_access(PDO $pdo): void
 {
@@ -20,7 +17,7 @@ function rateb_enforce_public_access(PDO $pdo): void
     $enforced = true;
 
     $path = rateb_public_gate_normalize_path(parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/');
-    if (rateb_public_gate_is_infrastructure_exempt($path)) {
+    if (rateb_public_gate_is_always_exempt($path)) {
         return;
     }
 
@@ -28,11 +25,13 @@ function rateb_enforce_public_access(PDO $pdo): void
     $publicOn = platform_setting_bool($pdo, 'public_site_enabled', true);
     $maintOn = platform_setting_bool($pdo, 'maintenance_mode', false);
 
-    if ($maintOn) {
+    $marketing = rateb_public_gate_is_marketing_path($path);
+
+    if ($maintOn && $marketing) {
         rateb_public_gate_render('maintenance', $pdo);
     }
 
-    if (!$publicOn && rateb_public_gate_is_marketing_path($path)) {
+    if (!$publicOn && $marketing) {
         rateb_public_gate_render('off', $pdo);
     }
 }
@@ -45,15 +44,28 @@ function rateb_public_gate_normalize_path(string $path): string
     return $path;
 }
 
-/** Always reachable: admin console, auth, payment hooks, static assets. */
-function rateb_public_gate_is_infrastructure_exempt(string $path): bool
+/** Admin, auth API, payments, customer app — never blocked by site toggles. */
+function rateb_public_gate_is_always_exempt(string $path): bool
 {
     $prefixes = [
         '/admin',
         '/app/auth',
         '/app/payment',
+        '/app/ai',
+        '/app/campaign',
+        '/app/content',
+        '/app/media',
+        '/app/brand',
+        '/app/hr',
         '/login',
         '/logout',
+        '/dashboard',
+        '/billing.php',
+        '/billing',
+        '/campaign',
+        '/brand',
+        '/hr',
+        '/api',
         '/public',
         '/favicon.ico',
     ];
@@ -65,13 +77,7 @@ function rateb_public_gate_is_infrastructure_exempt(string $path): bool
     return false;
 }
 
-/** @deprecated use rateb_public_gate_is_infrastructure_exempt */
-function rateb_public_gate_is_always_exempt(string $path): bool
-{
-    return rateb_public_gate_is_infrastructure_exempt($path);
-}
-
-/** Paths treated as the public marketing website (public-off without full maintenance). */
+/** Paths treated as the public marketing website (affected by maintenance / public off). */
 function rateb_public_gate_is_marketing_path(string $path): bool
 {
     $marketing = [
@@ -86,14 +92,11 @@ function rateb_public_gate_is_marketing_path(string $path): bool
     return in_array($path, $marketing, true);
 }
 
-/** @deprecated */
+/** @deprecated use rateb_public_gate_is_always_exempt */
 function rateb_public_gate_is_exempt_path(string $path): bool
 {
     $path = rateb_public_gate_normalize_path($path);
-    if (rateb_public_gate_is_infrastructure_exempt($path)) {
-        return true;
-    }
-    return !rateb_public_gate_is_marketing_path($path);
+    return rateb_public_gate_is_always_exempt($path) || !rateb_public_gate_is_marketing_path($path);
 }
 
 function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
@@ -118,7 +121,7 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     echo '<style>body{margin:0;font-family:Manrope,Tajawal,sans-serif;background:#070b14;color:#e8eef7;display:grid;place-items:center;min-height:100vh;padding:24px}';
     echo '.box{max-width:520px;background:#10192b;border:1px solid #243049;border-radius:16px;padding:24px}h1{color:#67e8f9;font-size:1.25rem;margin:0 0 12px}p{color:#93a4bd;line-height:1.6}a{color:#67e8f9}</style></head><body>';
     echo '<div class="box"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p>';
-    echo '<p><a href="/admin/">' . ($ar ? 'لوحة الإدارة' : 'Admin console') . '</a>';
+    echo '<p><a href="/login">' . ($ar ? 'تسجيل الدخول' : 'Sign in') . '</a>';
     if ($mode === 'maintenance') {
         echo ' · <a href="/admin/login.php">' . ($ar ? 'دخول الموظفين' : 'Staff sign-in') . '</a>';
     }

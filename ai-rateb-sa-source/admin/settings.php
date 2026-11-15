@@ -42,8 +42,8 @@ if ($notice === 'saved') {
 }
 if (admin_actor_is_owner($adminActor)) {
     admin_panel_open(admin_t('Public website', 'الموقع العام'), admin_t(
-        'Maintenance stops the whole customer product (dashboard, HR, campaigns). Only /admin stays open. Disabling public site (without maintenance) blocks landing and registration only.',
-        'الصيانة توقف كل منتج العميل (لوحة التحكم، HR، الحملات). يبقى /admin فقط. إيقاف الموقع العام (بدون صيانة) يغلق الصفحة الرئيسية والتسجيل فقط.'
+        'Applies to the marketing homepage (/) and registration pages. Customer dashboard, HR, and /admin stay available.',
+        'يُطبَّق على الصفحة الرئيسية (/) وصفحات التسجيل. لوحة العملاء وHR و/admin تبقى متاحة.'
     ));
     echo '<section class="stats"><article class="stat"><b><span class="pill ' . ($publicOn ? 'ok' : 'bad') . '">' . admin_h($publicOn ? admin_t('On', 'مفعّل') : admin_t('Off', 'معطّل')) . '</span></b><span>' . admin_h(admin_t('Public site', 'الموقع العام')) . '</span></article>';
     echo '<article class="stat"><b><span class="pill ' . ($maintOn ? 'warn' : 'ok') . '">' . admin_h($maintOn ? admin_t('On', 'مفعّل') : admin_t('Off', 'معطّل')) . '</span></b><span>' . admin_h(admin_t('Maintenance', 'الصيانة')) . '</span></article></section>';

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
+require_once dirname(__DIR__) . '/app/payment/commerce.php';
 
 admin_require_permission('finance.view');
 
@@ -56,12 +57,19 @@ $filterLinks = [
 
 $mrrCatalog = (float) $pdo->query("SELECT COALESCE(SUM(p.price_sar),0) FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.status = 'active' AND s.period_end >= NOW() AND p.code <> 'free'")->fetchColumn();
 $activeSubs = (int) $pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status = 'active' AND period_end >= NOW()")->fetchColumn();
+$refundedHalalas = rateb_refunds_sum_halalas($pdo, $start, $end);
+$netHalalas = max(0, $collected - $refundedHalalas);
+$stalePending = 0;
+if ($hasOrders) {
+    $stalePending = (int) $pdo->query("SELECT COUNT(*) FROM payment_orders WHERE status = 'pending' AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)")->fetchColumn();
+}
 
 admin_start(admin_t('Financial management', 'الإدارة المالية'));
 $financeToolbar = [
     ['href' => '/admin/payments.php', 'label' => admin_t('All receipts', 'كل الإيصالات')],
     ['href' => '/admin/subscriptions.php', 'label' => admin_t('Manage subscriptions', 'إدارة الاشتراكات')],
     ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات')],
+    ['href' => '/admin/refunds.php', 'label' => admin_t('Refunds', 'الاستردادات')],
 ];
 if (admin_actor_has($adminActor, 'finance.export')) {
     $rangeKey = (string) ($range['key'] ?? '30');
@@ -120,16 +128,19 @@ if ($tab === 'overview') {
     echo '<article class="stat"><b>' . (int) $paidCount . '</b><span>' . admin_h(admin_t('Successful receipts', 'إيصالات ناجحة')) . '</span></article>';
     echo '<article class="stat"><b>' . (int) $pendingCount . ' · ' . admin_h(admin_halalas_to_sar($pendingHalalas)) . ' SAR</b><span>' . admin_h(admin_t('Pending orders', 'طلبات معلّقة')) . '</span></article>';
     echo '<article class="stat"><b>' . (int) $failedCount . ' · ' . admin_h(admin_halalas_to_sar($failedHalalas)) . ' SAR</b><span>' . admin_h(admin_t('Failed orders', 'طلبات فاشلة')) . '</span></article>';
-    echo '<article class="stat"><b>' . admin_h(admin_t('Unavailable', 'غير متاح')) . '</b><span>' . admin_h(admin_t('Refunded amount', 'مبلغ مسترد')) . '</span></article>';
-    echo '<article class="stat"><b>' . admin_h(admin_t('Unavailable', 'غير متاح')) . '</b><span>' . admin_h(admin_t('Net revenue', 'صافي الإيراد')) . '</span></article>';
+    echo '<article class="stat"><b>' . admin_h(admin_halalas_to_sar($refundedHalalas)) . ' SAR</b><span>' . admin_h(admin_t('Refunded amount', 'مبلغ مسترد')) . '</span></article>';
+    echo '<article class="stat"><b>' . admin_h(admin_halalas_to_sar($netHalalas)) . ' SAR</b><span>' . admin_h(admin_t('Net revenue', 'صافي الإيراد')) . '</span></article>';
+    if ($stalePending > 0) {
+        echo '<article class="stat"><b>' . (int) $stalePending . '</b><span>' . admin_h(admin_t('Pending &gt; 24h (review)', 'معلّق &gt; ٢٤ ساعة')) . '</span></article>';
+    }
     echo '<article class="stat"><b>' . admin_h(number_format($mrrCatalog, 2, '.', '')) . ' SAR</b><span>' . admin_h(admin_t('Catalog MRR (active paid plans)', 'MRR كتالوج (باقات مدفوعة نشطة)')) . '</span></article>';
     echo '<article class="stat"><b>' . (int) $activeSubs . '</b><span>' . admin_h(admin_t('Active subscriptions', 'اشتراكات نشطة')) . '</span></article>';
     echo '</section>';
     admin_panel_close();
 
     echo '<p class="note">' . admin_h(admin_t(
-        'Collected amounts come only from payment_receipts (unique moyasar_id). Pending and failed rows use payment_orders and are not revenue. Currency is SAR; amounts are stored in halalas. Refunds are not stored, so refunded and net figures stay unavailable.',
-        'المبالغ المحصّلة من payment_receipts فقط (moyasar_id فريد). المعلّق والفاشل من payment_orders وليست إيرادًا. العملة ريال والمخزن بالهللة. الاسترداد غير مخزّن، لذا المسترد والصافي غير متاحين.'
+        'Net revenue is collected minus refunds recorded in payment_refunds. Stale pending orders older than 24 hours should be checked in Moyasar.',
+        'صافي الإيراد = المحصّل ناقص الاستردادات في payment_refunds. راجع الطلبات المعلّقة أكثر من ٢٤ ساعة في Moyasar.'
     )) . '</p>';
 
     echo '<p class="export-links"><a class="btn" href="' . admin_h($exportBase . (str_contains($exportBase, '?') ? '&' : '?') . 'export=summary') . '">' . admin_h(admin_t('Export summary CSV', 'تصدير ملخص CSV')) . '</a> ';
@@ -358,6 +369,12 @@ if ($tab === 'reconcile' && $hasOrders) {
         'Pending/failed orders with optional matching receipt. Receipt rows remain the revenue source of truth.',
         'طلبات معلّقة/فاشلة مع إيصال مطابق إن وُجد. الإيصالات هي مصدر الإيراد.'
     ));
+    if ($stalePending > 0) {
+        echo '<p class="flash warn">' . admin_h(admin_t(
+            (string) $stalePending . ' pending orders are older than 24 hours — review in Moyasar.',
+            (string) $stalePending . ' طلبًا معلّقًا منذ أكثر من ٢٤ ساعة — راجعها في Moyasar.'
+        )) . '</p>';
+    }
     admin_table_open();
     echo '<tr><th>' . admin_h(admin_t('Order', 'طلب')) . '</th><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Moyasar invoice', 'فاتورة')) . '</th><th>' . admin_h(admin_t('Receipt match', 'إيصال مطابق')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
     foreach ($reconcileRows as $row) {

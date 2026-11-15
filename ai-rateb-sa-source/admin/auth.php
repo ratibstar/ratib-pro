@@ -167,6 +167,7 @@ function admin_nav_items(): array
         ['permission' => 'campaigns.view', 'group' => 'content', 'href' => '/admin/campaigns.php', 'en' => 'Campaigns', 'ar' => 'الحملات'],
         ['permission' => 'finance.view', 'group' => 'finance', 'href' => '/admin/finance.php', 'en' => 'Financial overview', 'ar' => 'الإدارة المالية'],
         ['permission' => 'finance.view', 'group' => 'finance', 'href' => '/admin/finance.php?tab=reconcile', 'en' => 'Payment reconciliation', 'ar' => 'مطابقة المدفوعات'],
+        ['permission' => 'finance.view', 'group' => 'finance', 'href' => '/admin/refunds.php', 'en' => 'Refunds', 'ar' => 'الاستردادات'],
         ['permission' => 'finance.view', 'group' => 'finance', 'href' => '/admin/payments.php', 'en' => 'Payments', 'ar' => 'المدفوعات'],
         ['permission' => 'finance.view', 'group' => 'finance', 'href' => '/admin/subscriptions.php', 'en' => 'Subscriptions', 'ar' => 'الاشتراكات'],
         ['permission' => 'finance.view', 'group' => 'finance', 'href' => '/admin/plans.php', 'en' => 'Plans & packages', 'ar' => 'الباقات والخطط'],

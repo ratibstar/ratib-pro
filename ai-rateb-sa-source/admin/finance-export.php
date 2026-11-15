@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
+require_once dirname(__DIR__) . '/app/payment/commerce.php';
 
 admin_require_permission('finance.export');
 
@@ -59,8 +60,10 @@ if ($export === 'summary') {
         echo admin_csv_row(['pending_sar', admin_halalas_to_sar($pendingHalalas), $start, $end, '']);
         echo admin_csv_row(['failed_orders', (string) $failedCount, $start, $end, 'not revenue']);
         echo admin_csv_row(['failed_sar', admin_halalas_to_sar($failedHalalas), $start, $end, '']);
-        echo admin_csv_row(['refunded_sar', admin_t('Unavailable', 'غير متاح'), $start, $end, 'no refund table']);
-        echo admin_csv_row(['net_sar', admin_t('Unavailable', 'غير متاح'), $start, $end, 'refunds not verified']);
+        $refunded = rateb_refunds_sum_halalas($pdo, $start, $end);
+        $net = max(0, (int) $receiptAgg['halalas'] - $refunded);
+        echo admin_csv_row(['refunded_sar', admin_halalas_to_sar($refunded), $start, $end, 'payment_refunds']);
+        echo admin_csv_row(['net_sar', admin_halalas_to_sar($net), $start, $end, 'collected minus refunds']);
         echo admin_csv_row(['range_key', $range['key'], $range['from'], $range['to'], '']);
     });
 }

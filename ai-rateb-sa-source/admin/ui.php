@@ -91,6 +91,7 @@ function admin_nav_glyph(string $href): string
         '/admin/finance-customer.php' => '◆',
         '/admin/hr-customer.php' => '◈',
         '/admin/payments.php' => '◇',
+        '/admin/refunds.php' => '◇',
         '/admin/campaigns.php' => '▤',
         '/admin/media.php' => '▥',
         '/admin/subscriptions.php' => '▧',

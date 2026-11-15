@@ -4,6 +4,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../schema.php';
 require_once __DIR__ . '/../plans.php';
+require_once __DIR__ . '/commerce.php';
+require_once __DIR__ . '/../notify/events.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -49,6 +51,12 @@ if ($http !== 200 || !is_array($payment) || (string) ($payment['id'] ?? '') !== 
 $pdo = db();
 ensure_campaign_schema($pdo);
 $status = (string) ($payment['status'] ?? '');
+if ($status === 'refunded') {
+    rateb_refund_from_moyasar_payment($pdo, $payment);
+    http_response_code(200);
+    echo 'refunded';
+    exit;
+}
 if ($status !== 'paid') {
     $meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
     if (in_array($status, ['failed', 'canceled', 'cancelled', 'expired', 'voided'], true)) {
@@ -68,6 +76,18 @@ try {
 if ($result !== 'ok' && $result !== 'duplicate') {
     http_response_code(422);
     exit('Unexpected payment');
+}
+
+if ($result === 'ok') {
+    $meta = is_array($payment['metadata'] ?? null) ? $payment['metadata'] : [];
+    $uid = (int) ($meta['user_id'] ?? 0);
+    $code = (string) ($meta['package'] ?? '');
+    $receiptStmt = $pdo->prepare('SELECT id, amount FROM payment_receipts WHERE moyasar_id = ? LIMIT 1');
+    $receiptStmt->execute([$paymentId]);
+    $receiptRow = $receiptStmt->fetch();
+    if ($receiptRow && $uid > 0) {
+        rateb_notify_payment_paid($pdo, $uid, (int) $receiptRow['id'], $code, (int) $receiptRow['amount']);
+    }
 }
 
 http_response_code(200);

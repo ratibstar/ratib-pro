@@ -60,6 +60,9 @@ function admin_nav_on(string $here, string $href): bool
     if (str_starts_with($href, '/admin/finance-export.php') && str_starts_with($here, '/admin/finance-export.php')) {
         return true;
     }
+    if ($path === '/admin/refunds.php' && $here === '/admin/refunds.php') {
+        return true;
+    }
     if ($path === '/admin/campaigns.php' && str_starts_with($here, '/admin/campaign.php')) {
         return true;
     }
