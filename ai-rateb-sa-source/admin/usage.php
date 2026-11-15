@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
+require_once dirname(__DIR__) . '/app/ai/provider-health.php';
 
 admin_require_permission('operations.view');
 
@@ -39,6 +40,34 @@ foreach (admin_provider_snapshot() as $row) {
     echo '<tr><td>' . admin_h((string) $row['label']) . '</td><td><span class="pill ' . ($row['configured'] ? 'ok' : 'warn') . '">' . admin_h($row['configured'] ? admin_t('Present', 'موجود') : admin_t('Missing', 'غير موجود')) . '</span></td><td>' . admin_h($row['selected'] ? admin_t('Yes', 'نعم') : admin_t('No', 'لا')) . '</td><td>' . admin_h((string) $row['note']) . '</td></tr>';
 }
 admin_table_close();
+
+$usage24 = rateb_health_usage_24h($pdo);
+$videoHealth = rateb_health_video_summary($pdo);
+$wanUrl = trim((string) getenv('RATEB_PRIVATE_VIDEO_URL'));
+$wanTok = trim((string) getenv('RATEB_PRIVATE_VIDEO_TOKEN'));
+$wanProbe = rateb_health_probe_wan($wanUrl, $wanTok);
+
+admin_panel_open(admin_t('Live signals (24h)', 'إشارات حيّة (٢٤ ساعة)'), admin_t(
+    'Recent successful usage rows and optional Wan /health probe. Not a SLA dashboard.',
+    'آخر عمليات ناجحة + فحص Wan اختياري. ليس لوحة اتفاقية مستوى خدمة.'
+));
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Signal', 'إشارة')) . '</th><th>' . admin_h(admin_t('Last success', 'آخر نجاح')) . '</th><th>' . admin_h(admin_t('Count 24h', 'عدد ٢٤ س')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th></tr>';
+foreach ($usage24 as $row) {
+    $ok = (int) $row['count_24h'] > 0;
+    echo '<tr><td>' . admin_h((string) $row['operation']) . '</td><td>' . admin_h((string) ($row['last_at'] ?? '—')) . '</td><td>' . (int) $row['count_24h'] . '</td>';
+    echo '<td><span class="pill ' . ($ok ? 'ok' : 'warn') . '">' . admin_h($ok ? admin_t('Active', 'نشط') : admin_t('Quiet', 'هادئ')) . '</span></td></tr>';
+}
+echo '<tr><td>Wan /health</td><td>—</td><td>—</td><td><span class="pill ' . ($wanProbe['ok'] ? 'ok' : 'warn') . '">' . admin_h($wanProbe['label']) . '</span> ' . admin_h($wanProbe['detail']) . '</td></tr>';
+if ($videoHealth['last_completed']) {
+    echo '<tr><td>video_jobs completed</td><td>' . admin_h((string) $videoHealth['last_completed']) . '</td><td>—</td><td><span class="pill ok">ok</span></td></tr>';
+}
+if ($videoHealth['last_error_code']) {
+    echo '<tr><td>video last error</td><td>' . admin_h((string) $videoHealth['last_error_at']) . '</td><td>—</td><td><span class="pill bad">' . admin_h((string) $videoHealth['last_error_code']) . '</span></td></tr>';
+}
+admin_table_close();
+admin_panel_close();
+
 admin_panel_open(admin_t('Operations', 'العمليات'), admin_t('The credits column below is the raw database sum.', 'عمود النقاط أدناه هو المجموع الخام من قاعدة البيانات.'));
 admin_table_open();
 echo '<tr><th>' . admin_h(admin_t('Operation', 'العملية')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Events', 'العدد')) . '</th><th>' . admin_h(admin_t('Units', 'الوحدات')) . '</th><th>' . admin_h(admin_t('Raw credits column', 'عمود النقاط الخام')) . '</th></tr>';

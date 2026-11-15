@@ -44,6 +44,17 @@ if (commerce_table_has($pdo, 'payment_refunds', 'receipt_id')) {
 }
 
 $ar = ui_language() === 'ar';
+$daysLeft = null;
+$renewCode = (string) $wallet['package_type'];
+if ($subscription && ($subscription['period_end'] ?? '') !== '') {
+    $endTs = strtotime((string) $subscription['period_end']);
+    if ($endTs !== false) {
+        $daysLeft = (int) floor(($endTs - time()) / 86400);
+    }
+    if ((string) $subscription['code'] !== 'free') {
+        $renewCode = (string) $subscription['code'];
+    }
+}
 ?><!doctype html>
 <html lang="<?= $ar ? 'ar' : 'en' ?>" dir="<?= $ar ? 'rtl' : 'ltr' ?>" data-theme="light">
 <head>
@@ -61,9 +72,13 @@ $ar = ui_language() === 'ar';
 <section class="studio-hero" style="padding:20px;margin-bottom:20px">
 <p><?= $ar ? 'الباقة' : 'Plan' ?>: <strong><?= e((string) $wallet['package_type']) ?></strong> · <?= $ar ? 'الرصيد' : 'Credits' ?>: <strong><?= (int) $wallet['credits_balance'] ?></strong></p>
 <?php if ($subscription): ?>
-<p><?= $ar ? 'ينتهي الاشتراك' : 'Period ends' ?>: <?= e((string) $subscription['period_end']) ?></p>
+<p><?= $ar ? 'ينتهي الاشتراك' : 'Period ends' ?>: <?= e((string) $subscription['period_end']) ?>
+<?php if ($daysLeft !== null): ?> · <?= $daysLeft >= 0 ? (($ar ? 'متبقي ' : '') . $daysLeft . ($ar ? ' يوم' : ' days left')) : ($ar ? 'منتهٍ' : 'Expired') ?><?php endif; ?></p>
 <?php endif; ?>
-<p><a class="button" href="/?pricing=1#pricing"><?= $ar ? 'ترقية الباقة' : 'Upgrade plan' ?></a></p>
+<p>
+<a class="button" href="/app/payment/checkout.php?package=<?= rawurlencode(in_array($renewCode, ['starter', 'pro'], true) ? $renewCode : 'starter') ?>"><?= $ar ? 'تجديد / ترقية' : 'Renew / upgrade' ?></a>
+<a class="btn quiet" style="margin-inline-start:8px" href="/credits.php"><?= $ar ? 'كل الباقات' : 'All plans' ?></a>
+</p>
 </section>
 <h2><?= $ar ? 'إيصالات الدفع' : 'Payment receipts' ?></h2>
 <table style="width:100%;border-collapse:collapse">

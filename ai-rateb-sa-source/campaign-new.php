@@ -263,9 +263,9 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
           <b data-i18n="no_attachments"><?= $arabic ? 'ما فيه مرفقات.' : 'No files were attached.' ?></b>
         <?php endif; ?>
       </li>
-      <li data-state="later">
+      <li data-state="open">
         <span data-i18n="read_direction"><?= $arabic ? 'تجهيز اتجاه الحملة' : 'Preparing the campaign direction' ?></span>
-        <b data-i18n="direction_later"><?= $arabic ? 'هذا يجهز لاحقًا.' : 'This comes later.' ?></b>
+        <b data-i18n="direction_next"><?= $arabic ? 'يُكتمل في خطوة الاستراتيجية بعد المتابعة.' : 'Completes in the strategy step after you continue.' ?></b>
       </li>
     </ol>
     <form method="post" action="/campaign-new.php">

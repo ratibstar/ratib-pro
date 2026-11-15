@@ -160,8 +160,8 @@ $stageNames = $arabic
     ? ['idea' => 'الفكرة', 'strategy' => 'الاستراتيجية', 'copy' => 'النص', 'images' => 'الصور', 'voice' => 'الصوت', 'video' => 'الفيديو', 'ready' => 'الحملة الجاهزة']
     : ['idea' => 'Idea', 'strategy' => 'Strategy', 'copy' => 'Copy', 'images' => 'Images', 'voice' => 'Voice', 'video' => 'Video', 'ready' => 'Ready campaign'];
 $stateNames = $arabic
-    ? ['done' => 'مكتملة', 'progress' => 'قيد الإعداد', 'open' => 'جاهزة للبدء', 'next' => 'لاحقًا', 'locked' => 'غير متاحة']
-    : ['done' => 'Done', 'progress' => 'In progress', 'open' => 'Ready to start', 'next' => 'Later', 'locked' => 'Not available'];
+    ? ['done' => 'مكتملة', 'progress' => 'قيد الإعداد', 'open' => 'جاهزة للبدء', 'next' => 'الخطوة التالية', 'locked' => 'غير متاحة']
+    : ['done' => 'Done', 'progress' => 'In progress', 'open' => 'Ready to start', 'next' => 'Next step', 'locked' => 'Not available'];
 $stateKeys = ['done' => 'state_done', 'progress' => 'state_progress', 'open' => 'state_open', 'next' => 'state_next', 'locked' => 'state_locked'];
 $briefRows = [];
 if ($product !== '') {
