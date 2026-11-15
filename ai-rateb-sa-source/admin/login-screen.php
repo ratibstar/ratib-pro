@@ -23,7 +23,9 @@ function admin_staff_login_screen(object $pdo): void
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         verify_csrf();
-        $result = admin_staff_authenticate($pdo, (string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''));
+        $emailRaw = (string) ($_POST['email'] ?? '');
+        $password = (string) ($_POST['password'] ?? '');
+        $result = admin_staff_authenticate($pdo, $emailRaw, $password);
         if ($result['ok']) {
             admin_staff_login_session($result['staff']);
             admin_staff_touch_login($pdo, (int) $result['staff']['id']);
@@ -35,9 +37,20 @@ function admin_staff_login_screen(object $pdo): void
             header('Location: /admin');
             exit;
         }
-        $message = match ($result['code']) {
-            'disabled' => $adminLang === 'ar' ? 'الحساب معطّل.' : 'This staff account is disabled.',
+        $owner = admin_owner_authenticate($pdo, $emailRaw, $password);
+        if ($owner['ok']) {
+            admin_owner_login_session($owner['user']);
+            require_once dirname(__DIR__) . '/app/auth/account-state.php';
+            rateb_stamp_login($pdo, (int) $owner['user']['id']);
+            header('Location: /admin');
+            exit;
+        }
+        $failCode = $owner['code'] !== 'invalid' ? $owner['code'] : $result['code'];
+        $message = match ($failCode) {
+            'disabled' => $adminLang === 'ar' ? 'الحساب معطّل.' : 'This account is disabled.',
             'schema' => $adminLang === 'ar' ? 'الترحيل غير مطبّق.' : 'Staff schema is not applied.',
+            'customer' => $adminLang === 'ar' ? 'حساب العميل لا يدخل من هنا — استخدم حساب المالك أو موظف.' : 'Customer accounts cannot use this console.',
+            'owner' => $adminLang === 'ar' ? 'حساب المالك يستخدم البريد الكامل (مثل admin@rateb.sa).' : 'Owners must use the full email (e.g. admin@rateb.sa).',
             default => $adminLang === 'ar' ? 'بيانات الدخول غير صحيحة.' : 'Invalid login.',
         };
     }
@@ -67,7 +80,7 @@ function admin_staff_login_screen(object $pdo): void
         <?php if ($message !== ''): ?><p class="flash bad"><?= $h($message) ?></p><?php endif; ?>
         <form class="stack" method="post" action="/admin">
             <input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>">
-            <label><?= $h($t('Email', 'البريد')) ?><input type="email" name="email" required autocomplete="username"></label>
+            <label><?= $h($t('Email or username', 'البريد أو اسم المستخدم')) ?><input type="text" name="email" required autocomplete="username" inputmode="email" placeholder="admin@rateb.sa"></label>
             <label><?= $h($t('Password', 'كلمة المرور')) ?><input type="password" name="password" required autocomplete="current-password"></label>
             <button type="submit" class="btn primary" style="width:100%"><?= $h($t('Sign in', 'دخول')) ?></button>
         </form>

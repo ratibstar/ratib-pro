@@ -262,9 +262,59 @@ function admin_nav_groups_for_actor(array $actor, string $lang): array
     return $out;
 }
 
-function admin_staff_authenticate(object $pdo, string $email, string $password): array
+function admin_normalize_login_email(string $email): string
 {
     $email = strtolower(trim($email));
+    if ($email !== '' && !str_contains($email, '@')) {
+        $email .= '@rateb.sa';
+    }
+    return $email;
+}
+
+/**
+ * @return array{ok:bool,code:string,user?:array{id:int,name:string,email:string,role:string}}
+ */
+function admin_owner_authenticate(object $pdo, string $email, string $password): array
+{
+    $email = admin_normalize_login_email($email);
+    if ($email === '' || $password === '') {
+        return ['ok' => false, 'code' => 'invalid'];
+    }
+    $stmt = $pdo->prepare('SELECT id, name, email, password_hash, role FROM users WHERE email = ? LIMIT 1');
+    $stmt->execute([$email]);
+    $user = $stmt->fetch();
+    if (!$user || !password_verify($password, (string) $user['password_hash'])) {
+        return ['ok' => false, 'code' => 'invalid'];
+    }
+    require_once dirname(__DIR__) . '/app/auth/account-state.php';
+    if (rateb_user_is_disabled($pdo, (int) $user['id'])) {
+        return ['ok' => false, 'code' => 'disabled'];
+    }
+    if ((string) ($user['role'] ?? '') !== 'owner') {
+        return ['ok' => false, 'code' => 'customer'];
+    }
+    return [
+        'ok' => true,
+        'code' => 'applied',
+        'user' => [
+            'id' => (int) $user['id'],
+            'name' => (string) $user['name'],
+            'email' => (string) $user['email'],
+            'role' => (string) $user['role'],
+        ],
+    ];
+}
+
+function admin_owner_login_session(array $user): void
+{
+    session_regenerate_id(true);
+    unset($_SESSION['admin_staff_id']);
+    $_SESSION['user_id'] = (int) $user['id'];
+}
+
+function admin_staff_authenticate(object $pdo, string $email, string $password): array
+{
+    $email = admin_normalize_login_email($email);
     if ($email === '' || $password === '') {
         return ['ok' => false, 'code' => 'invalid'];
     }
