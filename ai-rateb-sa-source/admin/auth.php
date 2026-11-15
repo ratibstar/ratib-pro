@@ -84,22 +84,30 @@ function admin_session_has_dual_identity(): bool
     return !empty($_SESSION['user_id']) && !empty($_SESSION['admin_staff_id']);
 }
 
-function admin_invalidate_dual_admin_session(): void
+function admin_clear_dual_identity(): void
 {
     if (!admin_session_has_dual_identity()) {
         return;
     }
     unset($_SESSION['admin_staff_id'], $_SESSION['user_id']);
-    header('Location: /admin/login.php');
+}
+
+function admin_invalidate_dual_admin_session(): void
+{
+    if (!admin_session_has_dual_identity()) {
+        return;
+    }
+    admin_clear_dual_identity();
+    header('Location: /admin');
     exit;
 }
 
 /**
- * @return array{type:string,user_id?:int,staff_id?:int,email:string,name:string,role_code:string,permissions:list<string>}
+ * @return array{type:string,user_id?:int,staff_id?:int,email:string,name:string,role_code:string,permissions:list<string>}|null
  */
-function require_admin_access(object $pdo): array
+function resolve_admin_actor(object $pdo): ?array
 {
-    admin_invalidate_dual_admin_session();
+    admin_clear_dual_identity();
 
     if (!empty($_SESSION['admin_staff_id']) && admin_table_has($pdo, 'admin_staff', 'id')) {
         $stmt = $pdo->prepare("SELECT id, email, name, role_code, status FROM admin_staff WHERE id = ? LIMIT 1");
@@ -107,13 +115,11 @@ function require_admin_access(object $pdo): array
         $staff = $stmt->fetch();
         if (!$staff || (string) $staff['status'] !== 'active') {
             unset($_SESSION['admin_staff_id']);
-            header('Location: /admin/login.php');
-            exit;
+            return null;
         }
         if ((string) $staff['role_code'] === 'owner') {
             unset($_SESSION['admin_staff_id']);
-            header('Location: /admin/login.php');
-            exit;
+            return null;
         }
         return admin_actor_from_staff($staff);
     }
@@ -136,8 +142,20 @@ function require_admin_access(object $pdo): array
         }
     }
 
-    header('Location: /admin/login.php');
-    exit;
+    return null;
+}
+
+/**
+ * @return array{type:string,user_id?:int,staff_id?:int,email:string,name:string,role_code:string,permissions:list<string>}
+ */
+function require_admin_access(object $pdo): array
+{
+    $actor = resolve_admin_actor($pdo);
+    if ($actor === null) {
+        header('Location: /admin');
+        exit;
+    }
+    return $actor;
 }
 
 /** @return array{id:int,email:string,name:string,role:string} */

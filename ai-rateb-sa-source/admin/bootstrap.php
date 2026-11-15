@@ -7,7 +7,9 @@ require __DIR__ . '/lib.php';
 require __DIR__ . '/ui.php';
 require __DIR__ . '/auth.php';
 
-$adminActor = require_admin_access($pdo);
+if (!isset($adminActor)) {
+    $adminActor = require_admin_access($pdo);
+}
 $adminUser = admin_actor_legacy_user($adminActor);
 $adminLang = (($_COOKIE['rateb_admin_lang'] ?? '') === 'en') ? 'en' : 'ar';
 

@@ -1,6 +1,16 @@
 <?php
 declare(strict_types=1);
 
+require dirname(__DIR__) . '/config/bootstrap.php';
+require __DIR__ . '/auth.php';
+
+$adminActor = resolve_admin_actor($pdo);
+if ($adminActor === null) {
+    require __DIR__ . '/login.php';
+    admin_staff_login_screen($pdo);
+    exit;
+}
+
 require __DIR__ . '/bootstrap.php';
 
 admin_require_permission('dashboard.view');
