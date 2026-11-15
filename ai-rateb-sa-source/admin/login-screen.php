@@ -22,37 +22,47 @@ function admin_staff_login_screen(object $pdo): void
     $message = '';
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        verify_csrf();
-        $emailRaw = (string) ($_POST['email'] ?? '');
-        $password = (string) ($_POST['password'] ?? '');
-        $result = admin_staff_authenticate($pdo, $emailRaw, $password);
-        if ($result['ok']) {
-            admin_staff_login_session($result['staff']);
-            admin_staff_touch_login($pdo, (int) $result['staff']['id']);
-            if (admin_table_has($pdo, 'admin_audit_log', 'id')) {
-                require_once __DIR__ . '/lib.php';
-                $actor = admin_actor_from_staff($result['staff']);
-                admin_audit($pdo, $actor, 'staff_login', 'staff', (int) $result['staff']['id'], '', '');
+        try {
+            verify_csrf();
+            $emailRaw = (string) ($_POST['email'] ?? '');
+            $password = (string) ($_POST['password'] ?? '');
+            $result = admin_staff_authenticate($pdo, $emailRaw, $password);
+            if ($result['ok']) {
+                admin_staff_login_session($result['staff']);
+                admin_staff_touch_login($pdo, (int) $result['staff']['id']);
+                if (admin_table_has($pdo, 'admin_audit_log', 'id')) {
+                    require_once __DIR__ . '/lib.php';
+                    $actor = admin_actor_from_staff($result['staff']);
+                    admin_audit($pdo, $actor, 'staff_login', 'staff', (int) $result['staff']['id'], '', '');
+                }
+                header('Location: /admin');
+                exit;
             }
-            header('Location: /admin');
-            exit;
+            $owner = ['ok' => false, 'code' => 'invalid'];
+            if (function_exists('admin_owner_authenticate')) {
+                $owner = admin_owner_authenticate($pdo, $emailRaw, $password);
+            }
+            if ($owner['ok']) {
+                admin_owner_login_session($owner['user']);
+                if (function_exists('rateb_stamp_login')) {
+                    rateb_stamp_login($pdo, (int) $owner['user']['id']);
+                }
+                header('Location: /admin');
+                exit;
+            }
+            $failCode = $owner['code'] !== 'invalid' ? $owner['code'] : $result['code'];
+            $message = match ($failCode) {
+                'disabled' => $adminLang === 'ar' ? 'الحساب معطّل.' : 'This account is disabled.',
+                'schema' => $adminLang === 'ar' ? 'الترحيل غير مطبّق.' : 'Staff schema is not applied.',
+                'customer' => $adminLang === 'ar' ? 'حساب العميل لا يدخل من هنا — استخدم حساب المالك أو موظف.' : 'Customer accounts cannot use this console.',
+                'owner' => $adminLang === 'ar' ? 'حساب المالك يستخدم البريد الكامل (مثل admin@rateb.sa).' : 'Owners must use the full email (e.g. admin@rateb.sa).',
+                default => $adminLang === 'ar' ? 'بيانات الدخول غير صحيحة.' : 'Invalid login.',
+            };
+        } catch (Throwable) {
+            $message = $adminLang === 'ar'
+                ? 'تعذّر تسجيل الدخول مؤقتًا. حدّث الصفحة وحاول مرة أخرى.'
+                : 'Sign-in failed temporarily. Refresh the page and try again.';
         }
-        $owner = admin_owner_authenticate($pdo, $emailRaw, $password);
-        if ($owner['ok']) {
-            admin_owner_login_session($owner['user']);
-            require_once dirname(__DIR__) . '/app/auth/account-state.php';
-            rateb_stamp_login($pdo, (int) $owner['user']['id']);
-            header('Location: /admin');
-            exit;
-        }
-        $failCode = $owner['code'] !== 'invalid' ? $owner['code'] : $result['code'];
-        $message = match ($failCode) {
-            'disabled' => $adminLang === 'ar' ? 'الحساب معطّل.' : 'This account is disabled.',
-            'schema' => $adminLang === 'ar' ? 'الترحيل غير مطبّق.' : 'Staff schema is not applied.',
-            'customer' => $adminLang === 'ar' ? 'حساب العميل لا يدخل من هنا — استخدم حساب المالك أو موظف.' : 'Customer accounts cannot use this console.',
-            'owner' => $adminLang === 'ar' ? 'حساب المالك يستخدم البريد الكامل (مثل admin@rateb.sa).' : 'Owners must use the full email (e.g. admin@rateb.sa).',
-            default => $adminLang === 'ar' ? 'بيانات الدخول غير صحيحة.' : 'Invalid login.',
-        };
     }
 
     $h = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
