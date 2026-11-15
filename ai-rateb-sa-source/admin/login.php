@@ -64,11 +64,12 @@ $t = static fn (string $en, string $ar): string => $adminLang === 'ar' ? $ar : $
     <div class="login-card">
         <p class="login-brand">RATEB <span style="color:var(--cyan)">AI</span></p>
         <h1><?= admin_login_h($t('Staff sign-in', 'دخول الموظفين')) ?></h1>
-        <p class="note"><?= admin_login_h($t('Owner accounts use the main site login.', 'حساب المالك يستخدم تسجيل الدخول الرئيسي للموقع.')) ?></p>
+        <p class="note"><?= admin_login_h($t('Platform staff only (finance, support). Not for the site owner.', 'لموظفي المنصة فقط (مالية، دعم). ليس لحساب مالك الموقع.')) ?></p>
+        <p class="note"><a href="/login?next=/admin/"><?= admin_login_h($t('Site owner? Sign in here →', 'مالك الموقع؟ سجّل الدخول من هنا ←')) ?></a></p>
         <?php if ($message !== ''): ?><p class="flash bad"><?= admin_login_h($message) ?></p><?php endif; ?>
         <form class="stack" method="post" action="/admin/login.php">
             <input type="hidden" name="csrf_token" value="<?= admin_login_h(csrf_token()) ?>">
-            <label><?= admin_login_h($t('Email', 'البريد')) ?><input type="email" name="email" required autocomplete="username"></label>
+            <label><?= admin_login_h($t('Staff email', 'بريد الموظف')) ?><input type="email" name="email" required autocomplete="username" placeholder="finance@rateb.sa"></label>
             <label><?= admin_login_h($t('Password', 'كلمة المرور')) ?><input type="password" name="password" required autocomplete="current-password"></label>
             <button type="submit" class="btn primary" style="width:100%"><?= admin_login_h($t('Sign in', 'دخول')) ?></button>
         </form>

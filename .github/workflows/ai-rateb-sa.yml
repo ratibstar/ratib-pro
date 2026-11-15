@@ -176,6 +176,12 @@ jobs:
             "admin/usage.php"
             "admin/refunds.php"
             "admin/finance.php"
+            "admin/login.php"
+            "admin/auth.php"
+            "admin/bootstrap.php"
+            "admin/index.php"
+            "migrations/admin_staff_schema.php"
+            "cli/apply-admin-staff-schema.php"
             "cli/notify-subscription-reminders.php"
             "cli/reconcile-pending-payments.php"
             "cli/enforce-subscription-expiry.php"
@@ -283,7 +289,7 @@ jobs:
           scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${RUNNER_TEMP}/ai-build.txt" "${REMOTE}:${TARGET}/public/ai-build.txt"
           echo "BUILD_MARKER=public/ai-build.txt"
-          SCHEMA_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/apply-commerce-schema.php" 2>&1)" || true
+          SCHEMA_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/apply-commerce-schema.php && php cli/apply-admin-staff-schema.php" 2>&1)" || true
           echo "$SCHEMA_OUT"
           COMMERCE_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/run-commerce-now.php" 2>&1)" || true
           echo "$COMMERCE_OUT"
