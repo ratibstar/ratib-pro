@@ -7,7 +7,7 @@ require __DIR__ . '/lib.php';
 
 $adminActor = resolve_admin_actor($pdo);
 if ($adminActor === null) {
-    require __DIR__ . '/login.php';
+    require_once __DIR__ . '/login-screen.php';
     admin_staff_login_screen($pdo);
     exit;
 }

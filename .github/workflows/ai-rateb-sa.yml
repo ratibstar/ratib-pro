@@ -157,6 +157,7 @@ jobs:
             "admin/bootstrap.php"
             "admin/auth.php"
             "admin/login.php"
+            "admin/login-screen.php"
             "admin/ui.php"
             "admin/lib.php"
             "admin/admin.css"
