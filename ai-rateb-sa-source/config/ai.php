@@ -21,4 +21,5 @@ return [
     'horde_api_key' => trim((string) (getenv('HORDE_API_KEY') ?: ($local['horde_api_key'] ?? ''))),
     'sawtak_api_key' => trim((string) (getenv('SAWTAK_API_KEY') ?: ($local['sawtak_api_key'] ?? ''))),
     'moyasar_secret_key' => trim((string) (getenv('MOYASAR_SECRET_KEY') ?: ($local['moyasar_secret_key'] ?? ''))),
+    'moyasar_webhook_secret' => trim((string) (getenv('MOYASAR_WEBHOOK_SECRET') ?: ($local['moyasar_webhook_secret'] ?? ''))),
 ];

@@ -6,6 +6,7 @@ require __DIR__ . '/app/nav.php';
 $user = current_user($pdo);
 $campaigns = [];
 if ($user) {
+    rateb_user_plan($pdo, (int) $user['id']);
 $stmt = $pdo->prepare('SELECT id, title, product_name, status, created_at FROM campaigns WHERE user_id = ? ORDER BY id DESC LIMIT 20');
 $stmt->execute([$user['id']]);
 $campaigns = $stmt->fetchAll();

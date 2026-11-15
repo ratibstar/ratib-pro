@@ -1,0 +1,3 @@
+.phase0-staging/
+storage/*.log
+!storage/.gitkeep
