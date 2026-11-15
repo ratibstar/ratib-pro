@@ -6,3 +6,6 @@
 
 # Every 15 minutes — catch delayed Moyasar webhooks
 # */15 * * * * cd /home/admin/domains/ai.rateb.sa && php cli/reconcile-pending-payments.php 7
+
+# Hourly — downgrade expired paid subscriptions to free (limits only; credits kept)
+# 0 * * * * cd /home/admin/domains/ai.rateb.sa && php cli/enforce-subscription-expiry.php 120

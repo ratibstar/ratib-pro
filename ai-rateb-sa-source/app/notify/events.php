@@ -69,6 +69,29 @@ function rateb_notify_low_credits(PDO $pdo, int $userId, int $balance): void
     rateb_mail_send($pdo, (string) $user['email'], $subject, $body, 'low_credits', $userId, 'balance:' . $balance);
 }
 
+function rateb_notify_subscription_expired(PDO $pdo, int $userId, string $planCode, string $periodEnd): void
+{
+    $meta = 'expired:' . $planCode . ':' . $periodEnd;
+    $dedup = $pdo->prepare('SELECT id FROM outbound_email_log WHERE user_id = ? AND template_key = ? AND meta = ? LIMIT 1');
+    $dedup->execute([$userId, 'subscription_expired', $meta]);
+    if ($dedup->fetchColumn()) {
+        return;
+    }
+    $stmt = $pdo->prepare('SELECT name, email FROM users WHERE id = ? LIMIT 1');
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch();
+    if (!$user) {
+        return;
+    }
+    $link = 'https://ai.rateb.sa/credits.php';
+    $ar = rateb_user_lang($user) === 'ar';
+    $subject = $ar ? 'RATEB AI — انتهى اشتراكك' : 'RATEB AI — Subscription ended';
+    $body = $ar
+        ? "مرحباً {$user['name']},\n\nانتهت باقتك ({$planCode}) في {$periodEnd}. أصبحت حدودك الآن باقة free — رصيد النقاط المتبقي ما زال في حسابك.\nجدد من: {$link}\n"
+        : "Hi {$user['name']},\n\nYour plan ({$planCode}) ended on {$periodEnd}. Your limits are now on the free plan — remaining credits stay in your account.\nRenew at: {$link}\n";
+    rateb_mail_send($pdo, (string) $user['email'], $subject, $body, 'subscription_expired', $userId, $meta);
+}
+
 function rateb_notify_subscription_ending(PDO $pdo, int $userId, string $planCode, string $periodEnd): void
 {
     $stmt = $pdo->prepare('SELECT name, email FROM users WHERE id = ? LIMIT 1');

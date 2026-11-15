@@ -167,6 +167,8 @@ jobs:
             "admin/finance.php"
             "cli/notify-subscription-reminders.php"
             "cli/reconcile-pending-payments.php"
+            "cli/enforce-subscription-expiry.php"
+            "app/notify/events.php"
             "config/guard.php"
             "app/brand/library.php"
             "app/nav.php"

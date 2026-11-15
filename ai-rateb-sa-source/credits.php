@@ -6,8 +6,10 @@ require_once __DIR__ . '/app/plans.php';
 require_once __DIR__ . '/app/nav.php';
 require_login();
 
+$userId = (int) $_SESSION['user_id'];
+rateb_user_plan($pdo, $userId);
 $ar = ui_language() === 'ar';
-$wallet = rateb_account_credits($pdo, (int) $_SESSION['user_id']);
+$wallet = rateb_account_credits($pdo, $userId);
 $packages = [];
 foreach (['starter', 'pro'] as $code) {
     $pkg = rateb_paid_package($code);

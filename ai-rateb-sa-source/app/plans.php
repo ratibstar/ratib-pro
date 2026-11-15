@@ -61,6 +61,13 @@ function rateb_lock_plan(PDO $pdo, int $userId): array
         FOR UPDATE");
     $stmt->execute([$userId]);
     $plan = $stmt->fetch();
+    if ($plan && rateb_subscription_must_downgrade($plan)) {
+        $formerCode = (string) $plan['code'];
+        $formerEnd = (string) $plan['period_end'];
+        rateb_subscription_apply_free_entitlement($pdo, $userId, (int) $plan['subscription_id'], $formerCode, $formerEnd);
+        $stmt->execute([$userId]);
+        $plan = $stmt->fetch();
+    }
     if ($plan) {
         return $plan;
     }
@@ -113,6 +120,78 @@ function rateb_subscription_current(array $plan, int $now): bool
         return true;
     }
     return $end >= $now;
+}
+
+function rateb_subscription_must_downgrade(array $plan, ?int $now = null): bool
+{
+    $code = (string) ($plan['code'] ?? 'free');
+    if ($code === 'free' || rateb_video_is_free($plan)) {
+        return false;
+    }
+    return !rateb_subscription_current($plan, $now ?? time());
+}
+
+/** Downgrade expired paid entitlement to free limits; credits_balance is untouched. */
+function rateb_subscription_apply_free_entitlement(PDO $pdo, int $userId, int $subscriptionId, string $formerCode, string $formerPeriodEnd, bool $notify = true): void
+{
+    if ($userId < 1 || $subscriptionId < 1) {
+        return;
+    }
+    $freeId = (int) $pdo->query("SELECT id FROM plans WHERE code = 'free' LIMIT 1")->fetchColumn();
+    if ($freeId < 1) {
+        throw new RuntimeException('Missing free plan');
+    }
+    $start = date('Y-m-d H:i:s');
+    $end = date('Y-m-d H:i:s', strtotime('+1 month'));
+    $pdo->prepare('UPDATE subscriptions SET plan_id = ?, status = ?, period_start = ?, period_end = ? WHERE id = ? AND user_id = ?')
+        ->execute([$freeId, 'active', $start, $end, $subscriptionId, $userId]);
+    $pdo->prepare("UPDATE users SET package_type = 'free', subscription_expires_at = ? WHERE id = ?")
+        ->execute([$end, $userId]);
+    try {
+        $pdo->prepare("INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, NULL, 'subscription_expired', 1, 'completed', 'subscription_expired', 0, ?)")
+            ->execute([$userId, 'sub_exp:' . $subscriptionId . ':' . $formerPeriodEnd]);
+    } catch (Throwable) {
+        // audit row is best-effort
+    }
+    if ($notify && $formerCode !== '' && $formerCode !== 'free') {
+        $notifyFile = __DIR__ . '/notify/events.php';
+        if (is_file($notifyFile)) {
+            require_once $notifyFile;
+            rateb_notify_subscription_expired($pdo, $userId, $formerCode, $formerPeriodEnd);
+        }
+    }
+}
+
+/** @return array{scanned:int,downgraded:int} */
+function rateb_subscription_expire_due_batch(PDO $pdo, int $limit = 80): array
+{
+    $limit = max(1, min(500, $limit));
+    $rows = $pdo->query("SELECT s.id AS subscription_id, s.user_id, s.period_end, p.code
+        FROM subscriptions s
+        INNER JOIN plans p ON p.id = s.plan_id
+        WHERE s.status = 'active' AND p.code <> 'free' AND p.price_sar > 0 AND s.period_end < NOW()
+        ORDER BY s.period_end ASC
+        LIMIT {$limit}")->fetchAll();
+    $downgraded = 0;
+    foreach ($rows as $row) {
+        $userId = (int) $row['user_id'];
+        $owned = !$pdo->inTransaction();
+        if ($owned) {
+            $pdo->beginTransaction();
+        }
+        try {
+            rateb_lock_plan($pdo, $userId);
+            if ($owned) {
+                $pdo->commit();
+            }
+            $downgraded++;
+        } catch (Throwable) {
+            if ($owned && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+        }
+    }
+    return ['scanned' => count($rows), 'downgraded' => $downgraded];
 }
 
 /** @return array<string,mixed> */
@@ -490,6 +569,7 @@ function rateb_subscription_apply_paid_plan(PDO $pdo, int $userId, int $planId):
             $newEnd = date('Y-m-d H:i:s', strtotime('+1 month', $endTs));
             $pdo->prepare('UPDATE subscriptions SET plan_id = ?, status = ?, period_end = ? WHERE id = ?')
                 ->execute([$planId, 'active', $newEnd, (int) $row['id']]);
+            $pdo->prepare('UPDATE users SET subscription_expires_at = ? WHERE id = ?')->execute([$newEnd, $userId]);
             return;
         }
     }
@@ -498,10 +578,12 @@ function rateb_subscription_apply_paid_plan(PDO $pdo, int $userId, int $planId):
     if ($row) {
         $pdo->prepare('UPDATE subscriptions SET plan_id = ?, status = ?, period_start = ?, period_end = ? WHERE id = ?')
             ->execute([$planId, 'active', $start, $end, (int) $row['id']]);
+        $pdo->prepare('UPDATE users SET subscription_expires_at = ? WHERE id = ?')->execute([$end, $userId]);
         return;
     }
     $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end) VALUES (?, ?, 'active', ?, ?)")
         ->execute([$userId, $planId, $start, $end]);
+    $pdo->prepare('UPDATE users SET subscription_expires_at = ? WHERE id = ?')->execute([$end, $userId]);
 }
 
 function rateb_payment_mark_failed(PDO $pdo, int $orderId, int $userId): void

@@ -9,6 +9,7 @@ require __DIR__ . '/app/nav.php';
 require_login();
 
 $userId = (int) $_SESSION['user_id'];
+rateb_user_plan($pdo, $userId);
 $user = current_user($pdo);
 if (!$user) {
     header('Location: /login?next=/billing.php');
