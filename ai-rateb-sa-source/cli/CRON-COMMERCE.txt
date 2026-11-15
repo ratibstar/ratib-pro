@@ -1,0 +1,8 @@
+# ai.rateb.sa — commercial cron (cPanel / DirectAdmin)
+# Run as the site user; PHP CLI path may be /usr/local/bin/php or /usr/bin/php
+
+# Daily 09:00 — subscription ending emails (7-day window)
+# 0 9 * * * cd /home/admin/domains/ai.rateb.sa && php cli/notify-subscription-reminders.php
+
+# Every 15 minutes — catch delayed Moyasar webhooks
+# */15 * * * * cd /home/admin/domains/ai.rateb.sa && php cli/reconcile-pending-payments.php 7

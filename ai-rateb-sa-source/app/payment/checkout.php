@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $configured) {
     $pdo->prepare('INSERT INTO payment_orders (user_id, package_code, amount, credits, currency, status) VALUES (?, ?, ?, ?, \'SAR\', \'pending\')')
         ->execute([(int) $_SESSION['user_id'], $packageCode, $selected['amount'], $selected['credits']]);
     $orderId = (int) $pdo->lastInsertId();
-    $return = 'https://ai.rateb.sa/app/payment/return.php?order=' . $orderId . ($campaignId > 0 ? '&campaign=' . $campaignId : '');
+    $return = rateb_app_origin() . '/app/payment/return.php?order=' . $orderId . ($campaignId > 0 ? '&campaign=' . $campaignId : '');
     $body = json_encode([
         'amount' => $selected['amount'],
         'currency' => 'SAR',

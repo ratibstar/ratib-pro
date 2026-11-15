@@ -458,14 +458,7 @@ function rateb_payment_record(PDO $pdo, array $payment): string
             $pdo->prepare('UPDATE users SET package_type = ?, credits_balance = credits_balance + ? WHERE id = ?')
                 ->execute([$code, $package['credits'], $userId]);
             if ($selectedPlan > 0) {
-                $start = date('Y-m-d H:i:s');
-                $end = date('Y-m-d H:i:s', strtotime('+1 month'));
-                $switch = $pdo->prepare("UPDATE subscriptions SET plan_id = ?, status = 'active', period_start = ?, period_end = ? WHERE user_id = ? AND status = 'active'");
-                $switch->execute([$selectedPlan, $start, $end, $userId]);
-                if ($switch->rowCount() < 1) {
-                    $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end) VALUES (?, ?, 'active', ?, ?)")
-                        ->execute([$userId, $selectedPlan, $start, $end]);
-                }
+                rateb_subscription_apply_paid_plan($pdo, $userId, $selectedPlan);
             }
         }
         $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, NULL, ?, 1, \'completed\', ?, 0, ?)')
@@ -479,6 +472,36 @@ function rateb_payment_record(PDO $pdo, array $payment): string
         }
         throw $error;
     }
+}
+
+/** Extend subscription by one month from current period_end when still active; otherwise start a fresh period. */
+function rateb_subscription_apply_paid_plan(PDO $pdo, int $userId, int $planId): void
+{
+    if ($userId < 1 || $planId < 1) {
+        return;
+    }
+    $sub = $pdo->prepare("SELECT id, period_start, period_end FROM subscriptions WHERE user_id = ? AND status = 'active' ORDER BY id DESC LIMIT 1");
+    $sub->execute([$userId]);
+    $row = $sub->fetch();
+    $now = time();
+    if ($row) {
+        $endTs = strtotime((string) $row['period_end']);
+        if ($endTs !== false && $endTs > $now) {
+            $newEnd = date('Y-m-d H:i:s', strtotime('+1 month', $endTs));
+            $pdo->prepare('UPDATE subscriptions SET plan_id = ?, status = ?, period_end = ? WHERE id = ?')
+                ->execute([$planId, 'active', $newEnd, (int) $row['id']]);
+            return;
+        }
+    }
+    $start = date('Y-m-d H:i:s', $now);
+    $end = date('Y-m-d H:i:s', strtotime('+1 month', $now));
+    if ($row) {
+        $pdo->prepare('UPDATE subscriptions SET plan_id = ?, status = ?, period_start = ?, period_end = ? WHERE id = ?')
+            ->execute([$planId, 'active', $start, $end, (int) $row['id']]);
+        return;
+    }
+    $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end) VALUES (?, ?, 'active', ?, ?)")
+        ->execute([$userId, $planId, $start, $end]);
 }
 
 function rateb_payment_mark_failed(PDO $pdo, int $orderId, int $userId): void

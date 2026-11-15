@@ -152,6 +152,8 @@ jobs:
             "app/payment/webhook.php"
             "app/payment/checkout.php"
             "app/payment/return.php"
+            "app/payment/order-status.php"
+            "app/payment/moyasar-sync.php"
             "app/payment/commerce.php"
             "app/payment/invoice.php"
             "billing.php"
@@ -164,6 +166,8 @@ jobs:
             "admin/refunds.php"
             "admin/finance.php"
             "cli/notify-subscription-reminders.php"
+            "cli/reconcile-pending-payments.php"
+            "config/guard.php"
             "app/brand/library.php"
             "app/nav.php"
           )

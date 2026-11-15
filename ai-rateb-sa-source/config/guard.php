@@ -108,3 +108,17 @@ function require_admin(PDO $pdo): array
     $actor = require_admin_access($pdo);
     return admin_actor_legacy_user($actor);
 }
+
+function rateb_app_origin(): string
+{
+    if (PHP_SAPI === 'cli') {
+        return 'https://ai.rateb.sa';
+    }
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    if ($host === '' || !preg_match('/^[a-z0-9.-]+(?::\d+)?$/i', $host)) {
+        return 'https://ai.rateb.sa';
+    }
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443;
+    return ($https ? 'https' : 'http') . '://' . $host;
+}

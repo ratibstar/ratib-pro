@@ -69,6 +69,14 @@ if ($subscription && ($subscription['period_end'] ?? '') !== '') {
 <?php rateb_site_header('/billing.php', true); ?>
 <main class="container studio-page" style="max-width:920px;margin:24px auto">
 <h1><?= $ar ? 'الفواتير والاشتراك' : 'Billing & subscription' ?></h1>
+<?php if ($daysLeft !== null && $daysLeft < 0): ?>
+<p class="alert" role="status"><?= $ar ? 'انتهت صلاحية اشتراكك المدفوع. جدّد الآن لاستعادة حدود الباقة.' : 'Your paid subscription has ended. Renew now to restore plan limits.' ?></p>
+<?php elseif ($daysLeft !== null && $daysLeft <= 7 && $subscription && (string) $subscription['code'] !== 'free'): ?>
+<p class="alert" role="status"><?= $ar ? 'اشتراكك ينتهي قريباً. التجديد الآن يُمدّد الفترة من تاريخ الانتهاء الحالي.' : 'Your subscription ends soon. Renewing now extends from your current end date.' ?></p>
+<?php endif; ?>
+<?php if ((int) $wallet['credits_balance'] <= 50): ?>
+<p class="muted"><?= $ar ? 'رصيد منخفض — رقِّ الباقة أو اشترِ من جديد من صفحة الباقات.' : 'Low balance — upgrade or buy again from the plans page.' ?> <a href="/credits.php"><?= $ar ? 'الباقات' : 'Plans' ?></a></p>
+<?php endif; ?>
 <section class="studio-hero" style="padding:20px;margin-bottom:20px">
 <p><?= $ar ? 'الباقة' : 'Plan' ?>: <strong><?= e((string) $wallet['package_type']) ?></strong> · <?= $ar ? 'الرصيد' : 'Credits' ?>: <strong><?= (int) $wallet['credits_balance'] ?></strong></p>
 <?php if ($subscription): ?>

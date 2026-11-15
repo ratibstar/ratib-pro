@@ -8,10 +8,18 @@ require_login();
 
 $ar = ui_language() === 'ar';
 $wallet = rateb_account_credits($pdo, (int) $_SESSION['user_id']);
-$packages = [
-    ['code' => 'starter', 'price' => '99', 'credits' => 500],
-    ['code' => 'pro', 'price' => '249', 'credits' => 2500],
-];
+$packages = [];
+foreach (['starter', 'pro'] as $code) {
+    $pkg = rateb_paid_package($code);
+    if ($pkg === null) {
+        continue;
+    }
+    $packages[] = [
+        'code' => $code,
+        'price' => number_format($pkg['amount'] / 100, 0, '.', ''),
+        'credits' => (int) $pkg['credits'],
+    ];
+}
 ?><!doctype html>
 <html lang="<?= $ar ? 'ar' : 'en' ?>" dir="<?= $ar ? 'rtl' : 'ltr' ?>" data-theme="light">
 <head>
@@ -28,7 +36,7 @@ $packages = [
 <p><?= $ar ? 'باقتك الحالية' : 'Current plan' ?>: <strong><?= e((string) $wallet['package_type']) ?></strong> · <?= $ar ? 'الرصيد' : 'Credits' ?>: <strong><?= (int) $wallet['credits_balance'] ?></strong></p>
 <div class="price-grid">
 <?php foreach ($packages as $pkg): ?>
-<article class="price-card<?= $wallet['package_type'] === $pkg['code'] ? ' is-featured' : '' ?>">
+<article class="price-card<?= $wallet['package_type'] === $pkg['code'] ? ' is-featured' : '' ?>" id="<?= e($pkg['code']) ?>">
 <p class="eyebrow"><?= e($pkg['code']) ?></p>
 <p class="price-amount"><b><?= e($pkg['price']) ?></b> <span><?= $ar ? 'ر.س' : 'SAR' ?></span></p>
 <p><?= (int) $pkg['credits'] ?> <?= $ar ? 'نقطة' : 'credits' ?></p>
