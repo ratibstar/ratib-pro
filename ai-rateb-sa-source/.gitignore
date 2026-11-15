@@ -1,3 +1,5 @@
 .phase0-staging/
+config/database.local.php
+config/ai.local.php
 storage/*.log
 !storage/.gitkeep

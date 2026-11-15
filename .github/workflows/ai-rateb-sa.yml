@@ -89,6 +89,7 @@ jobs:
           RATEB_MAIL_ENABLED: ${{ secrets.RATEB_MAIL_ENABLED || '1' }}
           RATEB_MAIL_FROM: ${{ secrets.RATEB_MAIL_FROM || 'noreply@rateb.sa' }}
           RATEB_MAIL_FROM_NAME: ${{ secrets.RATEB_MAIL_FROM_NAME || 'RATEB AI' }}
+          RATEB_AI_DB_PASSWORD: ${{ secrets.RATEB_AI_DB_PASSWORD }}
         run: |
           set -euo pipefail
           if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
@@ -170,6 +171,7 @@ jobs:
             "app/ai/provider-health.php"
             "app/public-gate.php"
             "config/bootstrap.php"
+            "config/database.php"
             "config/guard.php"
             "admin/usage.php"
             "admin/refunds.php"
@@ -260,6 +262,22 @@ jobs:
           scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${RUNNER_TEMP}/ai-local.php" "${REMOTE}:${TARGET}/config/ai.local.php"
           echo "AI_LOCAL=written"
+          if [ -n "${RATEB_AI_DB_PASSWORD:-}" ]; then
+            python3 - << 'PY'
+          import os
+          from pathlib import Path
+          pwd = os.environ.get("RATEB_AI_DB_PASSWORD", "").replace("\\", "\\\\").replace("'", "\\'")
+          body = "<?php\ndeclare(strict_types=1);\nreturn [\n    'password' => '" + pwd + "',\n];\n"
+          Path(os.environ["RUNNER_TEMP"], "database.local.php").write_text(body, encoding="utf-8")
+          PY
+            scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+              "${RUNNER_TEMP}/database.local.php" "${REMOTE}:${TARGET}/config/database.local.php"
+            echo "DATABASE_LOCAL=written"
+          else
+            echo "::warning::RATEB_AI_DB_PASSWORD not set — CLI cron may fail until database.local.php exists on server"
+          fi
+          scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "ai-rateb-sa-source/config/database.php" "${REMOTE}:${TARGET}/config/database.php"
           echo "${GITHUB_SHA} $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "${RUNNER_TEMP}/ai-build.txt"
           "${SSH[@]}" "$REMOTE" "mkdir -p '${TARGET}/storage' '${TARGET}/public'"
           scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
