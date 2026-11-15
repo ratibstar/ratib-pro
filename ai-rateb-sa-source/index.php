@@ -1,7 +1,5 @@
 <?php
 require __DIR__ . '/config/bootstrap.php';
-require_once __DIR__ . '/app/public-gate.php';
-rateb_enforce_public_access($pdo);
 require __DIR__ . '/app/nav.php';
 $googleClient = (string) ((require __DIR__ . '/config/google.php')['client_id'] ?? '');
 

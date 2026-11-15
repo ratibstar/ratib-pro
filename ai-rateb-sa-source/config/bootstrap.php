@@ -34,3 +34,8 @@ function current_user(PDO $pdo): ?array
 }
 
 rateb_block_disabled_session($pdo);
+
+require_once __DIR__ . '/../app/public-gate.php';
+if (PHP_SAPI !== 'cli') {
+    rateb_enforce_public_access($pdo);
+}

@@ -1,7 +1,5 @@
 <?php
 require __DIR__ . '/../../config/bootstrap.php';
-require_once __DIR__ . '/../public-gate.php';
-rateb_enforce_public_access($pdo);
 require __DIR__ . '/../welcome.php';
 require __DIR__ . '/../plans.php';
 require_once __DIR__ . '/account-state.php';

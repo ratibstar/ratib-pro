@@ -31,9 +31,16 @@ function admin_nav_on(string $here, string $href): bool
     $query = (string) (parse_url($href, PHP_URL_QUERY) ?? '');
     if ($path === '/admin/finance.php') {
         $tab = (string) ($_GET['tab'] ?? '');
-        if ($query === 'tab=customers') {
+        $hrefTab = (string) (parse_url($href, PHP_URL_QUERY) ?? '');
+        if ($query === 'tab=customers' || str_contains($hrefTab, 'tab=customers')) {
             return ($here === '/admin/finance.php' && $tab === 'customers')
                 || str_starts_with($here, '/admin/finance-customer.php');
+        }
+        if ($query === 'tab=reconcile' || str_contains($hrefTab, 'tab=reconcile')) {
+            return $here === '/admin/finance.php' && $tab === 'reconcile';
+        }
+        if ($query === '' && $hrefTab === '') {
+            return $here === '/admin/finance.php' && ($tab === '' || $tab === 'overview');
         }
         return $here === '/admin/finance.php' && $tab === ''
             || str_starts_with($here, '/admin/finance-export.php');
@@ -45,6 +52,12 @@ function admin_nav_on(string $here, string $href): bool
         return true;
     }
     if ($path === '/admin/hr-overview.php' && ($here === '/admin/hr-overview.php' || str_starts_with($here, '/admin/hr-customer.php'))) {
+        return true;
+    }
+    if ($path === '/admin/hr-customer.php' && str_starts_with($here, '/admin/hr-customer.php')) {
+        return true;
+    }
+    if (str_starts_with($href, '/admin/finance-export.php') && str_starts_with($here, '/admin/finance-export.php')) {
         return true;
     }
     if ($path === '/admin/campaigns.php' && str_starts_with($here, '/admin/campaign.php')) {
@@ -70,7 +83,7 @@ function admin_start(string $title): void
     echo '<!doctype html><html lang="' . admin_h($adminLang) . '" dir="' . $dir . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>' . admin_h($title) . ' — RATEB AI</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
-    echo '<link rel="stylesheet" href="/admin/admin.css?v=14"></head><body class="admin-app">';
+    echo '<link rel="stylesheet" href="/admin/admin.css?v=15"></head><body class="admin-app">';
     echo '<input class="nav-check" id="nav-check" type="checkbox">';
     echo '<div class="shell"><aside class="side"><div class="brand"><b>RATEB</b> <span>AI</span></div><p class="role">' . admin_h(admin_t('Administration', 'الإدارة')) . '</p><nav class="nav-sections">';
     $groups = admin_nav_groups_for_actor($adminActor, $adminLang);

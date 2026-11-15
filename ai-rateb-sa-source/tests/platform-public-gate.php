@@ -12,9 +12,13 @@ $assert = static function (bool $ok, string $label) use (&$fail): void {
     }
 };
 
-$assert(rateb_public_gate_is_exempt_path('/admin/'), 'admin exempt');
-$assert(rateb_public_gate_is_exempt_path('/hr/employees.php'), 'hr exempt');
-$assert(rateb_public_gate_is_exempt_path('/dashboard'), 'dashboard exempt');
-$assert(!rateb_public_gate_is_exempt_path('/'), 'home not exempt');
+$assert(rateb_public_gate_is_always_exempt('/admin/'), 'admin always exempt');
+$assert(rateb_public_gate_is_always_exempt('/hr/employees.php'), 'hr workspace exempt');
+$assert(rateb_public_gate_is_always_exempt('/dashboard'), 'dashboard exempt');
+$assert(!rateb_public_gate_is_always_exempt('/'), 'home not always exempt');
+$assert(rateb_public_gate_is_marketing_path('/'), 'home is marketing');
+$assert(rateb_public_gate_is_marketing_path('/register.php'), 'register is marketing');
+$assert(!rateb_public_gate_is_marketing_path('/dashboard'), 'dashboard not marketing');
+$assert(!rateb_public_gate_is_exempt_path('/'), 'home not legacy exempt');
 
 exit($fail > 0 ? 1 : 0);

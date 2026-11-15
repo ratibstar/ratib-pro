@@ -41,14 +41,23 @@ if ($notice === 'saved') {
     admin_flash_box('owner_only', 'bad');
 }
 if (admin_actor_is_owner($adminActor)) {
-    echo '<section class="cards"><article class="card"><h2>' . admin_h(admin_t('Public website', 'الموقع العام')) . '</h2>';
-    echo '<form method="post"><input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '"><input type="hidden" name="site_settings" value="1">';
-    echo '<p><label><input type="checkbox" name="public_site_enabled"' . ($publicOn ? ' checked' : '') . '> ' . admin_h(admin_t('Public website enabled', 'تفعيل الموقع العام')) . '</label></p>';
-    echo '<p><label><input type="checkbox" name="maintenance_mode"' . ($maintOn ? ' checked' : '') . '> ' . admin_h(admin_t('Maintenance mode', 'وضع الصيانة')) . '</label></p>';
-    echo '<p class="note">' . admin_h(admin_t('Admin console (/admin) always remains available.', 'وحدة الإدارة (/admin) تبقى متاحة دائمًا.')) . '</p>';
-    echo '<label>' . admin_h(admin_t('Maintenance message (English)', 'رسالة الصيانة (إنجليزي)')) . '</label><textarea name="maintenance_message_en" rows="2">' . admin_h($msgEn) . '</textarea>';
-    echo '<label>' . admin_h(admin_t('Maintenance message (Arabic)', 'رسالة الصيانة (عربي)')) . '</label><textarea name="maintenance_message_ar" rows="2">' . admin_h($msgAr) . '</textarea>';
-    echo '<p><button type="submit">' . admin_h(admin_t('Save site settings', 'حفظ إعدادات الموقع')) . '</button></p></form></article></section>';
+    admin_panel_open(admin_t('Public website', 'الموقع العام'), admin_t(
+        'Applies to the marketing homepage (/) and registration pages. Customer dashboard, HR, and /admin stay available.',
+        'يُطبَّق على الصفحة الرئيسية (/) وصفحات التسجيل. لوحة العملاء وHR و/admin تبقى متاحة.'
+    ));
+    echo '<section class="stats"><article class="stat"><b><span class="pill ' . ($publicOn ? 'ok' : 'bad') . '">' . admin_h($publicOn ? admin_t('On', 'مفعّل') : admin_t('Off', 'معطّل')) . '</span></b><span>' . admin_h(admin_t('Public site', 'الموقع العام')) . '</span></article>';
+    echo '<article class="stat"><b><span class="pill ' . ($maintOn ? 'warn' : 'ok') . '">' . admin_h($maintOn ? admin_t('On', 'مفعّل') : admin_t('Off', 'معطّل')) . '</span></b><span>' . admin_h(admin_t('Maintenance', 'الصيانة')) . '</span></article></section>';
+    echo '<form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '"><input type="hidden" name="site_settings" value="1">';
+    echo '<p class="full"><label><input type="checkbox" name="public_site_enabled"' . ($publicOn ? ' checked' : '') . '> ' . admin_h(admin_t('Public website enabled', 'تفعيل الموقع العام')) . '</label></p>';
+    echo '<p class="full"><label><input type="checkbox" name="maintenance_mode"' . ($maintOn ? ' checked' : '') . '> ' . admin_h(admin_t('Maintenance mode', 'وضع الصيانة')) . '</label></p>';
+    echo '<label class="full">' . admin_h(admin_t('Maintenance message (English)', 'رسالة الصيانة (إنجليزي)')) . '<textarea name="maintenance_message_en" rows="2">' . admin_h($msgEn) . '</textarea></label>';
+    echo '<label class="full">' . admin_h(admin_t('Maintenance message (Arabic)', 'رسالة الصيانة (عربي)')) . '<textarea name="maintenance_message_ar" rows="2">' . admin_h($msgAr) . '</textarea></label>';
+    echo '<p class="full"><button type="submit" class="btn primary">' . admin_h(admin_t('Save site settings', 'حفظ إعدادات الموقع')) . '</button></p></form>';
+    echo '<p class="note">' . admin_h(admin_t(
+        'Preview: open https://ai.rateb.sa/ in a private window after saving. Logged-in users reach /dashboard directly.',
+        'معاينة: افتح https://ai.rateb.sa/ في نافذة خاصة بعد الحفظ. المستخدمون المسجّلون يدخلون /dashboard مباشرة.'
+    )) . '</p>';
+    admin_panel_close();
 }
 $truth = admin_billing_truth();
 echo '<section class="cards">';
