@@ -37,6 +37,10 @@ $stmt = $pdo->prepare("SELECT id, name, email, role, package_type, credits_balan
 $stmt->execute([$id]);
 $user = $stmt->fetch();
 admin_start(admin_t('User', 'مستخدم'));
+admin_toolbar([
+    ['href' => '/admin/users.php', 'label' => admin_t('All customers', 'كل العملاء')],
+    ['href' => '/admin/finance-customer.php?id=' . $id, 'label' => admin_t('Finance', 'المالية')],
+]);
 if (!$user) {
     echo '<p class="note">' . admin_h(admin_t('User not found.', 'المستخدم غير موجود.')) . '</p>';
     admin_end();
@@ -78,44 +82,61 @@ if ((string) $user['role'] !== 'owner') {
 
 $campaigns = $pdo->prepare('SELECT id, title, status, created_at FROM campaigns WHERE user_id = ? ORDER BY id DESC LIMIT 50');
 $campaigns->execute([$id]);
-echo '<h2>' . admin_h(admin_t('Campaigns', 'الحملات')) . '</h2><table><tr><th>' . admin_h(admin_t('Title', 'العنوان')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Created', 'التاريخ')) . '</th></tr>';
+admin_panel_open(admin_t('Campaigns', 'الحملات'));
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Title', 'العنوان')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Created', 'التاريخ')) . '</th></tr>';
 foreach ($campaigns as $row) {
-    echo '<tr><td><a href="/admin/campaign.php?id=' . (int) $row['id'] . '">' . admin_h((string) $row['title']) . '</a></td><td>' . admin_h((string) $row['status']) . '</td><td>' . admin_h((string) $row['created_at']) . '</td></tr>';
+    $st = (string) $row['status'];
+    echo '<tr><td><a href="/admin/campaign.php?id=' . (int) $row['id'] . '">' . admin_h((string) $row['title']) . '</a></td><td><span class="pill' . admin_pill_for_status($st) . '">' . admin_h(admin_campaign_status_label($st)) . '</span></td><td>' . admin_h((string) $row['created_at']) . '</td></tr>';
 }
-echo '</table>';
+admin_table_close();
+admin_panel_close();
 
 $usage = $pdo->prepare('SELECT created_at, operation, status, units, credits_deducted, campaign_id FROM usage_events WHERE user_id = ? ORDER BY id DESC LIMIT 50');
 $usage->execute([$id]);
-echo '<h2>' . admin_h(admin_t('Usage and credit events', 'الاستخدام وحركات النقاط')) . '</h2><table><tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Operation', 'العملية')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Credits recorded', 'النقاط المسجّلة')) . '</th><th>' . admin_h(admin_t('Campaign', 'الحملة')) . '</th></tr>';
+admin_panel_open(admin_t('Usage and credit events', 'الاستخدام وحركات النقاط'));
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Operation', 'العملية')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Credits recorded', 'النقاط المسجّلة')) . '</th><th>' . admin_h(admin_t('Campaign', 'الحملة')) . '</th></tr>';
 foreach ($usage as $row) {
     echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) $row['operation']) . '</td><td>' . admin_h((string) $row['status']) . '</td><td>' . (int) $row['credits_deducted'] . '</td><td>' . admin_h((string) ($row['campaign_id'] ?? '')) . '</td></tr>';
 }
-echo '</table>';
+admin_table_close();
+admin_panel_close();
 
 $pays = $pdo->prepare('SELECT created_at, moyasar_id, package_type, amount FROM payment_receipts WHERE user_id = ? ORDER BY id DESC LIMIT 50');
 $pays->execute([$id]);
-echo '<h2>' . admin_h(admin_t('Payments', 'المدفوعات')) . '</h2><table><tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Reference', 'المرجع')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th></tr>';
+admin_panel_open(admin_t('Payments', 'المدفوعات'));
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Reference', 'المرجع')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th></tr>';
 foreach ($pays as $row) {
     echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) $row['moyasar_id']) . '</td><td>' . admin_h((string) $row['package_type']) . '</td><td>' . admin_h(admin_halalas_to_sar((int) $row['amount'])) . '</td><td><span class="pill ok">paid</span></td></tr>';
 }
-echo '</table>';
+admin_table_close();
+admin_panel_close();
 
 $subs = $pdo->prepare("SELECT s.status, s.period_start, s.period_end, p.code FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.user_id = ? ORDER BY s.id DESC LIMIT 50");
 $subs->execute([$id]);
-echo '<h2>' . admin_h(admin_t('Subscriptions', 'الاشتراكات')) . '</h2><table><tr><th>' . admin_h(admin_t('Plan', 'الباقة')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Start', 'البداية')) . '</th><th>' . admin_h(admin_t('End', 'النهاية')) . '</th></tr>';
+admin_panel_open(admin_t('Subscriptions', 'الاشتراكات'));
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Plan', 'الباقة')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Start', 'البداية')) . '</th><th>' . admin_h(admin_t('End', 'النهاية')) . '</th></tr>';
 foreach ($subs as $row) {
-    echo '<tr><td>' . admin_h((string) $row['code']) . '</td><td>' . admin_h((string) $row['status']) . '</td><td>' . admin_h((string) $row['period_start']) . '</td><td>' . admin_h((string) $row['period_end']) . '</td></tr>';
+    $st = (string) $row['status'];
+    echo '<tr><td>' . admin_h((string) $row['code']) . '</td><td><span class="pill' . admin_pill_for_status($st) . '">' . admin_h(admin_subscription_status_label($st)) . '</span></td><td>' . admin_h((string) $row['period_start']) . '</td><td>' . admin_h((string) $row['period_end']) . '</td></tr>';
 }
-echo '</table>';
+admin_table_close();
+admin_panel_close();
 
 if (admin_table_has($pdo, 'admin_audit_log', 'id')) {
     $auditRows = admin_audit_rows_for_target($pdo, 'user', $id, 50);
     $missingStaff = admin_t('Staff (removed)', 'موظف (محذوف)');
-    echo '<h2>' . admin_h(admin_t('Admin audit', 'سجل الإدارة')) . '</h2><table><tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Actor', 'الفاعل')) . '</th><th>' . admin_h(admin_t('Action', 'الإجراء')) . '</th><th>' . admin_h(admin_t('Reason', 'السبب')) . '</th></tr>';
+    admin_panel_open(admin_t('Admin audit', 'سجل الإدارة'));
+    admin_table_open();
+    echo '<tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Actor', 'الفاعل')) . '</th><th>' . admin_h(admin_t('Action', 'الإجراء')) . '</th><th>' . admin_h(admin_t('Reason', 'السبب')) . '</th></tr>';
     foreach ($auditRows as $row) {
         $actorLabel = admin_audit_actor_display($row, $missingStaff);
         echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h($actorLabel) . '</td><td>' . admin_h((string) $row['action']) . '</td><td>' . admin_h((string) $row['reason']) . '</td></tr>';
     }
-    echo '</table>';
+    admin_table_close();
+    admin_panel_close();
 }
 admin_end();

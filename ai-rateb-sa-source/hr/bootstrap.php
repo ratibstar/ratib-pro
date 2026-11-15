@@ -50,6 +50,7 @@ function hr_nav_sections(): array
             'title' => ['en' => 'Insights', 'ar' => 'التقارير'],
             'links' => [
                 '/hr/reports.php' => ['en' => 'Reports', 'ar' => 'التقارير'],
+                '/hr/export.php?kind=employees' => ['en' => 'Export data', 'ar' => 'تصدير البيانات'],
             ],
         ],
     ];
@@ -73,7 +74,7 @@ function hr_start(string $title): void
     echo '<!doctype html><html lang="' . hr_h($hrLang) . '" dir="' . $dir . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>' . hr_h($title) . ' — RATEB AI HR</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
-    echo '<link rel="stylesheet" href="/admin/admin.css?v=11"></head><body class="admin-app">';
+    echo '<link rel="stylesheet" href="/admin/admin.css?v=14"></head><body class="admin-app">';
     echo '<input class="nav-check" id="hr-nav" type="checkbox">';
     echo '<div class="shell"><aside class="side"><div class="brand"><b>RATEB</b> <span>AI</span></div>';
     echo '<p class="role">' . hr_h(hr_t('Company HR workspace', 'مساحة الموارد البشرية لشركتك')) . '</p><nav>';
@@ -99,12 +100,13 @@ function hr_start(string $title): void
     echo '<header class="topbar"><label class="menu" for="hr-nav">' . hr_h(hr_t('Menu', 'القائمة')) . '</label>';
     echo '<div class="top-title"><p>' . hr_h(hr_t('Human resources', 'الموارد البشرية')) . '</p><h1>' . hr_h($title) . '</h1></div>';
     echo '<div class="top-tools"><a class="lang" href="/hr/lang.php?lang=' . ($hrLang === 'ar' ? 'en' : 'ar') . '">' . hr_h($hrLang === 'ar' ? 'English' : 'العربية') . '</a>';
-    echo '<span class="who"><i>' . hr_h($initial) . '</i><span>' . hr_h($email) . '</span></span></div></header><main>';
+    echo '<span class="who"><i>' . hr_h($initial) . '</i><span>' . hr_h($email) . '</span></span></div></header><main class="content-area">';
 }
 
 function hr_end(): void
 {
-    echo '</main></div></div></body></html>';
+    echo '</main><footer class="admin-footer">RATEB AI · ' . hr_h(hr_t('Human resources', 'الموارد البشرية')) . '</footer></div></div>';
+    echo '<script src="/admin/admin.js?v=1" defer></script></body></html>';
 }
 
 function hr_flash(string $code): string
@@ -114,6 +116,9 @@ function hr_flash(string $code): string
         'deleted' => hr_t('Deleted.', 'تم الحذف.'),
         'invalid' => hr_t('Invalid request.', 'طلب غير صالح.'),
         'forbidden' => hr_t('Record not in your company.', 'السجل لا يخص شركتك.'),
+        'upload' => hr_t('Upload failed.', 'فشل الرفع.'),
+        'size' => hr_t('File too large (max 5 MB).', 'الملف كبير جدًا (حد 5 ميجا).'),
+        'type' => hr_t('File type not allowed.', 'نوع الملف غير مسموح.'),
         default => $code,
     };
 }

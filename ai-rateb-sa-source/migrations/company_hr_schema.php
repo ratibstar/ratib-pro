@@ -73,11 +73,18 @@ function ensure_company_hr_schema(PDO $pdo): void
         employee_id BIGINT UNSIGNED NOT NULL,
         title VARCHAR(160) NOT NULL,
         file_label VARCHAR(255) NOT NULL,
+        storage_path VARCHAR(512) NULL,
         storage_note VARCHAR(500) NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         KEY company_employee (company_user_id, employee_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $col = $pdo->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $col->execute(['hr_documents', 'storage_path']);
+    if ((int) $col->fetchColumn() === 0) {
+        $pdo->exec('ALTER TABLE hr_documents ADD COLUMN storage_path VARCHAR(512) NULL AFTER file_label');
+    }
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS hr_payroll_records (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

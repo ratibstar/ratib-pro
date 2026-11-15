@@ -16,6 +16,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $notice = 'invalid';
         }
+    } elseif ($action === 'rename') {
+        $id = (int) ($_POST['id'] ?? 0);
+        $name = trim((string) ($_POST['name'] ?? ''));
+        if ($name === '' || !hr_verify_department_belongs($pdo, $cid, $id)) {
+            $notice = 'invalid';
+        } else {
+            $pdo->prepare('UPDATE hr_departments SET name = ? WHERE id = ? AND company_user_id = ?')->execute([$name, $id, $cid]);
+            $notice = 'saved';
+        }
     } elseif ($action === 'delete') {
         $id = (int) ($_POST['id'] ?? 0);
         if (hr_verify_department_belongs($pdo, $cid, $id)) {
@@ -33,7 +42,7 @@ $rows = $stmt->fetchAll();
 
 hr_start(hr_t('Departments', 'الأقسام'));
 if ($notice !== '') {
-    echo '<p class="flash">' . hr_h(hr_flash($notice)) . '</p>';
+    hr_flash_box($notice);
 }
 hr_toolbar([
     ['href' => '/hr/employees.php', 'label' => hr_t('Employees', 'الموظفون')],
@@ -43,9 +52,10 @@ echo '<form method="post" class="search"><input type="hidden" name="csrf_token" 
 echo '<input name="name" required placeholder="' . hr_h(hr_t('Department name', 'اسم القسم')) . '"><button type="submit" class="btn primary">' . hr_h(hr_t('Add department', 'إضافة قسم')) . '</button></form>';
 hr_panel_close();
 hr_panel_open(hr_t('All departments', 'كل الأقسام'));
-echo '<table><tr><th>' . hr_h(hr_t('Name', 'الاسم')) . '</th><th>' . hr_h(hr_t('Employees', 'الموظفون')) . '</th><th>' . hr_h(hr_t('Created', 'أُنشئ')) . '</th><th>' . hr_h(hr_th_actions()) . '</th></tr>';
+hr_table_open();
+echo '<tr><th>' . hr_h(hr_t('Name', 'الاسم')) . '</th><th>' . hr_h(hr_t('Employees', 'الموظفون')) . '</th><th>' . hr_h(hr_t('Created', 'أُنشئ')) . '</th><th>' . hr_h(hr_th_actions()) . '</th></tr>';
 foreach ($rows as $row) {
-    echo '<tr><td>' . hr_h((string) $row['name']) . '</td><td>' . (int) $row['headcount'] . '</td><td>' . hr_h((string) $row['created_at']) . '</td><td><div class="table-actions">';
+    echo '<tr><td><form method="post" class="inline" style="gap:6px"><input type="hidden" name="csrf_token" value="' . hr_h(csrf_token()) . '"><input type="hidden" name="action" value="rename"><input type="hidden" name="id" value="' . (int) $row['id'] . '"><input name="name" value="' . hr_h((string) $row['name']) . '" style="min-width:120px"><button type="submit" class="btn small quiet">' . hr_h(hr_t('Save', 'حفظ')) . '</button></form></td><td>' . (int) $row['headcount'] . '</td><td>' . hr_h((string) $row['created_at']) . '</td><td><div class="table-actions">';
     echo '<form method="post" class="inline" onsubmit="return confirm(\'' . hr_h(hr_t('Delete this department?', 'حذف هذا القسم؟')) . '\')">';
     echo '<input type="hidden" name="csrf_token" value="' . hr_h(csrf_token()) . '"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . (int) $row['id'] . '">';
     echo '<button type="submit" class="btn small danger">' . hr_h(hr_t('Delete', 'حذف')) . '</button></form></div></td></tr>';
@@ -53,6 +63,6 @@ foreach ($rows as $row) {
 if ($rows === []) {
     echo '<tr><td colspan="4">' . hr_h(hr_t('No departments.', 'لا توجد أقسام.')) . '</td></tr>';
 }
-echo '</table>';
+hr_table_close();
 hr_panel_close();
 hr_end();

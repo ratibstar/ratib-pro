@@ -124,7 +124,8 @@ admin_panel_close();
 echo '<form class="search" method="get"><input name="q" value="' . admin_h($q) . '" placeholder="' . admin_h(admin_t('Search staff', 'بحث الموظفين')) . '"><button type="submit">' . admin_h(admin_t('Search', 'بحث')) . '</button></form>';
 
 admin_panel_open(admin_t('Staff list', 'قائمة الموظفين'));
-echo '<table><tr><th>' . admin_h(admin_t('Name', 'الاسم')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Role', 'الدور')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Last login', 'آخر دخول')) . '</th><th>' . admin_h(admin_t('Created', 'أُنشئ')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Name', 'الاسم')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Role', 'الدور')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Last login', 'آخر دخول')) . '</th><th>' . admin_h(admin_t('Created', 'أُنشئ')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
 foreach ($rows as $row) {
     $inactive = (string) $row['status'] !== 'active';
     echo '<tr><td>' . admin_h((string) $row['name']) . '</td><td>' . admin_h((string) $row['email']) . '</td><td>' . admin_h((string) $row['role_code']) . '</td>';
@@ -143,6 +144,6 @@ foreach ($rows as $row) {
 if ($rows === []) {
     echo '<tr><td colspan="7">' . admin_h(admin_t('No staff accounts yet.', 'لا حسابات موظفين بعد.')) . '</td></tr>';
 }
-echo '</table>';
+admin_table_close();
 admin_panel_close();
 admin_end();

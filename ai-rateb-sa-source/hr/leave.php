@@ -46,36 +46,42 @@ $list->execute([$cid]);
 $rows = $list->fetchAll();
 
 hr_start(hr_t('Leave', 'الإجازات'));
+hr_toolbar([['href' => '/hr/employees.php', 'label' => hr_t('Employees', 'الموظفون')]]);
 if ($notice !== '') {
-    echo '<p class="flash">' . hr_h(hr_flash($notice)) . '</p>';
+    hr_flash_box($notice);
 }
-echo '<form method="post" class="card"><input type="hidden" name="csrf_token" value="' . hr_h(csrf_token()) . '"><input type="hidden" name="action" value="request">';
-echo '<label>' . hr_h(hr_t('Employee', 'الموظف')) . '</label><select name="employee_id" required>';
+hr_panel_open(hr_t('New leave request', 'طلب إجازة جديد'));
+echo '<form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="' . hr_h(csrf_token()) . '"><input type="hidden" name="action" value="request">';
+echo '<label>' . hr_h(hr_t('Employee', 'الموظف')) . '<select name="employee_id" required>';
 foreach ($empRows as $e) {
     echo '<option value="' . (int) $e['id'] . '">' . hr_h((string) $e['full_name']) . '</option>';
 }
-echo '</select><label>' . hr_h(hr_t('Type', 'النوع')) . '</label><select name="leave_type"><option value="annual">annual</option><option value="sick">sick</option><option value="unpaid">unpaid</option></select>';
-echo '<label>' . hr_h(hr_t('Start', 'البداية')) . '</label><input type="date" name="start_date" required>';
-echo '<label>' . hr_h(hr_t('End', 'النهاية')) . '</label><input type="date" name="end_date" required>';
-echo '<label>' . hr_h(hr_t('Reason', 'السبب')) . '</label><input name="reason"><p><button type="submit">' . hr_h(hr_t('Submit request', 'إرسال الطلب')) . '</button></p></form>';
-echo '<table><tr><th>' . hr_h(hr_t('Employee', 'الموظف')) . '</th><th>' . hr_h(hr_t('Dates', 'التواريخ')) . '</th><th>' . hr_h(hr_t('Type', 'النوع')) . '</th><th>' . hr_h(hr_t('Status', 'الحالة')) . '</th><th></th></tr>';
+echo '</select></label><label>' . hr_h(hr_t('Type', 'النوع')) . '<select name="leave_type">';
+foreach (['annual', 'sick', 'unpaid'] as $lt) {
+    echo '<option value="' . $lt . '">' . hr_h(hr_leave_type_label($lt)) . '</option>';
+}
+echo '</select></label><label>' . hr_h(hr_t('Start', 'البداية')) . '<input type="date" name="start_date" required></label>';
+echo '<label>' . hr_h(hr_t('End', 'النهاية')) . '<input type="date" name="end_date" required></label>';
+echo '<label class="full">' . hr_h(hr_t('Reason', 'السبب')) . '<input name="reason"></label>';
+echo '<p class="full"><button type="submit" class="btn primary">' . hr_h(hr_t('Submit request', 'إرسال الطلب')) . '</button></p></form>';
+hr_panel_close();
+hr_panel_open(hr_t('Leave requests', 'طلبات الإجازة'));
+hr_table_open();
+echo '<tr><th>' . hr_h(hr_t('Employee', 'الموظف')) . '</th><th>' . hr_h(hr_t('Dates', 'التواريخ')) . '</th><th>' . hr_h(hr_t('Type', 'النوع')) . '</th><th>' . hr_h(hr_t('Status', 'الحالة')) . '</th><th>' . hr_h(hr_th_actions()) . '</th></tr>';
 foreach ($rows as $row) {
-    $pill = match ((string) $row['status']) {
-        'approved' => 'ok',
-        'rejected' => 'bad',
-        default => 'warn',
-    };
-    echo '<tr><td>' . hr_h((string) $row['full_name']) . '</td><td>' . hr_h((string) $row['start_date']) . ' → ' . hr_h((string) $row['end_date']) . '</td><td>' . hr_h((string) $row['leave_type']) . '</td>';
-    echo '<td><span class="pill ' . $pill . '">' . hr_h((string) $row['status']) . '</span></td><td>';
-    if ((string) $row['status'] === 'pending') {
-        foreach (['approved', 'rejected'] as $st) {
-            echo '<form method="post" style="display:inline"><input type="hidden" name="csrf_token" value="' . hr_h(csrf_token()) . '"><input type="hidden" name="action" value="decide"><input type="hidden" name="id" value="' . (int) $row['id'] . '"><input type="hidden" name="status" value="' . $st . '"><button type="submit" class="btn quiet">' . hr_h($st) . '</button></form> ';
+    $st = (string) $row['status'];
+    echo '<tr><td>' . hr_h((string) $row['full_name']) . '</td><td>' . hr_h((string) $row['start_date']) . ' → ' . hr_h((string) $row['end_date']) . '</td><td>' . hr_h(hr_leave_type_label((string) $row['leave_type'])) . '</td>';
+    echo '<td><span class="pill ' . hr_pill_class($st) . '">' . hr_h(hr_leave_status_label($st)) . '</span></td><td><div class="table-actions">';
+    if ($st === 'pending') {
+        foreach (['approved' => hr_t('Approve', 'موافقة'), 'rejected' => hr_t('Reject', 'رفض')] as $code => $label) {
+            echo '<form method="post" class="inline"><input type="hidden" name="csrf_token" value="' . hr_h(csrf_token()) . '"><input type="hidden" name="action" value="decide"><input type="hidden" name="id" value="' . (int) $row['id'] . '"><input type="hidden" name="status" value="' . $code . '"><button type="submit" class="btn small ' . ($code === 'rejected' ? 'danger' : 'primary') . '">' . hr_h($label) . '</button></form>';
         }
     }
-    echo '</td></tr>';
+    echo '</div></td></tr>';
 }
 if ($rows === []) {
-    echo '<tr><td colspan="5">' . hr_h(hr_t('No leave requests.', 'لا طلبات إجازة.')) . '</td></tr>';
+    hr_table_empty_row(5, hr_t('No leave requests.', 'لا طلبات إجازة.'));
 }
-echo '</table>';
+hr_table_close();
+hr_panel_close();
 hr_end();

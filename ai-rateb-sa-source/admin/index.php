@@ -170,6 +170,12 @@ $filters = [
 ];
 
 admin_start(admin_t('Dashboard', 'اللوحة'));
+admin_toolbar([
+    ['href' => '/admin/users.php', 'label' => admin_t('Customers', 'العملاء'), 'class' => 'primary'],
+    ['href' => '/admin/finance.php', 'label' => admin_t('Finance', 'المالية')],
+    ['href' => '/admin/campaigns.php', 'label' => admin_t('Campaigns', 'الحملات')],
+    ['href' => '/admin/settings.php', 'label' => admin_t('System', 'النظام')],
+]);
 echo '<div class="filters">';
 foreach ($filters as $filterKey => $filterLabel) {
     $class = $filterKey === $range['key'] ? ' class="on"' : '';
@@ -214,11 +220,12 @@ echo '<article class="card"><h2>' . admin_h(admin_t('Usage by service', 'الا�
 if ($services === []) {
     echo '<p class="note">' . admin_h(admin_t('No operations in this period.', 'لا توجد عمليات في هذه الفترة.')) . '</p>';
 } else {
-    echo '<table><tr><th>' . admin_h(admin_t('Service', 'الخدمة')) . '</th><th>' . admin_h(admin_t('Operations', 'العمليات')) . '</th></tr>';
+    admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Service', 'الخدمة')) . '</th><th>' . admin_h(admin_t('Operations', 'العمليات')) . '</th></tr>';
     foreach ($services as $service) {
         echo '<tr><td>' . admin_h((string) $service['operation']) . '</td><td>' . admin_h((string) $service['events']) . '</td></tr>';
     }
-    echo '</table>';
+    admin_table_close();
 }
 echo '<p class="note">' . admin_h(admin_t(
     'Operations are not stored with a provider name, so a provider breakdown is unavailable.',
@@ -232,15 +239,17 @@ admin_dash_chart(admin_t('Registrations', 'التسجيلات'), $signupSeries);
 admin_dash_chart(admin_t('New campaigns', 'الحملات الجديدة'), $campaignSeries);
 admin_dash_chart(admin_t('Completed operations', 'العمليات المكتملة'), $activitySeries);
 echo '</div>';
-echo '<script>document.querySelectorAll(".chart .bar").forEach(function(bar){bar.addEventListener("click",function(){var on=bar.classList.contains("is-tip");document.querySelectorAll(".chart .bar.is-tip").forEach(function(node){node.classList.remove("is-tip");});if(!on){bar.classList.add("is-tip");}});});</script>';
 
 echo '<h2 class="section-title">' . admin_h(admin_t('Platform health', 'صحة المنصة')) . '</h2>';
-echo '<article class="card"><h2>' . admin_h(admin_t('Provider configuration', 'إعداد المزوّدين')) . '</h2><table><tr><th>' . admin_h(admin_t('Provider', 'المزوّد')) . '</th><th>' . admin_h(admin_t('Configuration', 'الإعداد')) . '</th><th>' . admin_h(admin_t('Live status', 'الحالة المباشرة')) . '</th></tr>';
+echo '<article class="card"><h2>' . admin_h(admin_t('Provider configuration', 'إعداد المزوّدين')) . '</h2>';
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Provider', 'المزوّد')) . '</th><th>' . admin_h(admin_t('Configuration', 'الإعداد')) . '</th><th>' . admin_h(admin_t('Live status', 'الحالة المباشرة')) . '</th></tr>';
 foreach ($providers as $provider) {
     $configured = !empty($provider['configured']) ? admin_t('Configured', 'مُعد') : admin_t('Not configured', 'غير مُعد');
     echo '<tr><td>' . admin_h((string) $provider['label']) . '</td><td>' . admin_h($configured) . '</td><td>' . admin_h(admin_t('Unavailable', 'غير متاح')) . '</td></tr>';
 }
-echo '</table><p class="note">' . admin_h(admin_t(
+admin_table_close();
+echo '<p class="note">' . admin_h(admin_t(
     'Configuration only shows whether a key is present. The application does not probe provider uptime.',
     'الإعداد يوضح وجود المفتاح فقط. التطبيق لا يفحص جاهزية المزوّد.'
 )) . '</p></article>';
@@ -250,22 +259,24 @@ echo '<article class="card"><h2>' . admin_h(admin_t('Failed operations', 'الع
 if ($failRows === []) {
     echo '<p class="note">' . admin_h(admin_t('No failed operations in this period.', 'لا توجد عمليات فاشلة في هذه الفترة.')) . '</p>';
 } else {
-    echo '<table><tr><th>' . admin_h(admin_t('Service', 'الخدمة')) . '</th><th>' . admin_h(admin_t('Count', 'العدد')) . '</th></tr>';
+    admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Service', 'الخدمة')) . '</th><th>' . admin_h(admin_t('Count', 'العدد')) . '</th></tr>';
     foreach ($failRows as $row) {
         echo '<tr><td>' . admin_h((string) $row['operation']) . '</td><td>' . admin_h((string) $row['events']) . '</td></tr>';
     }
-    echo '</table>';
+    admin_table_close();
 }
 echo '</article>';
 echo '<article class="card"><h2>' . admin_h(admin_t('Latest failed operations', 'آخر العمليات الفاشلة')) . '</h2>';
 if ($recentFailRows === []) {
     echo '<p class="note">' . admin_h(admin_t('No failed operations in this period.', 'لا توجد عمليات فاشلة في هذه الفترة.')) . '</p>';
 } else {
-    echo '<table><tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h(admin_t('Service', 'الخدمة')) . '</th></tr>';
+    admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h(admin_t('Service', 'الخدمة')) . '</th></tr>';
     foreach ($recentFailRows as $row) {
         echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) $row['operation']) . '</td></tr>';
     }
-    echo '</table>';
+    admin_table_close();
 }
 echo '<p class="note">' . admin_h(admin_t('Stored rows have no error message.', 'الصفوف المخزّنة بلا نص للخطأ.')) . '</p></article>';
 echo '<article class="card"><h2>' . admin_h(admin_t('Latest audit events', 'آخر أحداث التدقيق')) . '</h2>';
@@ -274,11 +285,12 @@ if (!$auditReady) {
 } elseif ($auditRows === []) {
     echo '<p class="note">' . admin_h(admin_t('No audit events in this period.', 'لا توجد أحداث تدقيق في هذه الفترة.')) . '</p>';
 } else {
-    echo '<table><tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h(admin_t('Action', 'الإجراء')) . '</th></tr>';
+    admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h(admin_t('Action', 'الإجراء')) . '</th></tr>';
     foreach ($auditRows as $row) {
         echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) $row['action']) . '</td></tr>';
     }
-    echo '</table>';
+    admin_table_close();
 }
 echo '</article></div>';
 admin_end();

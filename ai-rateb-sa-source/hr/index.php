@@ -24,7 +24,12 @@ $stmt->execute([$cid]);
 $stats['pending_leave'] = (int) $stmt->fetchColumn();
 
 hr_start(hr_t('HR overview', 'نظرة الموارد البشرية'));
-echo '<div class="stats">';
+hr_toolbar([
+    ['href' => '/hr/employees.php', 'label' => hr_t('Add employee', 'إضافة موظف'), 'class' => 'primary'],
+    ['href' => '/hr/departments.php', 'label' => hr_t('Departments', 'الأقسام')],
+    ['href' => '/hr/reports.php', 'label' => hr_t('Reports', 'التقارير')],
+]);
+echo '<section class="stats">';
 foreach (
     [
         [hr_t('Employees', 'الموظفون'), (string) $stats['employees']],
@@ -33,11 +38,11 @@ foreach (
         [hr_t('Pending leave', 'إجازات معلّقة'), (string) $stats['pending_leave']],
     ] as [$label, $value]
 ) {
-    echo '<article class="stat"><span>' . hr_h($label) . '</span><b>' . hr_h($value) . '</b></article>';
+    echo '<article class="stat"><b>' . hr_h($value) . '</b><span>' . hr_h($label) . '</span></article>';
 }
-echo '</div>';
+echo '</section>';
 echo '<p class="note">' . hr_h(hr_t(
-    'HR data is isolated to your company account. Platform administrators use a separate console and cannot manage your employees here.',
-    'بيانات الموارد البشرية معزولة لحساب شركتك. مسؤولو المنصة يستخدمون وحدة منفصلة ولا يديرون موظفيك من هنا.'
+    'Manage employees, attendance, payroll, and leave from the sidebar sections. Platform admins only monitor usage — they cannot edit your HR here.',
+    'أدِر الموظفين والحضور والرواتب والإجازات من أقسام القائمة. مسؤولو المنصة يراقبون الاستخدام فقط ولا يعدّلون بياناتك هنا.'
 )) . '</p>';
 hr_end();

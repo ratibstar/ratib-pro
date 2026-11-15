@@ -42,7 +42,8 @@ admin_panel_open(admin_t('Customer accounts', 'حسابات العملاء'), ad
 echo '<form class="search" method="get"><input name="q" value="' . admin_h($q) . '" placeholder="' . admin_h(admin_t('Name or email', 'الاسم أو البريد')) . '"><button type="submit">' . admin_h(admin_t('Search', 'بحث')) . '</button></form>';
 $canManage = admin_actor_has($adminActor, 'customers.manage');
 $canFinance = admin_actor_has($adminActor, 'finance.view');
-echo '<table><tr><th>' . admin_h(admin_t('Name', 'الاسم')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Role', 'الدور')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>' . admin_h(admin_t('Paid (SAR)', 'المدفوع (ر.س)')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th><th>' . admin_h(admin_t('Campaigns', 'الحملات')) . '</th><th>' . admin_h(admin_t('Usage', 'الاستخدام')) . '</th><th>' . admin_h(admin_t('Registered', 'التسجيل')) . '</th><th>' . admin_h(admin_t('Last login', 'آخر دخول')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Name', 'الاسم')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Role', 'الدور')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>' . admin_h(admin_t('Paid (SAR)', 'المدفوع (ر.س)')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th><th>' . admin_h(admin_t('Campaigns', 'الحملات')) . '</th><th>' . admin_h(admin_t('Usage', 'الاستخدام')) . '</th><th>' . admin_h(admin_t('Registered', 'التسجيل')) . '</th><th>' . admin_h(admin_t('Last login', 'آخر دخول')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
 foreach ($rows as $row) {
     $state = ($row['disabled_at'] ?? null) ? ' <span class="pill bad">' . admin_h(admin_t('Disabled', 'معطّل')) . '</span>' : '';
     $paid = admin_table_has($pdo, 'payment_receipts', 'amount') ? admin_halalas_to_sar((int) ($row['paid_halalas'] ?? 0)) : '—';
@@ -54,7 +55,7 @@ foreach ($rows as $row) {
     }
     echo '</div></td></tr>';
 }
-echo '</table>';
+admin_table_close();
 admin_pager($page, $total, '/admin/users.php?' . ($q !== '' ? 'q=' . rawurlencode($q) . '&' : '') . 'page=');
 admin_panel_close();
 admin_end();

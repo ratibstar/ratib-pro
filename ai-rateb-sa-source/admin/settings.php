@@ -31,10 +31,14 @@ $msgEn = platform_setting($pdo, 'maintenance_message_en', '') ?? '';
 $msgAr = platform_setting($pdo, 'maintenance_message_ar', '') ?? '';
 
 admin_start(admin_t('System', 'النظام'));
+admin_toolbar([
+    ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات')],
+    ['href' => '/admin/usage.php', 'label' => admin_t('Usage', 'الاستخدام')],
+]);
 if ($notice === 'saved') {
-    echo '<p class="flash">' . admin_h(admin_t('Site settings saved.', 'تم حفظ إعدادات الموقع.')) . '</p>';
+    admin_flash_box('saved', 'ok');
 } elseif ($notice === 'owner_only') {
-    echo '<p class="flash">' . admin_h(admin_t('Only the platform owner can change public site settings.', 'فقط مالك المنصة يمكنه تغيير إعدادات الموقع العام.')) . '</p>';
+    admin_flash_box('owner_only', 'bad');
 }
 if (admin_actor_is_owner($adminActor)) {
     echo '<section class="cards"><article class="card"><h2>' . admin_h(admin_t('Public website', 'الموقع العام')) . '</h2>';

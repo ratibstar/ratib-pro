@@ -44,7 +44,7 @@ function admin_nav_on(string $here, string $href): bool
     if ($path === '/admin/users.php' && str_starts_with($here, '/admin/user.php')) {
         return true;
     }
-    if ($path === '/admin/hr-overview.php' && $here === '/admin/hr-overview.php') {
+    if ($path === '/admin/hr-overview.php' && ($here === '/admin/hr-overview.php' || str_starts_with($here, '/admin/hr-customer.php'))) {
         return true;
     }
     if ($path === '/admin/campaigns.php' && str_starts_with($here, '/admin/campaign.php')) {
@@ -70,7 +70,7 @@ function admin_start(string $title): void
     echo '<!doctype html><html lang="' . admin_h($adminLang) . '" dir="' . $dir . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>' . admin_h($title) . ' — RATEB AI</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
-    echo '<link rel="stylesheet" href="/admin/admin.css?v=11"></head><body class="admin-app">';
+    echo '<link rel="stylesheet" href="/admin/admin.css?v=14"></head><body class="admin-app">';
     echo '<input class="nav-check" id="nav-check" type="checkbox">';
     echo '<div class="shell"><aside class="side"><div class="brand"><b>RATEB</b> <span>AI</span></div><p class="role">' . admin_h(admin_t('Administration', 'الإدارة')) . '</p><nav class="nav-sections">';
     $groups = admin_nav_groups_for_actor($adminActor, $adminLang);
@@ -87,7 +87,8 @@ function admin_start(string $title): void
         echo '<div class="nav-section-links">';
         foreach ($links as $href => $label) {
             $on = admin_nav_on($here, $href);
-            echo '<a class="' . ($on ? 'on' : '') . '" href="' . admin_h($href) . '">' . admin_h($label) . '</a>';
+            $glyph = admin_nav_glyph($href);
+            echo '<a class="' . ($on ? 'on' : '') . '" href="' . admin_h($href) . '"><span class="nav-ico" aria-hidden="true">' . admin_h($glyph) . '</span>' . admin_h($label) . '</a>';
         }
         echo '</div></details>';
     }
@@ -97,12 +98,14 @@ function admin_start(string $title): void
     if (($adminActor['type'] ?? '') === 'staff') {
         echo '<a class="lang" href="/admin/logout.php">' . admin_h(admin_t('Sign out', 'خروج')) . '</a>';
     }
-    echo '<span class="who"><i>' . admin_h($initial) . '</i><span>' . admin_h($email) . '</span></span></div></header><main>';
+    echo '<span class="who"><i>' . admin_h($initial) . '</i><span>' . admin_h($email) . '</span></span></div></header><main class="content-area">';
 }
 
 function admin_end(): void
 {
-    echo '</main></div></div></body></html>';
+    $year = date('Y');
+    echo '</main><footer class="admin-footer">RATEB AI · ' . admin_h(admin_t('Administration', 'الإدارة')) . ' · ' . admin_h($year) . '</footer></div></div>';
+    echo '<script src="/admin/admin.js?v=1" defer></script></body></html>';
 }
 
 function admin_pager(int $page, int $total, string $base): void
@@ -133,6 +136,8 @@ function admin_flash(string $code): string
         'self' => admin_t('You cannot change your own access this way.', 'لا يمكن تغيير وصولك بهذه الطريقة.'),
         'missing' => admin_t('The record was not found.', 'السجل غير موجود.'),
         'schema' => admin_t('Apply the admin migration before this action.', 'طبّق ترحيل الإدارة قبل هذا الإجراء.'),
+        'saved' => admin_t('Saved.', 'تم الحفظ.'),
+        'owner_only' => admin_t('Only the platform owner can do this.', 'فقط مالك المنصة يمكنه ذلك.'),
         default => admin_t('The action was not completed.', 'لم يكتمل الإجراء.'),
     };
 }

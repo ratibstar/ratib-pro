@@ -9,7 +9,7 @@ $range = admin_finance_range();
 $start = $range['start'];
 $end = $range['end'];
 $tab = (string) ($_GET['tab'] ?? 'overview');
-if (!in_array($tab, ['overview', 'customers', 'payments'], true)) {
+if (!in_array($tab, ['overview', 'customers', 'payments', 'subscriptions', 'reconcile'], true)) {
     $tab = 'overview';
 }
 $q = trim((string) ($_GET['q'] ?? ''));
@@ -54,7 +54,23 @@ $filterLinks = [
     'year' => admin_t('This year', 'هذه السنة'),
 ];
 
+$mrrCatalog = (float) $pdo->query("SELECT COALESCE(SUM(p.price_sar),0) FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.status = 'active' AND s.period_end >= NOW() AND p.code <> 'free'")->fetchColumn();
+$activeSubs = (int) $pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status = 'active' AND period_end >= NOW()")->fetchColumn();
+
 admin_start(admin_t('Financial management', 'الإدارة المالية'));
+$financeToolbar = [
+    ['href' => '/admin/payments.php', 'label' => admin_t('All receipts', 'كل الإيصالات')],
+    ['href' => '/admin/subscriptions.php', 'label' => admin_t('Manage subscriptions', 'إدارة الاشتراكات')],
+    ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات')],
+];
+if (admin_actor_has($adminActor, 'finance.export')) {
+    $rangeKey = (string) ($range['key'] ?? '30');
+    $financeToolbar[] = ['href' => '/admin/finance-export.php?export=summary&range=' . rawurlencode($rangeKey), 'label' => admin_t('Export CSV', 'تصدير CSV')];
+    if ($hasOrders) {
+        $financeToolbar[] = ['href' => '/admin/finance-export.php?export=pending&range=' . rawurlencode($rangeKey), 'label' => admin_t('Export pending', 'تصدير المعلّقة')];
+    }
+}
+admin_toolbar($financeToolbar);
 
 echo '<div class="filters">';
 foreach ($filterLinks as $filterKey => $filterLabel) {
@@ -83,7 +99,12 @@ foreach ([
     'overview' => admin_t('Overview', 'نظرة عامة'),
     'customers' => admin_t('Customer finances', 'مالية العملاء'),
     'payments' => admin_t('Payment history', 'سجل المدفوعات'),
+    'subscriptions' => admin_t('Subscriptions', 'الاشتراكات'),
+    'reconcile' => admin_t('Reconciliation', 'المطابقة'),
 ] as $tabKey => $tabLabel) {
+    if ($tabKey === 'reconcile' && !$hasOrders) {
+        continue;
+    }
     $on = $tab === $tabKey ? ' on' : '';
     $href = '/admin/finance.php' . admin_finance_query_string(['tab' => $tabKey, 'page' => '']);
     echo '<a class="finance-tab' . $on . '" href="' . admin_h($href) . '">' . admin_h($tabLabel) . '</a>';
@@ -93,6 +114,7 @@ echo '</nav>';
 $exportBase = '/admin/finance-export.php' . admin_finance_query_string(['page' => '']);
 
 if ($tab === 'overview') {
+    admin_panel_open(admin_t('Finance snapshot', 'ملخص المالية'), admin_t('Collected cash from receipts in the selected date range.', 'النقد المحصّل من الإيصالات ضمن الفترة المحددة.'));
     echo '<section class="stats">';
     echo '<article class="stat"><b>' . admin_h(admin_halalas_to_sar($collected)) . ' SAR</b><span>' . admin_h(admin_t('Collected payments', 'مدفوعات محصّلة')) . '</span></article>';
     echo '<article class="stat"><b>' . (int) $paidCount . '</b><span>' . admin_h(admin_t('Successful receipts', 'إيصالات ناجحة')) . '</span></article>';
@@ -100,7 +122,10 @@ if ($tab === 'overview') {
     echo '<article class="stat"><b>' . (int) $failedCount . ' · ' . admin_h(admin_halalas_to_sar($failedHalalas)) . ' SAR</b><span>' . admin_h(admin_t('Failed orders', 'طلبات فاشلة')) . '</span></article>';
     echo '<article class="stat"><b>' . admin_h(admin_t('Unavailable', 'غير متاح')) . '</b><span>' . admin_h(admin_t('Refunded amount', 'مبلغ مسترد')) . '</span></article>';
     echo '<article class="stat"><b>' . admin_h(admin_t('Unavailable', 'غير متاح')) . '</b><span>' . admin_h(admin_t('Net revenue', 'صافي الإيراد')) . '</span></article>';
+    echo '<article class="stat"><b>' . admin_h(number_format($mrrCatalog, 2, '.', '')) . ' SAR</b><span>' . admin_h(admin_t('Catalog MRR (active paid plans)', 'MRR كتالوج (باقات مدفوعة نشطة)')) . '</span></article>';
+    echo '<article class="stat"><b>' . (int) $activeSubs . '</b><span>' . admin_h(admin_t('Active subscriptions', 'اشتراكات نشطة')) . '</span></article>';
     echo '</section>';
+    admin_panel_close();
 
     echo '<p class="note">' . admin_h(admin_t(
         'Collected amounts come only from payment_receipts (unique moyasar_id). Pending and failed rows use payment_orders and are not revenue. Currency is SAR; amounts are stored in halalas. Refunds are not stored, so refunded and net figures stay unavailable.',
@@ -117,10 +142,10 @@ if ($tab === 'overview') {
     admin_finance_chart(admin_t('Monthly collected (SAR)', 'محصّل شهري (ر.س)'), $monthlySeries);
     admin_finance_chart(admin_t('Yearly collected (SAR)', 'محصّل سنوي (ر.س)'), $yearlySeries);
     echo '</div>';
-    echo '<script>document.querySelectorAll(".chart .bar").forEach(function(bar){bar.addEventListener("click",function(){var on=bar.classList.contains("is-tip");document.querySelectorAll(".chart .bar.is-tip").forEach(function(node){node.classList.remove("is-tip");});if(!on){bar.classList.add("is-tip");}});});</script>';
 }
 
 if ($tab === 'customers') {
+    admin_panel_open(admin_t('Customer finances', 'مالية العملاء'));
     $where = '';
     $params = [];
     if ($q !== '') {
@@ -171,7 +196,8 @@ if ($tab === 'customers') {
         'إجمالي المدفوع يشمل الإيصالات الناجحة فقط. أسماء الاشتراك حالة كتالوج وليست نقدًا محصّلًا.'
     )) . '</p>';
 
-    echo '<table><tr><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Payments', 'المدفوعات')) . '</th><th>' . admin_h(admin_t('Subscription', 'الاشتراك')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Last payment', 'آخر دفع')) . '</th></tr>';
+    admin_table_open();
+    echo '<tr><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Payments', 'المدفوعات')) . '</th><th>' . admin_h(admin_t('Subscription', 'الاشتراك')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Last payment', 'آخر دفع')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
     foreach ($rows as $row) {
         $disabled = ($row['disabled_at'] ?? null) !== null && (string) $row['disabled_at'] !== '';
         $plan = (string) ($row['plan_code'] ?? '');
@@ -182,14 +208,18 @@ if ($tab === 'customers') {
         echo '<td>' . admin_h($plan !== '' ? $plan : '—') . '</td>';
         echo '<td>' . (int) $row['credits_balance'] . '</td>';
         echo '<td><span class="pill ' . ($disabled ? 'bad' : 'ok') . '">' . admin_h($disabled ? admin_t('Disabled', 'معطّل') : admin_t('Active', 'نشط')) . '</span></td>';
-        echo '<td>' . admin_h((string) ($row['last_payment'] ?? '—')) . '</td></tr>';
+        echo '<td>' . admin_h((string) ($row['last_payment'] ?? '—')) . '</td><td><div class="table-actions">';
+        echo '<a class="btn small quiet" href="/admin/finance-customer.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('Finance', 'مالية')) . '</a>';
+        echo '<a class="btn small quiet" href="/admin/user.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('Account', 'حساب')) . '</a></div></td></tr>';
     }
-    echo '</table>';
+    admin_table_close();
     $custBase = '/admin/finance.php' . admin_finance_query_string(['tab' => 'customers']);
     admin_pager($page, $total, $custBase . (str_contains($custBase, '?') ? '&' : '?') . 'page=');
+    admin_panel_close();
 }
 
 if ($tab === 'payments') {
+    admin_panel_open(admin_t('Payment history', 'سجل المدفوعات'));
   if (!in_array($status, ['all', 'paid', 'pending', 'failed'], true)) {
         $status = 'all';
     }
@@ -262,7 +292,8 @@ if ($tab === 'payments') {
     }
     echo '</p>';
 
-    echo '<table><tr><th>' . admin_h(admin_t('Reference', 'المرجع')) . '</th><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Moyasar ID', 'معرّف Moyasar')) . '</th></tr>';
+    admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Reference', 'المرجع')) . '</th><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Moyasar ID', 'معرّف Moyasar')) . '</th></tr>';
     foreach ($rows as $row) {
         $ref = ($row['kind'] === 'receipt' ? 'R' : 'O') . (int) $row['row_id'];
         $pill = match ((string) $row['status']) {
@@ -276,13 +307,79 @@ if ($tab === 'payments') {
         echo '<td>' . admin_h((string) $row['package_code']) . '</td>';
         echo '<td>' . admin_h(admin_halalas_to_sar((int) $row['amount'])) . '</td>';
         echo '<td>' . admin_h((string) $row['created_at']) . '</td>';
-        echo '<td><span class="pill ' . $pill . '">' . admin_h((string) $row['status']) . '</span></td>';
+        $pst = (string) $row['status'];
+        echo '<td><span class="pill ' . $pill . '">' . admin_h(admin_payment_status_label($pst)) . '</span></td>';
         echo '<td>' . admin_h((string) $row['moyasar_ref']) . '</td></tr>';
     }
-    echo '</table>';
+    admin_table_close();
     $pageBase = '/admin/finance.php' . admin_finance_query_string(['tab' => 'payments', 'page' => '']);
     $sep = str_contains($pageBase, '?') ? '&' : '?';
     admin_pager($page, $total, $pageBase . $sep . 'page=');
+    admin_panel_close();
+}
+
+if ($tab === 'subscriptions') {
+    $subRows = $pdo->query("SELECT s.id, u.id AS user_id, u.email, u.package_type, p.code, p.price_sar, s.status, s.period_end
+        FROM subscriptions s
+        INNER JOIN users u ON u.id = s.user_id
+        INNER JOIN plans p ON p.id = s.plan_id
+        ORDER BY s.id DESC LIMIT 200")->fetchAll();
+    admin_panel_open(admin_t('Subscription ledger', 'سجل الاشتراكات'), admin_t('Catalog subscriptions table. To replace a plan (owner), use the dedicated subscriptions page.', 'جدول الاشتراكات. لاستبدال باقة (مالك) استخدم صفحة الاشتراكات المخصصة.'));
+    echo '<p class="page-toolbar"><a class="btn primary" href="/admin/subscriptions.php">' . admin_h(admin_t('Open full subscription control', 'فتح التحكم الكامل بالاشتراكات')) . '</a></p>';
+    admin_table_open();
+    echo '<tr><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Plan', 'الباقة')) . '</th><th>' . admin_h(admin_t('Catalog SAR', 'كتالوج ر.س')) . '</th><th>' . admin_h(admin_t('package_type', 'package_type')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Period end', 'نهاية الفترة')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
+    foreach ($subRows as $row) {
+        $st = (string) $row['status'];
+        $mismatch = (string) $row['package_type'] !== (string) $row['code'];
+        echo '<tr><td><a href="/admin/finance-customer.php?id=' . (int) $row['user_id'] . '">' . admin_h((string) $row['email']) . '</a></td>';
+        echo '<td>' . admin_h((string) $row['code']) . '</td><td>' . admin_h((string) $row['price_sar']) . '</td>';
+        echo '<td>' . ($mismatch ? '<span class="pill warn">' : '') . admin_h((string) $row['package_type']) . ($mismatch ? '</span>' : '') . '</td>';
+        echo '<td><span class="pill' . admin_pill_for_status($st) . '">' . admin_h(admin_subscription_status_label($st)) . '</span></td>';
+        echo '<td>' . admin_h((string) $row['period_end']) . '</td><td><div class="table-actions"><a class="btn small quiet" href="/admin/user.php?id=' . (int) $row['user_id'] . '">' . admin_h(admin_t('Account', 'حساب')) . '</a></div></td></tr>';
+    }
+    if ($subRows === []) {
+        admin_table_empty_row(7, admin_t('No subscriptions.', 'لا اشتراكات.'));
+    }
+    admin_table_close();
+    admin_panel_close();
+}
+
+if ($tab === 'reconcile' && $hasOrders) {
+    $reconcileRows = $pdo->query("SELECT o.id AS order_id, o.user_id, u.name, u.email, o.package_code, o.amount, o.status, o.moyasar_invoice_id, o.created_at,
+        (SELECT r.id FROM payment_receipts r WHERE r.user_id = o.user_id AND (
+            (o.moyasar_invoice_id IS NOT NULL AND o.moyasar_invoice_id <> '' AND r.moyasar_id = o.moyasar_invoice_id)
+            OR (r.amount = o.amount AND r.package_type = o.package_code AND r.created_at >= o.created_at)
+        ) ORDER BY r.id DESC LIMIT 1) AS receipt_id
+        FROM payment_orders o
+        INNER JOIN users u ON u.id = o.user_id
+        WHERE o.status IN ('pending','failed')
+        ORDER BY o.id DESC LIMIT 250")->fetchAll();
+    admin_panel_open(admin_t('Moyasar reconciliation', 'مطابقة Moyasar'), admin_t(
+        'Pending/failed orders with optional matching receipt. Receipt rows remain the revenue source of truth.',
+        'طلبات معلّقة/فاشلة مع إيصال مطابق إن وُجد. الإيصالات هي مصدر الإيراد.'
+    ));
+    admin_table_open();
+    echo '<tr><th>' . admin_h(admin_t('Order', 'طلب')) . '</th><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Moyasar invoice', 'فاتورة')) . '</th><th>' . admin_h(admin_t('Receipt match', 'إيصال مطابق')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
+    foreach ($reconcileRows as $row) {
+        $st = (string) $row['status'];
+        $pill = $st === 'pending' ? 'warn' : 'bad';
+        $match = $row['receipt_id'] !== null ? '<span class="pill ok">R' . (int) $row['receipt_id'] . '</span>' : '<span class="pill bad">' . admin_h(admin_t('None', 'لا يوجد')) . '</span>';
+        echo '<tr><td>O' . (int) $row['order_id'] . '</td>';
+        echo '<td><a href="/admin/finance-customer.php?id=' . (int) $row['user_id'] . '">' . admin_h((string) $row['name']) . '</a><br><span class="note">' . admin_h((string) $row['email']) . '</span></td>';
+        echo '<td>' . admin_h((string) $row['package_code']) . '</td><td>' . admin_h(admin_halalas_to_sar((int) $row['amount'])) . '</td>';
+        echo '<td><span class="pill ' . $pill . '">' . admin_h(admin_payment_status_label($st)) . '</span></td>';
+        echo '<td>' . admin_h((string) ($row['moyasar_invoice_id'] ?? '')) . '</td><td>' . $match . '</td>';
+        echo '<td><div class="table-actions"><a class="btn small quiet" href="/admin/user.php?id=' . (int) $row['user_id'] . '">' . admin_h(admin_t('Account', 'حساب')) . '</a></div></td></tr>';
+    }
+    if ($reconcileRows === []) {
+        admin_table_empty_row(8, admin_t('No pending or failed orders.', 'لا طلبات معلّقة أو فاشلة.'));
+    }
+    admin_table_close();
+    echo '<p class="note">' . admin_h(admin_t(
+        'There is no automatic refund UI in this release. Investigate unmatched pending rows in Moyasar, then rely on webhook + receipts for collected cash.',
+        'لا واجهة استرداد تلقائي في هذا الإصدار. راجع الطلبات المعلّقة غير المطابقة في Moyasar؛ الإيراد المعتمد هو الإيصالات بعد الويب هوك.'
+    )) . '</p>';
+    admin_panel_close();
 }
 
 admin_end();

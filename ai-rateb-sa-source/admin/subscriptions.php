@@ -80,12 +80,13 @@ foreach ($notes as $note) {
     echo '<li>' . admin_h($note) . '</li>';
 }
 echo '</ul></div>';
-echo '<table><tr><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Plan', 'الباقة')) . '</th><th>package_type</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Period end', 'نهاية الفترة')) . '</th><th>subscription_expires_at</th></tr>';
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Plan', 'الباقة')) . '</th><th>package_type</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Period end', 'نهاية الفترة')) . '</th><th>subscription_expires_at</th></tr>';
 foreach ($rows as $row) {
     $mismatch = (string) $row['package_type'] !== (string) $row['code'];
     echo '<tr><td><a href="/admin/user.php?id=' . (int) $row['user_id'] . '">' . admin_h((string) $row['email']) . '</a></td><td>' . admin_h((string) $row['code']) . '</td><td>' . ($mismatch ? '<span class="pill warn">' : '') . admin_h((string) $row['package_type']) . ($mismatch ? '</span>' : '') . '</td><td>' . admin_h((string) $row['status']) . '</td><td>' . admin_h((string) $row['period_end']) . '</td><td>' . admin_h((string) ($row['subscription_expires_at'] ?? '—')) . '</td></tr>';
 }
-echo '</table>';
+admin_table_close();
 echo '<h2>' . admin_h(admin_t('Replace a user plan', 'استبدال باقة مستخدم')) . '</h2>';
 echo '<form method="post" class="inline"><input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '">';
 echo '<input name="user_id" inputmode="numeric" placeholder="' . admin_h(admin_t('User id', 'رقم المستخدم')) . '">';

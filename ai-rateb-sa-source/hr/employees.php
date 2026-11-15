@@ -72,6 +72,7 @@ if ($notice !== '') {
 hr_toolbar([
     ['href' => '/hr/employees.php', 'label' => hr_t('Add employee', 'إضافة موظف'), 'class' => 'primary'],
     ['href' => '/hr/departments.php', 'label' => hr_t('Departments', 'الأقسام')],
+    ['href' => '/hr/export.php?kind=employees', 'label' => hr_t('Export CSV', 'تصدير CSV')],
 ]);
 hr_panel_open($edit ? hr_t('Edit employee', 'تعديل موظف') : hr_t('Add employee', 'إضافة موظف'), hr_t('Full add / edit / delete for your company employees.', 'إضافة وتعديل وحذف موظفي شركتك بالكامل.'));
 echo '<form method="post" class="form-grid" id="employee-form">';
@@ -93,7 +94,7 @@ echo '<label>' . hr_h(hr_t('Phone', 'الهاتف')) . '</label><input name="pho
 echo '<label>' . hr_h(hr_t('Status', 'الحالة')) . '</label><select name="status">';
 foreach (['active', 'inactive', 'terminated'] as $st) {
     $sel = ((string) ($edit['status'] ?? 'active')) === $st ? ' selected' : '';
-    echo '<option value="' . $st . '"' . $sel . '>' . hr_h($st) . '</option>';
+    echo '<option value="' . $st . '"' . $sel . '>' . hr_h(hr_employee_status_label($st)) . '</option>';
 }
 echo '</select>';
 echo '<label>' . hr_h(hr_t('Hire date', 'تاريخ التعيين')) . '</label><input type="date" name="hired_at" value="' . hr_h((string) ($edit['hired_at'] ?? '')) . '">';
@@ -108,11 +109,12 @@ echo '</p></form>';
 hr_panel_close();
 
 hr_panel_open(hr_t('All employees', 'كل الموظفين'));
-echo '<table><tr><th>' . hr_h(hr_t('Name', 'الاسم')) . '</th><th>' . hr_h(hr_t('Department', 'القسم')) . '</th><th>' . hr_h(hr_t('Title', 'المسمى')) . '</th><th>' . hr_h(hr_t('Status', 'الحالة')) . '</th><th>' . hr_h(hr_th_actions()) . '</th></tr>';
+hr_table_open();
+echo '<tr><th>' . hr_h(hr_t('Name', 'الاسم')) . '</th><th>' . hr_h(hr_t('Department', 'القسم')) . '</th><th>' . hr_h(hr_t('Title', 'المسمى')) . '</th><th>' . hr_h(hr_t('Status', 'الحالة')) . '</th><th>' . hr_h(hr_th_actions()) . '</th></tr>';
 foreach ($rows as $row) {
-    $pill = (string) $row['status'] === 'active' ? 'ok' : 'warn';
+    $st = (string) $row['status'];
     echo '<tr><td>' . hr_h((string) $row['full_name']) . '</td><td>' . hr_h((string) ($row['department_name'] ?? '—')) . '</td><td>' . hr_h((string) ($row['job_title'] ?? '—')) . '</td>';
-    echo '<td><span class="pill ' . $pill . '">' . hr_h((string) $row['status']) . '</span></td><td><div class="table-actions">';
+    echo '<td><span class="pill ' . hr_pill_class($st) . '">' . hr_h(hr_employee_status_label($st)) . '</span></td><td><div class="table-actions">';
     echo '<a class="btn small quiet" href="/hr/employees.php?edit=' . (int) $row['id'] . '">' . hr_h(hr_t('Edit', 'تعديل')) . '</a>';
     echo '<form method="post" class="inline" onsubmit="return confirm(\'' . hr_h(hr_t('Delete this employee?', 'حذف هذا الموظف؟')) . '\')">';
     echo '<input type="hidden" name="csrf_token" value="' . hr_h(csrf_token()) . '"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . (int) $row['id'] . '">';
@@ -121,6 +123,6 @@ foreach ($rows as $row) {
 if ($rows === []) {
     echo '<tr><td colspan="5">' . hr_h(hr_t('No employees yet.', 'لا يوجد موظفون بعد.')) . '</td></tr>';
 }
-echo '</table>';
+hr_table_close();
 hr_panel_close();
 hr_end();

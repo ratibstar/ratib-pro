@@ -44,14 +44,14 @@ foreach ($rp as $row) {
 }
 
 admin_start(admin_t('Roles & permissions', 'الأدوار والصلاحيات'));
+admin_toolbar([['href' => '/admin/staff.php', 'label' => admin_t('Staff', 'موظفو المنصة'), 'class' => 'primary']]);
 if ($notice !== '') {
-    echo '<p class="flash">' . admin_h(admin_flash($notice)) . '</p>';
+    admin_flash_box($notice, $notice === 'applied' ? 'ok' : 'bad');
 }
-echo '<p class="note">' . admin_h(admin_t(
+admin_panel_open(admin_t('Permission matrix', 'مصفوفة الصلاحيات'), admin_t(
     'Toggle what each staff role can access. The Owner always has full access. Changes apply on next staff login.',
     'فعّل ما يمكن لكل دور الوصول إليه. المالك دائمًا بصلاحيات كاملة. التغييرات تُطبَّق عند دخول الموظف التالي.'
-)) . '</p>';
-
+));
 echo '<div class="perm-grid">';
 foreach ($roles as $role) {
     $code = (string) $role['code'];
@@ -71,4 +71,5 @@ foreach ($roles as $role) {
     echo '</form></div>';
 }
 echo '</div>';
+admin_panel_close();
 admin_end();

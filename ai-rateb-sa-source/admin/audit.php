@@ -6,6 +6,7 @@ require __DIR__ . '/bootstrap.php';
 admin_require_permission('operations.view');
 
 admin_start(admin_t('Audit log', 'سجل التدقيق'));
+admin_toolbar([['href' => '/admin/settings.php', 'label' => admin_t('System', 'النظام'), 'class' => 'quiet']]);
 if (!admin_table_has($pdo, 'admin_audit_log', 'id')) {
     echo '<p class="note">' . admin_h(admin_t('The audit table is not available.', 'جدول التدقيق غير متاح.')) . '</p>';
     admin_end();
@@ -27,11 +28,17 @@ $rows = $pdo->query(
     ORDER BY a.id DESC LIMIT ' . admin_per_page() . ' OFFSET ' . admin_offset($page)
 )->fetchAll();
 $missingStaff = admin_t('Staff (removed)', 'موظف (محذوف)');
-echo '<table><tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h(admin_t('Actor', 'الفاعل')) . '</th><th>' . admin_h(admin_t('Action', 'الإجراء')) . '</th><th>' . admin_h(admin_t('Target', 'الهدف')) . '</th><th>' . admin_h(admin_t('Reason', 'السبب')) . '</th></tr>';
+admin_panel_open(admin_t('Recent events', 'الأحداث الأخيرة'), admin_t('Immutable trail of admin actions on customers, credits, and staff.', 'سجل ثابت لإجراءات الإدارة على العملاء والنقاط والموظفين.'));
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h(admin_t('Actor', 'الفاعل')) . '</th><th>' . admin_h(admin_t('Action', 'الإجراء')) . '</th><th>' . admin_h(admin_t('Target', 'الهدف')) . '</th><th>' . admin_h(admin_t('Reason', 'السبب')) . '</th></tr>';
 foreach ($rows as $row) {
     $actorLabel = admin_audit_actor_display($row, $missingStaff);
     echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h($actorLabel) . '</td><td>' . admin_h((string) $row['action']) . '</td><td>' . admin_h((string) $row['target_type'] . ' ' . (string) ($row['target_id'] ?? '')) . '</td><td>' . admin_h((string) $row['reason']) . '</td></tr>';
 }
-echo '</table>';
+if ($rows === []) {
+    admin_table_empty_row(5, admin_t('No audit events yet.', 'لا أحداث تدقيق بعد.'));
+}
+admin_table_close();
 admin_pager($page, $total, '/admin/audit.php?page=');
+admin_panel_close();
 admin_end();

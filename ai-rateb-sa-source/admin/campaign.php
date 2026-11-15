@@ -16,6 +16,10 @@ if (!$campaign) {
     admin_end();
     exit;
 }
+admin_toolbar([
+    ['href' => '/admin/campaigns.php', 'label' => admin_t('All campaigns', 'كل الحملات'), 'class' => 'quiet'],
+    ['href' => '/admin/user.php?id=' . (int) $campaign['user_id'], 'label' => admin_t('Owner account', 'حساب المالك'), 'class' => 'quiet'],
+]);
 echo '<article class="card"><h2>' . admin_h((string) $campaign['title']) . '</h2>';
 echo '<p>' . admin_h(admin_t('Owner', 'المالك')) . ': ' . admin_h((string) $campaign['owner_name']) . ' · ' . admin_h((string) $campaign['email']) . '</p>';
 echo '<p>' . admin_h(admin_t('Status', 'الحالة')) . ': <span class="pill">' . admin_h((string) $campaign['status']) . '</span></p>';
@@ -68,5 +72,5 @@ foreach ($jobs as $row) {
     $pill = (string) $row['status'] === 'failed' ? 'bad' : ((string) $row['status'] === 'completed' ? 'ok' : 'warn');
     echo '<tr><td>' . (int) $row['id'] . '</td><td>' . admin_h((string) $row['provider']) . '</td><td><span class="pill ' . $pill . '">' . admin_h((string) $row['status']) . '</span></td><td>' . admin_h((string) $row['error_code']) . '</td><td>' . admin_h((string) $row['approval_status']) . '</td></tr>';
 }
-echo '</table>';
+admin_table_close();
 admin_end();

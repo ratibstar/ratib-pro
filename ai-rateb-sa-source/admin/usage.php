@@ -33,32 +33,40 @@ echo '<p class="note">' . admin_h(admin_t(
     'Configured means a non-empty secret or URL is present on this server. It does not mean the provider answered successfully.',
     '«مُعد» يعني أن سرًا أو رابطًا غير فارغ موجود على الخادم. لا يعني أن المزوّد استجاب بنجاح.'
 )) . '</p>';
-echo '<table><tr><th>' . admin_h(admin_t('Provider', 'المزوّد')) . '</th><th>' . admin_h(admin_t('Secret present', 'السر موجود')) . '</th><th>' . admin_h(admin_t('Selected route', 'المسار المختار')) . '</th><th>' . admin_h(admin_t('Note', 'ملاحظة')) . '</th></tr>';
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Provider', 'المزوّد')) . '</th><th>' . admin_h(admin_t('Secret present', 'السر موجود')) . '</th><th>' . admin_h(admin_t('Selected route', 'المسار المختار')) . '</th><th>' . admin_h(admin_t('Note', 'ملاحظة')) . '</th></tr>';
 foreach (admin_provider_snapshot() as $row) {
     echo '<tr><td>' . admin_h((string) $row['label']) . '</td><td><span class="pill ' . ($row['configured'] ? 'ok' : 'warn') . '">' . admin_h($row['configured'] ? admin_t('Present', 'موجود') : admin_t('Missing', 'غير موجود')) . '</span></td><td>' . admin_h($row['selected'] ? admin_t('Yes', 'نعم') : admin_t('No', 'لا')) . '</td><td>' . admin_h((string) $row['note']) . '</td></tr>';
 }
-echo '</table>';
-echo '<h2>' . admin_h(admin_t('Operations', 'العمليات')) . '</h2><p class="note">' . admin_h(admin_t('The credits column below is the raw database sum. Reservation rows repeat a charge that the cards above count once from the feature ledger.', 'عمود النقاط أدناه هو المجموع الخام. صفوف الحجز تكرر خصمًا تحسبه البطاقات أعلاه مرة واحدة من سجل العملية.')) . '</p><table><tr><th>' . admin_h(admin_t('Operation', 'العملية')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Events', 'العدد')) . '</th><th>' . admin_h(admin_t('Units', 'الوحدات')) . '</th><th>' . admin_h(admin_t('Raw credits column', 'عمود النقاط الخام')) . '</th></tr>';
+admin_table_close();
+admin_panel_open(admin_t('Operations', 'العمليات'), admin_t('The credits column below is the raw database sum.', 'عمود النقاط أدناه هو المجموع الخام من قاعدة البيانات.'));
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Operation', 'العملية')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Events', 'العدد')) . '</th><th>' . admin_h(admin_t('Units', 'الوحدات')) . '</th><th>' . admin_h(admin_t('Raw credits column', 'عمود النقاط الخام')) . '</th></tr>';
 foreach ($summary as $row) {
     echo '<tr><td>' . admin_h((string) $row['operation']) . '</td><td>' . admin_h((string) $row['status']) . '</td><td>' . (int) $row['events'] . '</td><td>' . (int) $row['units'] . '</td><td>' . (int) $row['credits'] . '</td></tr>';
 }
-echo '</table>';
+admin_table_close();
+admin_panel_close();
 echo '<h2>' . admin_h(admin_t('Video error codes', 'أكواد أخطاء الفيديو')) . '</h2>';
 if ($errors === []) {
     echo '<p class="note">' . admin_h(admin_t('No stored video error codes.', 'لا توجد أكواد خطأ مخزّنة للفيديو.')) . '</p>';
 } else {
-    echo '<table><tr><th>' . admin_h(admin_t('Code', 'الرمز')) . '</th><th>' . admin_h(admin_t('Events', 'العدد')) . '</th></tr>';
+    admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Code', 'الرمز')) . '</th><th>' . admin_h(admin_t('Events', 'العدد')) . '</th></tr>';
     foreach ($errors as $row) {
         echo '<tr><td>' . admin_h((string) $row['error_code']) . '</td><td>' . (int) $row['events'] . '</td></tr>';
     }
-    echo '</table>';
+    admin_table_close();
 }
 echo '<h2>' . admin_h(admin_t('Cost', 'التكلفة')) . '</h2><p class="note">' . admin_h($costKnown > 0
     ? admin_t('cost_sar has stored values. Sum them only from the column, not from provider invoices.', 'يوجد قيم في cost_sar. اجمعها من العمود فقط.')
     : admin_t('cost_sar is null for every usage row. No verified provider cost is available.', 'cost_sar فارغ في كل صفوف الاستخدام. لا توجد تكلفة موثّقة.')) . '</p>';
-echo '<h2>' . admin_h(admin_t('Recent events', 'آخر العمليات')) . '</h2><table><tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('User', 'المستخدم')) . '</th><th>' . admin_h(admin_t('Campaign', 'الحملة')) . '</th><th>' . admin_h(admin_t('Operation', 'العملية')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th></tr>';
+admin_panel_open(admin_t('Recent events', 'آخر العمليات'));
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('User', 'المستخدم')) . '</th><th>' . admin_h(admin_t('Campaign', 'الحملة')) . '</th><th>' . admin_h(admin_t('Operation', 'العملية')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th></tr>';
 foreach ($recent as $row) {
     echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) $row['email']) . '</td><td>' . admin_h((string) ($row['campaign_id'] ?? '')) . '</td><td>' . admin_h((string) $row['operation']) . '</td><td>' . admin_h((string) $row['status']) . '</td><td>' . (int) $row['credits_deducted'] . '</td></tr>';
 }
-echo '</table>';
+admin_table_close();
+admin_panel_close();
 admin_end();

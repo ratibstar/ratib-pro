@@ -34,15 +34,17 @@ echo '<p class="note">' . admin_h(admin_t(
 )) . '</p>';
 admin_panel_open(admin_t('HR usage by customer', 'استخدام HR لكل عميل'));
 echo '<form class="search" method="get"><input name="q" value="' . admin_h($q) . '" placeholder="' . admin_h(admin_t('Name or email', 'الاسم أو البريد')) . '"><button type="submit">' . admin_h(admin_t('Search', 'بحث')) . '</button></form>';
-echo '<table><tr><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Employees', 'الموظفون')) . '</th><th>' . admin_h(admin_t('Active', 'نشط')) . '</th><th>' . admin_h(admin_t('Registered', 'التسجيل')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
+admin_table_open();
+echo '<tr><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Employees', 'الموظفون')) . '</th><th>' . admin_h(admin_t('Active', 'نشط')) . '</th><th>' . admin_h(admin_t('Registered', 'التسجيل')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
 foreach ($rows as $row) {
     echo '<tr><td>' . admin_h((string) $row['name']) . '<br><span class="note">' . admin_h((string) $row['email']) . '</span></td>';
     echo '<td>' . (int) $row['employees'] . '</td><td>' . (int) $row['active_employees'] . '</td><td>' . admin_h((string) $row['created_at']) . '</td>';
-    echo '<td><div class="table-actions"><a class="btn small quiet" href="/admin/user.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('Account', 'الحساب')) . '</a></div></td></tr>';
+    echo '<td><div class="table-actions"><a class="btn small primary" href="/admin/hr-customer.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('View HR', 'عرض HR')) . '</a>';
+    echo '<a class="btn small quiet" href="/admin/user.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('Account', 'الحساب')) . '</a></div></td></tr>';
 }
 if ($rows === []) {
-    echo '<tr><td colspan="5">' . admin_h(admin_t('No customers.', 'لا عملاء.')) . '</td></tr>';
+    admin_table_empty_row(5, admin_t('No customers.', 'لا عملاء.'));
 }
-echo '</table>';
+admin_table_close();
 admin_panel_close();
 admin_end();

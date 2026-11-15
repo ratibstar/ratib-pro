@@ -56,22 +56,24 @@ $t = static fn (string $en, string $ar): string => $adminLang === 'ar' ? $ar : $
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title><?= admin_login_h($t('Admin sign-in', 'دخول الإدارة')) ?> — RATEB AI</title>
-    <link rel="stylesheet" href="/admin/admin.css?v=6">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
+    <link rel="stylesheet" href="/admin/admin.css?v=14">
 </head>
 <body class="admin-app">
-<main style="max-width:420px;margin:48px auto;padding:0 16px">
-    <div class="card">
-        <h2><?= admin_login_h($t('Staff sign-in', 'دخول الموظفين')) ?></h2>
+<div class="login-screen">
+    <div class="login-card">
+        <p class="login-brand">RATEB <span style="color:var(--cyan)">AI</span></p>
+        <h1><?= admin_login_h($t('Staff sign-in', 'دخول الموظفين')) ?></h1>
         <p class="note"><?= admin_login_h($t('Owner accounts use the main site login.', 'حساب المالك يستخدم تسجيل الدخول الرئيسي للموقع.')) ?></p>
-        <?php if ($message !== ''): ?><p class="flash"><?= admin_login_h($message) ?></p><?php endif; ?>
+        <?php if ($message !== ''): ?><p class="flash bad"><?= admin_login_h($message) ?></p><?php endif; ?>
         <form class="stack" method="post" action="/admin/login.php">
             <input type="hidden" name="csrf_token" value="<?= admin_login_h(csrf_token()) ?>">
             <label><?= admin_login_h($t('Email', 'البريد')) ?><input type="email" name="email" required autocomplete="username"></label>
             <label><?= admin_login_h($t('Password', 'كلمة المرور')) ?><input type="password" name="password" required autocomplete="current-password"></label>
-            <button type="submit"><?= admin_login_h($t('Sign in', 'دخول')) ?></button>
+            <button type="submit" class="btn primary" style="width:100%"><?= admin_login_h($t('Sign in', 'دخول')) ?></button>
         </form>
-        <p><a href="/login?next=/admin/"><?= admin_login_h($t('Owner login', 'دخول المالك')) ?></a></p>
+        <p style="margin-top:18px;text-align:center"><a class="btn quiet" href="/login?next=/admin/"><?= admin_login_h($t('Owner login', 'دخول المالك')) ?></a></p>
     </div>
-</main>
+</div>
 </body>
 </html>
