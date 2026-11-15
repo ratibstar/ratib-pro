@@ -58,8 +58,12 @@ function admin_staff_login_screen(object $pdo): void
 <div class="login-screen">
     <div class="login-card">
         <p class="login-brand">RATEB <span style="color:var(--cyan)">AI</span></p>
-        <h1><?= $h($t('Staff sign-in', 'دخول الموظفين')) ?></h1>
-        <p class="note"><?= $h($t('Owner accounts use the main site login.', 'حساب المالك يستخدم تسجيل الدخول الرئيسي للموقع.')) ?></p>
+        <h1><?= $h($t('Administration console', 'لوحة إدارة المنصة')) ?></h1>
+        <p class="note"><?= $h($t(
+            'You are on the official admin URL (/admin). After sign-in you get the dashboard, finance, customers, and settings.',
+            'أنت على رابط الإدارة الرسمي (/admin). بعد الدخول تظهر اللوحة والتحليلات والمالية والعملاء والإعدادات.'
+        )) ?></p>
+        <h2 class="login-sub" style="margin:16px 0 8px;font-size:1rem;color:var(--muted,#93a4bd)"><?= $h($t('Platform staff', 'موظفو المنصة')) ?></h2>
         <?php if ($message !== ''): ?><p class="flash bad"><?= $h($message) ?></p><?php endif; ?>
         <form class="stack" method="post" action="/admin">
             <input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>">
@@ -67,7 +71,10 @@ function admin_staff_login_screen(object $pdo): void
             <label><?= $h($t('Password', 'كلمة المرور')) ?><input type="password" name="password" required autocomplete="current-password"></label>
             <button type="submit" class="btn primary" style="width:100%"><?= $h($t('Sign in', 'دخول')) ?></button>
         </form>
-        <p style="margin-top:18px;text-align:center"><a class="btn quiet" href="/login?next=/admin"><?= $h($t('Owner login', 'دخول المالك')) ?></a></p>
+        <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line,#243049);text-align:center">
+            <p class="note" style="margin-bottom:10px"><?= $h($t('Platform owner?', 'مالك المنصة؟')) ?> <?= $h($t('Use your main site account — not the staff form above.', 'استخدم حساب الموقع الرئيسي — وليس نموذج الموظفين أعلاه.')) ?></p>
+            <a class="btn primary" href="/login?next=/admin"><?= $h($t('Owner sign-in to admin', 'دخول المالك إلى الإدارة')) ?></a>
+        </div>
     </div>
 </div>
 </body>
