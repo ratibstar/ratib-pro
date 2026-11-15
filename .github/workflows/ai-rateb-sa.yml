@@ -89,7 +89,7 @@ jobs:
           RATEB_MAIL_ENABLED: ${{ secrets.RATEB_MAIL_ENABLED || '1' }}
           RATEB_MAIL_FROM: ${{ secrets.RATEB_MAIL_FROM || 'noreply@rateb.sa' }}
           RATEB_MAIL_FROM_NAME: ${{ secrets.RATEB_MAIL_FROM_NAME || 'RATEB AI' }}
-          RATEB_AI_DB_PASSWORD: ${{ secrets.RATEB_AI_DB_PASSWORD }}
+          RATEB_AI_DB_PASSWORD: ${{ secrets.RATEB_AI_DB_PASSWORD || secrets.DB_PASSWORD || secrets.MYSQL_PASSWORD }}
         run: |
           set -euo pipefail
           if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
@@ -176,12 +176,6 @@ jobs:
             "admin/usage.php"
             "admin/refunds.php"
             "admin/finance.php"
-            "admin/login.php"
-            "admin/auth.php"
-            "admin/bootstrap.php"
-            "admin/index.php"
-            "migrations/admin_staff_schema.php"
-            "cli/apply-admin-staff-schema.php"
             "cli/notify-subscription-reminders.php"
             "cli/reconcile-pending-payments.php"
             "cli/enforce-subscription-expiry.php"
@@ -268,6 +262,13 @@ jobs:
           scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${RUNNER_TEMP}/ai-local.php" "${REMOTE}:${TARGET}/config/ai.local.php"
           echo "AI_LOCAL=written"
+          if [ -z "${RATEB_AI_DB_PASSWORD:-}" ]; then
+            DB_PASS_FROM_SERVER="$("${SSH[@]}" "$REMOTE" 'if [ -f /home/admin/.secrets/rateb_ai_db_password ]; then tr -d "\r\n" < /home/admin/.secrets/rateb_ai_db_password; fi' 2>/dev/null || true)"
+            if [ -n "${DB_PASS_FROM_SERVER:-}" ]; then
+              export RATEB_AI_DB_PASSWORD="${DB_PASS_FROM_SERVER}"
+              echo "DATABASE_LOCAL=from_server_secret_file"
+            fi
+          fi
           if [ -n "${RATEB_AI_DB_PASSWORD:-}" ]; then
             python3 - << 'PY'
           import os
@@ -289,7 +290,7 @@ jobs:
           scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${RUNNER_TEMP}/ai-build.txt" "${REMOTE}:${TARGET}/public/ai-build.txt"
           echo "BUILD_MARKER=public/ai-build.txt"
-          SCHEMA_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/apply-commerce-schema.php && php cli/apply-admin-staff-schema.php" 2>&1)" || true
+          SCHEMA_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/apply-commerce-schema.php" 2>&1)" || true
           echo "$SCHEMA_OUT"
           COMMERCE_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/run-commerce-now.php" 2>&1)" || true
           echo "$COMMERCE_OUT"
