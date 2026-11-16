@@ -16,6 +16,22 @@ require __DIR__ . '/bootstrap.php';
 
 admin_require_permission('dashboard.view');
 
+/** @param callable():void $body */
+function admin_dashboard_render(callable $body): void
+{
+    try {
+        $body();
+    } catch (Throwable $e) {
+        error_log('admin dashboard: ' . $e->getMessage());
+        admin_start(admin_t('Dashboard', 'اللوحة'));
+        echo '<p class="flash bad">' . admin_h(admin_t(
+            'Some dashboard data is temporarily unavailable. Core admin pages still work from the menu.',
+            'بعض بيانات اللوحة غير متاحة مؤقتًا. باقي صفحات الإدارة تعمل من القائمة.'
+        )) . '</p>';
+        admin_end();
+    }
+}
+
 /** @return array{key:string,start:string,end:string,prev_start:string,prev_end:string,grain:string,slots:array<int,string>} */
 function admin_dash_range(): array
 {
@@ -105,6 +121,8 @@ function admin_dash_card(string $label, ?string $value): void
     echo '<article class="stat"><b>' . admin_h($value ?? admin_t('Unavailable', 'غير متاح')) . '</b><span>' . admin_h($label) . '</span></article>';
 }
 
+admin_dashboard_render(static function (): void {
+global $pdo;
 $range = admin_dash_range();
 $start = $range['start'];
 $end = $range['end'];
@@ -117,7 +135,7 @@ $active = admin_table_has($pdo, 'users', 'last_login_at')
     : $na;
 $campaigns = (int) $pdo->query('SELECT COUNT(*) FROM campaigns')->fetchColumn();
 $monthCampaigns = (int) $pdo->query("SELECT COUNT(*) FROM campaigns WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
-$subs = admin_table_has($pdo, 'subscriptions', 'status')
+$subs = admin_table_has($pdo, 'subscriptions', 'status') && admin_table_has($pdo, 'subscriptions', 'period_end')
     ? (int) $pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status = 'active' AND period_end >= NOW()")->fetchColumn()
     : $na;
 
@@ -138,7 +156,11 @@ $pendingPayments = admin_table_has($pdo, 'payment_orders', 'status')
     ? admin_dash_count($pdo, "SELECT COUNT(*) FROM payment_orders WHERE status = 'pending' AND created_at >= ? AND created_at < ?", $start, $end)
     : $na;
 $catalogLabel = $na;
-if (admin_table_has($pdo, 'subscriptions', 'plan_id') && admin_table_has($pdo, 'plans', 'price_sar')) {
+if (
+    admin_table_has($pdo, 'subscriptions', 'plan_id')
+    && admin_table_has($pdo, 'subscriptions', 'period_end')
+    && admin_table_has($pdo, 'plans', 'price_sar')
+) {
     $catalog = $pdo->query("SELECT COALESCE(SUM(p.price_sar),0) FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.status = 'active' AND s.period_end >= NOW() AND p.code <> 'free'")->fetchColumn();
     $catalogLabel = number_format((float) $catalog, 2, '.', '');
 }
@@ -340,3 +362,4 @@ echo '<tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h
 }
 echo '</article></div>';
 admin_end();
+});

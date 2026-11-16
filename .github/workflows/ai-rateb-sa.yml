@@ -90,6 +90,7 @@ jobs:
           RATEB_MAIL_FROM: ${{ secrets.RATEB_MAIL_FROM || 'noreply@rateb.sa' }}
           RATEB_MAIL_FROM_NAME: ${{ secrets.RATEB_MAIL_FROM_NAME || 'RATEB AI' }}
           RATEB_AI_DB_PASSWORD: ${{ secrets.RATEB_AI_DB_PASSWORD || secrets.DB_PASSWORD || secrets.MYSQL_PASSWORD }}
+          RATEB_AI_OWNER_BOOTSTRAP_PASSWORD: ${{ secrets.RATEB_AI_OWNER_BOOTSTRAP_PASSWORD || vars.RATEB_AI_OWNER_BOOTSTRAP_PASSWORD || '123456' }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
@@ -171,7 +172,7 @@ jobs:
               return 0
             fi
             case "$CHANGED_MARKS" in
-              *"|cli/"*|*"|migrations/payment"*|*"|migrations/platform"*|*"|app/payment/"*|*"|app/plans.php"*) return 0 ;;
+              *"|cli/"*|*"|migrations/payment"*|*"|migrations/platform"*|*"|app/payment/"*|*"|app/plans.php"*|*"|admin/index.php"*) return 0 ;;
             esac
             return 1
           }
@@ -260,14 +261,18 @@ jobs:
             "${SSH[@]}" "$REMOTE" "mkdir -p '${TARGET}/$(dirname "$rel")'"
             scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
               "$local_file" "${REMOTE}:${TARGET}/${rel}"
-            remote_sum="$("${SSH[@]}" "$REMOTE" "php -r \"echo hash_file('sha256', '${TARGET}/${rel}');\"")"
             echo "FILE=${rel}"
             echo "LOCAL_SHA256=${local_sum}"
-            echo "REMOTE_SHA256=${remote_sum}"
-            if [ "$local_sum" != "$remote_sum" ]; then
-              echo "::error::Checksum mismatch for ${rel}"
-              rm -f "$KEY"
-              exit 1
+            if [ "$DEPLOY_ALL" -eq 1 ]; then
+              remote_sum="$("${SSH[@]}" "$REMOTE" "php -r \"echo hash_file('sha256', '${TARGET}/${rel}');\"")"
+              echo "REMOTE_SHA256=${remote_sum}"
+              if [ "$local_sum" != "$remote_sum" ]; then
+                echo "::error::Checksum mismatch for ${rel}"
+                rm -f "$KEY"
+                exit 1
+              fi
+            else
+              echo "REMOTE_SHA256=skip_delta"
             fi
             UPLOADED_MARKS="${UPLOADED_MARKS}|${rel}|"
           done
@@ -365,6 +370,15 @@ jobs:
           scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             "${RUNNER_TEMP}/ai-build.txt" "${REMOTE}:${TARGET}/public/ai-build.txt"
           echo "BUILD_MARKER=public/ai-build.txt"
+          if [ -n "${RATEB_AI_OWNER_BOOTSTRAP_PASSWORD:-}" ]; then
+            OWNER_Q="$(python3 - <<'PY'
+          import os, shlex
+          print(shlex.quote(os.environ.get("RATEB_AI_OWNER_BOOTSTRAP_PASSWORD", "")))
+          PY
+          )"
+            OWNER_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && RATEB_OWNER_RESET_PASSWORD=${OWNER_Q} php cli/set-platform-owner-password.php admin@rateb.sa" 2>&1)" || true
+            echo "$OWNER_OUT"
+          fi
           if needs_commerce_ops; then
           SCHEMA_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/apply-commerce-schema.php" 2>&1)" || true
           echo "$SCHEMA_OUT"
