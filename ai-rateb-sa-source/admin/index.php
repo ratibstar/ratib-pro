@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/config/bootstrap.php';
-require __DIR__ . '/auth.php';
-require __DIR__ . '/lib.php';
+require_once dirname(__DIR__) . '/config/bootstrap.php';
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/lib.php';
 
 $adminActor = resolve_admin_actor($pdo);
 if ($adminActor === null) {
@@ -12,7 +12,7 @@ if ($adminActor === null) {
     exit;
 }
 
-require __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/bootstrap.php';
 
 admin_require_permission('dashboard.view');
 

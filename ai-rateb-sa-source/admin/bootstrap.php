@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/config/bootstrap.php';
-require dirname(__DIR__) . '/app/plans.php';
-require __DIR__ . '/lib.php';
-require __DIR__ . '/ui.php';
-require __DIR__ . '/auth.php';
+require_once dirname(__DIR__) . '/config/bootstrap.php';
+require_once dirname(__DIR__) . '/app/plans.php';
+require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/ui.php';
+require_once __DIR__ . '/auth.php';
 
 if (!isset($adminActor)) {
     $adminActor = require_admin_access($pdo);
