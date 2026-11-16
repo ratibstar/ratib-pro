@@ -117,49 +117,84 @@ $active = admin_table_has($pdo, 'users', 'last_login_at')
     : $na;
 $campaigns = (int) $pdo->query('SELECT COUNT(*) FROM campaigns')->fetchColumn();
 $monthCampaigns = (int) $pdo->query("SELECT COUNT(*) FROM campaigns WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
-$subs = (int) $pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status = 'active' AND period_end >= NOW()")->fetchColumn();
+$subs = admin_table_has($pdo, 'subscriptions', 'status')
+    ? (int) $pdo->query("SELECT COUNT(*) FROM subscriptions WHERE status = 'active' AND period_end >= NOW()")->fetchColumn()
+    : $na;
 
-$collected = admin_dash_count($pdo, 'SELECT COALESCE(SUM(amount),0) FROM payment_receipts WHERE created_at >= ? AND created_at < ?', $start, $end);
-$paidCount = admin_dash_count($pdo, 'SELECT COUNT(*) FROM payment_receipts WHERE created_at >= ? AND created_at < ?', $start, $end);
-$previousCollected = admin_dash_count($pdo, 'SELECT COALESCE(SUM(amount),0) FROM payment_receipts WHERE created_at >= ? AND created_at < ?', $range['prev_start'], $range['prev_end']);
+$hasReceipts = admin_table_has($pdo, 'payment_receipts', 'amount');
+$collected = $hasReceipts
+    ? admin_dash_count($pdo, 'SELECT COALESCE(SUM(amount),0) FROM payment_receipts WHERE created_at >= ? AND created_at < ?', $start, $end)
+    : 0;
+$paidCount = $hasReceipts
+    ? admin_dash_count($pdo, 'SELECT COUNT(*) FROM payment_receipts WHERE created_at >= ? AND created_at < ?', $start, $end)
+    : 0;
+$previousCollected = $hasReceipts
+    ? admin_dash_count($pdo, 'SELECT COALESCE(SUM(amount),0) FROM payment_receipts WHERE created_at >= ? AND created_at < ?', $range['prev_start'], $range['prev_end'])
+    : 0;
 $failedPayments = admin_table_has($pdo, 'payment_orders', 'status')
     ? admin_dash_count($pdo, "SELECT COUNT(*) FROM payment_orders WHERE status = 'failed' AND created_at >= ? AND created_at < ?", $start, $end)
     : $na;
 $pendingPayments = admin_table_has($pdo, 'payment_orders', 'status')
     ? admin_dash_count($pdo, "SELECT COUNT(*) FROM payment_orders WHERE status = 'pending' AND created_at >= ? AND created_at < ?", $start, $end)
     : $na;
-$catalog = $pdo->query("SELECT COALESCE(SUM(p.price_sar),0) FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.status = 'active' AND s.period_end >= NOW() AND p.code <> 'free'")->fetchColumn();
-$catalogLabel = number_format((float) $catalog, 2, '.', '');
+$catalogLabel = $na;
+if (admin_table_has($pdo, 'subscriptions', 'plan_id') && admin_table_has($pdo, 'plans', 'price_sar')) {
+    $catalog = $pdo->query("SELECT COALESCE(SUM(p.price_sar),0) FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.status = 'active' AND s.period_end >= NOW() AND p.code <> 'free'")->fetchColumn();
+    $catalogLabel = number_format((float) $catalog, 2, '.', '');
+}
 
-$ops = admin_dash_count($pdo, "SELECT COUNT(*) FROM usage_events WHERE status IN ('completed','failed','reserved') AND created_at >= ? AND created_at < ?", $start, $end);
-$ok = admin_dash_count($pdo, "SELECT COUNT(*) FROM usage_events WHERE status = 'completed' AND created_at >= ? AND created_at < ?", $start, $end);
-$failedOps = admin_dash_count($pdo, "SELECT COUNT(*) FROM usage_events WHERE status = 'failed' AND created_at >= ? AND created_at < ?", $start, $end);
-$creditStmt = $pdo->prepare('SELECT operation, COALESCE(SUM(credits_deducted),0) AS credits, COUNT(*) AS events FROM usage_events WHERE created_at >= ? AND created_at < ? GROUP BY operation');
-$creditStmt->execute([$start, $end]);
-$buckets = admin_credit_buckets($creditStmt->fetchAll());
-$remaining = (int) $pdo->query('SELECT COALESCE(SUM(credits_balance),0) FROM users')->fetchColumn();
-$serviceStmt = $pdo->prepare("SELECT operation, COUNT(*) AS events FROM usage_events WHERE status IN ('completed','failed') AND created_at >= ? AND created_at < ? GROUP BY operation ORDER BY events DESC LIMIT 12");
-$serviceStmt->execute([$start, $end]);
-$services = $serviceStmt->fetchAll();
+$hasUsage = admin_table_has($pdo, 'usage_events', 'status');
+$ops = $hasUsage
+    ? admin_dash_count($pdo, "SELECT COUNT(*) FROM usage_events WHERE status IN ('completed','failed','reserved') AND created_at >= ? AND created_at < ?", $start, $end)
+    : 0;
+$ok = $hasUsage
+    ? admin_dash_count($pdo, "SELECT COUNT(*) FROM usage_events WHERE status = 'completed' AND created_at >= ? AND created_at < ?", $start, $end)
+    : 0;
+$failedOps = $hasUsage
+    ? admin_dash_count($pdo, "SELECT COUNT(*) FROM usage_events WHERE status = 'failed' AND created_at >= ? AND created_at < ?", $start, $end)
+    : 0;
+$buckets = ['consumed' => 0, 'refunded' => 0, 'granted' => 0, 'adjusted_add' => 0, 'adjusted_deduct' => 0];
+$services = [];
+if ($hasUsage) {
+    $creditStmt = $pdo->prepare('SELECT operation, COALESCE(SUM(credits_deducted),0) AS credits, COUNT(*) AS events FROM usage_events WHERE created_at >= ? AND created_at < ? GROUP BY operation');
+    $creditStmt->execute([$start, $end]);
+    $buckets = admin_credit_buckets($creditStmt->fetchAll());
+    $serviceStmt = $pdo->prepare("SELECT operation, COUNT(*) AS events FROM usage_events WHERE status IN ('completed','failed') AND created_at >= ? AND created_at < ? GROUP BY operation ORDER BY events DESC LIMIT 12");
+    $serviceStmt->execute([$start, $end]);
+    $services = $serviceStmt->fetchAll();
+}
+$remaining = admin_table_has($pdo, 'users', 'credits_balance')
+    ? (int) $pdo->query('SELECT COALESCE(SUM(credits_balance),0) FROM users')->fetchColumn()
+    : $na;
 
 $signupSeries = admin_dash_series($pdo, 'SELECT %s AS bucket, COUNT(*) AS total FROM users WHERE created_at >= ? AND created_at < ? GROUP BY bucket', $start, $end, $range['slots'], $range['grain']);
 $campaignSeries = admin_dash_series($pdo, 'SELECT %s AS bucket, COUNT(*) AS total FROM campaigns WHERE created_at >= ? AND created_at < ? GROUP BY bucket', $start, $end, $range['slots'], $range['grain']);
-$revenueSeries = admin_dash_series($pdo, 'SELECT %s AS bucket, COALESCE(SUM(amount),0) AS total FROM payment_receipts WHERE created_at >= ? AND created_at < ? GROUP BY bucket', $start, $end, $range['slots'], $range['grain']);
-$activitySeries = admin_dash_series($pdo, "SELECT %s AS bucket, COUNT(*) AS total FROM usage_events WHERE status = 'completed' AND created_at >= ? AND created_at < ? GROUP BY bucket", $start, $end, $range['slots'], $range['grain']);
+$revenueSeries = $hasReceipts
+    ? admin_dash_series($pdo, 'SELECT %s AS bucket, COALESCE(SUM(amount),0) AS total FROM payment_receipts WHERE created_at >= ? AND created_at < ? GROUP BY bucket', $start, $end, $range['slots'], $range['grain'])
+    : [];
+$activitySeries = $hasUsage
+    ? admin_dash_series($pdo, "SELECT %s AS bucket, COUNT(*) AS total FROM usage_events WHERE status = 'completed' AND created_at >= ? AND created_at < ? GROUP BY bucket", $start, $end, $range['slots'], $range['grain'])
+    : [];
 $newUsers = admin_dash_count($pdo, 'SELECT COUNT(*) FROM users WHERE created_at >= ? AND created_at < ?', $start, $end);
-$converted = admin_dash_count($pdo, 'SELECT COUNT(DISTINCT r.user_id) FROM payment_receipts r INNER JOIN users u ON u.id = r.user_id WHERE u.created_at >= ? AND u.created_at < ? AND r.created_at >= ? AND r.created_at < ?', $start, $end, $start, $end);
+$converted = $hasReceipts
+    ? admin_dash_count($pdo, 'SELECT COUNT(DISTINCT r.user_id) FROM payment_receipts r INNER JOIN users u ON u.id = r.user_id WHERE u.created_at >= ? AND u.created_at < ? AND r.created_at >= ? AND r.created_at < ?', $start, $end, $start, $end)
+    : 0;
 if ($newUsers > 0) {
     $conversion = (string) (int) round(($converted / $newUsers) * 100) . '%';
 } else {
     $conversion = null;
 }
 
-$failByType = $pdo->prepare("SELECT operation, COUNT(*) AS events FROM usage_events WHERE status = 'failed' AND created_at >= ? AND created_at < ? GROUP BY operation ORDER BY events DESC LIMIT 8");
-$failByType->execute([$start, $end]);
-$failRows = $failByType->fetchAll();
-$recentFails = $pdo->prepare("SELECT created_at, operation, status FROM usage_events WHERE status = 'failed' AND created_at >= ? AND created_at < ? ORDER BY id DESC LIMIT 8");
-$recentFails->execute([$start, $end]);
-$recentFailRows = $recentFails->fetchAll();
+$failRows = [];
+$recentFailRows = [];
+if ($hasUsage) {
+    $failByType = $pdo->prepare("SELECT operation, COUNT(*) AS events FROM usage_events WHERE status = 'failed' AND created_at >= ? AND created_at < ? GROUP BY operation ORDER BY events DESC LIMIT 8");
+    $failByType->execute([$start, $end]);
+    $failRows = $failByType->fetchAll();
+    $recentFails = $pdo->prepare("SELECT created_at, operation, status FROM usage_events WHERE status = 'failed' AND created_at >= ? AND created_at < ? ORDER BY id DESC LIMIT 8");
+    $recentFails->execute([$start, $end]);
+    $recentFailRows = $recentFails->fetchAll();
+}
 $auditRows = [];
 $auditReady = admin_table_has($pdo, 'admin_audit_log', 'id');
 if ($auditReady) {
@@ -200,7 +235,7 @@ admin_dash_card(admin_t('New registrations', 'تسجيلات جديدة'), (stri
 admin_dash_card(admin_t('Active users in 30 days', 'مستخدمون نشطون خلال ٣٠ يومًا'), $active === null ? null : (string) $active);
 admin_dash_card(admin_t('Total campaigns', 'إجمالي الحملات'), (string) $campaigns);
 admin_dash_card(admin_t('Campaigns this month', 'حملات هذا الشهر'), (string) $monthCampaigns);
-admin_dash_card(admin_t('Active subscriptions', 'اشتراكات نشطة'), (string) $subs);
+admin_dash_card(admin_t('Active subscriptions', 'اشتراكات نشطة'), $subs === null ? null : (string) $subs);
 echo '</section>';
 
 echo '<h2 class="section-title">' . admin_h(admin_t('Financial performance', 'الأداء المالي')) . '</h2><section class="stats">';
@@ -208,7 +243,7 @@ admin_dash_card(admin_t('Collected revenue (SAR)', 'الإيراد المحصّ�
 admin_dash_card(admin_t('Successful payments', 'مدفوعات ناجحة'), (string) $paidCount);
 admin_dash_card(admin_t('Failed payments', 'مدفوعات فاشلة'), $failedPayments === null ? null : (string) $failedPayments);
 admin_dash_card(admin_t('Pending payments', 'مدفوعات معلّقة'), $pendingPayments === null ? null : (string) $pendingPayments);
-admin_dash_card(admin_t('Catalog value of active paid plans (SAR)', 'قيمة الباقات المدفوعة النشطة (ر.س)'), $catalogLabel);
+admin_dash_card(admin_t('Catalog value of active paid plans (SAR)', 'قيمة الباقات المدفوعة النشطة (ر.س)'), $catalogLabel === null ? null : (string) $catalogLabel);
 admin_dash_card(admin_t('Change versus the previous period (SAR)', 'التغير عن الفترة السابقة (ر.س)'), $deltaText);
 admin_dash_card(admin_t('Refunded revenue', 'إيراد مسترد'), null);
 echo '</section>';
@@ -225,7 +260,7 @@ admin_dash_card(admin_t('AI operations', 'عمليات الذكاء'), (string) 
 admin_dash_card(admin_t('Successful operations', 'عمليات ناجحة'), (string) $ok);
 admin_dash_card(admin_t('Failed operations', 'عمليات فاشلة'), (string) $failedOps);
 admin_dash_card(admin_t('Consumed credits', 'نقاط مستهلكة'), (string) $buckets['consumed']);
-admin_dash_card(admin_t('Remaining credits now', 'النقاط المتبقية الآن'), (string) $remaining);
+admin_dash_card(admin_t('Remaining credits now', 'النقاط المتبقية الآن'), $remaining === null ? null : (string) $remaining);
 echo '</section>';
 echo '<article class="card"><h2>' . admin_h(admin_t('Usage by service', 'الاستخدام حسب الخدمة')) . '</h2>';
 if ($services === []) {

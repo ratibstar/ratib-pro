@@ -56,7 +56,9 @@ function admin_staff_login_screen(object $pdo): void
                 'schema' => $adminLang === 'ar' ? 'الترحيل غير مطبّق.' : 'Staff schema is not applied.',
                 'customer' => $adminLang === 'ar' ? 'حساب العميل لا يدخل من هنا — استخدم حساب المالك أو موظف.' : 'Customer accounts cannot use this console.',
                 'owner' => $adminLang === 'ar' ? 'حساب المالك يستخدم البريد الكامل (مثل admin@rateb.sa).' : 'Owners must use the full email (e.g. admin@rateb.sa).',
-                default => $adminLang === 'ar' ? 'بيانات الدخول غير صحيحة.' : 'Invalid login.',
+                default => $adminLang === 'ar'
+                ? 'بيانات الدخول غير صحيحة. استخدم كلمة مرور الموقع الرئيسي (ليست بالضرورة 123456).'
+                : 'Invalid login. Use your main site password (not necessarily 123456).',
             };
         } catch (Throwable) {
             $message = $adminLang === 'ar'

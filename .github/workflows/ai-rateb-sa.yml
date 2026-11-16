@@ -242,6 +242,7 @@ jobs:
             "cli/enforce-subscription-expiry.php"
             "cli/apply-commerce-schema.php"
             "cli/run-commerce-now.php"
+            "cli/set-platform-owner-password.php"
             "migrations/payment_commerce_schema.php"
             "migrations/platform_settings_schema.php"
             "app/notify/events.php"
