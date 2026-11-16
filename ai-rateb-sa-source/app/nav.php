@@ -8,9 +8,6 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
             ['/dashboard', 'dashboard', 'Dashboard'],
             ['/campaign-new.php', 'new_campaign', 'New Campaign'],
             ['/brand.php', 'brand_kit', 'Brand kit'],
-            ['/hr/', 'hr', 'HR'],
-            ['/billing.php', 'billing', 'Billing'],
-            ['/credits.php', 'nav_plans', 'Plans'],
         ],
         [
             ['/#workflow', 'nav_how', 'How it works'],
