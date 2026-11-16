@@ -16,22 +16,6 @@ require __DIR__ . '/bootstrap.php';
 
 admin_require_permission('dashboard.view');
 
-/** @param callable():void $body */
-function admin_dashboard_render(callable $body): void
-{
-    try {
-        $body();
-    } catch (Throwable $e) {
-        error_log('admin dashboard: ' . $e->getMessage());
-        admin_start(admin_t('Dashboard', 'اللوحة'));
-        echo '<p class="flash bad">' . admin_h(admin_t(
-            'Some dashboard data is temporarily unavailable. Core admin pages still work from the menu.',
-            'بعض بيانات اللوحة غير متاحة مؤقتًا. باقي صفحات الإدارة تعمل من القائمة.'
-        )) . '</p>';
-        admin_end();
-    }
-}
-
 /** @return array{key:string,start:string,end:string,prev_start:string,prev_end:string,grain:string,slots:array<int,string>} */
 function admin_dash_range(): array
 {
@@ -121,8 +105,8 @@ function admin_dash_card(string $label, ?string $value): void
     echo '<article class="stat"><b>' . admin_h($value ?? admin_t('Unavailable', 'غير متاح')) . '</b><span>' . admin_h($label) . '</span></article>';
 }
 
-admin_dashboard_render(static function (): void {
-global $pdo;
+$dashboardLoadError = false;
+try {
 $range = admin_dash_range();
 $start = $range['start'];
 $end = $range['end'];
@@ -228,6 +212,22 @@ $providers = admin_provider_snapshot();
 
 $delta = $collected - $previousCollected;
 $deltaText = ($delta > 0 ? '+' : '') . admin_halalas_to_sar($delta);
+} catch (Throwable $dashboardError) {
+    error_log('admin dashboard metrics: ' . $dashboardError->getMessage());
+    $dashboardLoadError = true;
+    $range = admin_dash_range();
+    $start = $range['start'];
+    $end = $range['end'];
+    $na = null;
+    $users = $signups = $campaigns = $monthCampaigns = $collected = $paidCount = $previousCollected = $ops = $ok = $failedOps = $newUsers = 0;
+    $converted = 0;
+    $subs = $active = $failedPayments = $pendingPayments = $remaining = $catalogLabel = $conversion = null;
+    $buckets = ['consumed' => 0, 'refunded' => 0, 'granted' => 0, 'adjusted_add' => 0, 'adjusted_deduct' => 0];
+    $services = $signupSeries = $campaignSeries = $revenueSeries = $activitySeries = $failRows = $recentFailRows = $auditRows = [];
+    $providers = [];
+    $auditReady = false;
+    $deltaText = admin_halalas_to_sar(0);
+}
 
 $filters = [
     'today' => admin_t('Today', 'اليوم'),
@@ -238,6 +238,12 @@ $filters = [
 ];
 
 admin_start(admin_t('Dashboard', 'اللوحة'));
+if ($dashboardLoadError) {
+    echo '<p class="flash bad">' . admin_h(admin_t(
+        'Some dashboard statistics are unavailable (run commerce schema on the server). Use Customers or Finance from the menu.',
+        'بعض إحصائيات اللوحة غير متاحة (شغّل ترحيل commerce على السيرفر). استخدم العملاء أو المالية من القائمة.'
+    )) . '</p>';
+}
 admin_toolbar([
     ['href' => '/admin/users.php', 'label' => admin_t('Customers', 'العملاء'), 'class' => 'primary'],
     ['href' => '/admin/finance.php', 'label' => admin_t('Finance', 'المالية')],
@@ -362,4 +368,3 @@ echo '<tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h
 }
 echo '</article></div>';
 admin_end();
-});
