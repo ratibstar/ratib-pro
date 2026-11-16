@@ -146,3 +146,121 @@ function admin_pill_for_status(string $status): string
     };
     return $pill !== '' ? ' pill ' . $pill : ' pill';
 }
+
+/**
+ * Standard list controls: add, edit, delete, bulk.
+ *
+ * @param array{
+ *   screen:string,
+ *   can_manage?:bool,
+ *   form_id?:string,
+ *   add_href?:string|null,
+ *   add_enabled?:bool,
+ *   bulk_actions?:list<array{value:string,label:string}>,
+ *   links?:list<array{href:string,label:string,class?:string}>
+ * } $opts
+ */
+function admin_crud_toolbar(array $opts): void
+{
+    require_once __DIR__ . '/lib-bulk.php';
+    $screen = (string) $opts['screen'];
+    $canManage = (bool) ($opts['can_manage'] ?? false);
+    $formId = (string) ($opts['form_id'] ?? ('admin-bulk-' . $screen));
+    $addHref = $opts['add_href'] ?? null;
+    $addEnabled = $canManage && ($opts['add_enabled'] ?? true) && is_string($addHref) && $addHref !== '';
+    $bulkActions = $opts['bulk_actions'] ?? admin_bulk_actions_for_screen($screen);
+    $hasBulk = $canManage && $bulkActions !== [];
+
+    echo '<div class="page-toolbar crud-toolbar" data-admin-crud-toolbar data-admin-form="' . admin_h($formId) . '">';
+    foreach ($opts['links'] ?? [] as $link) {
+        $class = 'btn ' . ($link['class'] ?? 'quiet');
+        echo '<a class="' . admin_h(trim($class)) . '" href="' . admin_h((string) $link['href']) . '">' . admin_h((string) $link['label']) . '</a>';
+    }
+    echo '<span class="crud-group">';
+    if ($addEnabled) {
+        echo '<a class="btn primary" href="' . admin_h($addHref) . '">' . admin_h(admin_t('Add', 'إضافة')) . '</a>';
+    } else {
+        echo '<span class="btn disabled" title="' . admin_h(admin_t('Not available on this screen', 'غير متاح في هذه الشاشة')) . '">' . admin_h(admin_t('Add', 'إضافة')) . '</span>';
+    }
+    echo '<button type="button" class="btn quiet" data-admin-crud="edit" disabled>' . admin_h(admin_t('Edit', 'تعديل')) . '</button>';
+    echo '<button type="button" class="btn danger quiet" data-admin-crud="delete" disabled>' . admin_h(admin_t('Delete', 'حذف')) . '</button>';
+    if ($hasBulk) {
+        echo '<select class="bulk-action" data-admin-bulk-picker aria-label="' . admin_h(admin_t('Bulk action', 'إجراء جماعي')) . '">';
+        echo '<option value="">' . admin_h(admin_t('Bulk…', 'جماعي…')) . '</option>';
+        foreach ($bulkActions as $bulk) {
+            echo '<option value="' . admin_h((string) $bulk['value']) . '">' . admin_h((string) $bulk['label']) . '</option>';
+        }
+        echo '</select>';
+        echo '<button type="button" class="btn primary" data-admin-bulk-run form="' . admin_h($formId) . '">' . admin_h(admin_t('Apply bulk', 'تنفيذ جماعي')) . '</button>';
+    } else {
+        echo '<span class="btn disabled">' . admin_h(admin_t('Bulk', 'جماعي')) . '</span>';
+    }
+    echo '</span></div>';
+}
+
+function admin_bulk_form_open(string $screen, string $returnPath): string
+{
+    $id = 'admin-bulk-' . preg_replace('/[^a-z0-9_-]/', '', $screen);
+    echo '<form id="' . admin_h($id) . '" class="admin-bulk-form" method="post" action="/admin/bulk.php" data-admin-list>';
+    echo '<input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '">';
+    echo '<input type="hidden" name="screen" value="' . admin_h($screen) . '">';
+    echo '<input type="hidden" name="return" value="' . admin_h($returnPath) . '">';
+    echo '<input type="hidden" name="bulk_action" value="" data-admin-bulk-action-field>';
+    echo '<input type="hidden" name="bulk_reason" value="bulk" data-admin-bulk-reason-field>';
+    return $id;
+}
+
+function admin_bulk_form_close(): void
+{
+    echo '</form>';
+}
+
+function admin_th_select(bool $enabled): void
+{
+    if (!$enabled) {
+        echo '<th class="sel-col" aria-hidden="true"></th>';
+        return;
+    }
+    echo '<th class="sel-col"><input type="checkbox" data-admin-select-all aria-label="' . admin_h(admin_t('Select all', 'تحديد الكل')) . '"></th>';
+}
+
+function admin_td_select(int $id, string $editHref, bool $enabled): void
+{
+    if (!$enabled) {
+        echo '<td class="sel-col"></td>';
+        return;
+    }
+    echo '<td class="sel-col"><input type="checkbox" name="ids[]" value="' . (int) $id . '" data-admin-row-select data-edit-href="' . admin_h($editHref) . '"></td>';
+}
+
+function admin_crud_row_actions(string $editHref, string $viewHref, bool $canManage, int $id): void
+{
+    echo '<div class="table-actions">';
+    if ($viewHref !== '' && $viewHref !== $editHref) {
+        echo '<a class="btn small quiet" href="' . admin_h($viewHref) . '">' . admin_h(admin_t('View', 'عرض')) . '</a>';
+    }
+    echo '<a class="btn small primary" href="' . admin_h($editHref) . '">' . admin_h(admin_t('Edit', 'تعديل')) . '</a>';
+    if ($canManage) {
+        echo '<button type="button" class="btn small danger" data-admin-row-delete data-row-id="' . (int) $id . '">' . admin_h(admin_t('Delete', 'حذف')) . '</button>';
+    }
+    echo '</div>';
+}
+
+function admin_bulk_flash_from_query(): void
+{
+    $code = (string) ($_GET['bulk'] ?? '');
+    if ($code === '') {
+        return;
+    }
+    $n = (int) ($_GET['n'] ?? 0);
+    $msg = match ($code) {
+        'applied' => admin_t('Bulk update applied to {n} row(s).', 'طُبّق التحديث الجماعي على {n} صف.') ,
+        'reason' => admin_t('Enter a reason (3+ chars) for bulk changes.', 'اكتب سببًا (٣+ أحرف) للتغيير الجماعي.'),
+        'owner_only' => admin_t('Only the owner can delete campaigns.', 'المالك فقط يحذف الحملات.'),
+        'missing' => admin_t('No eligible rows were updated.', 'لم يُحدَّث أي صف مؤهل.'),
+        default => admin_t('Bulk action was not completed.', 'لم يكتمل الإجراء الجماعي.'),
+    };
+    $msg = str_replace('{n}', (string) $n, $msg);
+    $type = $code === 'applied' ? 'ok' : 'bad';
+    echo '<p class="flash ' . admin_h($type) . '">' . admin_h($msg) . '</p>';
+}

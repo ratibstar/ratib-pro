@@ -18,6 +18,13 @@ $costKnown = (int) $pdo->query('SELECT COUNT(*) FROM usage_events WHERE cost_sar
 $bucketRows = $pdo->query('SELECT operation, COALESCE(SUM(credits_deducted),0) AS credits, COUNT(*) AS events FROM usage_events GROUP BY operation')->fetchAll();
 $buckets = admin_credit_buckets($bucketRows);
 admin_start(admin_t('AI operations', 'عمليات الذكاء'));
+admin_crud_toolbar([
+    'screen' => 'usage',
+    'can_manage' => false,
+    'links' => [
+        ['href' => '/admin/users.php', 'label' => admin_t('Customers', 'العملاء'), 'class' => 'quiet'],
+    ],
+]);
 echo '<section class="stats">';
 foreach ([
     [admin_t('Consumed', 'مستهلك'), $buckets['consumed']],

@@ -53,6 +53,14 @@ $rows = $pdo->query("SELECT s.id, u.id AS user_id, u.email, u.package_type, u.su
     LIMIT 200")->fetchAll();
 $plans = $pdo->query('SELECT code, name_en, name_ar FROM plans WHERE is_active = 1 ORDER BY sort_order')->fetchAll();
 admin_start(admin_t('Subscriptions', 'الاشتراكات'));
+admin_crud_toolbar([
+    'screen' => 'subscriptions',
+    'can_manage' => admin_actor_is_owner($adminActor),
+    'add_href' => '#replace-plan',
+    'links' => [
+        ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات'), 'class' => 'quiet'],
+    ],
+]);
 if ($notice !== '') {
     echo '<p class="flash">' . admin_h(admin_flash($notice)) . '</p>';
 }
@@ -87,7 +95,7 @@ foreach ($rows as $row) {
     echo '<tr><td><a href="/admin/user.php?id=' . (int) $row['user_id'] . '">' . admin_h((string) $row['email']) . '</a></td><td>' . admin_h((string) $row['code']) . '</td><td>' . ($mismatch ? '<span class="pill warn">' : '') . admin_h((string) $row['package_type']) . ($mismatch ? '</span>' : '') . '</td><td>' . admin_h((string) $row['status']) . '</td><td>' . admin_h((string) $row['period_end']) . '</td><td>' . admin_h((string) ($row['subscription_expires_at'] ?? '—')) . '</td></tr>';
 }
 admin_table_close();
-echo '<h2>' . admin_h(admin_t('Replace a user plan', 'استبدال باقة مستخدم')) . '</h2>';
+echo '<h2 id="replace-plan">' . admin_h(admin_t('Replace a user plan', 'استبدال باقة مستخدم')) . '</h2>';
 echo '<form method="post" class="inline"><input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '">';
 echo '<input name="user_id" inputmode="numeric" placeholder="' . admin_h(admin_t('User id', 'رقم المستخدم')) . '">';
 echo '<select name="plan_code">';

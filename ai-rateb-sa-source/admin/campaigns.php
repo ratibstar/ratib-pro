@@ -28,6 +28,8 @@ $list = $pdo->prepare("SELECT c.id, c.title, c.status, c.created_at, u.email, b.
 $list->execute($params);
 $rows = $list->fetchAll();
 
+$canManage = admin_actor_has($adminActor, 'campaigns.manage');
+$pageReturn = '/admin/campaigns.php?q=' . rawurlencode($q) . '&status=' . rawurlencode($status) . '&page=' . $page;
 admin_start(admin_t('Campaigns', 'الحملات'));
 admin_toolbar([
     ['href' => '/admin', 'label' => admin_t('Dashboard', 'اللوحة')],
@@ -41,24 +43,40 @@ foreach (campaign_status_values() as $value) {
     echo '<option value="' . admin_h($value) . '"' . ($status === $value ? ' selected' : '') . '>' . admin_h($label) . '</option>';
 }
 echo '</select><button type="submit" class="btn primary">' . admin_h(admin_t('Search', 'بحث')) . '</button></form>';
+admin_bulk_flash_from_query();
+$formId = admin_bulk_form_open('campaigns', $pageReturn);
+admin_crud_toolbar([
+    'screen' => 'campaigns',
+    'can_manage' => $canManage,
+    'form_id' => $formId,
+    'add_enabled' => false,
+]);
 admin_table_open();
-echo '<tr><th>' . admin_h(admin_t('Title', 'العنوان')) . '</th><th>' . admin_h(admin_t('Owner', 'المالك')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Language', 'اللغة')) . '</th><th>' . admin_h(admin_t('Created', 'التاريخ')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
+echo '<tr>';
+admin_th_select($canManage);
+echo '<th>' . admin_h(admin_t('Title', 'العنوان')) . '</th><th>' . admin_h(admin_t('Owner', 'المالك')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Language', 'اللغة')) . '</th><th>' . admin_h(admin_t('Created', 'التاريخ')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
 foreach ($rows as $row) {
     $language = (string) ($row['campaign_language'] ?? '');
     if ((string) ($row['resolved_language'] ?? '') !== '') {
         $language .= ' → ' . (string) $row['resolved_language'];
     }
     $st = (string) $row['status'];
-    echo '<tr><td>' . admin_h((string) $row['title']) . '</td><td>' . admin_h((string) $row['email']) . '</td>';
+    $cid = (int) $row['id'];
+    $editHref = '/admin/campaign.php?id=' . $cid;
+    echo '<tr>';
+    admin_td_select($cid, $editHref, $canManage);
+    echo '<td>' . admin_h((string) $row['title']) . '</td><td>' . admin_h((string) $row['email']) . '</td>';
     echo '<td><span class="pill' . admin_pill_for_status($st) . '">' . admin_h(admin_campaign_status_label($st)) . '</span></td>';
-    echo '<td>' . admin_h($language) . '</td><td>' . admin_h((string) $row['created_at']) . '</td>';
-    echo '<td><div class="table-actions"><a class="btn small quiet" href="/admin/campaign.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('Open', 'فتح')) . '</a></div></td></tr>';
+    echo '<td>' . admin_h($language) . '</td><td>' . admin_h((string) $row['created_at']) . '</td><td>';
+    admin_crud_row_actions($editHref, $editHref, $canManage, $cid);
+    echo '</td></tr>';
 }
 if ($rows === []) {
-    admin_table_empty_row(6, admin_t('No campaigns match your filters.', 'لا حملات تطابق التصفية.'));
+    admin_table_empty_row($canManage ? 7 : 6, admin_t('No campaigns match your filters.', 'لا حملات تطابق التصفية.'));
 }
 admin_table_close();
 $base = '/admin/campaigns.php?q=' . rawurlencode($q) . '&status=' . rawurlencode($status) . '&page=';
 admin_pager($page, $total, $base);
 admin_panel_close();
+admin_bulk_form_close();
 admin_end();

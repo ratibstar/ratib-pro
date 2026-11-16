@@ -36,9 +36,14 @@ $rows = $pdo->query('SELECT f.id, f.created_at, f.amount_halalas, f.credits_reve
     ORDER BY f.id DESC LIMIT 80')->fetchAll();
 
 admin_start(admin_t('Refunds', 'الاستردادات'));
-admin_toolbar([
-    ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية')],
-    ['href' => '/admin/payments.php', 'label' => admin_t('Receipts', 'الإيصالات')],
+admin_crud_toolbar([
+    'screen' => 'refunds',
+    'can_manage' => admin_actor_is_owner($adminActor),
+    'add_href' => '#record-refund',
+    'links' => [
+        ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية')],
+        ['href' => '/admin/payments.php', 'label' => admin_t('Receipts', 'الإيصالات')],
+    ],
 ]);
 if ($notice === 'saved') {
     admin_flash_box('saved', 'ok');
@@ -55,7 +60,7 @@ if (admin_actor_is_owner($adminActor)) {
         'Use when Moyasar or support refunded a customer. Credits reversed is optional (defaults from package on webhook).',
         'استخدم عند استرداد من Moyasar أو الدعم. عكس النقاط اختياري (الويب هوك يستخدم خريطة الباقة).'
     ));
-    echo '<form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '">';
+    echo '<form id="record-refund" method="post" class="form-grid"><input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '">';
     echo '<label>' . admin_h(admin_t('Receipt id', 'رقم الإيصال R')) . '<input name="receipt_id" inputmode="numeric" required placeholder="R123"></label>';
     echo '<label>SAR<input name="amount_sar" inputmode="decimal" required></label>';
     echo '<label>' . admin_h(admin_t('Credits to reverse', 'نقاط تُخصم')) . '<input name="credits_reversed" inputmode="numeric" value="0"></label>';

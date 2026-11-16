@@ -78,7 +78,12 @@ if (admin_actor_has($adminActor, 'finance.export')) {
         $financeToolbar[] = ['href' => '/admin/finance-export.php?export=pending&range=' . rawurlencode($rangeKey), 'label' => admin_t('Export pending', 'تصدير المعلّقة')];
     }
 }
-admin_toolbar($financeToolbar);
+admin_crud_toolbar([
+    'screen' => 'finance',
+    'can_manage' => admin_actor_is_owner($adminActor),
+    'add_href' => '/admin/refunds.php#record-refund',
+    'links' => $financeToolbar,
+]);
 
 echo '<div class="filters">';
 foreach ($filterLinks as $filterKey => $filterLabel) {

@@ -244,11 +244,15 @@ if ($dashboardLoadError) {
         'بعض إحصائيات اللوحة غير متاحة (شغّل ترحيل commerce على السيرفر). استخدم العملاء أو المالية من القائمة.'
     )) . '</p>';
 }
-admin_toolbar([
-    ['href' => '/admin/users.php', 'label' => admin_t('Customers', 'العملاء'), 'class' => 'primary'],
-    ['href' => '/admin/finance.php', 'label' => admin_t('Finance', 'المالية')],
-    ['href' => '/admin/campaigns.php', 'label' => admin_t('Campaigns', 'الحملات')],
-    ['href' => '/admin/settings.php', 'label' => admin_t('System', 'النظام')],
+admin_crud_toolbar([
+    'screen' => 'dashboard',
+    'can_manage' => false,
+    'links' => [
+        ['href' => '/admin/users.php', 'label' => admin_t('Customers', 'العملاء'), 'class' => 'primary'],
+        ['href' => '/admin/finance.php', 'label' => admin_t('Finance', 'المالية')],
+        ['href' => '/admin/campaigns.php', 'label' => admin_t('Campaigns', 'الحملات')],
+        ['href' => '/admin/settings.php', 'label' => admin_t('System', 'النظام')],
+    ],
 ]);
 echo '<div class="filters">';
 foreach ($filters as $filterKey => $filterLabel) {

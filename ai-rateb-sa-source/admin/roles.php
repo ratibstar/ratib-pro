@@ -44,7 +44,14 @@ foreach ($rp as $row) {
 }
 
 admin_start(admin_t('Roles & permissions', 'الأدوار والصلاحيات'));
-admin_toolbar([['href' => '/admin/staff.php', 'label' => admin_t('Staff', 'موظفو المنصة'), 'class' => 'primary']]);
+admin_crud_toolbar([
+    'screen' => 'roles',
+    'can_manage' => true,
+    'add_href' => '/admin/staff.php#create-staff',
+    'links' => [
+        ['href' => '/admin/staff.php', 'label' => admin_t('Staff', 'موظفو المنصة'), 'class' => 'primary'],
+    ],
+]);
 if ($notice !== '') {
     admin_flash_box($notice, $notice === 'applied' ? 'ok' : 'bad');
 }

@@ -33,6 +33,9 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
+$canManage = admin_actor_has($adminActor, 'customers.manage');
+$canFinance = admin_actor_has($adminActor, 'finance.view');
+$listReturn = '/admin/users.php?' . ($q !== '' ? 'q=' . rawurlencode($q) . '&' : '') . 'page=' . $page;
 admin_start(admin_t('Users', 'المستخدمون'));
 admin_toolbar([
     ['href' => '/admin/finance.php?tab=customers', 'label' => admin_t('Customer finances', 'مالية العملاء'), 'class' => 'quiet'],
@@ -40,22 +43,34 @@ admin_toolbar([
 ]);
 admin_panel_open(admin_t('Customer accounts', 'حسابات العملاء'), admin_t('Customers register on the site. Open a row to manage credits, disable, or view payments.', 'العملاء يسجلون من الموقع. افتح الصف لإدارة النقاط أو التعطيل أو المدفوعات.'));
 echo '<form class="search" method="get"><input name="q" value="' . admin_h($q) . '" placeholder="' . admin_h(admin_t('Name or email', 'الاسم أو البريد')) . '"><button type="submit">' . admin_h(admin_t('Search', 'بحث')) . '</button></form>';
-$canManage = admin_actor_has($adminActor, 'customers.manage');
-$canFinance = admin_actor_has($adminActor, 'finance.view');
+admin_bulk_flash_from_query();
+$formId = admin_bulk_form_open('users', $listReturn);
+admin_crud_toolbar([
+    'screen' => 'users',
+    'can_manage' => $canManage,
+    'form_id' => $formId,
+    'add_enabled' => false,
+]);
 admin_table_open();
-echo '<tr><th>' . admin_h(admin_t('Name', 'الاسم')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Role', 'الدور')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>' . admin_h(admin_t('Paid (SAR)', 'المدفوع (ر.س)')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th><th>' . admin_h(admin_t('Campaigns', 'الحملات')) . '</th><th>' . admin_h(admin_t('Usage', 'الاستخدام')) . '</th><th>' . admin_h(admin_t('Registered', 'التسجيل')) . '</th><th>' . admin_h(admin_t('Last login', 'آخر دخول')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
+echo '<tr>';
+admin_th_select($canManage);
+echo '<th>' . admin_h(admin_t('Name', 'الاسم')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Role', 'الدور')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>' . admin_h(admin_t('Paid (SAR)', 'المدفوع (ر.س)')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th><th>' . admin_h(admin_t('Campaigns', 'الحملات')) . '</th><th>' . admin_h(admin_t('Usage', 'الاستخدام')) . '</th><th>' . admin_h(admin_t('Registered', 'التسجيل')) . '</th><th>' . admin_h(admin_t('Last login', 'آخر دخول')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
 foreach ($rows as $row) {
     $state = ($row['disabled_at'] ?? null) ? ' <span class="pill bad">' . admin_h(admin_t('Disabled', 'معطّل')) . '</span>' : '';
     $paid = admin_table_has($pdo, 'payment_receipts', 'amount') ? admin_halalas_to_sar((int) ($row['paid_halalas'] ?? 0)) : '—';
     $uid = (int) $row['id'];
-    echo '<tr><td><a href="/admin/user.php?id=' . $uid . '">' . admin_h((string) $row['name']) . '</a>' . $state . '</td><td>' . admin_h((string) $row['email']) . '</td><td>' . admin_h((string) $row['role']) . '</td><td>' . admin_h((string) (($row['plan_code'] ?? '') !== '' ? $row['plan_code'] : $row['package_type'])) . '</td><td>' . admin_h($paid) . '</td><td>' . (int) $row['credits_balance'] . '</td><td>' . (int) $row['campaigns'] . '</td><td>' . (int) $row['used_units'] . '</td><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) ($row['last_login_at'] ?? admin_t('Not tracked', 'غير مسجّل'))) . '</td><td><div class="table-actions">';
-    echo '<a class="btn small quiet" href="/admin/user.php?id=' . $uid . '">' . admin_h(admin_t('Manage', 'إدارة')) . '</a>';
+    $editHref = '/admin/user.php?id=' . $uid;
+    echo '<tr>';
+    admin_td_select($uid, $editHref, $canManage);
+    echo '<td><a href="' . admin_h($editHref) . '">' . admin_h((string) $row['name']) . '</a>' . $state . '</td><td>' . admin_h((string) $row['email']) . '</td><td>' . admin_h((string) $row['role']) . '</td><td>' . admin_h((string) (($row['plan_code'] ?? '') !== '' ? $row['plan_code'] : $row['package_type'])) . '</td><td>' . admin_h($paid) . '</td><td>' . (int) $row['credits_balance'] . '</td><td>' . (int) $row['campaigns'] . '</td><td>' . (int) $row['used_units'] . '</td><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) ($row['last_login_at'] ?? admin_t('Not tracked', 'غير مسجّل'))) . '</td><td>';
+    admin_crud_row_actions($editHref, $editHref, $canManage, $uid);
     if ($canFinance) {
-        echo '<a class="btn small quiet" href="/admin/finance-customer.php?id=' . $uid . '">' . admin_h(admin_t('Payments', 'مدفوعات')) . '</a>';
+        echo ' <a class="btn small quiet" href="/admin/finance-customer.php?id=' . $uid . '">' . admin_h(admin_t('Payments', 'مدفوعات')) . '</a>';
     }
-    echo '</div></td></tr>';
+    echo '</td></tr>';
 }
 admin_table_close();
 admin_pager($page, $total, '/admin/users.php?' . ($q !== '' ? 'q=' . rawurlencode($q) . '&' : '') . 'page=');
 admin_panel_close();
+admin_bulk_form_close();
 admin_end();

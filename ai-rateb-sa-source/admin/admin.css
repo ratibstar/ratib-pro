@@ -198,6 +198,11 @@ form.inline{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center;margin
 .finance-custom label{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:13px}
 .export-links{margin:0 0 16px}
 .page-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 20px}
+.crud-toolbar .crud-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-inline-start:auto;padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius);background:rgba(8,12,22,.45)}
+.btn.disabled,.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+.crud-toolbar select.bulk-action{background:#0a101c;color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:8px 10px;font:inherit;min-width:140px}
+.sel-col{width:36px;text-align:center}
+.sel-col input[type=checkbox]{width:16px;height:16px;accent-color:var(--cyan)}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 16px}
 .form-grid label{display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--muted);font-weight:500}
 .form-grid .full{grid-column:1/-1}

@@ -31,9 +31,14 @@ $msgEn = platform_setting($pdo, 'maintenance_message_en', '') ?? '';
 $msgAr = platform_setting($pdo, 'maintenance_message_ar', '') ?? '';
 
 admin_start(admin_t('System', 'النظام'));
-admin_toolbar([
-    ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات')],
-    ['href' => '/admin/usage.php', 'label' => admin_t('Usage', 'الاستخدام')],
+admin_crud_toolbar([
+    'screen' => 'settings',
+    'can_manage' => admin_actor_is_owner($adminActor),
+    'add_enabled' => false,
+    'links' => [
+        ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات')],
+        ['href' => '/admin/usage.php', 'label' => admin_t('Usage', 'الاستخدام')],
+    ],
 ]);
 if ($notice === 'saved') {
     admin_flash_box('saved', 'ok');

@@ -25,8 +25,12 @@ $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
 admin_start(admin_t('Customer HR (read-only)', 'موارد بشرية العملاء (قراءة فقط)'));
-admin_toolbar([
-    ['href' => '/admin/users.php', 'label' => admin_t('Customer accounts', 'حسابات العملاء'), 'class' => 'quiet'],
+admin_crud_toolbar([
+    'screen' => 'hr',
+    'can_manage' => false,
+    'links' => [
+        ['href' => '/admin/users.php', 'label' => admin_t('Customer accounts', 'حسابات العملاء'), 'class' => 'quiet'],
+    ],
 ]);
 echo '<p class="note">' . admin_h(admin_t(
     'This page is monitoring only. To add or delete employees, the customer logs into the site and opens /hr (Human resources in the campaigns menu).',
@@ -39,8 +43,11 @@ echo '<tr><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . a
 foreach ($rows as $row) {
     echo '<tr><td>' . admin_h((string) $row['name']) . '<br><span class="note">' . admin_h((string) $row['email']) . '</span></td>';
     echo '<td>' . (int) $row['employees'] . '</td><td>' . (int) $row['active_employees'] . '</td><td>' . admin_h((string) $row['created_at']) . '</td>';
-    echo '<td><div class="table-actions"><a class="btn small primary" href="/admin/hr-customer.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('View HR', 'عرض HR')) . '</a>';
-    echo '<a class="btn small quiet" href="/admin/user.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('Account', 'الحساب')) . '</a></div></td></tr>';
+    $uid = (int) $row['id'];
+    $editHref = '/admin/hr-customer.php?id=' . $uid;
+    echo '<td>';
+    admin_crud_row_actions($editHref, '/admin/user.php?id=' . $uid, false, $uid);
+    echo '</td></tr>';
 }
 if ($rows === []) {
     admin_table_empty_row(5, admin_t('No customers.', 'لا عملاء.'));
