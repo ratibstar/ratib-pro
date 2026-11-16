@@ -3,22 +3,24 @@ declare(strict_types=1);
 
 function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): void
 {
-    $groups = [
-        [
-            ['/dashboard', 'dashboard', 'Dashboard'],
-            ['/campaign-new.php', 'new_campaign', 'New Campaign'],
-            ['/brand.php', 'brand_kit', 'Brand kit'],
-            ['/hr/', 'hr', 'HR'],
-            ['/billing.php', 'billing', 'Billing'],
-            ['/credits.php', 'nav_plans', 'Plans'],
-        ],
-        [
-            ['/#workflow', 'nav_how', 'How it works'],
-            ['/#samples', 'nav_samples', 'Examples'],
-            ['/?pricing=1#pricing', 'nav_pricing', 'Pricing'],
-            ['/#create', 'nav_create', 'What it creates'],
-        ],
+    // Workspace links only after login — keep the public marketing header uncluttered.
+    $workspaceLinks = [
+        ['/dashboard', 'dashboard', 'Dashboard'],
+        ['/campaign-new.php', 'new_campaign', 'New Campaign'],
+        ['/brand.php', 'brand_kit', 'Brand kit'],
+        ['/hr/', 'hr', 'HR'],
+        ['/billing.php', 'billing', 'Billing'],
+        ['/credits.php', 'nav_plans', 'Plans'],
     ];
+    $marketingLinks = [
+        ['/#workflow', 'nav_how', 'How it works'],
+        ['/#samples', 'nav_samples', 'Examples'],
+        ['/?pricing=1#pricing', 'nav_pricing', 'Pricing'],
+        ['/#create', 'nav_create', 'What it creates'],
+    ];
+    $groups = $loggedIn
+        ? [$workspaceLinks, $marketingLinks]
+        : [$marketingLinks];
     $credits = null;
     if ($loggedIn && function_exists('rateb_account_credits') && !empty($_SESSION['user_id'])) {
         $pdo = function_exists('db') ? db() : ($GLOBALS['pdo'] ?? null);
