@@ -132,13 +132,8 @@ function resolve_admin_actor(object $pdo): ?array
             return admin_actor_from_owner($user);
         }
         if ($user) {
-            http_response_code(403);
-            header('Content-Type: text/html; charset=utf-8');
-            $ar = (($_COOKIE['rateb_ui_lang'] ?? '') === 'ar');
-            echo $ar
-                ? '<!doctype html><html lang="ar" dir="rtl"><body><p>حساب العميل لا يمكنه الوصول إلى لوحة الإدارة.</p></body></html>'
-                : '<!doctype html><html lang="en" dir="ltr"><body><p>Customer accounts cannot access the admin panel.</p></body></html>';
-            exit;
+            $_SESSION['admin_customer_blocked'] = (string) ($user['email'] ?? '');
+            return null;
         }
     }
 

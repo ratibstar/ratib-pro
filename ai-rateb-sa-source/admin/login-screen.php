@@ -29,6 +29,7 @@ function admin_staff_login_screen(object $pdo): void
             $result = admin_staff_authenticate($pdo, $emailRaw, $password);
             if ($result['ok']) {
                 admin_staff_login_session($result['staff']);
+                unset($_SESSION['admin_customer_blocked'], $_SESSION['user_id']);
                 admin_staff_touch_login($pdo, (int) $result['staff']['id']);
                 if (admin_table_has($pdo, 'admin_audit_log', 'id')) {
                     require_once __DIR__ . '/lib.php';
@@ -44,6 +45,7 @@ function admin_staff_login_screen(object $pdo): void
             }
             if ($owner['ok']) {
                 admin_owner_login_session($owner['user']);
+                unset($_SESSION['admin_customer_blocked']);
                 if (function_exists('rateb_stamp_login')) {
                     rateb_stamp_login($pdo, (int) $owner['user']['id']);
                 }
@@ -88,6 +90,13 @@ function admin_staff_login_screen(object $pdo): void
             'You are on the official admin URL (/admin). After sign-in you get the dashboard, finance, customers, and settings.',
             'أنت على رابط الإدارة الرسمي (/admin). بعد الدخول تظهر اللوحة والتحليلات والمالية والعملاء والإعدادات.'
         )) ?></p>
+        <?php if (!empty($_SESSION['admin_customer_blocked'])): ?>
+        <p class="flash bad"><?= $h($t(
+            'You are signed in on the site as a customer (' . (string) $_SESSION['admin_customer_blocked'] . '). That account cannot open /admin. Sign in below as owner (admin + your password) or staff, or log out of the customer session first.',
+            'أنت مسجّل دخولك على الموقع كعميل (' . (string) $_SESSION['admin_customer_blocked'] . '). هذا الحساب لا يفتح /admin. سجّل أدناه كمالك (admin + كلمة المرور) أو كموظف، أو سجّل خروج العميل أولاً.'
+        )) ?></p>
+        <p class="note" style="margin-bottom:12px"><a class="btn quiet" href="/logout.php?next=/admin"><?= $h($t('Log out customer session', 'تسجيل خروج حساب العميل')) ?></a></p>
+        <?php endif; ?>
         <h2 class="login-sub" style="margin:16px 0 8px;font-size:1rem;color:var(--muted,#93a4bd)"><?= $h($t('Platform staff', 'موظفو المنصة')) ?></h2>
         <?php if ($message !== ''): ?><p class="flash bad"><?= $h($message) ?></p><?php endif; ?>
         <form class="stack" method="post" action="/admin">
