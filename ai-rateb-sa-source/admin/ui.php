@@ -180,7 +180,6 @@ function admin_crud_toolbar(array $opts): void
         return;
     }
 
-    require_once __DIR__ . '/lib-bulk.php';
     $canManage = (bool) ($opts['can_manage'] ?? false);
     $addHref = $opts['add_href'] ?? null;
     $addEnabled = $canManage && ($opts['add_enabled'] ?? true) && is_string($addHref) && $addHref !== '';

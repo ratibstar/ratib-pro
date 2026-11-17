@@ -276,6 +276,40 @@ jobs:
             fi
             UPLOADED_MARKS="${UPLOADED_MARKS}|${rel}|"
           done
+          ADMIN_SYNC=0
+          if [ "$DEPLOY_ALL" -eq 1 ]; then
+            ADMIN_SYNC=1
+          else
+            case "$CHANGED_MARKS" in
+              *"|admin/"*) ADMIN_SYNC=1 ;;
+            esac
+          fi
+          if [ "$ADMIN_SYNC" -eq 1 ]; then
+            for local_file in ai-rateb-sa-source/admin/*.php; do
+              rel="${local_file#ai-rateb-sa-source/}"
+              case "$UPLOADED_MARKS" in
+                *"|${rel}|"*) continue ;;
+              esac
+              local_sum="$(sha256sum "$local_file" | awk '{print $1}')"
+              "${SSH[@]}" "$REMOTE" "mkdir -p '${TARGET}/$(dirname "$rel")'"
+              scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+                "$local_file" "${REMOTE}:${TARGET}/${rel}"
+              echo "FILE=${rel}"
+              echo "LOCAL_SHA256=${local_sum}"
+              if [ "$DEPLOY_ALL" -eq 1 ]; then
+                remote_sum="$("${SSH[@]}" "$REMOTE" "php -r \"echo hash_file('sha256', '${TARGET}/${rel}');\"")"
+                echo "REMOTE_SHA256=${remote_sum}"
+                if [ "$local_sum" != "$remote_sum" ]; then
+                  echo "::error::Checksum mismatch for ${rel}"
+                  rm -f "$KEY"
+                  exit 1
+                fi
+              else
+                echo "REMOTE_SHA256=skip_delta"
+              fi
+              UPLOADED_MARKS="${UPLOADED_MARKS}|${rel}|"
+            done
+          fi
           if needs_secrets_sync; then
             if [ -n "${RATEB_GOOGLE_CLIENT_ID:-}" ]; then
             python3 - << 'PY'
