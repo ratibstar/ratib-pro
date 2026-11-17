@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    # ai.rateb.sa ships via RATEB AI Campaign only — do not rsync public_html for these paths.
+    paths-ignore:
+      - 'ai-rateb-sa-source/**'
+      - '.github/workflows/ai-rateb-sa.yml'
   workflow_dispatch:
     inputs:
       full_sync:
