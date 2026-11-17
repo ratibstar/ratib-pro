@@ -1,6 +1,46 @@
 <?php
 declare(strict_types=1);
 
+function admin_public_site_url(): string
+{
+    return '/';
+}
+
+function admin_studio_url(): string
+{
+    return '/dashboard';
+}
+
+/** Quick links: dashboard, customers, HR, finance, and public site. */
+function admin_customer_hub(): void
+{
+    $items = [
+        ['/admin', admin_t('Dashboard & analytics', 'لوحة التحليلات'), admin_t('KPIs, revenue, AI usage', 'مؤشرات، إيراد، استخدام الذكاء'), '▣'],
+        ['/admin/users.php', admin_t('Customer accounts', 'حسابات العملاء'), admin_t('Search, credits, disable', 'بحث، نقاط، تعطيل'), '◎'],
+        ['/admin/hr-overview.php', admin_t('Customer HR', 'موارد بشرية العملاء'), admin_t('Employees per company (read-only)', 'موظفون لكل شركة (قراءة)'), '◈'],
+        ['/admin/finance.php?tab=customers', admin_t('Customer finances', 'مالية العملاء'), admin_t('Payments and balances', 'مدفوعات وأرصدة'), '◆'],
+    ];
+    echo '<section class="hub-cards" aria-label="' . admin_h(admin_t('Customer administration', 'إدارة العملاء')) . '">';
+    foreach ($items as [$href, $title, $hint, $glyph]) {
+        echo '<a class="hub-card" href="' . admin_h($href) . '">';
+        echo '<span class="hub-glyph" aria-hidden="true">' . admin_h($glyph) . '</span>';
+        echo '<strong>' . admin_h($title) . '</strong>';
+        echo '<span class="hub-hint">' . admin_h($hint) . '</span>';
+        echo '</a>';
+    }
+    echo '<a class="hub-card hub-card-public" href="' . admin_h(admin_public_site_url()) . '" target="_blank" rel="noopener">';
+    echo '<span class="hub-glyph" aria-hidden="true">↗</span>';
+    echo '<strong>' . admin_h(admin_t('Public website', 'الموقع العام')) . '</strong>';
+    echo '<span class="hub-hint">' . admin_h(admin_t('Homepage & registration (new tab)', 'الصفحة الرئيسية والتسجيل (نافذة جديدة)')) . '</span>';
+    echo '</a>';
+    echo '<a class="hub-card" href="' . admin_h(admin_studio_url()) . '">';
+    echo '<span class="hub-glyph" aria-hidden="true">◇</span>';
+    echo '<strong>' . admin_h(admin_t('Customer studio', 'استوديو العملاء')) . '</strong>';
+    echo '<span class="hub-hint">' . admin_h(admin_t('Same experience as logged-in customers', 'نفس تجربة العملاء بعد تسجيل الدخول')) . '</span>';
+    echo '</a>';
+    echo '</section>';
+}
+
 function admin_like(string $value): string
 {
     $value = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
