@@ -246,6 +246,10 @@ jobs:
             "cli/set-platform-owner-password.php"
             "migrations/payment_commerce_schema.php"
             "migrations/platform_settings_schema.php"
+            "migrations/company_hr_schema.php"
+            "migrations/admin_staff_schema.php"
+            "app/auth/account-state.php"
+            "config/session.php"
             "app/notify/events.php"
             "app/notify/mail.php"
             "app/brand/library.php"
@@ -281,7 +285,7 @@ jobs:
             ADMIN_SYNC=1
           else
             case "$CHANGED_MARKS" in
-              *"|admin/"*) ADMIN_SYNC=1 ;;
+              *"|admin/"*|*"|migrations/"*|*"|.github/workflows/ai-rateb-sa.yml"*) ADMIN_SYNC=1 ;;
             esac
           fi
           if [ "$ADMIN_SYNC" -eq 1 ]; then
@@ -307,6 +311,18 @@ jobs:
               else
                 echo "REMOTE_SHA256=skip_delta"
               fi
+              UPLOADED_MARKS="${UPLOADED_MARKS}|${rel}|"
+            done
+            for local_file in ai-rateb-sa-source/migrations/*.php; do
+              rel="${local_file#ai-rateb-sa-source/}"
+              case "$UPLOADED_MARKS" in
+                *"|${rel}|"*) continue ;;
+              esac
+              local_sum="$(sha256sum "$local_file" | awk '{print $1}')"
+              "${SSH[@]}" "$REMOTE" "mkdir -p '${TARGET}/$(dirname "$rel")'"
+              scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+                "$local_file" "${REMOTE}:${TARGET}/${rel}"
+              echo "FILE=${rel}"
               UPLOADED_MARKS="${UPLOADED_MARKS}|${rel}|"
             done
           fi
