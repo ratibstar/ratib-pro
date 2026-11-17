@@ -36,14 +36,10 @@ $rows = $pdo->query('SELECT f.id, f.created_at, f.amount_halalas, f.credits_reve
     ORDER BY f.id DESC LIMIT 80')->fetchAll();
 
 admin_start(admin_t('Refunds', 'الاستردادات'));
-admin_crud_toolbar([
-    'screen' => 'refunds',
-    'can_manage' => admin_actor_is_owner($adminActor),
-    'add_href' => '#record-refund',
-    'links' => [
-        ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية')],
-        ['href' => '/admin/payments.php', 'label' => admin_t('Receipts', 'الإيصالات')],
-    ],
+admin_toolbar([
+    ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية')],
+    ['href' => '/admin/payments.php', 'label' => admin_t('Receipts', 'الإيصالات')],
+    ['href' => '#record-refund', 'label' => admin_t('Record refund', 'تسجيل استرداد'), 'class' => 'primary'],
 ]);
 if ($notice === 'saved') {
     admin_flash_box('saved', 'ok');

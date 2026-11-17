@@ -15,13 +15,8 @@ $stmt->execute();
 $rows = $stmt->fetchAll();
 
 admin_start(admin_t('Payments', 'المدفوعات'));
-admin_crud_toolbar([
-    'screen' => 'payments',
-    'can_manage' => false,
-    'add_href' => '/admin/refunds.php',
-    'links' => [
-        ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية')],
-    ],
+admin_toolbar([
+    ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية')],
 ]);
 admin_panel_open(admin_t('Payment receipts', 'إيصالات الدفع'));
 echo '<section class="stats"><article class="stat"><b>' . admin_h(admin_halalas_to_sar($sum)) . '</b><span>' . admin_h(admin_t('Confirmed revenue SAR', 'إيراد مؤكد بالريال')) . '</span></article>';

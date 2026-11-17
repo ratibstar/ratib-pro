@@ -183,7 +183,10 @@ function admin_crud_toolbar(array $opts): void
     $canManage = (bool) ($opts['can_manage'] ?? false);
     $addHref = $opts['add_href'] ?? null;
     $addEnabled = $canManage && ($opts['add_enabled'] ?? true) && is_string($addHref) && $addHref !== '';
-    $bulkActions = $opts['bulk_actions'] ?? admin_bulk_actions_for_screen($screen);
+    $bulkActions = $opts['bulk_actions'] ?? [];
+    if ($bulkActions === [] && function_exists('admin_bulk_actions_for_screen')) {
+        $bulkActions = admin_bulk_actions_for_screen($screen);
+    }
     $hasBulk = $canManage && $bulkActions !== [];
 
     echo '<span class="crud-group">';
