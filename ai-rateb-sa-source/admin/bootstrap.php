@@ -88,7 +88,7 @@ function admin_start(string $title): void
     echo '<!doctype html><html lang="' . admin_h($adminLang) . '" dir="' . $dir . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>' . admin_h($title) . ' — RATEB AI</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
-    echo '<link rel="stylesheet" href="/admin/admin.css?v=16"></head><body class="admin-app">';
+    echo '<link rel="stylesheet" href="/admin/admin.css?v=17"></head><body class="admin-app">';
     echo '<input class="nav-check" id="nav-check" type="checkbox">';
     echo '<div class="shell"><aside class="side"><div class="brand"><b>RATEB</b> <span>AI</span></div><p class="role">' . admin_h(admin_t('Administration', 'الإدارة')) . '</p><nav class="nav-sections">';
     $groups = admin_nav_groups_for_actor($adminActor, $adminLang);
@@ -110,9 +110,13 @@ function admin_start(string $title): void
         }
         echo '</div></details>';
     }
+    echo '<a class="side-public" href="' . admin_h(admin_public_site_url()) . '" target="_blank" rel="noopener">' . admin_h(admin_t('Public site', 'الموقع العام')) . ' ↗</a>';
     echo '</nav></aside><div class="main">';
     echo '<header class="topbar"><label class="menu" for="nav-check">' . admin_h(admin_t('Menu', 'القائمة')) . '</label><div class="top-title"><p>' . admin_h($console) . '</p><h1>' . admin_h($title) . '</h1></div>';
-    echo '<div class="top-tools"><a class="lang" href="/admin/lang.php?lang=' . ($adminLang === 'ar' ? 'en' : 'ar') . '">' . admin_h($adminLang === 'ar' ? 'English' : 'العربية') . '</a>';
+    echo '<div class="top-tools">';
+    echo '<a class="lang" href="' . admin_h(admin_public_site_url()) . '" target="_blank" rel="noopener">' . admin_h(admin_t('Public site', 'الموقع العام')) . '</a>';
+    echo '<a class="lang" href="' . admin_h(admin_studio_url()) . '">' . admin_h(admin_t('Customer studio', 'استوديو العملاء')) . '</a>';
+    echo '<a class="lang" href="/admin/lang.php?lang=' . ($adminLang === 'ar' ? 'en' : 'ar') . '">' . admin_h($adminLang === 'ar' ? 'English' : 'العربية') . '</a>';
     if (($adminActor['type'] ?? '') === 'staff') {
         echo '<a class="lang" href="/admin/logout.php">' . admin_h(admin_t('Sign out', 'خروج')) . '</a>';
     }

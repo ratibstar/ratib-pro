@@ -238,6 +238,7 @@ $filters = [
 ];
 
 admin_start(admin_t('Dashboard', 'اللوحة'));
+admin_customer_hub();
 if ($dashboardLoadError) {
     echo '<p class="flash bad">' . admin_h(admin_t(
         'Some dashboard statistics are unavailable (run commerce schema on the server). Use Customers or Finance from the menu.',
@@ -246,14 +247,16 @@ if ($dashboardLoadError) {
 }
 admin_crud_toolbar([
     'screen' => 'dashboard',
-    'can_manage' => false,
+    'minimal' => true,
     'links' => [
-        ['href' => '/admin/users.php', 'label' => admin_t('Customers', 'العملاء'), 'class' => 'primary'],
-        ['href' => '/admin/finance.php', 'label' => admin_t('Finance', 'المالية')],
-        ['href' => '/admin/campaigns.php', 'label' => admin_t('Campaigns', 'الحملات')],
-        ['href' => '/admin/settings.php', 'label' => admin_t('System', 'النظام')],
+        ['href' => '/admin/users.php', 'label' => admin_t('Customer accounts', 'حسابات العملاء'), 'class' => 'primary'],
+        ['href' => '/admin/hr-overview.php', 'label' => admin_t('Customer HR', 'موارد بشرية العملاء')],
+        ['href' => '/admin/finance.php?tab=customers', 'label' => admin_t('Customer finances', 'مالية العملاء')],
+        ['href' => '/admin/settings.php', 'label' => admin_t('System & public site', 'النظام والموقع العام')],
+        ['href' => admin_public_site_url(), 'label' => admin_t('Public site', 'الموقع العام'), 'attrs' => ['target' => '_blank', 'rel' => 'noopener']],
     ],
 ]);
+try {
 echo '<div class="filters">';
 foreach ($filters as $filterKey => $filterLabel) {
     $class = $filterKey === $range['key'] ? ' class="on"' : '';
@@ -371,4 +374,11 @@ echo '<tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h
     admin_table_close();
 }
 echo '</article></div>';
+} catch (Throwable $dashboardRenderError) {
+    error_log('admin dashboard render: ' . $dashboardRenderError->getMessage());
+    echo '<p class="flash bad">' . admin_h(admin_t(
+        'Part of the dashboard could not be rendered. Use the links above or open Customer accounts / Finance.',
+        'تعذّر عرض جزء من اللوحة. استخدم الروابط أعلاه أو افتح حسابات العملاء / المالية.'
+    )) . '</p>';
+}
 admin_end();

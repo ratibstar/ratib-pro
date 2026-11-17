@@ -161,7 +161,16 @@ if ($tab === 'overview') {
 }
 
 if ($tab === 'customers') {
-    admin_panel_open(admin_t('Customer finances', 'مالية العملاء'));
+    admin_toolbar([
+        ['href' => '/admin', 'label' => admin_t('Dashboard', 'لوحة التحليلات'), 'class' => 'quiet'],
+        ['href' => '/admin/users.php', 'label' => admin_t('Customer accounts', 'حسابات العملاء'), 'class' => 'quiet'],
+        ['href' => '/admin/hr-overview.php', 'label' => admin_t('Customer HR', 'موارد بشرية العملاء'), 'class' => 'quiet'],
+        ['href' => admin_public_site_url(), 'label' => admin_t('Public site', 'الموقع العام'), 'class' => 'quiet', 'attrs' => ['target' => '_blank', 'rel' => 'noopener']],
+    ]);
+    admin_panel_open(admin_t('Customer finances', 'مالية العملاء'), admin_t(
+        'Totals per customer account. Customers pay and subscribe on the public site.',
+        'مجاميع لكل حساب عميل. الدفع والاشتراك يتم على الموقع العام.'
+    ));
     $where = '';
     $params = [];
     if ($q !== '') {

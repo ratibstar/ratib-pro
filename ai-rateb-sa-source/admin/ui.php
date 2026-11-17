@@ -79,6 +79,48 @@ function admin_th_actions(): string
     return admin_t('Actions', 'التحكم');
 }
 
+function admin_public_site_url(): string
+{
+    return '/';
+}
+
+function admin_studio_url(): string
+{
+    return '/dashboard';
+}
+
+/**
+ * Quick links for the four customer-console entry points plus the public marketing site.
+ */
+function admin_customer_hub(): void
+{
+    $items = [
+        ['/admin', admin_t('Dashboard & analytics', 'لوحة التحليلات'), admin_t('KPIs, revenue, AI usage', 'مؤشرات، إيراد، استخدام الذكاء'), '▣'],
+        ['/admin/users.php', admin_t('Customer accounts', 'حسابات العملاء'), admin_t('Search, credits, disable', 'بحث، نقاط، تعطيل'), '◎'],
+        ['/admin/hr-overview.php', admin_t('Customer HR', 'موارد بشرية العملاء'), admin_t('Employees per company (read-only)', 'موظفون لكل شركة (قراءة)'), '◈'],
+        ['/admin/finance.php?tab=customers', admin_t('Customer finances', 'مالية العملاء'), admin_t('Payments and balances', 'مدفوعات وأرصدة'), '◆'],
+    ];
+    echo '<section class="hub-cards" aria-label="' . admin_h(admin_t('Customer administration', 'إدارة العملاء')) . '">';
+    foreach ($items as [$href, $title, $hint, $glyph]) {
+        echo '<a class="hub-card" href="' . admin_h($href) . '">';
+        echo '<span class="hub-glyph" aria-hidden="true">' . admin_h($glyph) . '</span>';
+        echo '<strong>' . admin_h($title) . '</strong>';
+        echo '<span class="hub-hint">' . admin_h($hint) . '</span>';
+        echo '</a>';
+    }
+    echo '<a class="hub-card hub-card-public" href="' . admin_h(admin_public_site_url()) . '" target="_blank" rel="noopener">';
+    echo '<span class="hub-glyph" aria-hidden="true">↗</span>';
+    echo '<strong>' . admin_h(admin_t('Public website', 'الموقع العام')) . '</strong>';
+    echo '<span class="hub-hint">' . admin_h(admin_t('Homepage & registration (new tab)', 'الصفحة الرئيسية والتسجيل (نافذة جديدة)')) . '</span>';
+    echo '</a>';
+    echo '<a class="hub-card" href="' . admin_h(admin_studio_url()) . '">';
+    echo '<span class="hub-glyph" aria-hidden="true">◇</span>';
+    echo '<strong>' . admin_h(admin_t('Customer studio', 'استوديو العملاء')) . '</strong>';
+    echo '<span class="hub-hint">' . admin_h(admin_t('Same experience as logged-in customers', 'نفس تجربة العملاء بعد تسجيل الدخول')) . '</span>';
+    echo '</a>';
+    echo '</section>';
+}
+
 function admin_nav_glyph(string $href): string
 {
     $path = parse_url($href, PHP_URL_PATH) ?: $href;
@@ -164,6 +206,7 @@ function admin_crud_toolbar(array $opts): void
 {
     require_once __DIR__ . '/lib-bulk.php';
     $screen = (string) $opts['screen'];
+    $minimal = (bool) ($opts['minimal'] ?? false);
     $canManage = (bool) ($opts['can_manage'] ?? false);
     $formId = (string) ($opts['form_id'] ?? ('admin-bulk-' . $screen));
     $addHref = $opts['add_href'] ?? null;
@@ -174,7 +217,15 @@ function admin_crud_toolbar(array $opts): void
     echo '<div class="page-toolbar crud-toolbar" data-admin-crud-toolbar data-admin-form="' . admin_h($formId) . '">';
     foreach ($opts['links'] ?? [] as $link) {
         $class = 'btn ' . ($link['class'] ?? 'quiet');
-        echo '<a class="' . admin_h(trim($class)) . '" href="' . admin_h((string) $link['href']) . '">' . admin_h((string) $link['label']) . '</a>';
+        $extra = '';
+        foreach ($link['attrs'] ?? [] as $k => $v) {
+            $extra .= ' ' . admin_h((string) $k) . '="' . admin_h((string) $v) . '"';
+        }
+        echo '<a class="' . admin_h(trim($class)) . '" href="' . admin_h((string) $link['href']) . '"' . $extra . '>' . admin_h((string) $link['label']) . '</a>';
+    }
+    if ($minimal) {
+        echo '</div>';
+        return;
     }
     echo '<span class="crud-group">';
     if ($addEnabled) {
