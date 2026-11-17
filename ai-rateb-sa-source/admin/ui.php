@@ -162,15 +162,9 @@ function admin_pill_for_status(string $status): string
  */
 function admin_crud_toolbar(array $opts): void
 {
-    require_once __DIR__ . '/lib-bulk.php';
     $screen = (string) $opts['screen'];
     $minimal = (bool) ($opts['minimal'] ?? false);
-    $canManage = (bool) ($opts['can_manage'] ?? false);
     $formId = (string) ($opts['form_id'] ?? ('admin-bulk-' . $screen));
-    $addHref = $opts['add_href'] ?? null;
-    $addEnabled = $canManage && ($opts['add_enabled'] ?? true) && is_string($addHref) && $addHref !== '';
-    $bulkActions = $opts['bulk_actions'] ?? admin_bulk_actions_for_screen($screen);
-    $hasBulk = $canManage && $bulkActions !== [];
 
     echo '<div class="page-toolbar crud-toolbar" data-admin-crud-toolbar data-admin-form="' . admin_h($formId) . '">';
     foreach ($opts['links'] ?? [] as $link) {
@@ -185,6 +179,14 @@ function admin_crud_toolbar(array $opts): void
         echo '</div>';
         return;
     }
+
+    require_once __DIR__ . '/lib-bulk.php';
+    $canManage = (bool) ($opts['can_manage'] ?? false);
+    $addHref = $opts['add_href'] ?? null;
+    $addEnabled = $canManage && ($opts['add_enabled'] ?? true) && is_string($addHref) && $addHref !== '';
+    $bulkActions = $opts['bulk_actions'] ?? admin_bulk_actions_for_screen($screen);
+    $hasBulk = $canManage && $bulkActions !== [];
+
     echo '<span class="crud-group">';
     if ($addEnabled) {
         echo '<a class="btn primary" href="' . admin_h($addHref) . '">' . admin_h(admin_t('Add', 'إضافة')) . '</a>';
