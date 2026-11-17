@@ -206,25 +206,43 @@ if ($tab === 'customers') {
         'إجمالي المدفوع يشمل الإيصالات الناجحة فقط. أسماء الاشتراك حالة كتالوج وليست نقدًا محصّلًا.'
     )) . '</p>';
 
+    $canManageCustomers = admin_actor_has($adminActor, 'customers.manage');
+    $custReturn = '/admin/finance.php' . admin_finance_query_string(['tab' => 'customers', 'q' => $q, 'page' => $page]);
+    admin_bulk_flash_from_query();
+    $custFormId = admin_bulk_form_open('finance_customers', $custReturn);
+    admin_crud_toolbar([
+        'screen' => 'finance_customers',
+        'can_manage' => $canManageCustomers,
+        'form_id' => $custFormId,
+        'add_enabled' => false,
+    ]);
+
     admin_table_open();
-    echo '<tr><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Payments', 'المدفوعات')) . '</th><th>' . admin_h(admin_t('Subscription', 'الاشتراك')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Last payment', 'آخر دفع')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
+    echo '<tr>';
+    admin_th_select($canManageCustomers);
+    echo '<th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Payments', 'المدفوعات')) . '</th><th>' . admin_h(admin_t('Subscription', 'الاشتراك')) . '</th><th>' . admin_h(admin_t('Credits', 'النقاط')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Last payment', 'آخر دفع')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
     foreach ($rows as $row) {
         $disabled = ($row['disabled_at'] ?? null) !== null && (string) $row['disabled_at'] !== '';
         $plan = (string) ($row['plan_code'] ?? '');
-        echo '<tr><td><a href="/admin/finance-customer.php?id=' . (int) $row['id'] . '">' . admin_h((string) $row['name']) . '</a></td>';
+        $uid = (int) $row['id'];
+        $editHref = '/admin/finance-customer.php?id=' . $uid;
+        echo '<tr>';
+        admin_td_select($uid, $editHref, $canManageCustomers);
+        echo '<td><a href="' . admin_h($editHref) . '">' . admin_h((string) $row['name']) . '</a></td>';
         echo '<td>' . admin_h((string) $row['email']) . '</td>';
         echo '<td>' . admin_h(admin_halalas_to_sar((int) $row['paid_halalas'])) . '</td>';
         echo '<td>' . (int) $row['paid_count'] . '</td>';
         echo '<td>' . admin_h($plan !== '' ? $plan : '—') . '</td>';
         echo '<td>' . (int) $row['credits_balance'] . '</td>';
         echo '<td><span class="pill ' . ($disabled ? 'bad' : 'ok') . '">' . admin_h($disabled ? admin_t('Disabled', 'معطّل') : admin_t('Active', 'نشط')) . '</span></td>';
-        echo '<td>' . admin_h((string) ($row['last_payment'] ?? '—')) . '</td><td><div class="table-actions">';
-        echo '<a class="btn small quiet" href="/admin/finance-customer.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('Finance', 'مالية')) . '</a>';
-        echo '<a class="btn small quiet" href="/admin/user.php?id=' . (int) $row['id'] . '">' . admin_h(admin_t('Account', 'حساب')) . '</a></div></td></tr>';
+        echo '<td>' . admin_h((string) ($row['last_payment'] ?? '—')) . '</td><td>';
+        admin_crud_row_actions($editHref, '/admin/user.php?id=' . $uid, $canManageCustomers, $uid);
+        echo '</td></tr>';
     }
     admin_table_close();
     $custBase = '/admin/finance.php' . admin_finance_query_string(['tab' => 'customers']);
     admin_pager($page, $total, $custBase . (str_contains($custBase, '?') ? '&' : '?') . 'page=');
+    admin_bulk_form_close();
     admin_panel_close();
 }
 
@@ -302,26 +320,62 @@ if ($tab === 'payments') {
     }
     echo '</p>';
 
+    $canFinDelete = admin_actor_is_owner($adminActor) && admin_actor_has($adminActor, 'finance.view');
+    $payReturn = '/admin/finance.php' . admin_finance_query_string(['tab' => 'payments', 'q' => $q, 'status' => $status, 'page' => $page]);
+    admin_bulk_flash_from_query();
+    $payFormId = admin_bulk_form_open('finance_payments', $payReturn);
+    admin_crud_toolbar([
+        'screen' => 'finance_payments',
+        'can_manage' => $canFinDelete,
+        'form_id' => $payFormId,
+        'add_enabled' => false,
+    ]);
+    echo '<p class="note">' . admin_h(admin_t(
+        'Owner can delete pending/failed checkout rows or receipts with no refund record. Paid rows with refunds are skipped.',
+        'المالك يحذف صفوف الدفع المعلّقة/الفاشلة أو إيصالات بلا سجل استرداد. الصفوف المدفوعة ذات الاسترداد تُتخطى.'
+    )) . '</p>';
+
     admin_table_open();
-echo '<tr><th>' . admin_h(admin_t('Reference', 'المرجع')) . '</th><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Moyasar ID', 'معرّف Moyasar')) . '</th></tr>';
+    echo '<tr>';
+    admin_th_select($canFinDelete);
+    echo '<th>' . admin_h(admin_t('Reference', 'المرجع')) . '</th><th>' . admin_h(admin_t('Customer', 'العميل')) . '</th><th>' . admin_h(admin_t('Email', 'البريد')) . '</th><th>' . admin_h(admin_t('Package', 'الباقة')) . '</th><th>SAR</th><th>' . admin_h(admin_t('Date', 'التاريخ')) . '</th><th>' . admin_h(admin_t('Status', 'الحالة')) . '</th><th>' . admin_h(admin_t('Moyasar ID', 'معرّف Moyasar')) . '</th><th>' . admin_h(admin_th_actions()) . '</th></tr>';
     foreach ($rows as $row) {
         $ref = ($row['kind'] === 'receipt' ? 'R' : 'O') . (int) $row['row_id'];
+        $rowKey = (string) $row['kind'] . ':' . (int) $row['row_id'];
+        $uid = (int) $row['user_id'];
+        $editHref = '/admin/finance-customer.php?id=' . $uid;
         $pill = match ((string) $row['status']) {
             'paid' => 'ok',
             'pending' => 'warn',
             default => 'bad',
         };
-        echo '<tr><td>' . admin_h($ref) . '</td>';
-        echo '<td><a href="/admin/finance-customer.php?id=' . (int) $row['user_id'] . '">' . admin_h((string) $row['name']) . '</a></td>';
+        $kind = (string) $row['kind'];
+        $pst = (string) $row['status'];
+        $rowDeletable = false;
+        if ($canFinDelete) {
+            if ($kind === 'order' && in_array($pst, ['pending', 'failed'], true)) {
+                $rowDeletable = true;
+            } elseif ($kind === 'receipt') {
+                $rc = $pdo->prepare('SELECT COUNT(*) FROM payment_refunds WHERE receipt_id = ?');
+                $rc->execute([(int) $row['row_id']]);
+                $rowDeletable = (int) $rc->fetchColumn() === 0;
+            }
+        }
+        echo '<tr>';
+        admin_td_select($rowKey, $editHref, $rowDeletable);
+        echo '<td>' . admin_h($ref) . '</td>';
+        echo '<td><a href="' . admin_h($editHref) . '">' . admin_h((string) $row['name']) . '</a></td>';
         echo '<td>' . admin_h((string) $row['email']) . '</td>';
         echo '<td>' . admin_h((string) $row['package_code']) . '</td>';
         echo '<td>' . admin_h(admin_halalas_to_sar((int) $row['amount'])) . '</td>';
         echo '<td>' . admin_h((string) $row['created_at']) . '</td>';
-        $pst = (string) $row['status'];
         echo '<td><span class="pill ' . $pill . '">' . admin_h(admin_payment_status_label($pst)) . '</span></td>';
-        echo '<td>' . admin_h((string) $row['moyasar_ref']) . '</td></tr>';
+        echo '<td>' . admin_h((string) $row['moyasar_ref']) . '</td><td>';
+        admin_crud_row_actions($editHref, '/admin/user.php?id=' . $uid, $canFinDelete && $rowDeletable, $rowKey, $rowDeletable);
+        echo '</td></tr>';
     }
     admin_table_close();
+    admin_bulk_form_close();
     $pageBase = '/admin/finance.php' . admin_finance_query_string(['tab' => 'payments', 'page' => '']);
     $sep = str_contains($pageBase, '?') ? '&' : '?';
     admin_pager($page, $total, $pageBase . $sep . 'page=');

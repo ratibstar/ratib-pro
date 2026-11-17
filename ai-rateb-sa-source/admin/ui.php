@@ -278,24 +278,24 @@ function admin_th_select(bool $enabled): void
     echo '<th class="sel-col"><input type="checkbox" data-admin-select-all aria-label="' . admin_h(admin_t('Select all', 'تحديد الكل')) . '"></th>';
 }
 
-function admin_td_select(int $id, string $editHref, bool $enabled): void
+function admin_td_select(int|string $id, string $editHref, bool $enabled): void
 {
     if (!$enabled) {
         echo '<td class="sel-col"></td>';
         return;
     }
-    echo '<td class="sel-col"><input type="checkbox" name="ids[]" value="' . (int) $id . '" data-admin-row-select data-edit-href="' . admin_h($editHref) . '"></td>';
+    echo '<td class="sel-col"><input type="checkbox" name="ids[]" value="' . admin_h((string) $id) . '" data-admin-row-select data-edit-href="' . admin_h($editHref) . '"></td>';
 }
 
-function admin_crud_row_actions(string $editHref, string $viewHref, bool $canManage, int $id): void
+function admin_crud_row_actions(string $editHref, string $viewHref, bool $canManage, int|string $rowId, bool $rowDelete = true): void
 {
     echo '<div class="table-actions">';
     if ($viewHref !== '' && $viewHref !== $editHref) {
         echo '<a class="btn small quiet" href="' . admin_h($viewHref) . '">' . admin_h(admin_t('View', 'عرض')) . '</a>';
     }
     echo '<a class="btn small primary" href="' . admin_h($editHref) . '">' . admin_h(admin_t('Edit', 'تعديل')) . '</a>';
-    if ($canManage) {
-        echo '<button type="button" class="btn small danger" data-admin-row-delete data-row-id="' . (int) $id . '">' . admin_h(admin_t('Delete', 'حذف')) . '</button>';
+    if ($canManage && $rowDelete) {
+        echo '<button type="button" class="btn small danger" data-admin-row-delete data-row-id="' . admin_h((string) $rowId) . '">' . admin_h(admin_t('Delete', 'حذف')) . '</button>';
     }
     echo '</div>';
 }
@@ -310,7 +310,7 @@ function admin_bulk_flash_from_query(): void
     $msg = match ($code) {
         'applied' => admin_t('Bulk update applied to {n} row(s).', 'طُبّق التحديث الجماعي على {n} صف.') ,
         'reason' => admin_t('Enter a reason (3+ chars) for bulk changes.', 'اكتب سببًا (٣+ أحرف) للتغيير الجماعي.'),
-        'owner_only' => admin_t('Only the owner can delete campaigns.', 'المالك فقط يحذف الحملات.'),
+        'owner_only' => admin_t('Only the owner can run this finance delete.', 'المالك فقط ينفّذ هذا الحذف المالي.'),
         'missing' => admin_t('No eligible rows were updated.', 'لم يُحدَّث أي صف مؤهل.'),
         default => admin_t('Bulk action was not completed.', 'لم يكتمل الإجراء الجماعي.'),
     };

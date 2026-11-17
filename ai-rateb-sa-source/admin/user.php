@@ -38,14 +38,9 @@ $stmt->execute([$id]);
 $user = $stmt->fetch();
 admin_start(admin_t('User', 'مستخدم'));
 admin_customers_nav_toolbar($adminActor);
-admin_crud_toolbar([
-    'screen' => 'user',
-    'can_manage' => admin_actor_has($adminActor, 'customers.manage'),
-    'add_enabled' => false,
-    'links' => [
-        ['href' => '/admin/users.php', 'label' => admin_t('All customers', 'كل العملاء')],
-        ['href' => '/admin/finance-customer.php?id=' . $id, 'label' => admin_t('Finance', 'المالية')],
-    ],
+admin_toolbar([
+    ['href' => '/admin/users.php', 'label' => admin_t('All customers', 'كل العملاء'), 'class' => 'quiet'],
+    ['href' => '/admin/finance-customer.php?id=' . $id, 'label' => admin_t('Finance', 'المالية'), 'class' => 'quiet'],
 ]);
 if (!$user) {
     echo '<p class="note">' . admin_h(admin_t('User not found.', 'المستخدم غير موجود.')) . '</p>';

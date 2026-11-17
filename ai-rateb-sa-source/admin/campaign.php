@@ -17,14 +17,9 @@ if (!$campaign) {
     admin_end();
     exit;
 }
-admin_crud_toolbar([
-    'screen' => 'campaign',
-    'can_manage' => admin_actor_has($adminActor, 'campaigns.manage'),
-    'add_enabled' => false,
-    'links' => [
-        ['href' => '/admin/campaigns.php', 'label' => admin_t('All campaigns', 'كل الحملات'), 'class' => 'quiet'],
-        ['href' => '/admin/user.php?id=' . (int) $campaign['user_id'], 'label' => admin_t('Owner account', 'حساب المالك'), 'class' => 'quiet'],
-    ],
+admin_toolbar([
+    ['href' => '/admin/campaigns.php', 'label' => admin_t('All campaigns', 'كل الحملات'), 'class' => 'quiet'],
+    ['href' => '/admin/user.php?id=' . (int) $campaign['user_id'], 'label' => admin_t('Owner account', 'حساب المالك'), 'class' => 'quiet'],
 ]);
 echo '<article class="card"><h2>' . admin_h((string) $campaign['title']) . '</h2>';
 echo '<p>' . admin_h(admin_t('Owner', 'المالك')) . ': ' . admin_h((string) $campaign['owner_name']) . ' · ' . admin_h((string) $campaign['email']) . '</p>';

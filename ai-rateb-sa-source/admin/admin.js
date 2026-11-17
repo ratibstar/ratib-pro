@@ -17,166 +17,203 @@
     });
   });
 
-  const toolbar = document.querySelector("[data-admin-crud-toolbar]");
-  const listForm = document.querySelector("[data-admin-list]");
-  if (!toolbar || !listForm) {
-    return;
-  }
-
-  const editBtn = toolbar.querySelector('[data-admin-crud="edit"]');
-  const deleteBtn = toolbar.querySelector('[data-admin-crud="delete"]');
-  const bulkRun = toolbar.querySelector("[data-admin-bulk-run]");
-  const bulkPicker = toolbar.querySelector("[data-admin-bulk-picker]");
-  const actionField = listForm.querySelector("[data-admin-bulk-action-field]");
-  const reasonField = listForm.querySelector("[data-admin-bulk-reason-field]");
-
-  const selectedBoxes = () =>
-    Array.from(listForm.querySelectorAll("[data-admin-row-select]:checked"));
-
-  const syncTopButtons = () => {
-    const picked = selectedBoxes();
-    const one = picked.length === 1 ? picked[0] : null;
-    if (editBtn) {
-      editBtn.disabled = !one;
-      if (one) {
-        editBtn.dataset.editHref = one.dataset.editHref || "";
-      }
+  const resolveDeleteAction = (listForm, bulkPicker) => {
+    if (bulkPicker && bulkPicker.value) {
+      return bulkPicker.value;
     }
-    if (deleteBtn) {
-      deleteBtn.disabled = picked.length === 0;
+    const pick = (value) => listForm.querySelector(`option[value="${value}"]`);
+    if (pick("delete")) {
+      return "delete";
     }
+    if (pick("disable")) {
+      return "disable";
+    }
+    if (pick("deactivate")) {
+      return "deactivate";
+    }
+    return "";
   };
 
-  listForm.addEventListener("change", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLInputElement)) {
-      return;
-    }
-    if (target.matches("[data-admin-select-all]")) {
-      const on = target.checked;
-      listForm.querySelectorAll("[data-admin-row-select]").forEach((box) => {
-        box.checked = on;
+  const bindCrudList = (toolbar, listForm) => {
+    const editBtn = toolbar.querySelector('[data-admin-crud="edit"]');
+    const deleteBtn = toolbar.querySelector('[data-admin-crud="delete"]');
+    const bulkRun = toolbar.querySelector("[data-admin-bulk-run]");
+    const bulkPicker = toolbar.querySelector("[data-admin-bulk-picker]");
+    const actionField = listForm.querySelector("[data-admin-bulk-action-field]");
+    const reasonField = listForm.querySelector("[data-admin-bulk-reason-field]");
+
+    const selectedBoxes = () =>
+      Array.from(listForm.querySelectorAll("[data-admin-row-select]:checked"));
+
+    const syncTopButtons = () => {
+      const picked = selectedBoxes();
+      const one = picked.length === 1 ? picked[0] : null;
+      if (editBtn) {
+        const href = one ? one.dataset.editHref || "" : "";
+        if (href) {
+          editBtn.disabled = false;
+          editBtn.dataset.editHref = href;
+        } else {
+          editBtn.disabled = true;
+          delete editBtn.dataset.editHref;
+        }
+      }
+      if (deleteBtn) {
+        deleteBtn.disabled = picked.length === 0;
+      }
+    };
+
+    listForm.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) {
+        return;
+      }
+      if (target.matches("[data-admin-select-all]")) {
+        const on = target.checked;
+        listForm.querySelectorAll("[data-admin-row-select]").forEach((box) => {
+          box.checked = on;
+        });
+      }
+      syncTopButtons();
+    });
+
+    if (editBtn) {
+      editBtn.addEventListener("click", () => {
+        const href = editBtn.dataset.editHref;
+        if (href) {
+          window.location.href = href;
+        }
       });
     }
-    syncTopButtons();
-  });
 
-  if (editBtn) {
-    editBtn.addEventListener("click", () => {
-      const href = editBtn.dataset.editHref;
-      if (href) {
-        window.location.href = href;
-      }
-    });
-  }
-
-  const confirmReason = () => {
-    const reason = window.prompt(
-      document.documentElement.lang === "ar"
-        ? "سبب التغيير (٣ أحرف على الأقل):"
-        : "Reason for change (3+ chars):",
-      "bulk"
-    );
-    if (reason === null) {
-      return null;
-    }
-  if (reason.trim().length < 3) {
-      window.alert(
-        document.documentElement.lang === "ar" ? "السبب قصير جدًا." : "Reason is too short."
-      );
-      return null;
-    }
-    return reason.trim();
-  };
-
-  const submitBulk = (action) => {
-    if (!actionField) {
-      return;
-    }
-    const picked = selectedBoxes();
-    if (picked.length === 0) {
-      window.alert(
-        document.documentElement.lang === "ar" ? "حدّد صفًا واحدًا على الأقل." : "Select at least one row."
-      );
-      return;
-    }
-    const reason = confirmReason();
-    if (!reason) {
-      return;
-    }
-    if (
-      !window.confirm(
+    const confirmReason = () => {
+      const reason = window.prompt(
         document.documentElement.lang === "ar"
-          ? "تأكيد الإجراء الجماعي؟"
-          : "Confirm bulk action?"
-      )
-    ) {
-      return;
-    }
-    actionField.value = action;
-    if (reasonField) {
-      reasonField.value = reason;
-    }
-    listForm.submit();
-  };
-
-  if (deleteBtn) {
-    deleteBtn.addEventListener("click", () => {
-      const action = bulkPicker && bulkPicker.value ? bulkPicker.value : "delete";
-      const deleteOption = listForm.closest("main")?.querySelector('option[value="delete"]');
-      const useDelete = deleteOption ? "delete" : action;
-      if (bulkPicker && !bulkPicker.value && deleteOption) {
-        bulkPicker.value = "delete";
+          ? "سبب التغيير (٣ أحرف على الأقل):"
+          : "Reason for change (3+ chars):",
+        "bulk"
+      );
+      if (reason === null) {
+        return null;
       }
-      submitBulk(useDelete || "delete");
-    });
-  }
-
-  if (bulkRun && bulkPicker) {
-    bulkRun.addEventListener("click", () => {
-      const action = bulkPicker.value;
-      if (!action) {
+      if (reason.trim().length < 3) {
         window.alert(
-          document.documentElement.lang === "ar" ? "اختر إجراءً جماعيًا." : "Pick a bulk action."
+          document.documentElement.lang === "ar" ? "السبب قصير جدًا." : "Reason is too short."
+        );
+        return null;
+      }
+      return reason.trim();
+    };
+
+    const submitBulk = (action) => {
+      if (!actionField) {
+        return;
+      }
+      const picked = selectedBoxes();
+      if (picked.length === 0) {
+        window.alert(
+          document.documentElement.lang === "ar" ? "حدّد صفًا واحدًا على الأقل." : "Select at least one row."
         );
         return;
       }
+      const reason = confirmReason();
+      if (!reason) {
+        return;
+      }
+      if (
+        !window.confirm(
+          document.documentElement.lang === "ar"
+            ? "تأكيد الإجراء الجماعي؟"
+            : "Confirm bulk action?"
+        )
+      ) {
+        return;
+      }
+      actionField.value = action;
+      if (reasonField) {
+        reasonField.value = reason;
+      }
+      listForm.submit();
+    };
+
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", () => {
+        const action = resolveDeleteAction(listForm, bulkPicker);
+        if (!action) {
+          window.alert(
+            document.documentElement.lang === "ar"
+              ? "الحذف غير متاح لهذه القائمة."
+              : "Delete is not available for this list."
+          );
+          return;
+        }
+        if (bulkPicker && !bulkPicker.value) {
+          bulkPicker.value = action;
+        }
+        submitBulk(action);
+      });
+    }
+
+    if (bulkRun && bulkPicker) {
+      bulkRun.addEventListener("click", () => {
+        const action = bulkPicker.value;
+        if (!action) {
+          window.alert(
+            document.documentElement.lang === "ar" ? "اختر إجراءً جماعيًا." : "Pick a bulk action."
+          );
+          return;
+        }
+        submitBulk(action);
+      });
+    }
+
+    listForm.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const del = target.closest("[data-admin-row-delete]");
+      if (!del) {
+        return;
+      }
+      event.preventDefault();
+      const rowId = del.dataset.rowId || "";
+      const esc =
+        typeof CSS !== "undefined" && typeof CSS.escape === "function"
+          ? CSS.escape(rowId)
+          : rowId.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      const box = listForm.querySelector(`[data-admin-row-select][value="${esc}"]`);
+      if (box instanceof HTMLInputElement) {
+        listForm.querySelectorAll("[data-admin-row-select]").forEach((node) => {
+          node.checked = false;
+        });
+        box.checked = true;
+        syncTopButtons();
+      }
+      const action = resolveDeleteAction(listForm, bulkPicker);
+      if (!action) {
+        window.alert(
+          document.documentElement.lang === "ar"
+            ? "الحذف غير متاح لهذه القائمة."
+            : "Delete is not available for this list."
+        );
+        return;
+      }
+      if (bulkPicker && !bulkPicker.value) {
+        bulkPicker.value = action;
+      }
       submitBulk(action);
     });
-  }
 
-  listForm.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
+    syncTopButtons();
+  };
+
+  document.querySelectorAll("form[data-admin-list]").forEach((listForm) => {
+    const toolbar =
+      listForm.querySelector("[data-admin-crud-toolbar]") ||
+      listForm.closest("main")?.querySelector("[data-admin-crud-toolbar]");
+    if (toolbar instanceof HTMLElement) {
+      bindCrudList(toolbar, listForm);
     }
-    const del = target.closest("[data-admin-row-delete]");
-    if (!del) {
-      return;
-    }
-    const rowId = del.dataset.rowId;
-    const box = listForm.querySelector(`[data-admin-row-select][value="${rowId}"]`);
-    if (box) {
-      listForm.querySelectorAll("[data-admin-row-select]").forEach((node) => {
-        node.checked = false;
-      });
-      box.checked = true;
-      syncTopButtons();
-    }
-    const action = bulkPicker && listForm.querySelector('option[value="delete"]') ? "delete" : bulkPicker?.value;
-    if (!action) {
-      window.alert(
-        document.documentElement.lang === "ar"
-          ? "الحذف غير متاح لهذه القائمة."
-          : "Delete is not available for this list."
-      );
-      return;
-    }
-    if (bulkPicker) {
-      bulkPicker.value = action;
-    }
-    submitBulk(action);
   });
-
-  syncTopButtons();
 })();

@@ -672,6 +672,75 @@ function admin_bulk_apply(object $pdo, array $adminActor, string $screen, string
             }
             break;
 
+        case 'finance_customers':
+            if (!admin_actor_has($adminActor, 'customers.manage')) {
+                return ['code' => 'invalid', 'count' => 0];
+            }
+            if (!in_array($action, ['disable', 'enable'], true)) {
+                return ['code' => 'invalid', 'count' => 0];
+            }
+            foreach ($ids as $userId) {
+                $userId = (int) $userId;
+                if ($userId <= 0) {
+                    continue;
+                }
+                $result = admin_set_account_state($pdo, $adminActor, $userId, $action === 'disable', $reason);
+                if (($result['ok'] ?? false) === true) {
+                    $applied++;
+                }
+            }
+            break;
+
+        case 'finance_payments':
+        case 'finance_receipts':
+            if (!admin_actor_is_owner($adminActor) || !admin_actor_has($adminActor, 'finance.view')) {
+                return ['code' => 'owner_only', 'count' => 0];
+            }
+            if ($action !== 'delete') {
+                return ['code' => 'invalid', 'count' => 0];
+            }
+            foreach ($ids as $token) {
+                $token = (string) $token;
+                if ($screen === 'finance_receipts' && ctype_digit($token)) {
+                    $receiptId = (int) $token;
+                    $refunds = $pdo->prepare('SELECT COUNT(*) FROM payment_refunds WHERE receipt_id = ?');
+                    $refunds->execute([$receiptId]);
+                    if ((int) $refunds->fetchColumn() > 0) {
+                        continue;
+                    }
+                    $pdo->prepare('DELETE FROM payment_receipts WHERE id = ?')->execute([$receiptId]);
+                    admin_audit($pdo, $adminActor, 'receipt_delete', 'payment_receipts', $receiptId, $reason, 'bulk');
+                    $applied++;
+                    continue;
+                }
+                if (!preg_match('/^(receipt|order):(\d+)$/', $token, $m)) {
+                    continue;
+                }
+                $kind = $m[1];
+                $rowId = (int) $m[2];
+                if ($kind === 'order' && admin_table_has($pdo, 'payment_orders', 'status')) {
+                    $st = $pdo->prepare("SELECT status FROM payment_orders WHERE id = ? LIMIT 1");
+                    $st->execute([$rowId]);
+                    $status = (string) ($st->fetchColumn() ?: '');
+                    if (!in_array($status, ['pending', 'failed'], true)) {
+                        continue;
+                    }
+                    $pdo->prepare('DELETE FROM payment_orders WHERE id = ?')->execute([$rowId]);
+                    admin_audit($pdo, $adminActor, 'payment_order_delete', 'payment_orders', $rowId, $reason, 'bulk');
+                    $applied++;
+                } elseif ($kind === 'receipt') {
+                    $refunds = $pdo->prepare('SELECT COUNT(*) FROM payment_refunds WHERE receipt_id = ?');
+                    $refunds->execute([$rowId]);
+                    if ((int) $refunds->fetchColumn() > 0) {
+                        continue;
+                    }
+                    $pdo->prepare('DELETE FROM payment_receipts WHERE id = ?')->execute([$rowId]);
+                    admin_audit($pdo, $adminActor, 'receipt_delete', 'payment_receipts', $rowId, $reason, 'bulk');
+                    $applied++;
+                }
+            }
+            break;
+
         default:
             return ['code' => 'invalid', 'count' => 0];
     }
@@ -693,6 +762,16 @@ function admin_bulk_actions_for_screen(string $screen): array
         ],
         'campaigns' => [
             ['value' => 'delete', 'label' => admin_t('Delete draft/failed', 'حذف مسودة/فاشلة')],
+        ],
+        'finance_customers' => [
+            ['value' => 'disable', 'label' => admin_t('Disable selected', 'تعطيل المحدد')],
+            ['value' => 'enable', 'label' => admin_t('Enable selected', 'تفعيل المحدد')],
+        ],
+        'finance_payments' => [
+            ['value' => 'delete', 'label' => admin_t('Delete selected', 'حذف المحدد')],
+        ],
+        'finance_receipts' => [
+            ['value' => 'delete', 'label' => admin_t('Delete selected', 'حذف المحدد')],
         ],
         default => [],
     };
