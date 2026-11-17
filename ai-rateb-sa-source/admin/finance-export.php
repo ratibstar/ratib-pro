@@ -52,7 +52,7 @@ if ($export === 'summary') {
         $failedCount = (int) $failedAgg['rows_count'];
         $failedHalalas = (int) $failedAgg['halalas'];
     }
-    admin_finance_send_csv($filename, static function () use ($range, $start, $end, $receiptAgg, $pendingCount, $pendingHalalas, $failedCount, $failedHalalas): void {
+    admin_finance_send_csv($filename, static function () use ($pdo, $range, $start, $end, $receiptAgg, $pendingCount, $pendingHalalas, $failedCount, $failedHalalas): void {
         echo admin_csv_row(['metric', 'value', 'range_start', 'range_end', 'currency_note']);
         echo admin_csv_row(['collected_sar', admin_halalas_to_sar((int) $receiptAgg['halalas']), $start, $end, 'SAR; amounts stored as halalas in DB']);
         echo admin_csv_row(['receipt_count', (string) (int) $receiptAgg['rows_count'], $start, $end, '']);

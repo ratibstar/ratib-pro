@@ -53,14 +53,14 @@ $rows = $pdo->query("SELECT s.id, u.id AS user_id, u.email, u.package_type, u.su
     LIMIT 200")->fetchAll();
 $plans = $pdo->query('SELECT code, name_en, name_ar FROM plans WHERE is_active = 1 ORDER BY sort_order')->fetchAll();
 admin_start(admin_t('Subscriptions', 'الاشتراكات'));
-admin_crud_toolbar([
-    'screen' => 'subscriptions',
-    'can_manage' => admin_actor_is_owner($adminActor),
-    'add_href' => '#replace-plan',
-    'links' => [
-        ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات'), 'class' => 'quiet'],
-    ],
-]);
+$subToolbar = [
+    ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات'), 'class' => 'quiet'],
+    ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية'), 'class' => 'quiet'],
+];
+if (admin_actor_is_owner($adminActor)) {
+    $subToolbar[] = ['href' => '#replace-plan', 'label' => admin_t('Replace plan', 'استبدال باقة'), 'class' => 'primary'];
+}
+admin_toolbar($subToolbar);
 if ($notice !== '') {
     echo '<p class="flash">' . admin_h(admin_flash($notice)) . '</p>';
 }

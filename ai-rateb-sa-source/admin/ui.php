@@ -188,6 +188,11 @@ function admin_crud_toolbar(array $opts): void
         $bulkActions = admin_bulk_actions_for_screen($screen);
     }
     $hasBulk = $canManage && $bulkActions !== [];
+    $showCrudChrome = $addEnabled || $hasBulk || in_array($screen, ['users', 'staff', 'campaigns'], true);
+    if (!$showCrudChrome) {
+        echo '</div>';
+        return;
+    }
 
     echo '<span class="crud-group">';
     if ($addEnabled) {

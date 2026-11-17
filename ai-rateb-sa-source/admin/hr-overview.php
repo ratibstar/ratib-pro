@@ -32,13 +32,6 @@ admin_toolbar([
     ['href' => admin_public_site_url(), 'label' => admin_t('Public site', 'الموقع العام'), 'class' => 'quiet', 'attrs' => ['target' => '_blank', 'rel' => 'noopener']],
     ['href' => '/hr', 'label' => admin_t('Customer HR on site', 'HR على الموقع'), 'class' => 'primary', 'attrs' => ['target' => '_blank', 'rel' => 'noopener']],
 ]);
-admin_crud_toolbar([
-    'screen' => 'hr',
-    'minimal' => true,
-    'links' => [
-        ['href' => '/admin/users.php', 'label' => admin_t('Customer accounts', 'حسابات العملاء'), 'class' => 'quiet'],
-    ],
-]);
 echo '<p class="note">' . admin_h(admin_t(
     'This page is monitoring only. To add or delete employees, the customer logs into the site and opens /hr (Human resources in the campaigns menu).',
     'هذه الصفحة للمراقبة فقط. الإضافة والحذف تتم عندما يسجّل العميل دخوله ويفتح /hr من قائمة الحملات (الموارد البشرية).'
