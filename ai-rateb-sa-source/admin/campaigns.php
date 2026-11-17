@@ -24,6 +24,7 @@ $sqlWhere = $where === [] ? '' : ('WHERE ' . implode(' AND ', $where));
 $count = $pdo->prepare("SELECT COUNT(*) FROM campaigns c INNER JOIN users u ON u.id = c.user_id $sqlWhere");
 $count->execute($params);
 $total = (int) $count->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/campaigns.php', $page, $total);
 $list = $pdo->prepare("SELECT c.id, c.title, c.status, c.created_at, u.email, b.campaign_language, b.resolved_language FROM campaigns c INNER JOIN users u ON u.id = c.user_id LEFT JOIN campaign_briefs b ON b.campaign_id = c.id $sqlWhere ORDER BY c.id DESC LIMIT " . admin_per_page() . ' OFFSET ' . admin_offset($page));
 $list->execute($params);
 $rows = $list->fetchAll();

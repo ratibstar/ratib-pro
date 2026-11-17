@@ -158,6 +158,35 @@ function admin_offset(int $page): int
     return ($page - 1) * admin_per_page();
 }
 
+function admin_clamp_page(int $page, int $total): int
+{
+    $pages = max(1, (int) ceil($total / admin_per_page()));
+    if ($page < 1) {
+        return 1;
+    }
+    return min($page, $pages);
+}
+
+/** Redirect when ?page= is past the last page (e.g. after bulk delete). */
+function admin_enforce_page_in_range(string $path, int $page, int $total): int
+{
+    $clamped = admin_clamp_page($page, $total);
+    if ($clamped === $page) {
+        return $page;
+    }
+    $query = [];
+    foreach ($_GET as $key => $value) {
+        if ($key === 'page' || (!is_string($value) && !is_int($value))) {
+            continue;
+        }
+        $query[$key] = (string) $value;
+    }
+    $query['page'] = (string) $clamped;
+    $qs = http_build_query($query);
+    header('Location: ' . $path . ($qs !== '' ? '?' . $qs : ''));
+    exit;
+}
+
 function admin_table_has(object $pdo, string $table, string $column): bool
 {
     static $cache = [];

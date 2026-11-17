@@ -7,6 +7,7 @@ admin_require_permission('finance.view');
 
 $page = admin_page();
 $total = (int) $pdo->query('SELECT COUNT(*) FROM payment_receipts')->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/payments.php', $page, $total);
 $sum = (int) $pdo->query('SELECT COALESCE(SUM(amount),0) FROM payment_receipts')->fetchColumn();
 $stmt = $pdo->prepare('SELECT r.id, r.created_at, r.moyasar_id, r.package_type, r.amount, u.email, u.name, u.id AS user_id
     FROM payment_receipts r INNER JOIN users u ON u.id = r.user_id

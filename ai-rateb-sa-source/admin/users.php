@@ -17,6 +17,7 @@ if ($q !== '') {
 $count = $pdo->prepare('SELECT COUNT(*) FROM users u ' . $where);
 $count->execute($params);
 $total = (int) $count->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/users.php', $page, $total);
 $login = admin_table_has($pdo, 'users', 'last_login_at') ? 'u.last_login_at' : 'NULL AS last_login_at';
 $disabled = admin_table_has($pdo, 'users', 'disabled_at') ? 'u.disabled_at' : 'NULL AS disabled_at';
 $paidExpr = admin_table_has($pdo, 'payment_receipts', 'amount')

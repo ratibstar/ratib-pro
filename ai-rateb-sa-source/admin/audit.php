@@ -14,6 +14,7 @@ if (!admin_table_has($pdo, 'admin_audit_log', 'id')) {
 }
 $page = admin_page();
 $total = (int) $pdo->query('SELECT COUNT(*) FROM admin_audit_log')->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/audit.php', $page, $total);
 $hasStaffCol = admin_table_has($pdo, 'admin_audit_log', 'admin_staff_id');
 $hasStaffTable = admin_table_has($pdo, 'admin_staff', 'id');
 $staffJoin = ($hasStaffCol && $hasStaffTable)

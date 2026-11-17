@@ -167,6 +167,7 @@ if ($tab === 'customers') {
     $count = $pdo->prepare($countSql);
     $count->execute($params);
     $total = (int) $count->fetchColumn();
+    $page = admin_enforce_page_in_range('/admin/finance.php', $page, $total);
 
     $disabledExpr = $disabledCol ? 'u.disabled_at' : 'NULL AS disabled_at';
     $sql = "SELECT u.id, u.name, u.email, u.credits_balance, $disabledExpr,
@@ -291,6 +292,7 @@ if ($tab === 'payments') {
         $countStmt = $pdo->prepare('SELECT COUNT(*) FROM (' . $union . ') AS finance_rows');
         $countStmt->execute($params);
         $total = (int) $countStmt->fetchColumn();
+        $page = admin_enforce_page_in_range('/admin/finance.php', $page, $total);
         $listStmt = $pdo->prepare($union . ' ORDER BY created_at DESC LIMIT ' . admin_per_page() . ' OFFSET ' . admin_offset($page));
         $listStmt->execute($params);
         $rows = $listStmt->fetchAll();
