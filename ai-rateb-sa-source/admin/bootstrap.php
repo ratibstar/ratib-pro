@@ -88,7 +88,7 @@ function admin_start(string $title): void
     echo '<!doctype html><html lang="' . admin_h($adminLang) . '" dir="' . $dir . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>' . admin_h($title) . ' — RATEB AI</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
-    echo '<link rel="stylesheet" href="/admin/admin.css?v=20"></head><body class="admin-app">';
+    echo '<link rel="stylesheet" href="/admin/admin.css?v=21"></head><body class="admin-app">';
     echo '<input class="nav-check" id="nav-check" type="checkbox">';
     echo '<div class="shell"><aside class="side"><div class="brand"><b>RATEB</b> <span>AI</span></div><p class="role">' . admin_h(admin_t('Administration', 'الإدارة')) . '</p><nav class="nav-sections">';
     $groups = admin_nav_groups_for_actor($adminActor, $adminLang);
@@ -133,19 +133,51 @@ function admin_end(): void
 
 function admin_pager(int $page, int $total, string $base): void
 {
-    $pages = max(1, (int) ceil($total / admin_per_page()));
-    if ($pages < 2) {
+    if ($total < 1) {
         return;
     }
-    echo '<nav class="pager">';
+    $per = admin_per_page();
+    $pages = max(1, (int) ceil($total / $per));
+    $page = min(max(1, $page), $pages);
+    $from = ($page - 1) * $per + 1;
+    $to = min($total, $page * $per);
+    $rangeLabel = admin_t('Showing {from}–{to} of {total}', 'عرض {from}–{to} من {total}');
+    $rangeLabel = str_replace(['{from}', '{to}', '{total}'], [(string) $from, (string) $to, (string) $total], $rangeLabel);
+
+    echo '<nav class="pager" aria-label="' . admin_h(admin_t('Pagination', 'ترقيم الصفحات')) . '">';
+    echo '<span class="pager-meta">' . admin_h($rangeLabel) . '</span>';
+    echo '<div class="pager-controls">';
     if ($page > 1) {
-        echo '<a href="' . admin_h($base . ($page - 1)) . '">' . admin_h(admin_t('Previous', 'السابق')) . '</a>';
+        echo '<a class="pager-btn" href="' . admin_h($base . ($page - 1)) . '">' . admin_h(admin_t('Previous', 'السابق')) . '</a>';
+    } else {
+        echo '<span class="pager-btn disabled">' . admin_h(admin_t('Previous', 'السابق')) . '</span>';
     }
-    echo '<span>' . (int) $page . ' / ' . (int) $pages . '</span>';
+
+    $show = [];
+    for ($p = 1; $p <= $pages; $p++) {
+        if ($p === 1 || $p === $pages || abs($p - $page) <= 2) {
+            $show[] = $p;
+        }
+    }
+    $last = 0;
+    foreach ($show as $p) {
+        if ($last > 0 && $p > $last + 1) {
+            echo '<span class="pager-ellipsis" aria-hidden="true">…</span>';
+        }
+        if ($p === $page) {
+            echo '<span class="pager-num on" aria-current="page">' . (int) $p . '</span>';
+        } else {
+            echo '<a class="pager-num" href="' . admin_h($base . $p) . '">' . (int) $p . '</a>';
+        }
+        $last = $p;
+    }
+
     if ($page < $pages) {
-        echo '<a href="' . admin_h($base . ($page + 1)) . '">' . admin_h(admin_t('Next', 'التالي')) . '</a>';
+        echo '<a class="pager-btn" href="' . admin_h($base . ($page + 1)) . '">' . admin_h(admin_t('Next', 'التالي')) . '</a>';
+    } else {
+        echo '<span class="pager-btn disabled">' . admin_h(admin_t('Next', 'التالي')) . '</span>';
     }
-    echo '</nav>';
+    echo '</div></nav>';
 }
 
 function admin_flash(string $code): string

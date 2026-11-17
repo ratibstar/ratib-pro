@@ -11,8 +11,13 @@ $summary = $pdo->query("SELECT operation, status, COUNT(*) AS events, COALESCE(S
     COALESCE(SUM(cost_sar),0) AS cost_sum, SUM(cost_sar IS NOT NULL) AS cost_rows
     FROM usage_events GROUP BY operation, status ORDER BY operation, status")->fetchAll();
 $errors = $pdo->query("SELECT error_code, COUNT(*) AS events FROM video_jobs WHERE error_code <> '' GROUP BY error_code ORDER BY events DESC LIMIT 30")->fetchAll();
-$recent = $pdo->query("SELECT e.created_at, u.email, e.campaign_id, e.operation, e.units, e.status, e.credits_deducted, e.cost_sar
-    FROM usage_events e INNER JOIN users u ON u.id = e.user_id ORDER BY e.id DESC LIMIT 100")->fetchAll();
+$page = admin_page();
+$eventsTotal = (int) $pdo->query('SELECT COUNT(*) FROM usage_events')->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/usage.php', $page, $eventsTotal);
+$recentStmt = $pdo->prepare("SELECT e.created_at, u.email, e.campaign_id, e.operation, e.units, e.status, e.credits_deducted, e.cost_sar
+    FROM usage_events e INNER JOIN users u ON u.id = e.user_id ORDER BY e.id DESC LIMIT " . admin_per_page() . ' OFFSET ' . admin_offset($page));
+$recentStmt->execute();
+$recent = $recentStmt->fetchAll();
 $costKnown = (int) $pdo->query('SELECT COUNT(*) FROM usage_events WHERE cost_sar IS NOT NULL')->fetchColumn();
 
 $bucketRows = $pdo->query('SELECT operation, COALESCE(SUM(credits_deducted),0) AS credits, COUNT(*) AS events FROM usage_events GROUP BY operation')->fetchAll();
@@ -98,5 +103,6 @@ foreach ($recent as $row) {
     echo '<tr><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) $row['email']) . '</td><td>' . admin_h((string) ($row['campaign_id'] ?? '')) . '</td><td>' . admin_h((string) $row['operation']) . '</td><td>' . admin_h((string) $row['status']) . '</td><td>' . (int) $row['credits_deducted'] . '</td></tr>';
 }
 admin_table_close();
+admin_pager($page, $eventsTotal, '/admin/usage.php?page=');
 admin_panel_close();
 admin_end();

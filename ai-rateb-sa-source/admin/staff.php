@@ -90,7 +90,12 @@ if ($q !== '') {
     $like = admin_like(mb_substr($q, 0, 120));
     $params = [$like, $like];
 }
-$sql = 'SELECT id, email, name, role_code, status, last_login_at, created_at FROM admin_staff ' . $where . ' ORDER BY id DESC';
+$page = admin_page();
+$countStmt = $pdo->prepare('SELECT COUNT(*) FROM admin_staff ' . $where);
+$countStmt->execute($params);
+$total = (int) $countStmt->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/staff.php', $page, $total);
+$sql = 'SELECT id, email, name, role_code, status, last_login_at, created_at FROM admin_staff ' . $where . ' ORDER BY id DESC LIMIT ' . admin_per_page() . ' OFFSET ' . admin_offset($page);
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
@@ -160,6 +165,7 @@ if ($rows === []) {
     echo '<tr><td colspan="7">' . admin_h(admin_t('No staff accounts yet.', 'لا حسابات موظفين بعد.')) . '</td></tr>';
 }
 admin_table_close();
+admin_pager($page, $total, '/admin/staff.php?' . ($q !== '' ? 'q=' . rawurlencode($q) . '&' : '') . 'page=');
 admin_panel_close();
 admin_bulk_form_close();
 admin_end();

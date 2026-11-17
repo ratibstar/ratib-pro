@@ -150,7 +150,7 @@ function admin_page(): int
 
 function admin_per_page(): int
 {
-    return 25;
+    return 10;
 }
 
 function admin_offset(int $page): int

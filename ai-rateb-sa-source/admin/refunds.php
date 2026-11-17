@@ -29,11 +29,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$rows = $pdo->query('SELECT f.id, f.created_at, f.amount_halalas, f.credits_reversed, f.reason, f.source, r.id AS receipt_id, u.name, u.email
+$page = admin_page();
+$total = (int) $pdo->query('SELECT COUNT(*) FROM payment_refunds')->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/refunds.php', $page, $total);
+$listStmt = $pdo->prepare('SELECT f.id, f.created_at, f.amount_halalas, f.credits_reversed, f.reason, f.source, r.id AS receipt_id, u.name, u.email
     FROM payment_refunds f
     INNER JOIN payment_receipts r ON r.id = f.receipt_id
     INNER JOIN users u ON u.id = f.user_id
-    ORDER BY f.id DESC LIMIT 80')->fetchAll();
+    ORDER BY f.id DESC LIMIT ' . admin_per_page() . ' OFFSET ' . admin_offset($page));
+$listStmt->execute();
+$rows = $listStmt->fetchAll();
 
 admin_start(admin_t('Refunds', 'الاستردادات'));
 admin_finance_nav_toolbar($adminActor, [
@@ -75,5 +80,6 @@ if ($rows === []) {
     admin_table_empty_row(7, admin_t('No refunds yet.', 'لا استردادات بعد.'));
 }
 admin_table_close();
+admin_pager($page, $total, '/admin/refunds.php?page=');
 admin_panel_close();
 admin_end();

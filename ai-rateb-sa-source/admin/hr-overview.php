@@ -16,10 +16,15 @@ if ($q !== '') {
     $like = admin_like(mb_substr($q, 0, 120));
     $params = [$like, $like];
 }
+$page = admin_page();
+$countStmt = $pdo->prepare('SELECT COUNT(*) FROM users u ' . $where);
+$countStmt->execute($params);
+$total = (int) $countStmt->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/hr-overview.php', $page, $total);
 $sql = "SELECT u.id, u.name, u.email, u.created_at,
     (SELECT COUNT(*) FROM hr_employees e WHERE e.company_user_id = u.id) AS employees,
     (SELECT COUNT(*) FROM hr_employees e WHERE e.company_user_id = u.id AND e.status = 'active') AS active_employees
-    FROM users u $where ORDER BY employees DESC, u.id DESC LIMIT 100";
+    FROM users u $where ORDER BY employees DESC, u.id DESC LIMIT " . admin_per_page() . ' OFFSET ' . admin_offset($page);
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
@@ -49,5 +54,6 @@ if ($rows === []) {
     admin_table_empty_row(5, admin_t('No customers.', 'لا عملاء.'));
 }
 admin_table_close();
+admin_pager($page, $total, '/admin/hr-overview.php?' . ($q !== '' ? 'q=' . rawurlencode($q) . '&' : '') . 'page=');
 admin_panel_close();
 admin_end();

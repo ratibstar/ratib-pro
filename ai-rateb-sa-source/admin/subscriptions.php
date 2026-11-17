@@ -45,12 +45,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$rows = $pdo->query("SELECT s.id, u.id AS user_id, u.email, u.package_type, u.subscription_expires_at, p.code, p.price_sar, s.status, s.period_start, s.period_end
+$page = admin_page();
+$total = (int) $pdo->query('SELECT COUNT(*) FROM subscriptions')->fetchColumn();
+$page = admin_enforce_page_in_range('/admin/subscriptions.php', $page, $total);
+$listStmt = $pdo->prepare("SELECT s.id, u.id AS user_id, u.email, u.package_type, u.subscription_expires_at, p.code, p.price_sar, s.status, s.period_start, s.period_end
     FROM subscriptions s
     INNER JOIN users u ON u.id = s.user_id
     INNER JOIN plans p ON p.id = s.plan_id
     ORDER BY s.id DESC
-    LIMIT 200")->fetchAll();
+    LIMIT " . admin_per_page() . ' OFFSET ' . admin_offset($page));
+$listStmt->execute();
+$rows = $listStmt->fetchAll();
 $plans = $pdo->query('SELECT code, name_en, name_ar FROM plans WHERE is_active = 1 ORDER BY sort_order')->fetchAll();
 admin_start(admin_t('Subscriptions', 'الاشتراكات'));
 $subExtra = [];
@@ -92,6 +97,7 @@ foreach ($rows as $row) {
     echo '<tr><td><a href="/admin/user.php?id=' . (int) $row['user_id'] . '">' . admin_h((string) $row['email']) . '</a></td><td>' . admin_h((string) $row['code']) . '</td><td>' . ($mismatch ? '<span class="pill warn">' : '') . admin_h((string) $row['package_type']) . ($mismatch ? '</span>' : '') . '</td><td>' . admin_h((string) $row['status']) . '</td><td>' . admin_h((string) $row['period_end']) . '</td><td>' . admin_h((string) ($row['subscription_expires_at'] ?? '—')) . '</td></tr>';
 }
 admin_table_close();
+admin_pager($page, $total, '/admin/subscriptions.php?page=');
 echo '<h2 id="replace-plan">' . admin_h(admin_t('Replace a user plan', 'استبدال باقة مستخدم')) . '</h2>';
 echo '<form method="post" class="inline"><input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '">';
 echo '<input name="user_id" inputmode="numeric" placeholder="' . admin_h(admin_t('User id', 'رقم المستخدم')) . '">';
