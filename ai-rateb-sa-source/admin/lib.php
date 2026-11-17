@@ -11,16 +11,20 @@ function admin_studio_url(): string
     return '/dashboard';
 }
 
-/** Quick links: dashboard, customers, HR, finance, and public site. */
+/** Admin shortcuts — shown below analytics, not as the analytics view itself. */
 function admin_customer_hub(): void
 {
     $items = [
-        ['/admin', admin_t('Dashboard & analytics', 'لوحة التحليلات'), admin_t('KPIs, revenue, AI usage', 'مؤشرات، إيراد، استخدام الذكاء'), '▣'],
         ['/admin/users.php', admin_t('Customer accounts', 'حسابات العملاء'), admin_t('Search, credits, disable', 'بحث، نقاط، تعطيل'), '◎'],
         ['/admin/hr-overview.php', admin_t('Customer HR', 'موارد بشرية العملاء'), admin_t('Employees per company (read-only)', 'موظفون لكل شركة (قراءة)'), '◈'],
         ['/admin/finance.php?tab=customers', admin_t('Customer finances', 'مالية العملاء'), admin_t('Payments and balances', 'مدفوعات وأرصدة'), '◆'],
     ];
-    echo '<section class="hub-cards" aria-label="' . admin_h(admin_t('Customer administration', 'إدارة العملاء')) . '">';
+    echo '<h2 class="section-title hub-section-title">' . admin_h(admin_t('Admin shortcuts', 'اختصارات الإدارة')) . '</h2>';
+    echo '<p class="note hub-section-note">' . admin_h(admin_t(
+        'Jump to customer screens. Analytics for the selected period are above.',
+        'انتقل لشاشات العملاء. التحليلات للفترة المحددة أعلاه.'
+    )) . '</p>';
+    echo '<section class="hub-cards hub-cards-compact" aria-label="' . admin_h(admin_t('Admin shortcuts', 'اختصارات الإدارة')) . '">';
     foreach ($items as [$href, $title, $hint, $glyph]) {
         echo '<a class="hub-card" href="' . admin_h($href) . '">';
         echo '<span class="hub-glyph" aria-hidden="true">' . admin_h($glyph) . '</span>';

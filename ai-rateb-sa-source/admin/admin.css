@@ -92,9 +92,13 @@ main.content-area{padding:20px 24px 56px;max-width:1440px;width:100%;margin:0 au
   color:var(--cyan);text-decoration:none;font-size:12px;font-weight:600;text-align:center;
 }
 .side-public:hover{background:rgba(13,148,136,.12);border-color:var(--cyan)}
+.dash-lead{margin:0 0 14px;max-width:58ch}
+.hub-section-title{margin-top:36px}
+.hub-section-note{margin:-6px 0 14px;max-width:58ch}
 .hub-cards{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:0 0 22px;
 }
+.hub-cards-compact{opacity:.92}
 .hub-card{
   display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:var(--radius-lg);
   border:1px solid var(--line);background:linear-gradient(165deg,var(--card) 0%,#0d1524 100%);

@@ -237,8 +237,7 @@ $filters = [
     'year' => admin_t('This year', 'هذه السنة'),
 ];
 
-admin_start(admin_t('Dashboard', 'اللوحة'));
-admin_customer_hub();
+admin_start(admin_t('Analytics dashboard', 'لوحة التحليلات'));
 if ($dashboardLoadError) {
     echo '<p class="flash bad">' . admin_h(admin_t(
         'Some dashboard statistics are unavailable (run commerce schema on the server). Use Customers or Finance from the menu.',
@@ -257,6 +256,10 @@ admin_crud_toolbar([
     ],
 ]);
 try {
+echo '<p class="note dash-lead">' . admin_h(admin_t(
+    'KPIs and charts for the selected period. Change the range with the filters below.',
+    'مؤشرات ورسوم للفترة المحددة. غيّر الفترة من الفلاتر أدناه.'
+)) . '</p>';
 echo '<div class="filters">';
 foreach ($filters as $filterKey => $filterLabel) {
     $class = $filterKey === $range['key'] ? ' class="on"' : '';
@@ -377,8 +380,9 @@ echo '</article></div>';
 } catch (Throwable $dashboardRenderError) {
     error_log('admin dashboard render: ' . $dashboardRenderError->getMessage());
     echo '<p class="flash bad">' . admin_h(admin_t(
-        'Part of the dashboard could not be rendered. Use the links above or open Customer accounts / Finance.',
-        'تعذّر عرض جزء من اللوحة. استخدم الروابط أعلاه أو افتح حسابات العملاء / المالية.'
+        'Part of the analytics could not be rendered. Try another date range or open Finance.',
+        'تعذّر عرض جزء من التحليلات. جرّب فترة أخرى أو افتح المالية.'
     )) . '</p>';
 }
+admin_customer_hub();
 admin_end();
