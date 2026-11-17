@@ -52,7 +52,11 @@ foreach ($campaigns as $row) {
 <?php rateb_site_header('/dashboard', !empty($_SESSION['user_id'])); ?>
 <?php
 $wallet = !empty($_SESSION['user_id']) ? rateb_account_credits($pdo, (int) $_SESSION['user_id']) : ['package_type' => 'free', 'credits_balance' => 0];
-$planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باقة الانطلاق', 'pro' => 'الباقة الاحترافية'];
+$pricingPlans = rateb_public_pricing_plans($pdo);
+$planNames = [];
+foreach ($pricingPlans as $planRow) {
+    $planNames[$planRow['code']] = $planRow['name_ar'];
+}
 ?>
 <p class="muted" style="width:min(1800px,calc(100% - 36px));margin:12px auto 0">الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
 <main class="container studio-page">
@@ -226,9 +230,27 @@ $planNames = ['free' => 'الباقة التجريبية', 'starter' => 'باق�
     <p><?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?></p>
     <p class="muted">الرصيد المتبقي: <?= (int) $wallet['credits_balance'] ?></p>
     <div class="price-grid">
-      <article class="price-card"><p class="eyebrow">الباقة التجريبية</p><p class="price-amount"><b>0</b> <span>ر.س</span></p><p>50 نقطة</p><a class="button" href="/?pricing=1#pricing">الباقة الحالية</a></article>
-      <article class="price-card is-featured"><p class="eyebrow">باقة الانطلاق</p><p class="price-amount"><b>99</b> <span>ر.س / شهر</span></p><p>500 نقطة</p><a class="button" href="/app/payment/checkout.php?package=starter">ترقية الباقة</a></article>
-      <article class="price-card"><p class="eyebrow">الباقة الاحترافية</p><p class="price-amount"><b>249</b> <span>ر.س / شهر</span></p><p>2500 نقطة</p><a class="button" href="/app/payment/checkout.php?package=pro">ترقية الباقة</a></article>
+<?php foreach ($pricingPlans as $planRow):
+    $isCurrent = $wallet['package_type'] === $planRow['code'];
+    $featured = $planRow['code'] === 'starter' ? ' is-featured' : '';
+    $priceLabel = rateb_format_sar_price($planRow['price_sar']);
+    $suffix = $planRow['code'] === 'free' ? 'ر.س' : 'ر.س / شهر';
+?>
+      <article class="price-card<?= $featured ?><?= $isCurrent ? ' is-current' : '' ?>">
+        <p class="eyebrow"><?= e($planRow['name_ar']) ?></p>
+        <p class="price-amount"><b><?= e($priceLabel) ?></b> <span><?= e($suffix) ?></span></p>
+        <p><?= (int) $planRow['credits'] ?> نقطة</p>
+        <?php if ($isCurrent): ?>
+        <a class="button" href="/?pricing=1#pricing">الباقة الحالية</a>
+        <?php elseif ($planRow['code'] === 'free'): ?>
+        <span class="button muted">مجانية</span>
+        <?php elseif ($planRow['is_active']): ?>
+        <a class="button" href="/app/payment/checkout.php?package=<?= rawurlencode($planRow['code']) ?>">ترقية الباقة</a>
+        <?php else: ?>
+        <span class="button muted">غير متاحة</span>
+        <?php endif; ?>
+      </article>
+<?php endforeach; ?>
     </div>
   </div>
 </dialog>

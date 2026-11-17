@@ -384,25 +384,135 @@ function rateb_plan_feature_locked(array $plan, string $featureType): bool
     return false;
 }
 
+function rateb_checkout_credits_for_plan(string $code): int
+{
+    return match ($code) {
+        'free' => 50,
+        'starter' => 500,
+        'pro' => 2500,
+        default => 0,
+    };
+}
+
+/** Checkout-enabled paid codes shown on the public site (Moyasar). */
+function rateb_checkout_plan_codes(): array
+{
+    return ['starter', 'pro'];
+}
+
 /**
- * Paid checkout amounts that are already published on the pricing page and in checkout.
- * 99 SAR = 9900 halalas with 500 credits. 249 SAR = 24900 halalas with 2500 credits.
- * plans.price_sar (79 / 199 / 399 / 799) is a different catalog and is not used here.
- * growth and business have no published charge amount or credit grant, so they are refused.
- *
- * @return array{amount:int,currency:string,credits:int,plan_code:string}|null
+ * @return array{amount:int,currency:string,credits:int,plan_code:string,price_sar:float,name_ar:string,name_en:string}|null
  */
+/** @return array{amount:int,currency:string,credits:int,plan_code:string,price_sar:float,name_ar:string,name_en:string}|null */
+function rateb_paid_package_catalog_fallback(string $code): ?array
+{
+    $legacySar = ['starter' => 99.0, 'pro' => 249.0];
+    if (!isset($legacySar[$code])) {
+        return null;
+    }
+    $priceSar = $legacySar[$code];
+    return [
+        'amount' => (int) round($priceSar * 100),
+        'currency' => 'SAR',
+        'credits' => rateb_checkout_credits_for_plan($code),
+        'plan_code' => $code,
+        'price_sar' => $priceSar,
+        'name_ar' => $code === 'starter' ? 'أساسية' : 'احترافية',
+        'name_en' => $code === 'starter' ? 'Starter' : 'Pro',
+    ];
+}
+
+function rateb_paid_package(string $code, ?PDO $pdo = null): ?array
+{
+    if (!in_array($code, rateb_checkout_plan_codes(), true)) {
+        return null;
+    }
+    if ($pdo === null && function_exists('db')) {
+        try {
+            $pdo = db();
+        } catch (Throwable) {
+            $pdo = null;
+        }
+    }
+    if (!$pdo instanceof PDO) {
+        return rateb_paid_package_catalog_fallback($code);
+    }
+    $stmt = $pdo->prepare('SELECT code, price_sar, is_active, name_ar, name_en FROM plans WHERE code = ? LIMIT 1');
+    $stmt->execute([$code]);
+    $row = $stmt->fetch();
+    if (!$row || (int) ($row['is_active'] ?? 0) !== 1) {
+        return null;
+    }
+    $priceSar = (float) ($row['price_sar'] ?? 0);
+    if ($priceSar <= 0) {
+        return null;
+    }
+    $amount = max(100, (int) round($priceSar * 100));
+    return [
+        'amount' => $amount,
+        'currency' => 'SAR',
+        'credits' => rateb_checkout_credits_for_plan($code),
+        'plan_code' => $code,
+        'price_sar' => $priceSar,
+        'name_ar' => (string) ($row['name_ar'] ?? $code),
+        'name_en' => (string) ($row['name_en'] ?? $code),
+    ];
+}
+
+/**
+ * Pricing cards on the homepage, dashboard, and credits page.
+ *
+ * @return list<array{code:string,name_ar:string,name_en:string,price_sar:float,credits:int,is_active:bool}>
+ */
+function rateb_public_pricing_plans(PDO $pdo): array
+{
+    $codes = ['free', 'starter', 'pro'];
+    $placeholders = implode(',', array_fill(0, count($codes), '?'));
+    $stmt = $pdo->prepare("SELECT code, price_sar, is_active, name_ar, name_en FROM plans WHERE code IN ($placeholders)");
+    $stmt->execute($codes);
+    $byCode = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $byCode[(string) $row['code']] = $row;
+    }
+    $out = [];
+    foreach ($codes as $code) {
+        if (!isset($byCode[$code])) {
+            continue;
+        }
+        $row = $byCode[$code];
+        $out[] = [
+            'code' => $code,
+            'name_ar' => (string) ($row['name_ar'] ?? $code),
+            'name_en' => (string) ($row['name_en'] ?? $code),
+            'price_sar' => (float) ($row['price_sar'] ?? 0),
+            'credits' => rateb_checkout_credits_for_plan($code),
+            'is_active' => (int) ($row['is_active'] ?? 0) === 1,
+        ];
+    }
+    return $out;
+}
+
+function rateb_format_sar_price(float $sar): string
+{
+    if (abs($sar - round($sar)) < 0.001) {
+        return number_format($sar, 0, '.', '');
+    }
+    return number_format($sar, 2, '.', '');
+}
+
 function rateb_moyasar_configured(array $config): bool
 {
     return trim((string) ($config['moyasar_secret_key'] ?? '')) !== '';
 }
 
-function rateb_credit_halala(int $credits): int
+function rateb_credit_halala(int $credits, ?PDO $pdo = null): int
 {
     if ($credits < 1) {
         return 0;
     }
-    return max(100, (int) round($credits * 9900 / 500));
+    $starter = rateb_paid_package('starter', $pdo);
+    $per500 = $starter !== null ? $starter['amount'] : 9900;
+    return max(100, (int) round($credits * $per500 / 500));
 }
 
 /** @return array{credits:int,amount:int} */
@@ -414,21 +524,13 @@ function rateb_campaign_credit_bill(PDO $pdo, int $userId, int $campaignId): arr
     $stmt = $pdo->prepare("SELECT COALESCE(SUM(credits_deducted), 0) FROM usage_events WHERE user_id = ? AND campaign_id = ? AND status = 'completed' AND operation IN ('text_campaign', 'ai_image', 'saudi_voice', 'video_storyboard')");
     $stmt->execute([$userId, $campaignId]);
     $credits = (int) $stmt->fetchColumn();
-    return ['credits' => $credits, 'amount' => rateb_credit_halala($credits)];
-}
-
-function rateb_paid_package(string $code): ?array
-{
-    $packages = [
-        'starter' => ['amount' => 9900, 'currency' => 'SAR', 'credits' => 500, 'plan_code' => 'starter'],
-        'pro' => ['amount' => 24900, 'currency' => 'SAR', 'credits' => 2500, 'plan_code' => 'pro'],
-    ];
-    return $packages[$code] ?? null;
+    return ['credits' => $credits, 'amount' => rateb_credit_halala($credits, $pdo)];
 }
 
 /** @param array<string,mixed> $payment Moyasar payment object, already fetched from Moyasar */
 function rateb_payment_accept(array $payment): string
 {
+    $pdo = function_exists('db') ? db() : null;
     if ((string) ($payment['status'] ?? '') !== 'paid') {
         return 'unpaid';
     }
@@ -439,7 +541,7 @@ function rateb_payment_accept(array $payment): string
     $userId = (int) ($meta['user_id'] ?? 0);
     if ((string) ($meta['package'] ?? '') === 'usage') {
         $credits = (int) ($meta['credits'] ?? 0);
-        if ($userId < 1 || $credits < 1 || (int) ($payment['amount'] ?? 0) !== rateb_credit_halala($credits)) {
+        if ($userId < 1 || $credits < 1 || (int) ($payment['amount'] ?? 0) !== rateb_credit_halala($credits, $pdo instanceof PDO ? $pdo : null)) {
             return 'amount';
         }
         if ((int) ($meta['order_id'] ?? 0) < 1) {
@@ -447,7 +549,7 @@ function rateb_payment_accept(array $payment): string
         }
         return '';
     }
-    $package = rateb_paid_package((string) ($meta['package'] ?? ''));
+    $package = rateb_paid_package((string) ($meta['package'] ?? ''), $pdo);
     if ($userId < 1 || $package === null) {
         return 'package';
     }
@@ -479,8 +581,8 @@ function rateb_payment_record(PDO $pdo, array $payment): string
     $userId = (int) $meta['user_id'];
     $code = (string) $meta['package'];
     $package = $code === 'usage'
-        ? ['amount' => rateb_credit_halala((int) ($meta['credits'] ?? 0)), 'credits' => (int) ($meta['credits'] ?? 0), 'plan_code' => '']
-        : rateb_paid_package($code);
+        ? ['amount' => rateb_credit_halala((int) ($meta['credits'] ?? 0), $pdo), 'credits' => (int) ($meta['credits'] ?? 0), 'plan_code' => '']
+        : rateb_paid_package($code, $pdo);
     $paymentId = (string) ($payment['id'] ?? '');
     if ($package === null || preg_match('/^[a-f0-9-]{36}$/', $paymentId) !== 1) {
         return 'package';

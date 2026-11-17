@@ -37,8 +37,8 @@ $canEdit = admin_actor_has($adminActor, 'settings.manage');
 admin_start($adminLang === 'ar' ? 'الباقات والخطط' : 'Plans & packages');
 admin_finance_nav_toolbar($adminActor);
 echo '<p class="note">' . admin_h(admin_t(
-    'Catalog plan codes are fixed (free, starter, growth, pro, business). Edit limits and prices here — add new codes via a controlled migration only.',
-    'رموز الباقات ثابتة في النظام. عدّل الأسعار والحدود هنا — إضافة باقة جديدة تتطلب ترحيلًا مضبوطًا فقط.'
+    'Catalog plan codes are fixed (free, starter, growth, pro, business). Price (SAR) for starter and pro is shown on the public site and used for Moyasar checkout. growth/business are catalog-only until checkout is extended.',
+    'رموز الباقات ثابتة. سعر starter و pro يظهر في الموقع والدفع (Moyasar). باقات growth و business للكتالوج فقط حتى يُفعَّل الدفع لها.'
 )) . '</p>';
 echo '<div class="cards">';
 foreach ($plans as $plan) {

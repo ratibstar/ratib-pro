@@ -1,6 +1,12 @@
 <?php
 require __DIR__ . '/config/bootstrap.php';
+require_once __DIR__ . '/app/plans.php';
 require __DIR__ . '/app/nav.php';
+$pricingPlans = rateb_public_pricing_plans($pdo);
+$pricingByCode = [];
+foreach ($pricingPlans as $planRow) {
+    $pricingByCode[$planRow['code']] = $planRow;
+}
 $googleClient = (string) ((require __DIR__ . '/config/google.php')['client_id'] ?? '');
 
 $loggedIn = isset($_SESSION['user_id']);
@@ -147,8 +153,8 @@ if ($loggedIn && !isset($_GET['pricing'])) {
         <div class="price-grid">
             <article class="price-card">
                 <p class="eyebrow" data-i18n="plan_free">Free trial</p>
-                <p class="price-amount"><b>0</b> <span>SAR</span></p>
-                <p data-i18n="plan_free_credits">50 welcoming credits</p>
+                <p class="price-amount"><b><?= e(rateb_format_sar_price((float) ($pricingByCode['free']['price_sar'] ?? 0))) ?></b> <span>SAR</span></p>
+                <p><?= (int) ($pricingByCode['free']['credits'] ?? 50) ?> <span data-i18n="plan_free_credits">welcoming credits</span></p>
                 <ul>
                     <li data-i18n="plan_free_text">Text modules</li>
                     <li data-i18n="plan_free_image">Square images 1:1</li>
@@ -158,8 +164,8 @@ if ($loggedIn && !isset($_GET['pricing'])) {
             </article>
             <article class="price-card is-featured">
                 <p class="eyebrow" data-i18n="plan_starter">Starter</p>
-                <p class="price-amount"><b>99</b> <span data-i18n="plan_month">SAR / month</span></p>
-                <p data-i18n="plan_starter_credits">500 credits</p>
+                <p class="price-amount"><b><?= e(rateb_format_sar_price((float) ($pricingByCode['starter']['price_sar'] ?? 0))) ?></b> <span data-i18n="plan_month">SAR / month</span></p>
+                <p><?= (int) ($pricingByCode['starter']['credits'] ?? 500) ?> <span data-i18n="plan_starter_credits">credits</span></p>
                 <ul>
                     <li data-i18n="plan_starter_platforms">All platforms unlocked</li>
                     <li data-i18n="plan_starter_ratios">Flexible image ratios</li>
@@ -169,8 +175,8 @@ if ($loggedIn && !isset($_GET['pricing'])) {
             </article>
             <article class="price-card">
                 <p class="eyebrow" data-i18n="plan_pro">Pro</p>
-                <p class="price-amount"><b>249</b> <span data-i18n="plan_month">SAR / month</span></p>
-                <p data-i18n="plan_pro_credits">2500 credits</p>
+                <p class="price-amount"><b><?= e(rateb_format_sar_price((float) ($pricingByCode['pro']['price_sar'] ?? 0))) ?></b> <span data-i18n="plan_month">SAR / month</span></p>
+                <p><?= (int) ($pricingByCode['pro']['credits'] ?? 2500) ?> <span data-i18n="plan_pro_credits">credits</span></p>
                 <ul>
                     <li data-i18n="plan_pro_text">Unlimited text variations</li>
                     <li data-i18n="plan_pro_board">Full structured storyboard</li>

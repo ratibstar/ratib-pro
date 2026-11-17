@@ -25,7 +25,7 @@ if ($packageCode === 'usage' && $campaignId > 0) {
     }
     $selected = ['amount' => $usageBill['amount'], 'currency' => 'SAR', 'credits' => $usageBill['credits'], 'plan_code' => ''];
 } else {
-    $selected = rateb_paid_package($packageCode);
+    $selected = rateb_paid_package($packageCode, db());
 }
 if ($selected === null) {
     http_response_code(404);

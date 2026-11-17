@@ -12,13 +12,15 @@ $ar = ui_language() === 'ar';
 $wallet = rateb_account_credits($pdo, $userId);
 $packages = [];
 foreach (['starter', 'pro'] as $code) {
-    $pkg = rateb_paid_package($code);
+    $pkg = rateb_paid_package($code, $pdo);
     if ($pkg === null) {
         continue;
     }
     $packages[] = [
         'code' => $code,
-        'price' => number_format($pkg['amount'] / 100, 0, '.', ''),
+        'price' => rateb_format_sar_price((float) $pkg['price_sar']),
+        'name_ar' => $pkg['name_ar'],
+        'name_en' => $pkg['name_en'],
         'credits' => (int) $pkg['credits'],
     ];
 }
@@ -39,7 +41,7 @@ foreach (['starter', 'pro'] as $code) {
 <div class="price-grid">
 <?php foreach ($packages as $pkg): ?>
 <article class="price-card<?= $wallet['package_type'] === $pkg['code'] ? ' is-featured' : '' ?>" id="<?= e($pkg['code']) ?>">
-<p class="eyebrow"><?= e($pkg['code']) ?></p>
+<p class="eyebrow"><?= e($ar ? $pkg['name_ar'] : $pkg['name_en']) ?></p>
 <p class="price-amount"><b><?= e($pkg['price']) ?></b> <span><?= $ar ? 'ر.س' : 'SAR' ?></span></p>
 <p><?= (int) $pkg['credits'] ?> <?= $ar ? 'نقطة' : 'credits' ?></p>
 <a class="button studio-cta" href="/app/payment/checkout.php?package=<?= rawurlencode($pkg['code']) ?>"><?= $ar ? 'اشترك / جدّد' : 'Subscribe / renew' ?></a>
