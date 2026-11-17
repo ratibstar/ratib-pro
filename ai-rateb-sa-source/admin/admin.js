@@ -17,13 +17,17 @@
     });
   });
 
-  const resolveDeleteAction = (listForm, bulkPicker) => {
+  /** Row / toolbar "Delete" must not fall back to disable on customer lists. */
+  const resolveDeleteAction = (listForm, bulkPicker, permanentOnly = false) => {
     if (bulkPicker && bulkPicker.value) {
       return bulkPicker.value;
     }
     const pick = (value) => listForm.querySelector(`option[value="${value}"]`);
     if (pick("delete")) {
       return "delete";
+    }
+    if (permanentOnly) {
+      return "";
     }
     if (pick("disable")) {
       return "disable";
@@ -120,7 +124,17 @@
       if (!reason) {
         return;
       }
-      if (
+      const permanent = action === "delete" && listForm.querySelector('option[value="delete"]');
+      if (permanent) {
+        const okPermanent = window.confirm(
+          document.documentElement.lang === "ar"
+            ? "حذف نهائي — يُزال الحساب وجميع بياناته ولا يمكن استرجاعه. متأكد؟"
+            : "Permanent delete — the account and its data will be removed. Continue?"
+        );
+        if (!okPermanent) {
+          return;
+        }
+      } else if (
         !window.confirm(
           document.documentElement.lang === "ar"
             ? "تأكيد الإجراء الجماعي؟"
@@ -138,12 +152,12 @@
 
     if (deleteBtn) {
       deleteBtn.addEventListener("click", () => {
-        const action = resolveDeleteAction(listForm, bulkPicker);
+        const action = resolveDeleteAction(listForm, bulkPicker, true);
         if (!action) {
           window.alert(
             document.documentElement.lang === "ar"
-              ? "الحذف غير متاح لهذه القائمة."
-              : "Delete is not available for this list."
+              ? "الحذف النهائي متاح للمالك فقط أو غير مفعّل لهذه القائمة."
+              : "Permanent delete is owner-only or not available here."
           );
           return;
         }
@@ -190,12 +204,12 @@
         box.checked = true;
         syncTopButtons();
       }
-      const action = resolveDeleteAction(listForm, bulkPicker);
+      const action = resolveDeleteAction(listForm, bulkPicker, true);
       if (!action) {
         window.alert(
           document.documentElement.lang === "ar"
-            ? "الحذف غير متاح لهذه القائمة."
-            : "Delete is not available for this list."
+            ? "الحذف النهائي متاح للمالك فقط أو غير مفعّل لهذه القائمة."
+            : "Permanent delete is owner-only or not available here."
         );
         return;
       }

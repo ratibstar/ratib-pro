@@ -34,17 +34,21 @@ $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
 $canManage = admin_actor_has($adminActor, 'customers.manage');
+$canDeleteUser = $canManage && admin_actor_is_owner($adminActor);
 $canFinance = admin_actor_has($adminActor, 'finance.view');
 $listReturn = '/admin/users.php?' . ($q !== '' ? 'q=' . rawurlencode($q) . '&' : '') . 'page=' . $page;
 admin_start(admin_t('Users', 'المستخدمون'));
 admin_customers_nav_toolbar($adminActor);
-admin_panel_open(admin_t('Customer accounts', 'حسابات العملاء'), admin_t('Customers register on the site. Open a row to manage credits, disable, or view payments.', 'العملاء يسجلون من الموقع. افتح الصف لإدارة النقاط أو التعطيل أو المدفوعات.'));
+admin_panel_open(admin_t('Customer accounts', 'حسابات العملاء'), admin_t(
+    'Customers register on the site. Delete removes the account permanently (owner only). Use bulk “Disable” to block login without erasing data.',
+    'العملاء يسجلون من الموقع. الحذف يزيل الحساب نهائيًا (المالك فقط). استخدم «تعطيل» في الجماعي لمنع الدخول دون مسح البيانات.'
+));
 echo '<form class="search" method="get"><input name="q" value="' . admin_h($q) . '" placeholder="' . admin_h(admin_t('Name or email', 'الاسم أو البريد')) . '"><button type="submit">' . admin_h(admin_t('Search', 'بحث')) . '</button></form>';
 admin_bulk_flash_from_query();
 $formId = admin_bulk_form_open('users', $listReturn);
 admin_crud_toolbar([
     'screen' => 'users',
-    'can_manage' => $canManage,
+    'can_manage' => $canManage || $canDeleteUser,
     'form_id' => $formId,
     'add_enabled' => false,
 ]);
@@ -60,7 +64,7 @@ foreach ($rows as $row) {
     echo '<tr>';
     admin_td_select($uid, $editHref, $canManage);
     echo '<td><a href="' . admin_h($editHref) . '">' . admin_h((string) $row['name']) . '</a>' . $state . '</td><td>' . admin_h((string) $row['email']) . '</td><td>' . admin_h((string) $row['role']) . '</td><td>' . admin_h((string) (($row['plan_code'] ?? '') !== '' ? $row['plan_code'] : $row['package_type'])) . '</td><td>' . admin_h($paid) . '</td><td>' . (int) $row['credits_balance'] . '</td><td>' . (int) $row['campaigns'] . '</td><td>' . (int) $row['used_units'] . '</td><td>' . admin_h((string) $row['created_at']) . '</td><td>' . admin_h((string) ($row['last_login_at'] ?? admin_t('Not tracked', 'غير مسجّل'))) . '</td><td>';
-    admin_crud_row_actions($editHref, $editHref, $canManage, $uid);
+    admin_crud_row_actions($editHref, $editHref, $canDeleteUser, $uid, $canDeleteUser);
     if ($canFinance) {
         echo ' <a class="btn small quiet" href="/admin/finance-customer.php?id=' . $uid . '">' . admin_h(admin_t('Payments', 'مدفوعات')) . '</a>';
     }

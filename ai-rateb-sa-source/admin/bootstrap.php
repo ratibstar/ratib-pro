@@ -128,7 +128,7 @@ function admin_end(): void
 {
     $year = date('Y');
     echo '</main><footer class="admin-footer">RATEB AI · ' . admin_h(admin_t('Administration', 'الإدارة')) . ' · ' . admin_h($year) . '</footer></div></div>';
-    echo '<script src="/admin/admin.js?v=3" defer></script></body></html>';
+    echo '<script src="/admin/admin.js?v=4" defer></script></body></html>';
 }
 
 function admin_pager(int $page, int $total, string $base): void

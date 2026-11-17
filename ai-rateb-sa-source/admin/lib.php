@@ -334,6 +334,120 @@ function admin_set_account_state(object $pdo, array $actor, int $userId, bool $d
     }
 }
 
+/**
+ * Permanent removal of a customer account (not disable). Owner only.
+ *
+ * @return array{ok:bool,code:string}
+ */
+function admin_delete_customer_user(object $pdo, array $actor, int $userId, string $reason): array
+{
+    $reason = trim($reason);
+    if (!admin_actor_is_owner($actor) || !admin_actor_has($actor, 'customers.manage')) {
+        return ['ok' => false, 'code' => 'owner_only'];
+    }
+    if ($userId < 1 || mb_strlen($reason) < 3 || mb_strlen($reason) > 500) {
+        return ['ok' => false, 'code' => 'reason'];
+    }
+    if ((int) ($actor['user_id'] ?? 0) === $userId) {
+        return ['ok' => false, 'code' => 'self'];
+    }
+
+    $lock = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ? ' FOR UPDATE' : '';
+    $stmt = $pdo->prepare('SELECT id, email, role FROM users WHERE id = ?' . $lock);
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        return ['ok' => false, 'code' => 'missing'];
+    }
+    if ((string) $row['role'] === 'owner') {
+        return ['ok' => false, 'code' => 'owner'];
+    }
+
+    $pdo->beginTransaction();
+    try {
+        if (admin_table_has($pdo, 'video_jobs', 'user_id')) {
+            $pdo->prepare('DELETE FROM video_jobs WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'campaign_media', 'user_id')) {
+            $pdo->prepare('DELETE FROM campaign_media WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'campaign_outputs', 'campaign_id')) {
+            $pdo->prepare('DELETE o FROM campaign_outputs o INNER JOIN campaigns c ON c.id = o.campaign_id WHERE c.user_id = ?')->execute([$userId]);
+        }
+        foreach (['campaign_items', 'campaign_variations', 'campaign_briefs'] as $table) {
+            if (admin_table_has($pdo, $table, 'user_id')) {
+                $pdo->prepare("DELETE FROM {$table} WHERE user_id = ?")->execute([$userId]);
+            }
+        }
+        if (admin_table_has($pdo, 'campaigns', 'user_id')) {
+            $pdo->prepare('DELETE FROM campaigns WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'usage_events', 'user_id')) {
+            $pdo->prepare('DELETE FROM usage_events WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'subscriptions', 'user_id')) {
+            $pdo->prepare('DELETE FROM subscriptions WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'payment_refunds', 'user_id')) {
+            $pdo->prepare('DELETE FROM payment_refunds WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'payment_receipts', 'user_id')) {
+            $pdo->prepare('DELETE FROM payment_receipts WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'payment_orders', 'user_id')) {
+            $pdo->prepare('DELETE FROM payment_orders WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'admin_credit_adjustments', 'user_id')) {
+            $pdo->prepare('DELETE FROM admin_credit_adjustments WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'brand_kits', 'user_id')) {
+            $pdo->prepare('DELETE FROM brand_kits WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'password_resets', 'user_id')) {
+            $pdo->prepare('DELETE FROM password_resets WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'welcome_grants', 'user_id')) {
+            $pdo->prepare('DELETE FROM welcome_grants WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'signup_audit', 'user_id')) {
+            $pdo->prepare('DELETE FROM signup_audit WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'outbound_email_log', 'user_id')) {
+            $pdo->prepare('DELETE FROM outbound_email_log WHERE user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'hr_payroll_entries', 'company_user_id')) {
+            $pdo->prepare('DELETE FROM hr_payroll_entries WHERE company_user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'hr_attendance', 'company_user_id')) {
+            $pdo->prepare('DELETE FROM hr_attendance WHERE company_user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'hr_leave_requests', 'company_user_id')) {
+            $pdo->prepare('DELETE FROM hr_leave_requests WHERE company_user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'hr_employees', 'company_user_id')) {
+            $pdo->prepare('DELETE FROM hr_employees WHERE company_user_id = ?')->execute([$userId]);
+        }
+        if (admin_table_has($pdo, 'hr_departments', 'company_user_id')) {
+            $pdo->prepare('DELETE FROM hr_departments WHERE company_user_id = ?')->execute([$userId]);
+        }
+
+        $deleted = $pdo->prepare("DELETE FROM users WHERE id = ? AND role <> 'owner'");
+        $deleted->execute([$userId]);
+        if ($deleted->rowCount() !== 1) {
+            $pdo->rollBack();
+            return ['ok' => false, 'code' => 'missing'];
+        }
+        admin_audit($pdo, $actor, 'user_delete', 'user', $userId, $reason, 'email=' . (string) $row['email']);
+        $pdo->commit();
+        return ['ok' => true, 'code' => 'applied'];
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
+}
+
 function admin_secret_present(string $value): bool
 {
     return trim($value) !== '';
@@ -619,6 +733,15 @@ function admin_bulk_apply(object $pdo, array $adminActor, string $screen, string
             if (!admin_actor_has($adminActor, 'customers.manage')) {
                 return ['code' => 'invalid', 'count' => 0];
             }
+            if ($action === 'delete') {
+                foreach ($ids as $userId) {
+                    $result = admin_delete_customer_user($pdo, $adminActor, $userId, $reason);
+                    if (($result['ok'] ?? false) === true) {
+                        $applied++;
+                    }
+                }
+                break;
+            }
             if (!in_array($action, ['disable', 'enable'], true)) {
                 return ['code' => 'invalid', 'count' => 0];
             }
@@ -675,6 +798,19 @@ function admin_bulk_apply(object $pdo, array $adminActor, string $screen, string
         case 'finance_customers':
             if (!admin_actor_has($adminActor, 'customers.manage')) {
                 return ['code' => 'invalid', 'count' => 0];
+            }
+            if ($action === 'delete') {
+                foreach ($ids as $userId) {
+                    $userId = (int) $userId;
+                    if ($userId <= 0) {
+                        continue;
+                    }
+                    $result = admin_delete_customer_user($pdo, $adminActor, $userId, $reason);
+                    if (($result['ok'] ?? false) === true) {
+                        $applied++;
+                    }
+                }
+                break;
             }
             if (!in_array($action, ['disable', 'enable'], true)) {
                 return ['code' => 'invalid', 'count' => 0];
@@ -753,8 +889,9 @@ function admin_bulk_actions_for_screen(string $screen): array
 {
     return match ($screen) {
         'users' => [
-            ['value' => 'disable', 'label' => admin_t('Disable selected', 'تعطيل المحدد')],
+            ['value' => 'disable', 'label' => admin_t('Disable (keep data)', 'تعطيل (يبقى السجل)')],
             ['value' => 'enable', 'label' => admin_t('Enable selected', 'تفعيل المحدد')],
+            ['value' => 'delete', 'label' => admin_t('Delete permanently', 'حذف نهائي')],
         ],
         'staff' => [
             ['value' => 'deactivate', 'label' => admin_t('Disable selected', 'تعطيل المحدد')],
@@ -764,8 +901,9 @@ function admin_bulk_actions_for_screen(string $screen): array
             ['value' => 'delete', 'label' => admin_t('Delete draft/failed', 'حذف مسودة/فاشلة')],
         ],
         'finance_customers' => [
-            ['value' => 'disable', 'label' => admin_t('Disable selected', 'تعطيل المحدد')],
+            ['value' => 'disable', 'label' => admin_t('Disable (keep data)', 'تعطيل (يبقى السجل)')],
             ['value' => 'enable', 'label' => admin_t('Enable selected', 'تفعيل المحدد')],
+            ['value' => 'delete', 'label' => admin_t('Delete permanently', 'حذف نهائي')],
         ],
         'finance_payments' => [
             ['value' => 'delete', 'label' => admin_t('Delete selected', 'حذف المحدد')],

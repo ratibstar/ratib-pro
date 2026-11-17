@@ -228,6 +228,17 @@ function admin_crud_toolbar(array $opts): void
     if ($bulkActions === [] && function_exists('admin_bulk_actions_for_screen')) {
         $bulkActions = admin_bulk_actions_for_screen($screen);
     }
+    global $adminActor;
+    if (
+        $bulkActions !== []
+        && function_exists('admin_actor_is_owner')
+        && !admin_actor_is_owner(is_array($adminActor ?? null) ? $adminActor : [])
+    ) {
+        $bulkActions = array_values(array_filter(
+            $bulkActions,
+            static fn (array $item): bool => (string) ($item['value'] ?? '') !== 'delete'
+        ));
+    }
     $hasBulk = $canManage && $bulkActions !== [];
 
     echo '<span class="crud-group">';

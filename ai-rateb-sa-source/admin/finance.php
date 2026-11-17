@@ -207,12 +207,13 @@ if ($tab === 'customers') {
     )) . '</p>';
 
     $canManageCustomers = admin_actor_has($adminActor, 'customers.manage');
+    $canDeleteCustomers = $canManageCustomers && admin_actor_is_owner($adminActor);
     $custReturn = '/admin/finance.php' . admin_finance_query_string(['tab' => 'customers', 'q' => $q, 'page' => $page]);
     admin_bulk_flash_from_query();
     $custFormId = admin_bulk_form_open('finance_customers', $custReturn);
     admin_crud_toolbar([
         'screen' => 'finance_customers',
-        'can_manage' => $canManageCustomers,
+        'can_manage' => $canManageCustomers || $canDeleteCustomers,
         'form_id' => $custFormId,
         'add_enabled' => false,
     ]);
@@ -236,7 +237,7 @@ if ($tab === 'customers') {
         echo '<td>' . (int) $row['credits_balance'] . '</td>';
         echo '<td><span class="pill ' . ($disabled ? 'bad' : 'ok') . '">' . admin_h($disabled ? admin_t('Disabled', 'معطّل') : admin_t('Active', 'نشط')) . '</span></td>';
         echo '<td>' . admin_h((string) ($row['last_payment'] ?? '—')) . '</td><td>';
-        admin_crud_row_actions($editHref, '/admin/user.php?id=' . $uid, $canManageCustomers, $uid);
+        admin_crud_row_actions($editHref, '/admin/user.php?id=' . $uid, $canDeleteCustomers, $uid, $canDeleteCustomers);
         echo '</td></tr>';
     }
     admin_table_close();
