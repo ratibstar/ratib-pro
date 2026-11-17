@@ -132,7 +132,6 @@ function resolve_admin_actor(object $pdo): ?array
             return admin_actor_from_owner($user);
         }
         if ($user) {
-            $_SESSION['admin_customer_blocked'] = (string) ($user['email'] ?? '');
             return null;
         }
     }
