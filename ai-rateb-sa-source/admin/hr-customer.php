@@ -19,8 +19,7 @@ if (!in_array($tab, ['employees', 'departments', 'leave', 'payroll', 'attendance
 }
 
 admin_start(admin_t('Customer HR detail', 'تفاصيل موارد بشرية العميل'));
-admin_toolbar([
-    ['href' => '/admin/hr-overview.php', 'label' => admin_t('HR overview', 'نظرة HR'), 'class' => 'quiet'],
+admin_customers_nav_toolbar($adminActor, [
     ['href' => '/admin/user.php?id=' . $id, 'label' => admin_t('Account', 'الحساب'), 'class' => 'quiet'],
     ['href' => '/admin/finance-customer.php?id=' . $id, 'label' => admin_t('Finances', 'المالية'), 'class' => 'quiet'],
 ]);

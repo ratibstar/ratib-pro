@@ -219,6 +219,12 @@ form.inline{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center;margin
 .finance-custom{align-items:center}
 .finance-custom label{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:13px}
 .export-links{margin:0 0 16px}
+.global-quick-nav{
+  margin:0 0 16px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius);
+  background:rgba(12,18,32,.55);overflow:auto;
+}
+.global-quick-nav .page-toolbar{margin:0;gap:8px;flex-wrap:nowrap;min-width:min-content}
+.global-quick-nav .page-toolbar .btn{font-size:12px;padding:7px 12px;white-space:nowrap}
 .page-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 20px}
 .crud-toolbar .crud-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-inline-start:auto;padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius);background:rgba(8,12,22,.45)}
 .btn.disabled,.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}

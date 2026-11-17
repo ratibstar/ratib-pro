@@ -35,10 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $plans = $pdo->query('SELECT * FROM plans ORDER BY sort_order, id')->fetchAll();
 $canEdit = admin_actor_has($adminActor, 'settings.manage');
 admin_start($adminLang === 'ar' ? 'الباقات والخطط' : 'Plans & packages');
-admin_toolbar([
-    ['href' => '/admin/subscriptions.php', 'label' => $adminLang === 'ar' ? 'الاشتراكات' : 'Subscriptions', 'class' => 'quiet'],
-    ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية'), 'class' => 'quiet'],
-]);
+admin_finance_nav_toolbar($adminActor);
 echo '<p class="note">' . admin_h(admin_t(
     'Catalog plan codes are fixed (free, starter, growth, pro, business). Edit limits and prices here — add new codes via a controlled migration only.',
     'رموز الباقات ثابتة في النظام. عدّل الأسعار والحدود هنا — إضافة باقة جديدة تتطلب ترحيلًا مضبوطًا فقط.'

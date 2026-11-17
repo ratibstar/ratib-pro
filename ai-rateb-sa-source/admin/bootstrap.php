@@ -88,7 +88,7 @@ function admin_start(string $title): void
     echo '<!doctype html><html lang="' . admin_h($adminLang) . '" dir="' . $dir . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>' . admin_h($title) . ' — RATEB AI</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
-    echo '<link rel="stylesheet" href="/admin/admin.css?v=18"></head><body class="admin-app">';
+    echo '<link rel="stylesheet" href="/admin/admin.css?v=19"></head><body class="admin-app">';
     echo '<input class="nav-check" id="nav-check" type="checkbox">';
     echo '<div class="shell"><aside class="side"><div class="brand"><b>RATEB</b> <span>AI</span></div><p class="role">' . admin_h(admin_t('Administration', 'الإدارة')) . '</p><nav class="nav-sections">';
     $groups = admin_nav_groups_for_actor($adminActor, $adminLang);
@@ -121,6 +121,7 @@ function admin_start(string $title): void
         echo '<a class="lang" href="/admin/logout.php">' . admin_h(admin_t('Sign out', 'خروج')) . '</a>';
     }
     echo '<span class="who"><i>' . admin_h($initial) . '</i><span>' . admin_h($email) . '</span></span></div></header><main class="content-area">';
+    admin_global_quick_nav($adminActor);
 }
 
 function admin_end(): void

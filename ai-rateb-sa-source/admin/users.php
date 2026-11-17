@@ -37,12 +37,7 @@ $canManage = admin_actor_has($adminActor, 'customers.manage');
 $canFinance = admin_actor_has($adminActor, 'finance.view');
 $listReturn = '/admin/users.php?' . ($q !== '' ? 'q=' . rawurlencode($q) . '&' : '') . 'page=' . $page;
 admin_start(admin_t('Users', 'المستخدمون'));
-admin_toolbar([
-    ['href' => '/admin', 'label' => admin_t('Dashboard', 'لوحة التحليلات'), 'class' => 'quiet'],
-    ['href' => '/admin/finance.php?tab=customers', 'label' => admin_t('Customer finances', 'مالية العملاء'), 'class' => 'quiet'],
-    ['href' => '/admin/hr-overview.php', 'label' => admin_t('Customer HR', 'موارد بشرية العملاء'), 'class' => 'quiet'],
-    ['href' => admin_public_site_url(), 'label' => admin_t('Public site', 'الموقع العام'), 'class' => 'quiet', 'attrs' => ['target' => '_blank', 'rel' => 'noopener']],
-]);
+admin_customers_nav_toolbar($adminActor);
 admin_panel_open(admin_t('Customer accounts', 'حسابات العملاء'), admin_t('Customers register on the site. Open a row to manage credits, disable, or view payments.', 'العملاء يسجلون من الموقع. افتح الصف لإدارة النقاط أو التعطيل أو المدفوعات.'));
 echo '<form class="search" method="get"><input name="q" value="' . admin_h($q) . '" placeholder="' . admin_h(admin_t('Name or email', 'الاسم أو البريد')) . '"><button type="submit">' . admin_h(admin_t('Search', 'بحث')) . '</button></form>';
 admin_bulk_flash_from_query();

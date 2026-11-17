@@ -11,26 +11,38 @@ function admin_studio_url(): string
     return '/dashboard';
 }
 
-/** Admin shortcuts — shown below analytics, not as the analytics view itself. */
-function admin_customer_hub(): void
+/** Admin shortcuts — full console map below analytics on the dashboard. */
+function admin_customer_hub(?array $actor = null): void
 {
-    $items = [
-        ['/admin/users.php', admin_t('Customer accounts', 'حسابات العملاء'), admin_t('Search, credits, disable', 'بحث، نقاط، تعطيل'), '◎'],
-        ['/admin/hr-overview.php', admin_t('Customer HR', 'موارد بشرية العملاء'), admin_t('Employees per company (read-only)', 'موظفون لكل شركة (قراءة)'), '◈'],
-        ['/admin/finance.php?tab=customers', admin_t('Customer finances', 'مالية العملاء'), admin_t('Payments and balances', 'مدفوعات وأرصدة'), '◆'],
-    ];
-    echo '<h2 class="section-title hub-section-title">' . admin_h(admin_t('Admin shortcuts', 'اختصارات الإدارة')) . '</h2>';
+    if ($actor === null) {
+        global $adminActor;
+        $actor = is_array($adminActor ?? null) ? $adminActor : ['type' => 'owner', 'permissions' => []];
+    }
+  echo '<h2 class="section-title hub-section-title">' . admin_h(admin_t('Console shortcuts', 'اختصارات النظام')) . '</h2>';
     echo '<p class="note hub-section-note">' . admin_h(admin_t(
-        'Jump to customer screens. Analytics for the selected period are above.',
-        'انتقل لشاشات العملاء. التحليلات للفترة المحددة أعلاه.'
+        'All admin modules you can access. Analytics for the selected period are above.',
+        'كل وحدات الإدارة المتاحة لك. التحليلات للفترة المحددة أعلاه.'
     )) . '</p>';
-    echo '<section class="hub-cards hub-cards-compact" aria-label="' . admin_h(admin_t('Admin shortcuts', 'اختصارات الإدارة')) . '">';
-    foreach ($items as [$href, $title, $hint, $glyph]) {
-        echo '<a class="hub-card" href="' . admin_h($href) . '">';
-        echo '<span class="hub-glyph" aria-hidden="true">' . admin_h($glyph) . '</span>';
-        echo '<strong>' . admin_h($title) . '</strong>';
-        echo '<span class="hub-hint">' . admin_h($hint) . '</span>';
-        echo '</a>';
+    echo '<section class="hub-cards" aria-label="' . admin_h(admin_t('Console shortcuts', 'اختصارات النظام')) . '">';
+    if (function_exists('admin_nav_items') && function_exists('admin_actor_has') && function_exists('admin_nav_glyph')) {
+        $seen = [];
+        foreach (admin_nav_items() as $item) {
+            if (!admin_actor_has($actor, $item['permission'])) {
+                continue;
+            }
+            $href = (string) $item['href'];
+            if (isset($seen[$href])) {
+                continue;
+            }
+            $seen[$href] = true;
+            $title = admin_t((string) $item['en'], (string) $item['ar']);
+            $glyph = admin_nav_glyph($href);
+            echo '<a class="hub-card" href="' . admin_h($href) . '">';
+            echo '<span class="hub-glyph" aria-hidden="true">' . admin_h($glyph) . '</span>';
+            echo '<strong>' . admin_h($title) . '</strong>';
+            echo '<span class="hub-hint">' . admin_h($title) . '</span>';
+            echo '</a>';
+        }
     }
     echo '<a class="hub-card hub-card-public" href="' . admin_h(admin_public_site_url()) . '" target="_blank" rel="noopener">';
     echo '<span class="hub-glyph" aria-hidden="true">↗</span>';
@@ -43,6 +55,85 @@ function admin_customer_hub(): void
     echo '<span class="hub-hint">' . admin_h(admin_t('Same experience as logged-in customers', 'نفس تجربة العملاء بعد تسجيل الدخول')) . '</span>';
     echo '</a>';
     echo '</section>';
+}
+
+/** @param list<array{href?:string,label:string,class?:string,attrs?:array<string,string>}> $extra */
+function admin_customers_nav_toolbar(array $actor, array $extra = []): void
+{
+    $links = [];
+    if (admin_actor_has($actor, 'dashboard.view')) {
+        $links[] = ['href' => '/admin', 'label' => admin_t('Dashboard', 'لوحة التحليلات'), 'class' => 'quiet'];
+    }
+    if (admin_actor_has($actor, 'customers.view')) {
+        $links[] = ['href' => '/admin/users.php', 'label' => admin_t('Customer accounts', 'حسابات العملاء'), 'class' => 'quiet'];
+        $links[] = ['href' => '/admin/hr-overview.php', 'label' => admin_t('Customer HR', 'موارد بشرية العملاء'), 'class' => 'quiet'];
+    }
+    if (admin_actor_has($actor, 'finance.view')) {
+        $links[] = ['href' => '/admin/finance.php?tab=customers', 'label' => admin_t('Customer finances', 'مالية العملاء'), 'class' => 'quiet'];
+    }
+    if (admin_actor_has($actor, 'campaigns.view')) {
+        $links[] = ['href' => '/admin/campaigns.php', 'label' => admin_t('Campaigns', 'الحملات'), 'class' => 'quiet'];
+    }
+    admin_toolbar(array_merge($links, $extra));
+}
+
+/** @param list<array{href?:string,label:string,class?:string,attrs?:array<string,string>}> $extra */
+function admin_finance_nav_toolbar(array $actor, array $extra = []): void
+{
+    if (!admin_actor_has($actor, 'finance.view')) {
+        if ($extra !== []) {
+            admin_toolbar($extra);
+        }
+        return;
+    }
+    $links = [
+        ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية'), 'class' => 'quiet'],
+        ['href' => '/admin/payments.php', 'label' => admin_t('Payments', 'المدفوعات'), 'class' => 'quiet'],
+        ['href' => '/admin/refunds.php', 'label' => admin_t('Refunds', 'الاستردادات'), 'class' => 'quiet'],
+        ['href' => '/admin/subscriptions.php', 'label' => admin_t('Subscriptions', 'الاشتراكات'), 'class' => 'quiet'],
+        ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات'), 'class' => 'quiet'],
+        ['href' => '/admin/finance.php?tab=customers', 'label' => admin_t('Customer finances', 'مالية العملاء'), 'class' => 'quiet'],
+    ];
+    if (admin_actor_has($actor, 'finance.export')) {
+        $links[] = ['href' => '/admin/finance-export.php?export=summary&range=30', 'label' => admin_t('Export CSV', 'تصدير CSV'), 'class' => 'quiet'];
+    }
+    admin_toolbar(array_merge($links, $extra));
+}
+
+/** @param list<array{href?:string,label:string,class?:string,attrs?:array<string,string>}> $extra */
+function admin_operations_nav_toolbar(array $actor, array $extra = []): void
+{
+    $links = [];
+    if (admin_actor_has($actor, 'dashboard.view')) {
+        $links[] = ['href' => '/admin', 'label' => admin_t('Dashboard', 'لوحة التحليلات'), 'class' => 'quiet'];
+    }
+    if (admin_actor_has($actor, 'operations.view')) {
+        $links[] = ['href' => '/admin/usage.php', 'label' => admin_t('Credits & usage', 'النقاط والاستخدام'), 'class' => 'quiet'];
+        $links[] = ['href' => '/admin/audit.php', 'label' => admin_t('Audit log', 'سجل التدقيق'), 'class' => 'quiet'];
+    }
+    if (admin_actor_has($actor, 'settings.manage')) {
+        $links[] = ['href' => '/admin/settings.php', 'label' => admin_t('System', 'النظام'), 'class' => 'quiet'];
+    }
+    if (admin_actor_has($actor, 'campaigns.view')) {
+        $links[] = ['href' => '/admin/campaigns.php', 'label' => admin_t('Campaigns', 'الحملات'), 'class' => 'quiet'];
+    }
+    admin_toolbar(array_merge($links, $extra));
+}
+
+/** @param list<array{href?:string,label:string,class?:string,attrs?:array<string,string>}> $extra */
+function admin_security_nav_toolbar(array $actor, array $extra = []): void
+{
+    $links = [];
+    if (admin_actor_has($actor, 'staff.manage')) {
+        $links[] = ['href' => '/admin/staff.php', 'label' => admin_t('Admin staff', 'موظفو المنصة'), 'class' => 'quiet'];
+    }
+    if (admin_actor_has($actor, 'roles.manage')) {
+        $links[] = ['href' => '/admin/roles.php', 'label' => admin_t('Roles & permissions', 'الأدوار والصلاحيات'), 'class' => 'quiet'];
+    }
+    if (admin_actor_has($actor, 'operations.view')) {
+        $links[] = ['href' => '/admin/audit.php', 'label' => admin_t('Audit log', 'سجل التدقيق'), 'class' => 'quiet'];
+    }
+    admin_toolbar(array_merge($links, $extra));
 }
 
 function admin_like(string $value): string

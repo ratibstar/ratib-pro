@@ -37,6 +37,7 @@ $stmt = $pdo->prepare("SELECT id, name, email, role, package_type, credits_balan
 $stmt->execute([$id]);
 $user = $stmt->fetch();
 admin_start(admin_t('User', 'مستخدم'));
+admin_customers_nav_toolbar($adminActor);
 admin_crud_toolbar([
     'screen' => 'user',
     'can_manage' => admin_actor_has($adminActor, 'customers.manage'),

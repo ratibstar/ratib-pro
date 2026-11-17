@@ -65,23 +65,15 @@ if ($hasOrders) {
 }
 
 admin_start(admin_t('Financial management', 'الإدارة المالية'));
-$financeToolbar = [
-    ['href' => '/admin/payments.php', 'label' => admin_t('All receipts', 'كل الإيصالات')],
-    ['href' => '/admin/subscriptions.php', 'label' => admin_t('Manage subscriptions', 'إدارة الاشتراكات')],
-    ['href' => '/admin/plans.php', 'label' => admin_t('Plans', 'الباقات')],
-    ['href' => '/admin/refunds.php', 'label' => admin_t('Refunds', 'الاستردادات')],
-];
-if (admin_actor_has($adminActor, 'finance.export')) {
+$financeExtra = [];
+if (admin_actor_has($adminActor, 'finance.export') && $hasOrders) {
     $rangeKey = (string) ($range['key'] ?? '30');
-    $financeToolbar[] = ['href' => '/admin/finance-export.php?export=summary&range=' . rawurlencode($rangeKey), 'label' => admin_t('Export CSV', 'تصدير CSV')];
-    if ($hasOrders) {
-        $financeToolbar[] = ['href' => '/admin/finance-export.php?export=pending&range=' . rawurlencode($rangeKey), 'label' => admin_t('Export pending', 'تصدير المعلّقة')];
-    }
+    $financeExtra[] = ['href' => '/admin/finance-export.php?export=pending&range=' . rawurlencode($rangeKey), 'label' => admin_t('Export pending', 'تصدير المعلّقة'), 'class' => 'quiet'];
 }
 if (admin_actor_is_owner($adminActor)) {
-    $financeToolbar[] = ['href' => '/admin/refunds.php#record-refund', 'label' => admin_t('Record refund', 'تسجيل استرداد'), 'class' => 'primary'];
+    $financeExtra[] = ['href' => '/admin/refunds.php#record-refund', 'label' => admin_t('Record refund', 'تسجيل استرداد'), 'class' => 'primary'];
 }
-admin_toolbar($financeToolbar);
+admin_finance_nav_toolbar($adminActor, $financeExtra);
 
 echo '<div class="filters">';
 foreach ($filterLinks as $filterKey => $filterLabel) {
@@ -159,12 +151,7 @@ if ($tab === 'overview') {
 }
 
 if ($tab === 'customers') {
-    admin_toolbar([
-        ['href' => '/admin', 'label' => admin_t('Dashboard', 'لوحة التحليلات'), 'class' => 'quiet'],
-        ['href' => '/admin/users.php', 'label' => admin_t('Customer accounts', 'حسابات العملاء'), 'class' => 'quiet'],
-        ['href' => '/admin/hr-overview.php', 'label' => admin_t('Customer HR', 'موارد بشرية العملاء'), 'class' => 'quiet'],
-        ['href' => admin_public_site_url(), 'label' => admin_t('Public site', 'الموقع العام'), 'class' => 'quiet', 'attrs' => ['target' => '_blank', 'rel' => 'noopener']],
-    ]);
+    admin_customers_nav_toolbar($adminActor);
     admin_panel_open(admin_t('Customer finances', 'مالية العملاء'), admin_t(
         'Totals per customer account. Customers pay and subscribe on the public site.',
         'مجاميع لكل حساب عميل. الدفع والاشتراك يتم على الموقع العام.'

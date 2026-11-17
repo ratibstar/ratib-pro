@@ -6,9 +6,7 @@ require __DIR__ . '/bootstrap.php';
 admin_require_permission('operations.view');
 
 admin_start(admin_t('Audit log', 'سجل التدقيق'));
-admin_toolbar([
-    ['href' => '/admin/settings.php', 'label' => admin_t('System', 'النظام'), 'class' => 'quiet'],
-]);
+admin_operations_nav_toolbar($adminActor);
 if (!admin_table_has($pdo, 'admin_audit_log', 'id')) {
     echo '<p class="note">' . admin_h(admin_t('The audit table is not available.', 'جدول التدقيق غير متاح.')) . '</p>';
     admin_end();

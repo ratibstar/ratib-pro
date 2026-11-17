@@ -25,11 +25,7 @@ $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
 admin_start(admin_t('Customer HR (read-only)', 'موارد بشرية العملاء (قراءة فقط)'));
-admin_toolbar([
-    ['href' => '/admin', 'label' => admin_t('Dashboard', 'لوحة التحليلات'), 'class' => 'quiet'],
-    ['href' => '/admin/users.php', 'label' => admin_t('Customer accounts', 'حسابات العملاء'), 'class' => 'quiet'],
-    ['href' => '/admin/finance.php?tab=customers', 'label' => admin_t('Customer finances', 'مالية العملاء'), 'class' => 'quiet'],
-    ['href' => admin_public_site_url(), 'label' => admin_t('Public site', 'الموقع العام'), 'class' => 'quiet', 'attrs' => ['target' => '_blank', 'rel' => 'noopener']],
+admin_customers_nav_toolbar($adminActor, [
     ['href' => '/hr', 'label' => admin_t('Customer HR on site', 'HR على الموقع'), 'class' => 'primary', 'attrs' => ['target' => '_blank', 'rel' => 'noopener']],
 ]);
 echo '<p class="note">' . admin_h(admin_t(

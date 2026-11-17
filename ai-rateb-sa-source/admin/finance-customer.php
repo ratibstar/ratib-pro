@@ -15,11 +15,7 @@ $stmt->execute([$id]);
 $user = $stmt->fetch();
 
 admin_start(admin_t('Customer finances', 'مالية العميل'));
-admin_toolbar([
-    ['href' => '/admin/finance.php?tab=customers', 'label' => admin_t('All customers', 'كل العملاء')],
-    ['href' => '/admin/finance.php?tab=payments', 'label' => admin_t('Payments', 'المدفوعات')],
-    ['href' => '/admin/subscriptions.php', 'label' => admin_t('Subscriptions', 'الاشتراكات')],
-]);
+admin_finance_nav_toolbar($adminActor);
 if (!$user) {
     echo '<p class="note">' . admin_h(admin_t('Customer not found.', 'العميل غير موجود.')) . '</p>';
     echo '<p><a class="btn" href="/admin/finance.php?tab=customers">' . admin_h(admin_t('Back to customers', 'العودة للعملاء')) . '</a></p>';

@@ -238,6 +238,15 @@ $filters = [
 ];
 
 admin_start(admin_t('Analytics dashboard', 'لوحة التحليلات'));
+$dashExtra = [];
+if (admin_actor_has($adminActor, 'finance.export')) {
+    $dashExtra[] = ['href' => '/admin/finance-export.php?export=summary&range=' . rawurlencode((string) ($range['key'] ?? '30')), 'label' => admin_t('Export finance CSV', 'تصدير المالية CSV'), 'class' => 'primary'];
+}
+if ($dashExtra !== []) {
+    admin_customers_nav_toolbar($adminActor, $dashExtra);
+} else {
+    admin_customers_nav_toolbar($adminActor);
+}
 if ($dashboardLoadError) {
     echo '<p class="flash bad">' . admin_h(admin_t(
         'Some dashboard statistics are unavailable (run commerce schema on the server). Use Customers or Finance from the menu.',
@@ -365,5 +374,5 @@ echo '<tr><th>' . admin_h(admin_t('When', 'الوقت')) . '</th><th>' . admin_h
     admin_table_close();
 }
 echo '</article></div>';
-admin_customer_hub();
+admin_customer_hub($adminActor);
 admin_end();

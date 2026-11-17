@@ -15,9 +15,7 @@ $stmt->execute();
 $rows = $stmt->fetchAll();
 
 admin_start(admin_t('Payments', 'المدفوعات'));
-admin_toolbar([
-    ['href' => '/admin/finance.php', 'label' => admin_t('Finance hub', 'مركز المالية')],
-]);
+admin_finance_nav_toolbar($adminActor);
 admin_panel_open(admin_t('Payment receipts', 'إيصالات الدفع'));
 echo '<section class="stats"><article class="stat"><b>' . admin_h(admin_halalas_to_sar($sum)) . '</b><span>' . admin_h(admin_t('Confirmed revenue SAR', 'إيراد مؤكد بالريال')) . '</span></article>';
 echo '<article class="stat"><b>' . (int) $total . '</b><span>' . admin_h(admin_t('Receipts', 'الإيصالات')) . '</span></article></section>';

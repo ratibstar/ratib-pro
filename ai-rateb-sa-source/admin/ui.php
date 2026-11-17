@@ -5,6 +5,47 @@ declare(strict_types=1);
  * Shared admin UI helpers (presentation only).
  */
 
+/** Permission-filtered quick links (mirrors sidebar) for every admin screen. */
+function admin_global_quick_nav(array $actor): void
+{
+    if (!function_exists('admin_nav_items') || !function_exists('admin_actor_has')) {
+        return;
+    }
+    $actions = [];
+    $seen = [];
+    foreach (admin_nav_items() as $item) {
+        if (!admin_actor_has($actor, $item['permission'])) {
+            continue;
+        }
+        $href = (string) $item['href'];
+        if (isset($seen[$href])) {
+            continue;
+        }
+        $seen[$href] = true;
+        $here = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/admin'), PHP_URL_PATH) ?: '/admin';
+        $on = admin_nav_on($here, $href);
+        $actions[] = [
+            'href' => $href,
+            'label' => admin_t((string) $item['en'], (string) $item['ar']),
+            'class' => $on ? 'primary' : 'quiet',
+        ];
+    }
+    $actions[] = [
+        'href' => admin_studio_url(),
+        'label' => admin_t('Customer studio', 'استوديو العملاء'),
+        'class' => 'quiet',
+    ];
+    $actions[] = [
+        'href' => admin_public_site_url(),
+        'label' => admin_t('Public site', 'الموقع العام'),
+        'class' => 'quiet',
+        'attrs' => ['target' => '_blank', 'rel' => 'noopener'],
+    ];
+    echo '<nav class="global-quick-nav" aria-label="' . admin_h(admin_t('Console navigation', 'تنقل وحدة التحكم')) . '">';
+    admin_toolbar($actions);
+    echo '</nav>';
+}
+
 /** @param list<array{href?:string,label:string,class?:string,submit?:bool,form?:string,attrs?:array<string,string>}> $actions */
 function admin_toolbar(array $actions): void
 {
@@ -188,11 +229,6 @@ function admin_crud_toolbar(array $opts): void
         $bulkActions = admin_bulk_actions_for_screen($screen);
     }
     $hasBulk = $canManage && $bulkActions !== [];
-    $showCrudChrome = $addEnabled || $hasBulk || in_array($screen, ['users', 'staff', 'campaigns'], true);
-    if (!$showCrudChrome) {
-        echo '</div>';
-        return;
-    }
 
     echo '<span class="crud-group">';
     if ($addEnabled) {

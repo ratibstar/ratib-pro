@@ -44,6 +44,7 @@ foreach ($rp as $row) {
 }
 
 admin_start(admin_t('Roles & permissions', 'الأدوار والصلاحيات'));
+admin_security_nav_toolbar($adminActor);
 admin_crud_toolbar([
     'screen' => 'roles',
     'can_manage' => true,

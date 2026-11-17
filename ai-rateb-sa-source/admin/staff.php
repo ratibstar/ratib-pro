@@ -104,7 +104,9 @@ echo '<p class="note">' . admin_h(admin_t(
     'حسابات الموظفين منفصلة عن عملاء users. المالك فقط يدير الموظفين هنا.'
 )) . '</p>';
 
-admin_toolbar([['href' => '#create-staff', 'label' => admin_t('New staff member', 'موظف جديد'), 'class' => 'primary']]);
+admin_security_nav_toolbar($adminActor, [
+    ['href' => '#create-staff', 'label' => admin_t('New staff member', 'موظف جديد'), 'class' => 'primary'],
+]);
 admin_panel_open(admin_t('Create staff', 'إنشاء موظف'), admin_t('Add platform admin staff — not customer users.', 'إضافة موظف إدارة المنصة — وليس عملاء.'));
 echo '<form id="create-staff" class="stack form-grid" method="post">';
 echo '<input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '"><input type="hidden" name="action" value="create">';

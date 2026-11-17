@@ -31,10 +31,7 @@ $rows = $list->fetchAll();
 $canManage = admin_actor_has($adminActor, 'campaigns.manage');
 $pageReturn = '/admin/campaigns.php?q=' . rawurlencode($q) . '&status=' . rawurlencode($status) . '&page=' . $page;
 admin_start(admin_t('Campaigns', 'الحملات'));
-admin_toolbar([
-    ['href' => '/admin', 'label' => admin_t('Dashboard', 'اللوحة')],
-    ['href' => '/admin/users.php', 'label' => admin_t('Customers', 'العملاء')],
-]);
+admin_customers_nav_toolbar($adminActor);
 admin_panel_open(admin_t('All campaigns', 'كل الحملات'), admin_t('Open a row to inspect content and media.', 'افتح الصف لمراجعة المحتوى والوسائط.'));
 echo '<form class="search" method="get"><input name="q" value="' . admin_h($q) . '" placeholder="' . admin_h(admin_t('Title or owner email', 'العنوان أو بريد المالك')) . '">';
 echo '<select name="status"><option value="">' . admin_h(admin_t('Any status', 'كل الحالات')) . '</option>';

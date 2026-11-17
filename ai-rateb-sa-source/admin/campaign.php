@@ -11,6 +11,7 @@ $stmt = $pdo->prepare('SELECT c.*, u.email, u.name AS owner_name FROM campaigns 
 $stmt->execute([$id]);
 $campaign = $stmt->fetch();
 admin_start(admin_t('Campaign', 'حملة'));
+admin_customers_nav_toolbar($adminActor);
 if (!$campaign) {
     echo '<p class="note">' . admin_h(admin_t('Campaign not found.', 'الحملة غير موجودة.')) . '</p>';
     admin_end();
