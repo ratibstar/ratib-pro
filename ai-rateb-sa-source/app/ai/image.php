@@ -153,7 +153,7 @@ $payload = json_encode([
 $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);
 if ($submit['http'] !== 202) {
     $payload = json_encode([
-        'prompt' => $ratioLead . 'Product photo of a laptop and a phone on a desk, clean software screen, no people, no text.',
+        'prompt' => $prompt,
         'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
         'nsfw' => false,
         'censor_nsfw' => true,
@@ -371,20 +371,20 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
 {
     $rows = db()->prepare('SELECT output_type, content, approval_status FROM campaign_outputs WHERE campaign_id = ? ORDER BY id DESC');
     $rows->execute([(int) $campaign['id']]);
-    $strategy = '';
+    $strategy = null;
     $copy = [];
     foreach ($rows as $row) {
         $type = (string) $row['output_type'];
-        if ($type === 'strategy' && $strategy === '' && (string) $row['approval_status'] === 'approved') {
+        if ($type === 'strategy' && $strategy === null && (string) $row['approval_status'] === 'approved') {
             $document = rateb_strategy_document((string) $row['content']);
             if ($document !== null) {
-                $strategy = json_encode($document, JSON_UNESCAPED_UNICODE);
+                $strategy = $document;
             }
         } elseif (in_array($type, rateb_copy_types(), true) && (string) $row['approval_status'] === 'approved' && !isset($copy[$type])) {
             $copy[$type] = trim((string) $row['content']);
         }
     }
-    if ($strategy === '' || $copy === []) {
+    if ($strategy === null || $copy === []) {
         http_response_code(409);
         echo json_encode(['error' => rateb_ui_error('image_locked'), 'code' => 'image_locked'], JSON_UNESCAPED_UNICODE);
         exit;
@@ -403,19 +403,37 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
     if ($product === '') {
         $product = trim((string) ($campaign['title'] ?? ''));
     }
-    $subject = $product !== '' ? $product : $copyLine;
-    $haystack = mb_strtolower($subject . ' ' . $copyLine);
-    $software = preg_match('/rateb|راتب|منص|تطبيق|برنامج|ذكاء|ai|saas|software/u', $haystack) === 1;
-    if ($software) {
-        $scene = 'Studio product photo of one open laptop and one smartphone on a clean desk. Both screens are a blank purple dashboard with simple charts and no letters. The product is ' . $subject . '.';
-    } else {
-        $scene = 'Studio product photo of only this product, shown as the physical item itself: ' . $subject . '. Plain background, commercial lighting.';
-    }
-    $prompt = $scene . ' ### person, woman, man, face, hijab, portrait, crowd, text, letters, calligraphy, logo, watermark, street';
+    $direction = rateb_prompt_plain($strategy['creative_direction'] ?? '', 'ar');
+    $message = rateb_prompt_plain($strategy['core_message'] ?? '', 'ar');
+    $idea = trim($product . ' ' . $copyLine . ' ' . $direction . ' ' . $message . ' ' . (string) ($campaign['title'] ?? '') . ' ' . (string) ($campaign['description'] ?? ''));
+    $prompt = ai_image_scene($idea) . ' ### person, woman, man, face, hijab, portrait, crowd, text, letters, calligraphy, logo, watermark, street';
     if (mb_strlen($prompt) > $limit) {
         $prompt = rtrim(mb_substr($prompt, 0, $limit));
     }
     return trim($prompt);
+}
+
+function ai_image_scene(string $idea): string
+{
+    $text = mb_strtolower($idea);
+    $parts = ['Commercial photograph of the advertised idea, no people'];
+    if (preg_match('/فيديو|سناب|ستوري|ريلز|إعلان|اعلان|advertis|video|story/u', $text) === 1) {
+        $parts[] = 'a desk with one laptop showing a storyboard of advertising video frames and one phone showing a vertical silent video preview, plus a small cinema camera and a blank clapperboard';
+    }
+    if (preg_match('/ذكاء|اصطناعي|\bai\b|artificial/u', $text) === 1) {
+        $parts[] = 'the screens glow purple as an artificial intelligence tool building the video';
+    }
+    if (preg_match('/تمر|قهو|عطر|عطور|طعام|أكل|وجبه|بيتزا|حلويات/u', $text) === 1) {
+        $parts[] = 'the physical product from the offer sits in front of the camera as the hero object';
+    }
+    if (preg_match('/متجر|تسوق|منتج|عروض|خصم/u', $text) === 1 && count($parts) === 1) {
+        $parts[] = 'the offered product centered on a clean table as the only subject';
+    }
+    if (count($parts) === 1) {
+        $parts[] = 'the offered product or service shown as one clear object on a clean table';
+    }
+    $parts[] = 'studio light, square or vertical framing, nothing written anywhere';
+    return implode(', ', $parts);
 }
 
 function ai_image_pending(string $jobId, int $wait = 0): void
