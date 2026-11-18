@@ -247,6 +247,16 @@ function ensure_campaign_schema(PDO $pdo): void
     if (!isset($outputColumns['publish_on'])) {
         $pdo->exec('ALTER TABLE campaign_outputs ADD COLUMN publish_on DATE NULL');
     }
+    try {
+        $mediaColumns = [];
+        foreach ($pdo->query('SHOW COLUMNS FROM campaign_media') as $row) {
+            $mediaColumns[(string) $row['Field']] = true;
+        }
+        if ($mediaColumns !== [] && !isset($mediaColumns['approval_status'])) {
+            $pdo->exec("ALTER TABLE campaign_media ADD COLUMN approval_status VARCHAR(16) NOT NULL DEFAULT 'draft'");
+        }
+    } catch (Throwable) {
+    }
 
     $catalog = [
         ['free', 'مجانية', 'Free', '0.00', 3, 8, 15, 1, 1],

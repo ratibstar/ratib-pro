@@ -202,6 +202,7 @@ jobs:
             "public/assets/css/app.css"
             "app/media/upload.php"
             "app/media/library.php"
+            "app/media/approve.php"
             "campaign.php"
             "dashboard.php"
             "campaign-copy.php"

@@ -1112,7 +1112,11 @@
           if (!payload.pending) break;
           if (status) {
             status.className = 'notice stage-status';
-            status.textContent = dict[language].generating_image;
+            status.textContent = language === 'ar' ? 'الصورة تُجهّز. يمكنك تحديث الصفحة بعد قليل.' : 'The image is being prepared. You can refresh shortly.';
+          }
+          if (button) {
+            button.disabled = false;
+            button.classList.remove('is-busy');
           }
           await new Promise(function (resolve) { setTimeout(resolve, 3000); });
         }

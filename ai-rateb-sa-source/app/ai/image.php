@@ -114,7 +114,7 @@ $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type
 $modelList = json_decode($models['body'], true);
 $workers = 0;
 $imageModel = '';
-$preferred = ['Deliberate', 'Realistic Vision', 'ICBINP - I Can\'t Believe It\'s Not Photography', 'stable_diffusion'];
+$preferred = ['Realistic Vision', 'ICBINP - I Can\'t Believe It\'s Not Photography', 'Deliberate', 'stable_diffusion'];
 $counts = [];
 if (is_array($modelList)) {
     foreach ($modelList as $row) {
@@ -138,17 +138,7 @@ if ($models['http'] === 200 && $workers < 1) {
 }
 
 if ($imageModel === '') {
-    $imageModel = 'Deliberate';
-}
-$charge = rateb_reservation_charge(db(), $usageId, $userId, 'ai_image', $campaignId);
-if ($charge !== 'ok') {
-    ai_image_release($userId, '', $usageId, 'failed');
-    if ($charge === 'credits') {
-        rateb_credit_stop($userId, 'ai_image');
-    }
-    http_response_code(409);
-    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
-    exit;
+    $imageModel = 'Realistic Vision';
 }
 
 $payload = json_encode([
@@ -395,34 +385,25 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
         echo json_encode(['error' => rateb_ui_error('image_locked'), 'code' => 'image_locked'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $document = rateb_strategy_document($strategy) ?? [];
-    $prefer = (string) (rateb_output_language(db(), $campaign)['speech'] ?? 'ar');
     $copyLine = '';
     foreach (array_merge(['headline'], rateb_copy_types()) as $type) {
         if (empty($copy[$type])) {
             continue;
         }
-        $copyLine = rateb_prompt_plain($copy[$type], $prefer);
+        $copyLine = rateb_prompt_plain($copy[$type], 'ar');
         if ($copyLine !== '') {
             break;
         }
     }
-    $brand = [];
-    $brandStmt = db()->prepare('SELECT brand_name, tone, primary_color, secondary_color, forbidden, offer_line FROM brand_kits WHERE user_id = ?');
-    $brandStmt->execute([(int) ($campaign['user_id'] ?? 0)]);
-    $brandRow = $brandStmt->fetch();
-    if ($brandRow) {
-        $brand = $brandRow;
+    $offer = trim($copyLine !== '' ? $copyLine : (string) ($campaign['product_name'] ?? ''));
+    if ($offer === '') {
+        $offer = trim((string) ($campaign['title'] ?? ''));
     }
-    $prompt = rateb_visual_prompt(
-        array_merge(['Advertising photograph'], rateb_visual_lines($campaign, $document, $copyLine, $brand, $prefer)),
-        'No written text and no logo.',
-        $limit
-    );
-    if (trim($prompt) === '') {
-        http_response_code(422);
-        echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
-        exit;
+    $prompt = 'Product advertisement for this exact offer: ' . $offer
+        . '. Show the product or service itself. A software platform is a laptop and a phone with a clean interface, not a person. '
+        . 'No humans, no portraits, no traditional clothing, no street scene, no written text, and no logo.';
+    if (mb_strlen($prompt) > $limit) {
+        $prompt = rtrim(mb_substr($prompt, 0, $limit));
     }
     return trim($prompt);
 }

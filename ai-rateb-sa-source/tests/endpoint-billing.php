@@ -176,64 +176,64 @@ function job_store(string $dir): array
     return json_decode($raw, true)['jobs'] ?? [];
 }
 
-// Image: a new request charges before submitting and leaves one pending job.
+// Image: a new request stays uncharged and pending at the provider.
 [$dir, $start, $pending] = pending_image();
 $reservation = rows($pending, 'image');
 check($pending['http'] === 200 && ($pending['json']['pending'] ?? false) === true && ($pending['json']['job_id'] ?? '') === JOB, 'image: a new request returns the pending provider job');
-check(balance($pending) === 90 && count(rows($pending, 'ai_image')) === 1, 'image: a new request charges 10 credits once');
-check(count($reservation) === 1 && $reservation[0]['status'] === 'reserved' && (int) $reservation[0]['credits_deducted'] === 10, 'image: the charge is recorded on the open reservation');
+check(balance($pending) === 100 && rows($pending, 'ai_image') === [], 'image: a new request does not charge before approval');
+check(count($reservation) === 1 && $reservation[0]['status'] === 'reserved' && (int) $reservation[0]['credits_deducted'] === 0, 'image: the open reservation has no charge yet');
 $posts = calls($pending, 'POST', HORDE . 'generate/async');
-check(count($posts) === 1 && $posts[0]['balance'] === 90, 'image: the credits are taken before the provider submit');
+check(count($posts) === 1 && $posts[0]['balance'] === 100, 'image: the provider submit happens before any charge');
 check(calls($pending, 'GET', HORDE . 'status/models')[0]['balance'] === 100, 'image: the worker check happens before any charge');
 check(isset($pending['session']['ai_image_jobs'][JOB]) && count(job_store($dir)) === 1 && job_store($dir)[0]['phase'] === 'pending', 'image: the job is bound to the session and the job store');
 check($pending['unexpected'] === [], 'image: no unexpected provider calls on a new request');
 
-// Image: polling a job that is still running never charges again.
+// Image: polling a job that is still running never charges.
 $poll = run_endpoint(poll($start, $pending, [check_reply(['done' => false, 'wait_time' => 7])]), $dir);
 check($poll['http'] === 200 && ($poll['json']['pending'] ?? false) === true && ($poll['json']['wait'] ?? 0) === 7, 'image poll: a running job stays pending');
-check(balance($poll) === 90 && $poll['events'] == $pending['events'] && $poll['next_id'] === $pending['next_id'], 'image poll: polling adds no charge and no reservation');
+check(balance($poll) === 100 && $poll['events'] == $pending['events'] && $poll['next_id'] === $pending['next_id'], 'image poll: polling adds no charge and no reservation');
 check(calls($poll, 'POST') === [] && $poll['unexpected'] === [], 'image poll: polling does not submit a new job');
 $poll2 = run_endpoint(poll($start, $poll, [check_reply(['done' => false, 'wait_time' => 3])]), $dir);
-check(balance($poll2) === 90 && $poll2['events'] == $pending['events'], 'image poll: a second poll still adds no charge');
+check(balance($poll2) === 100 && $poll2['events'] == $pending['events'], 'image poll: a second poll still adds no charge');
 
 // Image: a repeat new request while the job runs resumes it instead of charging.
 $again = carry($start, $pending);
 $again['provider'] = [check_reply(['done' => false, 'wait_time' => 5])];
 $again = run_endpoint($again, $dir);
-check(($again['json']['job_id'] ?? '') === JOB && balance($again) === 90 && $again['events'] == $pending['events'], 'image: a repeat request while pending resumes the job without a second charge');
+check(($again['json']['job_id'] ?? '') === JOB && balance($again) === 100 && $again['events'] == $pending['events'], 'image: a repeat request while pending resumes the job without a second charge');
 check(calls($again, 'POST') === [] && $again['unexpected'] === [], 'image: a repeat request while pending submits nothing');
 
-// Image: a finished job is stored and the reservation completes without a refund.
+// Image: a finished job is stored and still uncharged until approval.
 $done = run_endpoint(poll($start, $poll, done_replies()), $dir);
 $reservation = rows($done, 'image');
 check($done['http'] === 200 && ($done['json']['ok'] ?? false) === true && $done['stores'] === 1, 'image poll: a finished job is stored');
-check(balance($done) === 90 && $reservation[0]['status'] === 'completed' && rows($done, 'ai_image_refund') === [], 'image poll: completion keeps the single charge and refunds nothing');
+check(balance($done) === 100 && $reservation[0]['status'] === 'completed' && rows($done, 'ai_image') === [], 'image poll: completion stores the image without charging');
 check(job_store($dir) === [] && !isset($done['session']['ai_image_jobs'][JOB]), 'image poll: completion clears the job');
 $replay = run_endpoint(poll($start, $done, []), $dir);
-check($replay['http'] === 404 && balance($replay) === 90 && $replay['events'] == $done['events'] && $replay['calls'] === [], 'image poll: replaying a finished job neither charges nor refunds');
+check($replay['http'] === 404 && balance($replay) === 100 && $replay['events'] == $done['events'] && $replay['calls'] === [], 'image poll: replaying a finished job neither charges nor refunds');
 
-// Image: a result on an untrusted host is refunded exactly once.
+// Image: a result on an untrusted host is discarded without a refund.
 [$dir, $start, $pending] = pending_image();
 $bad = run_endpoint(poll($start, $pending, array_slice(done_replies('https://evil.example/out.png'), 0, 2)), $dir);
-check($bad['http'] === 502 && balance($bad) === 100 && count(rows($bad, 'ai_image_refund')) === 1 && rows($bad, 'image')[0]['status'] === 'failed', 'image poll: an untrusted result host refunds the charge');
+check($bad['http'] === 502 && balance($bad) === 100 && rows($bad, 'ai_image_refund') === [] && rows($bad, 'image')[0]['status'] === 'failed', 'image poll: an untrusted result host stores nothing and charges nothing');
 check($bad['stores'] === 0 && job_store($dir) === [], 'image poll: an untrusted result is not stored and the job is cleared');
 $replay = run_endpoint(poll($start, $bad, []), $dir);
-check($replay['http'] === 404 && balance($replay) === 100 && count(rows($replay, 'ai_image_refund')) === 1, 'image poll: replaying a refunded job does not refund twice');
+check($replay['http'] === 404 && balance($replay) === 100 && rows($replay, 'ai_image_refund') === [], 'image poll: replaying a rejected job does not charge');
 
-// Image: a provider fault while polling is refunded.
+// Image: a provider fault while polling charges nothing.
 [$dir, $start, $pending] = pending_image();
 $faulted = run_endpoint(poll($start, $pending, [check_reply(['faulted' => true])]), $dir);
-check($faulted['http'] === 502 && balance($faulted) === 100 && count(rows($faulted, 'ai_image_refund')) === 1, 'image poll: a faulted provider job refunds the charge');
+check($faulted['http'] === 502 && balance($faulted) === 100 && rows($faulted, 'ai_image_refund') === [], 'image poll: a faulted provider job charges nothing');
 
-// Image: a storage failure after the provider finished is refunded.
+// Image: a storage failure after the provider finished charges nothing.
 [$dir, $start, $pending] = pending_image();
 $scenario = poll($start, $pending, done_replies());
 $scenario['storage_fails'] = true;
 $stored = run_endpoint($scenario, $dir);
 check($stored['http'] === 500 && ($stored['json']['code'] ?? '') === 'image_storage', 'image poll: a storage failure reports image_storage');
-check(balance($stored) === 100 && count(rows($stored, 'ai_image_refund')) === 1 && rows($stored, 'image')[0]['status'] === 'failed', 'image poll: a storage failure refunds the charge once');
+check(balance($stored) === 100 && rows($stored, 'ai_image_refund') === [] && rows($stored, 'image')[0]['status'] === 'failed', 'image poll: a storage failure charges nothing');
 
-// Image: an expired job is refunded once and reported as a timeout.
+// Image: an expired job is closed without a charge.
 [$dir, $start, $pending] = pending_image();
 $jobs = job_store($dir);
 $jobs[0]['created'] = time() - 1000;
@@ -241,18 +241,18 @@ file_put_contents($dir . DIRECTORY_SEPARATOR . 'user-' . USER . '.json', json_en
 $pending['session']['ai_image_jobs'][JOB]['created'] = time() - 1000;
 $expired = run_endpoint(poll($start, $pending, []), $dir);
 check($expired['http'] === 504 && ($expired['json']['code'] ?? '') === 'image_timeout' && $expired['calls'] === [], 'image poll: an expired job times out without calling the provider');
-check(balance($expired) === 100 && count(rows($expired, 'ai_image_refund')) === 1 && rows($expired, 'image')[0]['status'] === 'failed', 'image poll: an expired job refunds the charge once');
+check(balance($expired) === 100 && rows($expired, 'ai_image_refund') === [] && rows($expired, 'image')[0]['status'] === 'failed', 'image poll: an expired job charges nothing');
 
-// Image: a failed submit is refunded, after the charge was taken.
+// Image: a failed submit charges nothing.
 $dir = job_dir();
 $failed = run_endpoint(image_request(100, [models(), submit(500)]), $dir);
-check($failed['http'] === 500 && calls($failed, 'POST')[0]['balance'] === 90, 'image: a failed submit was attempted after the charge');
-check(balance($failed) === 100 && count(rows($failed, 'ai_image_refund')) === 1 && rows($failed, 'image')[0]['status'] === 'failed' && job_store($dir) === [], 'image: a failed submit refunds the charge and clears the claim');
+check($failed['http'] === 500 && calls($failed, 'POST')[0]['balance'] === 100, 'image: a failed submit was attempted before any charge');
+check(balance($failed) === 100 && rows($failed, 'ai_image_refund') === [] && rows($failed, 'image')[0]['status'] === 'failed' && job_store($dir) === [], 'image: a failed submit charges nothing and clears the claim');
 
-// Image: an invalid provider job id is refunded.
+// Image: an invalid provider job id charges nothing.
 $dir = job_dir();
 $invalid = run_endpoint(image_request(100, [models(), submit(202, 'not-a-job')]), $dir);
-check($invalid['http'] === 502 && balance($invalid) === 100 && count(rows($invalid, 'ai_image_refund')) === 1 && job_store($dir) === [], 'image: an invalid provider job id refunds the charge');
+check($invalid['http'] === 502 && balance($invalid) === 100 && rows($invalid, 'ai_image_refund') === [] && job_store($dir) === [], 'image: an invalid provider job id charges nothing');
 
 // Image: no workers means no charge and no submit.
 $dir = job_dir();
@@ -260,11 +260,11 @@ $idle = run_endpoint(image_request(100, [models(0)]), $dir);
 check($idle['http'] === 503 && ($idle['json']['code'] ?? '') === 'image_workers', 'image: no workers reports image_workers');
 check(balance($idle) === 100 && rows($idle, 'ai_image') === [] && calls($idle, 'POST') === [] && rows($idle, 'image')[0]['status'] === 'failed', 'image: no workers charges nothing, submits nothing, and closes the reservation');
 
-// Image: a low balance stops before the provider submit.
+// Image: a low balance can still request an image. The charge happens on approval.
 $dir = job_dir();
-$poor = run_endpoint(image_request(5, [models()]), $dir);
-check($poor['http'] === 402 && ($poor['json']['code'] ?? '') === 'credits', 'image: a low balance returns a credit stop');
-check(balance($poor) === 5 && rows($poor, 'ai_image') === [] && calls($poor, 'POST') === [] && rows($poor, 'image')[0]['status'] === 'failed' && job_store($dir) === [], 'image: a low balance charges nothing, submits nothing, and closes the reservation');
+$poor = run_endpoint(image_request(5, [models(), submit()]), $dir);
+check($poor['http'] === 200 && ($poor['json']['pending'] ?? false) === true, 'image: a low balance still starts the image');
+check(balance($poor) === 5 && rows($poor, 'ai_image') === [] && count(calls($poor, 'POST')) === 1, 'image: a low balance is not charged before approval');
 
 // Image: the plan limit is enforced before any provider call or charge.
 $dir = job_dir();

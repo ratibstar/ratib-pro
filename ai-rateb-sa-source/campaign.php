@@ -545,6 +545,9 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <button class="primary" type="submit" data-i18n="attach_images_button"><?= $arabic ? 'أرفق الصورة' : 'Attach image' ?></button>
       </form>
     <?php endif; ?>
+    <?php if (($_GET['credits'] ?? '') === '1'): ?>
+      <p class="notice is-error"><?= $arabic ? 'الرصيد لا يكفي لاعتماد الصورة.' : 'Not enough credits to approve this image.' ?></p>
+    <?php endif; ?>
     <?php if (($_GET['media_error'] ?? '') !== ''): ?>
       <p class="notice is-error" data-i18n="attach_failed"><?= $arabic ? 'تعذر إرفاق الصورة. استخدم JPG أو PNG أو WEBP بحجم مناسب.' : 'The image could not be attached. Use a JPG, PNG, or WEBP file within the size limit.' ?></p>
     <?php endif; ?>
@@ -564,6 +567,15 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
               <input type="hidden" name="panel" value="images">
               <button type="submit" class="quiet" data-i18n="delete"><?= $arabic ? 'حذف' : 'Delete' ?></button>
             </form>
+            <?php if ((string) ($item['source'] ?? '') === 'ai' && (string) ($item['approval_status'] ?? 'draft') !== 'approved'): ?>
+            <form method="post" action="/app/media/approve.php">
+              <input type="hidden" name="csrf" value="<?= $csrf ?>">
+              <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+              <button type="submit" class="primary"><?= $arabic ? 'اعتماد الصورة' : 'Approve image' ?></button>
+            </form>
+            <?php elseif ((string) ($item['approval_status'] ?? '') === 'approved'): ?>
+            <p class="badge"><?= $arabic ? 'معتمدة' : 'Approved' ?></p>
+            <?php endif; ?>
           </article>
         <?php endforeach; ?>
       </div>

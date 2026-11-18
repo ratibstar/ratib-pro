@@ -166,7 +166,7 @@ final class FakeStatement extends PDOStatement
                     }
                 }
                 return true;
-            case "SELECT s.id AS subscription_id, s.plan_id, p.code, p.name_ar, p.name_en, p.price_sar, p.video_limit, p.video_max_seconds, p.image_limit, p.watermark, p.is_active FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.user_id = ? AND s.status = 'active' ORDER BY s.id DESC LIMIT 1 FOR UPDATE":
+            case "SELECT s.id AS subscription_id, s.plan_id, s.period_end, p.code, p.name_ar, p.name_en, p.price_sar, p.video_limit, p.video_max_seconds, p.image_limit, p.watermark, p.is_active FROM subscriptions s INNER JOIN plans p ON p.id = s.plan_id WHERE s.user_id = ? AND s.status = 'active' ORDER BY s.id DESC LIMIT 1 FOR UPDATE":
                 if ($db->plan !== null) {
                     $this->result = [$db->plan];
                 }
