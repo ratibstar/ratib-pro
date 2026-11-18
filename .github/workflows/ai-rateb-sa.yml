@@ -242,6 +242,7 @@ jobs:
             "cli/reconcile-pending-payments.php"
             "cli/enforce-subscription-expiry.php"
             "cli/apply-commerce-schema.php"
+            "cli/restore-campaign-80-credits.php"
             "cli/run-commerce-now.php"
             "cli/set-platform-owner-password.php"
             "migrations/payment_commerce_schema.php"
@@ -434,6 +435,8 @@ jobs:
           if needs_commerce_ops; then
           SCHEMA_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/apply-commerce-schema.php" 2>&1)" || true
           echo "$SCHEMA_OUT"
+          RESTORE_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/restore-campaign-80-credits.php" 2>&1)" || true
+          echo "$RESTORE_OUT"
           COMMERCE_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/run-commerce-now.php" 2>&1)" || true
           echo "$COMMERCE_OUT"
           CRON_OUT="$("${SSH[@]}" "$REMOTE" "TARGET='${TARGET}' bash -s" <<'CRON'
