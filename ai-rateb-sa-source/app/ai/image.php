@@ -414,7 +414,7 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
     $direction = rateb_prompt_plain($strategy['creative_direction'] ?? '', 'ar');
     $message = rateb_prompt_plain($strategy['core_message'] ?? '', 'ar');
     $idea = trim($product . ' ' . $copyLine . ' ' . $direction . ' ' . $message . ' ' . (string) ($campaign['title'] ?? '') . ' ' . (string) ($campaign['description'] ?? ''));
-    $prompt = ai_image_scene($idea) . ' ### person, face, hijab, neon, purple room, cyberpunk, empty office, gaming chair, treadmill, wide room, text, letters, logo';
+    $prompt = ai_image_scene($idea) . ' ### landscape, hills, nature wallpaper, closed phone, face down tablet, neon, purple room, empty office, person, face, text, letters, logo';
     if (mb_strlen($prompt) > $limit) {
         $prompt = rtrim(mb_substr($prompt, 0, $limit));
     }
@@ -424,8 +424,15 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
 function ai_image_scene(string $idea): string
 {
     $text = mb_strtolower($idea);
+    $brand = 'the advertised product';
+    if (preg_match('/rateb\\s*ai|rateb/iu', $idea, $brandMatch) === 1) {
+        $brand = strtoupper(trim($brandMatch[0]));
+        if (!str_contains($brand, 'AI')) {
+            $brand .= ' AI';
+        }
+    }
     if (preg_match('/فيديو|سناب|ستوري|ريلز|إعلان|اعلان|advertis|video|story/u', $text) === 1) {
-        return 'close-up photograph, white desk, daylight, one smartphone standing upright playing a vertical product video, one open laptop behind it showing a video editing timeline, photorealistic advertising still, no people, no letters';
+        return $brand . ' advertisement for a platform that creates advertising videos, the whole frame is a smartphone screen playing a vertical video ad, a laptop corner shows a video editing timeline, not a nature wallpaper, white desk, daylight, photorealistic';
     }
     if (preg_match('/تمر|قهو|عطر|عطور|طعام|أكل|وجبه|بيتزا|حلويات/u', $text) === 1) {
         return 'close-up photograph of the physical product from the offer on a clean table, daylight, commercial food or goods photo, no people, no letters, no packaging text';
