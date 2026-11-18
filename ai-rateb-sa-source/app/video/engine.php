@@ -539,8 +539,11 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
         $cmd .= ' -vf ' . escapeshellarg($filter) . ' -an';
     }
     $cmd .= ' -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . escapeshellarg($out);
-    $code = 1;
     if (!function_exists('proc_open')) {
+        $fallback = rateb_video_single_clip($dir, $job, $scenes);
+        if ($fallback !== null) {
+            return $fallback;
+        }
         throw new RuntimeException('storage');
     }
     $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
@@ -553,13 +556,35 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     fclose($pipes[2]);
     $code = proc_close($process);
     $bytes = is_file($out) ? file_get_contents($out) : false;
-    if ($code !== 0 || !is_string($bytes) || !str_contains(substr($bytes, 0, 32), 'ftyp')) {
-        if ((int) $job['watermark'] === 1) {
-            throw new RuntimeException('watermark');
-        }
-        throw new RuntimeException('storage');
+    if ($code === 0 && is_string($bytes) && str_contains(substr($bytes, 0, 32), 'ftyp')) {
+        return $bytes;
     }
-    return $bytes;
+    $fallback = rateb_video_single_clip($dir, $job, $scenes);
+    if ($fallback !== null) {
+        return $fallback;
+    }
+    if ((int) $job['watermark'] === 1) {
+        throw new RuntimeException('watermark');
+    }
+    throw new RuntimeException('storage');
+}
+
+/** @param array<int,array<string,mixed>> $scenes */
+function rateb_video_single_clip(string $dir, array $job, array $scenes): ?string
+{
+    $found = null;
+    foreach ($scenes as $index => $scene) {
+        $clip = $dir . '/' . (int) $job['id'] . '-' . $index . '.mp4';
+        $bytes = is_file($clip) ? file_get_contents($clip) : false;
+        if (!is_string($bytes) || !str_contains(substr($bytes, 0, 32), 'ftyp')) {
+            continue;
+        }
+        if ($found !== null) {
+            return null;
+        }
+        $found = $bytes;
+    }
+    return $found;
 }
 
 function rateb_video_message(string $code, bool $arabic): string
