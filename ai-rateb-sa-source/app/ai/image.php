@@ -50,7 +50,7 @@ ai_image_dispatch($campaign, $decision, $postedJobId, $now);
 $ratio = (string) ($_POST['ratio'] ?? '1:1');
 $ratioSize = match ($ratio) {
     '4:5' => [512, 640],
-    '9:16' => [576, 1024],
+    '9:16' => [320, 576],
     default => [512, 512],
 };
 if (!in_array($ratio, ['1:1', '4:5', '9:16'], true)) {
@@ -399,13 +399,19 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
             break;
         }
     }
-    $offer = trim($copyLine !== '' ? $copyLine : (string) ($campaign['product_name'] ?? ''));
-    if ($offer === '') {
-        $offer = trim((string) ($campaign['title'] ?? ''));
+    $product = trim((string) ($campaign['product_name'] ?? ''));
+    if ($product === '') {
+        $product = trim((string) ($campaign['title'] ?? ''));
     }
-    $prompt = 'Product advertisement for this exact offer: ' . $offer
-        . '. Show the product or service itself. A software platform is a laptop and a phone with a clean interface, not a person. '
-        . 'No humans, no portraits, no traditional clothing, no street scene, no written text, and no logo.';
+    $subject = $product !== '' ? $product : $copyLine;
+    $haystack = mb_strtolower($subject . ' ' . $copyLine);
+    $software = preg_match('/rateb|راتب|منص|تطبيق|برنامج|ذكاء|ai|saas|software/u', $haystack) === 1;
+    if ($software) {
+        $scene = 'Studio product photo of one open laptop and one smartphone on a clean desk. Both screens are a blank purple dashboard with simple charts and no letters. The product is ' . $subject . '.';
+    } else {
+        $scene = 'Studio product photo of only this product, shown as the physical item itself: ' . $subject . '. Plain background, commercial lighting.';
+    }
+    $prompt = $scene . ' ### person, woman, man, face, hijab, portrait, crowd, text, letters, calligraphy, logo, watermark, street';
     if (mb_strlen($prompt) > $limit) {
         $prompt = rtrim(mb_substr($prompt, 0, $limit));
     }
