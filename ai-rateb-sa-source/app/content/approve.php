@@ -42,6 +42,14 @@ if (!$output || !in_array((string) $output['output_type'], rateb_copy_types(), t
     http_response_code(404);
     exit(ui_language() === 'ar' ? 'النص غير موجود.' : 'The copy was not found.');
 }
-db()->prepare("UPDATE campaign_outputs SET approval_status = 'approved' WHERE id = ? AND campaign_id = ?")->execute([$outputId, $id]);
+$status = (string) ($_POST['approval_status'] ?? 'approved');
+if (!in_array($status, ['draft', 'review', 'approved'], true)) {
+    $status = 'approved';
+}
+$publishOn = trim((string) ($_POST['publish_on'] ?? ''));
+if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $publishOn) !== 1) {
+    $publishOn = '';
+}
+db()->prepare('UPDATE campaign_outputs SET approval_status = ?, publish_on = NULLIF(?, \'\') WHERE id = ? AND campaign_id = ?')->execute([$status, $publishOn, $outputId, $id]);
 header('Location: /campaign.php?id=' . $id . '#copy');
 exit;

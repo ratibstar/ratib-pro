@@ -233,6 +233,16 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <div class="workspace-head">
       <div>
         <h1><?= e((string) $campaign['title']) ?></h1>
+        <?php
+          $aiCfg = require __DIR__ . '/config/ai.php';
+          $providerGaps = [];
+          if (trim((string) ($aiCfg['api_key'] ?? '')) === '') { $providerGaps[] = $arabic ? 'النص' : 'text'; }
+          if (trim((string) ($aiCfg['horde_api_key'] ?? '')) === '') { $providerGaps[] = $arabic ? 'الصور' : 'images'; }
+          if (trim((string) ($aiCfg['sawtak_api_key'] ?? '')) === '') { $providerGaps[] = $arabic ? 'الصوت' : 'voice'; }
+        ?>
+        <?php if ($providerGaps !== []): ?>
+        <p class="alert"><?= $arabic ? 'غير مهيأ على الخادم: ' : 'Not configured on the server: ' ?><?= e(implode('، ', $providerGaps)) ?>. <?= $arabic ? 'أعد المحاولة بعد ضبط المفتاح. الرصيد لا يُخصم عند فشل المزود.' : 'Retry after the key is set. Credits are not kept when a provider fails.' ?></p>
+        <?php endif; ?>
         <span class="badge status-<?= e($status) ?>" data-i18n="status_<?= e($status) ?>"><?= e($statusLabels[$status] ?? $status) ?></span>
       </div>
     </div>
@@ -475,7 +485,8 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
               <?php endforeach; ?>
             <?php endif; ?>
           </div>
-          <p class="badge" data-i18n="<?= $approved ? 'copy_approved' : 'copy_draft' ?>"><?= $approved ? ($arabic ? 'معتمد' : 'Approved') : ($arabic ? 'مسودة' : 'Draft') ?></p>
+          <?php $copyState = (string) ($row['approval_status'] ?? 'draft'); if (!in_array($copyState, ['draft', 'review', 'approved'], true)) { $copyState = 'draft'; } $stateLabel = ['draft' => $arabic ? 'مسودة' : 'Draft', 'review' => $arabic ? 'مراجعة' : 'Review', 'approved' => $arabic ? 'معتمد' : 'Approved'][$copyState]; ?>
+          <p class="badge"><?= e($stateLabel) ?><?php if (!empty($row['publish_on'])): ?> · <?= e((string) $row['publish_on']) ?><?php endif; ?></p>
           <div class="action-row">
             <button type="button" class="quiet" data-copy="<?= e($copyId) ?>" data-i18n="copy_button"><?= $arabic ? 'نسخ' : 'Copy' ?></button>
             <form data-ai="1" data-status="copy-status" data-busy="generating_copy" data-locked="<?= $approved ? '1' : '0' ?>">
@@ -486,14 +497,18 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
               <input type="hidden" name="confirm" value="0">
               <button class="quiet" type="submit" data-i18n="regenerate"><?= $arabic ? 'إعادة توليد' : 'Regenerate' ?></button>
             </form>
-            <?php if (!$approved): ?>
               <form method="post" action="/app/content/approve.php">
                 <input type="hidden" name="csrf" value="<?= $csrf ?>">
                 <input type="hidden" name="campaign_id" value="<?= $id ?>">
                 <input type="hidden" name="output_id" value="<?= (int) $row['id'] ?>">
-                <button class="primary" type="submit" data-i18n="approve_output"><?= $arabic ? 'اعتماد' : 'Approve' ?></button>
+                <select name="approval_status">
+                  <option value="draft" <?= $copyState === 'draft' ? 'selected' : '' ?>><?= $arabic ? 'مسودة' : 'Draft' ?></option>
+                  <option value="review" <?= $copyState === 'review' ? 'selected' : '' ?>><?= $arabic ? 'مراجعة' : 'Review' ?></option>
+                  <option value="approved" <?= $copyState === 'approved' ? 'selected' : '' ?>><?= $arabic ? 'اعتماد' : 'Approved' ?></option>
+                </select>
+                <input type="date" name="publish_on" value="<?= e((string) ($row['publish_on'] ?? '')) ?>">
+                <button class="primary" type="submit"><?= $arabic ? 'حفظ الحالة' : 'Save status' ?></button>
               </form>
-            <?php endif; ?>
             <details class="text-edit">
               <summary><?= $arabic ? 'تعديل' : 'Edit' ?></summary>
               <form method="post" action="/app/content/text-save.php">

@@ -164,7 +164,7 @@ foreach ($pricingPlans as $planRow) {
       <div class="voice-filters">
         <input type="search" data-voice-search placeholder="ابحث بالاسم">
         <select data-voice-country><option value="">اختر الدولة</option></select>
-        <select data-voice-dialect disabled><option value="">اختر اللهجة</option></select>
+        <select data-voice-dialect><option value="">اختر اللهجة</option></select>
       </div>
       <p class="muted" data-voice-note></p>
       <div class="voice-picks" data-voice-picks></div>

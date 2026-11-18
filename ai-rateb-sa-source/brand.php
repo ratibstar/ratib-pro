@@ -25,7 +25,7 @@ if (!in_array($error, ['size', 'type', 'upload'], true)) {
   <section class="panel">
     <span class="eyebrow" data-i18n="brand_kit">BRAND KIT</span>
     <h1 data-i18n="brand_kit_title">Brand kit</h1>
-    <p class="muted" data-i18n="brand_lead">These details are optional context for future campaign copy.</p>
+    <p class="muted">كل حملة لاحقة تقرأ هذه الذاكرة: الجمهور، العرض، الممنوع، واللهجة.</p>
     <?php if ($error !== ''): ?><p class="alert" data-i18n="media_error_<?= e($error) ?>">The file could not be saved.</p><?php endif; ?>
     <?php if (($_GET['saved'] ?? '') === '1'): ?><p class="muted" data-i18n="brand_saved">Brand kit saved.</p><?php endif; ?>
     <form method="post" action="/app/brand/save.php" enctype="multipart/form-data">
@@ -33,6 +33,16 @@ if (!in_array($error, ['size', 'type', 'upload'], true)) {
       <div class="grid two">
         <label><span data-i18n="brand_name">Brand name</span><input name="brand_name" value="<?= e($brand['brand_name']) ?>"></label>
         <label><span data-i18n="brand_tone">Tone of voice</span><input name="tone" value="<?= e($brand['tone']) ?>"></label>
+        <label><span>الجمهور</span><input name="audience" value="<?= e((string) ($brand['audience'] ?? '')) ?>"></label>
+        <label><span>العرض الحالي</span><input name="offer_line" value="<?= e((string) ($brand['offer_line'] ?? '')) ?>"></label>
+        <label><span>ممنوع ذكره</span><input name="forbidden" value="<?= e((string) ($brand['forbidden'] ?? '')) ?>"></label>
+        <label><span>اللهجة</span>
+          <select name="dialect">
+            <?php foreach (['' => 'بدون تحديد', 'najdi' => 'نجدية', 'hijazi' => 'حجازية', 'khaleeji' => 'خليجية', 'fusha' => 'فصحى إعلانية'] as $code => $label): ?>
+            <option value="<?= e($code) ?>" <?= (($brand['dialect'] ?? '') === $code) ? 'selected' : '' ?>><?= e($label) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
         <label><span data-i18n="brand_contact">Contact information</span><input name="contact" value="<?= e($brand['contact']) ?>"></label>
         <label><span data-i18n="brand_language">Preferred language</span>
           <select name="preferred_language">

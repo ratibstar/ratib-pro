@@ -232,7 +232,7 @@ function rateb_video_prompt_jpeg(string $bytes): ?string
 /** @return array<string,mixed> */
 function rateb_video_brand(PDO $pdo, int $userId): array
 {
-    $stmt = $pdo->prepare('SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
+    $stmt = $pdo->prepare('SELECT brand_name, tone, primary_color, secondary_color, forbidden, offer_line FROM brand_kits WHERE user_id = ?');
     $stmt->execute([$userId]);
     $row = $stmt->fetch();
     return $row ?: [];

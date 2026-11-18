@@ -1400,11 +1400,19 @@ function rateb_workspace_facts(PDO $pdo, array $campaign, array $brief): string
             $lines[] = $label . ': ' . $value;
         }
     }
-    $brand = $pdo->prepare('SELECT brand_name, tone, contact FROM brand_kits WHERE user_id = ?');
+    $brand = $pdo->prepare('SELECT brand_name, tone, contact, audience, offer_line, forbidden, dialect, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
     $brand->execute([(int) ($campaign['user_id'] ?? 0)]);
     $kit = $brand->fetch();
     if ($kit) {
-        foreach (['brand_name' => 'Brand name', 'tone' => 'Brand tone', 'contact' => 'Contact'] as $field => $label) {
+        foreach ([
+            'brand_name' => 'Brand name',
+            'tone' => 'Brand tone',
+            'audience' => 'Brand audience',
+            'offer_line' => 'Current offer',
+            'forbidden' => 'Never mention',
+            'dialect' => 'Dialect',
+            'contact' => 'Contact',
+        ] as $field => $label) {
             $value = trim((string) ($kit[$field] ?? ''));
             if ($value !== '') {
                 $lines[] = $label . ': ' . $value;
@@ -1450,6 +1458,19 @@ function rateb_prompt_plain(mixed $value, string $prefer = 'ar'): string
     return $text;
 }
 
+function rateb_dialect_line(string $code, string $resolved): string
+{
+    if ($resolved === 'en' || !in_array($code, ['najdi', 'hijazi', 'khaleeji', 'fusha'], true)) {
+        return '';
+    }
+    return match ($code) {
+        'najdi' => 'اكتب العربية بنبرة نجدية إعلانية طبيعية.',
+        'hijazi' => 'اكتب العربية بنبرة حجازية إعلانية طبيعية.',
+        'khaleeji' => 'اكتب العربية بنبرة خليجية إعلانية طبيعية.',
+        default => 'اكتب العربية بفصحى إعلانية واضحة.',
+    };
+}
+
 function rateb_brand_visual_lines(array $brand): array
 {
     if ($brand === []) {
@@ -1468,6 +1489,10 @@ function rateb_brand_visual_lines(array $brand): array
     $secondary = strtolower(trim((string) ($brand['secondary_color'] ?? '')));
     if (preg_match('/^#[0-9a-f]{6}$/', $primary) === 1 && preg_match('/^#[0-9a-f]{6}$/', $secondary) === 1) {
         $lines[] = 'Palette: ' . $primary . ' ' . $secondary;
+    }
+    $avoid = trim((string) ($brand['forbidden'] ?? ''));
+    if ($avoid !== '') {
+        $lines[] = 'Avoid: ' . $avoid;
     }
     return $lines;
 }

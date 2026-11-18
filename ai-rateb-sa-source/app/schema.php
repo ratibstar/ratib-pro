@@ -67,9 +67,27 @@ function ensure_campaign_schema(PDO $pdo): void
         preferred_language CHAR(2) NOT NULL DEFAULT 'en',
         tone VARCHAR(160) NOT NULL DEFAULT '',
         contact VARCHAR(255) NOT NULL DEFAULT '',
+        audience VARCHAR(255) NOT NULL DEFAULT '',
+        offer_line VARCHAR(255) NOT NULL DEFAULT '',
+        forbidden VARCHAR(500) NOT NULL DEFAULT '',
+        dialect VARCHAR(16) NOT NULL DEFAULT '',
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $brandColumns = [];
+    foreach ($pdo->query('SHOW COLUMNS FROM brand_kits') as $row) {
+        $brandColumns[(string) $row['Field']] = true;
+    }
+    foreach ([
+        'audience' => "ALTER TABLE brand_kits ADD COLUMN audience VARCHAR(255) NOT NULL DEFAULT ''",
+        'offer_line' => "ALTER TABLE brand_kits ADD COLUMN offer_line VARCHAR(255) NOT NULL DEFAULT ''",
+        'forbidden' => "ALTER TABLE brand_kits ADD COLUMN forbidden VARCHAR(500) NOT NULL DEFAULT ''",
+        'dialect' => "ALTER TABLE brand_kits ADD COLUMN dialect VARCHAR(16) NOT NULL DEFAULT ''",
+    ] as $column => $sql) {
+        if (!isset($brandColumns[$column])) {
+            $pdo->exec($sql);
+        }
+    }
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -225,6 +243,9 @@ function ensure_campaign_schema(PDO $pdo): void
     }
     if (!isset($outputColumns['approval_status'])) {
         $pdo->exec("ALTER TABLE campaign_outputs ADD COLUMN approval_status VARCHAR(16) NOT NULL DEFAULT 'draft'");
+    }
+    if (!isset($outputColumns['publish_on'])) {
+        $pdo->exec('ALTER TABLE campaign_outputs ADD COLUMN publish_on DATE NULL');
     }
 
     $catalog = [

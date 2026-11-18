@@ -396,7 +396,7 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
         }
     }
     $brand = [];
-    $brandStmt = db()->prepare('SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?');
+    $brandStmt = db()->prepare('SELECT brand_name, tone, primary_color, secondary_color, forbidden, offer_line FROM brand_kits WHERE user_id = ?');
     $brandStmt->execute([(int) ($campaign['user_id'] ?? 0)]);
     $brandRow = $brandStmt->fetch();
     if ($brandRow) {

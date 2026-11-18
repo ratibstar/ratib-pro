@@ -176,12 +176,20 @@ if ($fullText) {
 $decision = rateb_output_language(db(), $campaign);
 $resolved = (string) $decision['resolved'];
 $facts = rateb_workspace_facts(db(), $campaign, $brief);
+$dialectCode = '';
+if (preg_match('/^Dialect: (najdi|hijazi|khaleeji|fusha)$/m', $facts, $dialectMatch) === 1) {
+    $dialectCode = $dialectMatch[1];
+}
+$dialectLine = rateb_dialect_line($dialectCode, $resolved);
 if ($resolved === 'ar') {
     $system = 'أنت RATEB. أعد كائن JSON واحدًا فقط. كل قيمة جملة أو جملتان بالعربية. لا تخترع سعرًا أو تاريخًا أو مدينة أو جمهورًا أو قناة غير مذكورة في الحقائق. إذا نقصت معلومة فاكتب: لم يُحدد.';
 } elseif ($resolved === 'en') {
     $system = 'You are RATEB. Return one JSON object only. Each value is one or two short English sentences. Do not invent a price, date, place, audience, or channel that is not in the facts. If a fact is missing, write: Not specified.';
 } else {
     $system = 'You are RATEB. Return one JSON object only. Each value is an object with ar and en. ar is Arabic only and en is English only. Do not invent a price, date, place, audience, or channel that is not in the facts.';
+}
+if ($dialectLine !== '') {
+    $system .= ' ' . $dialectLine . ' التزم بالعرض والجمهور، ولا تذكر ما ورد تحت Never mention.';
 }
 
 if ($stage === 'strategy') {

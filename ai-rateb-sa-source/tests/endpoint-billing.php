@@ -124,7 +124,7 @@ function image_request(int $balance, array $provider): array
             ['output_type' => 'headline', 'content' => 'Fresh dates for Ramadan', 'approval_status' => 'approved'],
             ['output_type' => 'strategy', 'content' => json_encode($strategy), 'approval_status' => 'approved'],
         ]],
-        ['sql' => 'SELECT brand_name, tone, primary_color, secondary_color FROM brand_kits WHERE user_id = ?', 'rows' => []],
+        ['sql' => 'SELECT brand_name, tone, primary_color, secondary_color, forbidden, offer_line FROM brand_kits WHERE user_id = ?', 'rows' => []],
     ];
     $scenario['provider'] = $provider;
     return $scenario;

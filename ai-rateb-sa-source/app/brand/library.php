@@ -19,6 +19,10 @@ function brand_owned(): array
             'preferred_language' => 'en',
             'tone' => '',
             'contact' => '',
+            'audience' => '',
+            'offer_line' => '',
+            'forbidden' => '',
+            'dialect' => '',
         ];
     }
     $stmt = db()->prepare('SELECT * FROM brand_kits WHERE user_id = ?');
@@ -33,6 +37,10 @@ function brand_owned(): array
         'preferred_language' => 'en',
         'tone' => '',
         'contact' => '',
+        'audience' => '',
+        'offer_line' => '',
+        'forbidden' => '',
+        'dialect' => '',
     ];
 }
 
