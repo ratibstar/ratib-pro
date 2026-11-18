@@ -23,6 +23,24 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
 
 set_time_limit(60);
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
+if (isset($_FILES['poster']) && (int) ($_FILES['poster']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+    $bytes = (string) file_get_contents((string) $_FILES['poster']['tmp_name']);
+    $mime = ai_image_mime($bytes);
+    if ($mime === null || strlen($bytes) < 32 || strlen($bytes) > media_max_bytes('image')) {
+        http_response_code(422);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
+    $mediaId = media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ad-poster.png', $mime, $bytes);
+    echo json_encode([
+        'ok' => true,
+        'state' => 'ready',
+        'media_id' => $mediaId,
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 $now = time();
 $userId = (int) $_SESSION['user_id'];
 $campaignId = (int) $campaign['id'];

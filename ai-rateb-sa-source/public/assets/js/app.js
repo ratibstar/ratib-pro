@@ -1169,9 +1169,59 @@
     grid.prepend(card);
   }
 
+  function drawAdPoster(form) {
+    var headline = ((form.querySelector('[name="headline"]') || {}).value || '').trim();
+    var product = ((form.querySelector('[name="product"]') || {}).value || 'RATEB AI').trim();
+    var ratio = ((form.querySelector('[name="ratio"]') || {}).value || '1:1');
+    var width = 768;
+    var height = 768;
+    if (ratio === '4:5') { width = 640; height = 800; }
+    if (ratio === '9:16') { width = 540; height = 960; }
+    var canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    var ctx = canvas.getContext('2d');
+    var paint = ctx.createLinearGradient(0, 0, width, height);
+    paint.addColorStop(0, '#1b1038');
+    paint.addColorStop(1, '#5a3ec8');
+    ctx.fillStyle = paint;
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.direction = 'rtl';
+    ctx.font = '700 ' + Math.round(width * 0.055) + 'px Tahoma, Arial, sans-serif';
+    ctx.fillText(product, width / 2, Math.round(height * 0.16));
+    var words = headline.split(/\s+/);
+    var lines = [];
+    var line = '';
+    var fontSize = Math.round(width * 0.07);
+    ctx.font = '700 ' + fontSize + 'px Tahoma, Arial, sans-serif';
+    words.forEach(function (word) {
+      var next = line === '' ? word : line + ' ' + word;
+      if (ctx.measureText(next).width > width * 0.8 && line !== '') {
+        lines.push(line);
+        line = word;
+      } else {
+        line = next;
+      }
+    });
+    if (line !== '') lines.push(line);
+    var top = Math.round(height * 0.38);
+    lines.slice(0, 6).forEach(function (row, index) {
+      ctx.fillText(row, width / 2, top + index * Math.round(fontSize * 1.45));
+    });
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+    });
+  }
+
   async function requestImage(form, jobId) {
     var body = new FormData(form);
     if (jobId) body.set('job_id', jobId);
+    if (!jobId) {
+      var poster = await drawAdPoster(form);
+      if (poster) body.set('poster', poster, 'ad-poster.png');
+    }
     var controller = new AbortController();
     var timer = setTimeout(function () { controller.abort(); }, 30000);
     try {

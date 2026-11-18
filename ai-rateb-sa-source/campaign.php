@@ -119,6 +119,13 @@ foreach ($media as $mediaItem) {
     }
 }
 $product = trim((string) ($brief['product'] ?? $campaign['product_name'] ?? ''));
+$imageHeadline = '';
+if (isset($copyRows['headline']) && (string) ($copyRows['headline']['approval_status'] ?? '') === 'approved') {
+    $imageHeadline = rateb_prompt_plain((string) $copyRows['headline']['content'], 'ar');
+}
+if ($imageHeadline === '') {
+    $imageHeadline = $product !== '' ? $product : trim((string) ($campaign['title'] ?? ''));
+}
 $idea = trim((string) ($brief['description'] ?? $campaign['description'] ?? ''));
 $objective = trim((string) ($brief['objective'] ?? $campaign['objective'] ?? ''));
 $audience = trim((string) ($brief['audience'] ?? $campaign['target_customer'] ?? ''));
@@ -222,7 +229,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav47">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav48">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -289,6 +296,8 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
           <form id="imageForm" class="stage-action" data-status="stage-status" data-job-ttl="<?= (int) rateb_image_job_ttl() ?>">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
+            <input type="hidden" name="headline" value="<?= e($imageHeadline) ?>">
+            <input type="hidden" name="product" value="<?= e($product) ?>">
             <select name="ratio">
               <option value="1:1"><?= $arabic ? '1:1 مربع للمنشورات' : '1:1 square post' ?></option>
               <option value="4:5"><?= $arabic ? '4:5 عمودي لإنستغرام' : '4:5 Instagram portrait' ?></option>
@@ -829,6 +838,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav47"></script>
+<script src="/public/assets/js/app.js?v=nav48"></script>
 </body>
 </html>
