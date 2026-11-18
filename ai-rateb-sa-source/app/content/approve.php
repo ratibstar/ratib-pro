@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../plans.php';
+
 require_login();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

@@ -253,6 +253,8 @@ jobs:
             "app/notify/events.php"
             "app/notify/mail.php"
             "app/brand/library.php"
+            "app/brand/save.php"
+            "app/content/approve.php"
             "app/nav.php"
           )
           for rel in "${files[@]}"; do
