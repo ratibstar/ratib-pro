@@ -345,7 +345,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
 
     try {
         $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
-        media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
+        $mediaId = media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ai-image.' . media_kind_mimes()['image'][$mime], $mime, $bytes);
     } catch (Throwable $error) {
         ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(500);
@@ -358,6 +358,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         'state' => 'ready',
         'model' => $modelName,
         'mime' => $mime,
+        'media_id' => $mediaId,
         'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
     ], JSON_UNESCAPED_UNICODE);
     exit;

@@ -83,6 +83,8 @@ body.tabs-ready [data-panel].is-active{display:block}
 .notice.is-error{color:#a33b3b}
 [data-theme=dark] .notice.is-error{color:#fecaca}
 button.is-busy{opacity:.72;cursor:progress}
+.loader{display:inline-block;width:16px;height:16px;margin-inline-end:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-3px;animation:rateb-spin .7s linear infinite}
+@keyframes rateb-spin{to{transform:rotate(360deg)}}
 button.quiet,a.quiet{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
 button.danger{background:transparent;color:#a33b3b;border:1px solid #f0caca}
 .delete-campaign{margin-top:28px;padding:16px 18px;border:1px solid var(--border);border-radius:16px;background:var(--surface)}

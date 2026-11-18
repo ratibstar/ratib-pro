@@ -1084,14 +1084,16 @@
       if (imageForm.getAttribute('data-running') === '1') return;
       imageForm.setAttribute('data-running', '1');
       var status = document.getElementById(imageForm.getAttribute('data-status') || 'image-status');
+      var loader = document.getElementById('image-loader');
       var button = imageForm.querySelector('button');
       if (button) {
         button.disabled = true;
         button.classList.add('is-busy');
       }
+      if (loader) loader.hidden = false;
       if (status) {
         status.className = 'notice stage-status';
-        status.textContent = dict[language].generating_image;
+        status.textContent = '';
       }
       var ttl = Number(imageForm.getAttribute('data-job-ttl') || 900);
       var deadline = Date.now() + (ttl * 1000);
@@ -1110,20 +1112,19 @@
           if (payload.job_id) jobId = payload.job_id;
           if (payload.expires_at) deadline = Number(payload.expires_at) * 1000;
           if (!payload.pending) break;
-          if (status) {
-            status.className = 'notice stage-status';
-            status.textContent = language === 'ar' ? 'الصورة تُجهّز. يمكنك تحديث الصفحة بعد قليل.' : 'The image is being prepared. You can refresh shortly.';
-          }
-          if (button) {
-            button.disabled = false;
-            button.classList.remove('is-busy');
-          }
           await new Promise(function (resolve) { setTimeout(resolve, 3000); });
         }
         if (!payload.ok) throw new Error(payload.error || dict[language].image_failed);
-        location.href = payload.redirect;
+        if (loader) loader.hidden = true;
+        showGeneratedImage(imageForm, payload.media_id);
+        imageForm.removeAttribute('data-running');
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('is-busy');
+        }
       } catch (error) {
         imageForm.removeAttribute('data-running');
+        if (loader) loader.hidden = true;
         if (status) {
           status.className = 'notice is-error stage-status';
           status.textContent = error.code === 'image_timeout' ? (dict[language].image_timeout) : (error.message || dict[language].image_failed);
@@ -1135,6 +1136,37 @@
         }
       }
     };
+  }
+
+  function showGeneratedImage(form, mediaId) {
+    var panel = document.getElementById('images');
+    if (!panel || !mediaId) {
+      location.reload();
+      return;
+    }
+    var empty = panel.querySelector('.empty');
+    if (empty) empty.remove();
+    var grid = panel.querySelector('.generated-images');
+    if (!grid) {
+      grid = document.createElement('div');
+      grid.className = 'media-grid generated-images';
+      panel.appendChild(grid);
+    }
+    var csrf = (form.querySelector('[name="csrf"]') || {}).value || '';
+    var arabic = document.documentElement.lang === 'ar' || language === 'ar';
+    var card = document.createElement('article');
+    card.className = 'media-card';
+    card.innerHTML = '<button type="button" class="image-preview" data-kind="image"><img alt=""></button>'
+      + '<form method="post" action="/app/media/delete.php"><input type="hidden" name="csrf"><input type="hidden" name="id"><input type="hidden" name="panel" value="images"><button type="submit" class="quiet"></button></form>'
+      + '<form method="post" action="/app/media/approve.php"><input type="hidden" name="csrf"><input type="hidden" name="id"><button type="submit" class="primary"></button></form>';
+    var src = '/app/media/file.php?id=' + mediaId;
+    card.querySelector('img').src = src;
+    card.querySelector('.image-preview').setAttribute('data-src', src);
+    card.querySelectorAll('[name="csrf"]').forEach(function (input) { input.value = csrf; });
+    card.querySelectorAll('[name="id"]').forEach(function (input) { input.value = String(mediaId); });
+    card.querySelector('.quiet').textContent = arabic ? 'حذف' : 'Delete';
+    card.querySelector('.primary').textContent = arabic ? 'اعتماد الصورة' : 'Approve image';
+    grid.prepend(card);
   }
 
   async function requestImage(form, jobId) {
