@@ -110,7 +110,7 @@ if ($usageId < 1 || !rateb_image_job_allows_new_reservation($decision)) {
     exit;
 }
 
-$models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image');
+$models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image', null, 8);
 $modelList = json_decode($models['body'], true);
 $workers = 0;
 $imageModel = '';
@@ -413,12 +413,62 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
     }
     $direction = rateb_prompt_plain($strategy['creative_direction'] ?? '', 'ar');
     $message = rateb_prompt_plain($strategy['core_message'] ?? '', 'ar');
-    $idea = trim($product . ' ' . $copyLine . ' ' . $direction . ' ' . $message . ' ' . (string) ($campaign['title'] ?? '') . ' ' . (string) ($campaign['description'] ?? ''));
-    $prompt = ai_image_scene($idea) . ' ### landscape, hills, nature wallpaper, closed phone, face down tablet, neon, purple room, empty office, person, face, text, letters, logo';
+    $idea = trim($product . "\n" . $copyLine . "\n" . $direction . "\n" . $message . "\n" . (string) ($campaign['title'] ?? '') . "\n" . (string) ($campaign['description'] ?? ''));
+    $scene = ai_image_from_copy($idea);
+    if ($scene === '') {
+        $scene = ai_image_scene($idea);
+    }
+    $prompt = $scene . ' ### user interface, hud, target, reticle, sci-fi, neon, purple room, landscape, hills, wallpaper, closed phone, person, face, text, letters, logo';
     if (mb_strlen($prompt) > $limit) {
         $prompt = rtrim(mb_substr($prompt, 0, $limit));
     }
     return trim($prompt);
+}
+
+function ai_image_from_copy(string $idea): string
+{
+    $idea = trim($idea);
+    if ($idea === '') {
+        return '';
+    }
+    $cfg = require __DIR__ . '/../../config/ai.php';
+    $key = trim((string) ($cfg['api_key'] ?? ''));
+    if ($key === '') {
+        return '';
+    }
+    $body = json_encode([
+        'model' => (string) ($cfg['model'] ?? 'deepseek-chat'),
+        'messages' => [
+            ['role' => 'system', 'content' => 'Return JSON {"scene":"..."} only. scene is one English camera description of 35 words. It must depict the exact offer in the brief as a real advertisement a customer would recognize. Name the product. Show the result the customer gets, not a generic computer and not a control panel. No people, no readable text, no logo, no neon, no science-fiction interface.'],
+            ['role' => 'user', 'content' => $idea],
+        ],
+        'temperature' => 0.2,
+        'max_tokens' => 180,
+        'response_format' => ['type' => 'json_object'],
+    ], JSON_UNESCAPED_UNICODE);
+    $ch = curl_init(rtrim((string) ($cfg['base_url'] ?? ''), '/') . '/chat/completions');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $key],
+        CURLOPT_POSTFIELDS => $body,
+        CURLOPT_TIMEOUT => 12,
+        CURLOPT_CONNECTTIMEOUT => 5,
+    ]);
+    $raw = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($raw === false || $code < 200 || $code >= 300) {
+        return '';
+    }
+    $data = json_decode((string) $raw, true);
+    $content = is_array($data) ? (string) ($data['choices'][0]['message']['content'] ?? '') : '';
+    $parsed = json_decode($content, true);
+    $scene = is_array($parsed) ? trim((string) ($parsed['scene'] ?? '')) : '';
+    if ($scene === '' || preg_match('/\p{Arabic}/u', $scene) === 1 || mb_strlen($scene) < 20) {
+        return '';
+    }
+    return $scene;
 }
 
 function ai_image_scene(string $idea): string
