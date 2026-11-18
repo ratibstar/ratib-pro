@@ -21,7 +21,7 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
     exit;
 }
 
-set_time_limit(45);
+set_time_limit(60);
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
 $now = time();
 $userId = (int) $_SESSION['user_id'];
@@ -138,7 +138,7 @@ if ($models['http'] === 200 && $workers < 1) {
 }
 
 if ($imageModel === '') {
-    $imageModel = 'Realistic Vision';
+    $imageModel = 'Deliberate';
 }
 
 $payload = json_encode([
@@ -151,6 +151,17 @@ $payload = json_encode([
 ], JSON_UNESCAPED_UNICODE);
 
 $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);
+if ($submit['http'] !== 202) {
+    $payload = json_encode([
+        'prompt' => $ratioLead . 'Product photo of a laptop and a phone on a desk, clean software screen, no people, no text.',
+        'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
+        'nsfw' => false,
+        'censor_nsfw' => true,
+        'r2' => true,
+        'models' => ['Deliberate'],
+    ], JSON_UNESCAPED_UNICODE);
+    $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload, 20, true);
+}
 if ($submit['http'] !== 202) {
     ai_image_release($userId, '', $usageId, 'failed');
     ai_horde_fail($submit['http'], $submit['body']);
@@ -308,21 +319,13 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         $imageUrl = (string) ($result['generations'][0]['img'] ?? '');
         $modelName = (string) ($result['generations'][0]['model'] ?? '');
     }
-    $host = strtolower((string) parse_url($imageUrl, PHP_URL_HOST));
-    if (parse_url($imageUrl, PHP_URL_SCHEME) !== 'https' || !str_ends_with($host, '.r2.cloudflarestorage.com')) {
-        ai_image_release($userId, $jobId, $usageId, 'failed');
-        http_response_code(502);
-        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
-        exit;
+    if (!ai_image_url_allowed($imageUrl)) {
+        ai_image_pending($jobId, 3);
     }
 
-    $download = ai_horde_request('GET', $imageUrl, null, 45);
-    $finalHost = strtolower((string) parse_url($download['effective'], PHP_URL_HOST));
-    if ($download['http'] !== 200 || !str_ends_with($finalHost, '.r2.cloudflarestorage.com')) {
-        ai_image_release($userId, $jobId, $usageId, 'failed');
-        http_response_code(502);
-        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
-        exit;
+    $download = ai_horde_request('GET', $imageUrl, null, 25);
+    if ($download['http'] !== 200 || !ai_image_url_allowed($download['effective'] !== '' ? $download['effective'] : $imageUrl)) {
+        ai_image_pending($jobId, 3);
     }
     $bytes = $download['body'];
     $mime = ai_image_mime($bytes);
@@ -422,13 +425,25 @@ function ai_image_pending(string $jobId, int $wait = 0): void
     exit;
 }
 
-function ai_horde_request(string $method, string $url, ?string $body = null, int $timeout = 20): array
+function ai_image_url_allowed(string $url): bool
+{
+    $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+    if (parse_url($url, PHP_URL_SCHEME) !== 'https' || $host === '' || $host === 'localhost') {
+        return false;
+    }
+    if (filter_var($host, FILTER_VALIDATE_IP)) {
+        return false;
+    }
+    return !str_ends_with($host, '.local');
+}
+
+function ai_horde_request(string $method, string $url, ?string $body = null, int $timeout = 20, bool $anonymous = false): array
 {
     $ch = curl_init($url);
     $headers = ['Accept: application/json, image/webp, image/jpeg, image/png', 'Client-Agent: rateb-ai-campaign:1.0:ai.rateb.sa'];
     if (strtolower((string) parse_url($url, PHP_URL_HOST)) === 'aihorde.net') {
         $ai = require __DIR__ . '/../../config/ai.php';
-        $hordeKey = trim((string) ($ai['horde_api_key'] ?? ''));
+        $hordeKey = $anonymous ? '' : trim((string) ($ai['horde_api_key'] ?? ''));
         if ($hordeKey === '') {
             $hordeKey = '0000000000';
         }
