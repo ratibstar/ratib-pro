@@ -114,7 +114,7 @@ $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type
 $modelList = json_decode($models['body'], true);
 $workers = 0;
 $imageModel = '';
-$preferred = ['Realistic Vision', 'ICBINP - I Can\'t Believe It\'s Not Photography', 'Deliberate', 'stable_diffusion'];
+$preferred = ['Deliberate', 'stable_diffusion', 'Realistic Vision'];
 $counts = [];
 if (is_array($modelList)) {
     foreach ($modelList as $row) {
@@ -316,7 +316,7 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         exit;
     }
 
-    $download = ai_horde_request('GET', $imageUrl);
+    $download = ai_horde_request('GET', $imageUrl, null, 45);
     $finalHost = strtolower((string) parse_url($download['effective'], PHP_URL_HOST));
     if ($download['http'] !== 200 || !str_ends_with($finalHost, '.r2.cloudflarestorage.com')) {
         ai_image_release($userId, $jobId, $usageId, 'failed');
@@ -422,7 +422,7 @@ function ai_image_pending(string $jobId, int $wait = 0): void
     exit;
 }
 
-function ai_horde_request(string $method, string $url, ?string $body = null): array
+function ai_horde_request(string $method, string $url, ?string $body = null, int $timeout = 20): array
 {
     $ch = curl_init($url);
     $headers = ['Accept: application/json, image/webp, image/jpeg, image/png', 'Client-Agent: rateb-ai-campaign:1.0:ai.rateb.sa'];
@@ -441,7 +441,7 @@ function ai_horde_request(string $method, string $url, ?string $body = null): ar
         CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => $headers,
-        CURLOPT_TIMEOUT => 12,
+        CURLOPT_TIMEOUT => max(5, $timeout),
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS => 2,
         CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
