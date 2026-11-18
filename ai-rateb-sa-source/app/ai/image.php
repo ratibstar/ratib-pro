@@ -130,13 +130,16 @@ foreach ($preferred as $name) {
         break;
     }
 }
-if ($models['http'] !== 200 || $workers < 1 || $imageModel === '') {
+if ($models['http'] === 200 && $workers < 1) {
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(503);
     echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
+if ($imageModel === '') {
+    $imageModel = 'Deliberate';
+}
 $charge = rateb_reservation_charge(db(), $usageId, $userId, 'ai_image', $campaignId);
 if ($charge !== 'ok') {
     ai_image_release($userId, '', $usageId, 'failed');

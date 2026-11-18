@@ -501,11 +501,26 @@ jobs:
             echo "OPCACHE_BODY=$(cat "${RUNNER_TEMP}/opcache-body.txt" 2>/dev/null || true)"
             "${SSH[@]}" "$REMOTE" "rm -f '${TARGET}/${reset_name}'"
           else
-            while IFS= read -r rel; do
-              [ -z "$rel" ] && continue
-              "${SSH[@]}" "$REMOTE" "php -r \"if (function_exists('opcache_invalidate')) { opcache_invalidate('${TARGET}/${rel}', true); }\""
-              echo "OPCACHE_INVALIDATE=${rel}"
-            done < <(echo "$UPLOADED_MARKS" | tr '|' '\n' | grep -v '^$' || true)
+            reset_name="opcache-${GITHUB_RUN_ID}.php"
+            export UPLOADED_MARKS
+            python3 - << 'PY'
+          import os
+          from pathlib import Path
+          marks = os.environ.get("UPLOADED_MARKS", "")
+          rels = [part for part in marks.split("|") if part.endswith(".php")]
+          body = "<?php\nif (function_exists('opcache_invalidate')) {\n"
+          for rel in rels:
+              safe = rel.replace("\\", "\\\\").replace("'", "\\'")
+              body += "    opcache_invalidate(__DIR__ . '/" + safe + "', true);\n"
+          body += "}\necho 'ok';\n"
+          Path(os.environ["RUNNER_TEMP"], "opcache-reset.php").write_text(body, encoding="utf-8")
+          PY
+            scp -i "$KEY" -P "$PORT" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+              "${RUNNER_TEMP}/opcache-reset.php" "${REMOTE}:${TARGET}/${reset_name}"
+            reset_code="$(curl -sS -o "${RUNNER_TEMP}/opcache-body.txt" -w '%{http_code}' --max-time 15 "https://ai.rateb.sa/${reset_name}" || true)"
+            echo "OPCACHE_HTTP=${reset_code}"
+            echo "OPCACHE_BODY=$(cat "${RUNNER_TEMP}/opcache-body.txt" 2>/dev/null || true)"
+            "${SSH[@]}" "$REMOTE" "rm -f '${TARGET}/${reset_name}'"
           fi
           rm -f "$KEY"
 
