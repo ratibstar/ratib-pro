@@ -145,7 +145,7 @@ $payload = json_encode([
     'prompt' => $prompt,
     'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
     'nsfw' => false,
-    'censor_nsfw' => true,
+    'censor_nsfw' => false,
     'r2' => true,
     'models' => [$imageModel],
 ], JSON_UNESCAPED_UNICODE);
@@ -156,7 +156,7 @@ if ($submit['http'] !== 202) {
         'prompt' => $prompt,
         'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
         'nsfw' => false,
-        'censor_nsfw' => true,
+        'censor_nsfw' => false,
         'r2' => true,
         'models' => ['Deliberate'],
     ], JSON_UNESCAPED_UNICODE);
@@ -315,9 +315,17 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     $result = json_decode($status['body'], true);
     $imageUrl = '';
     $modelName = '';
-    if (is_array($result)) {
-        $imageUrl = (string) ($result['generations'][0]['img'] ?? '');
-        $modelName = (string) ($result['generations'][0]['model'] ?? '');
+    $generation = [];
+    if (is_array($result) && is_array($result['generations'][0] ?? null)) {
+        $generation = $result['generations'][0];
+        $imageUrl = (string) ($generation['img'] ?? '');
+        $modelName = (string) ($generation['model'] ?? '');
+    }
+    if (!empty($generation['censored'])) {
+        ai_image_release($userId, $jobId, $usageId, 'failed');
+        http_response_code(502);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
+        exit;
     }
     if (!ai_image_url_allowed($imageUrl)) {
         ai_image_pending($jobId, 3);
