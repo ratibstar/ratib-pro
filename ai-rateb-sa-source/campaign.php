@@ -120,8 +120,14 @@ foreach ($media as $mediaItem) {
 }
 $product = trim((string) ($brief['product'] ?? $campaign['product_name'] ?? ''));
 $imageHeadline = '';
-if (isset($copyRows['headline']) && (string) ($copyRows['headline']['approval_status'] ?? '') === 'approved') {
-    $imageHeadline = rateb_prompt_plain((string) $copyRows['headline']['content'], 'ar');
+foreach ($outputs as $outputRow) {
+    if ((string) ($outputRow['output_type'] ?? '') !== 'headline' || (string) ($outputRow['approval_status'] ?? '') !== 'approved') {
+        continue;
+    }
+    $line = rateb_prompt_plain((string) ($outputRow['content'] ?? ''), 'ar');
+    if ($line !== '') {
+        $imageHeadline = $line;
+    }
 }
 if ($imageHeadline === '') {
     $imageHeadline = $product !== '' ? $product : trim((string) ($campaign['title'] ?? ''));
@@ -838,6 +844,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav48"></script>
+<script src="/public/assets/js/app.js?v=nav49"></script>
 </body>
 </html>

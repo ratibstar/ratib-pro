@@ -1171,12 +1171,12 @@
 
   function drawAdPoster(form) {
     var headline = ((form.querySelector('[name="headline"]') || {}).value || '').trim();
-    var product = ((form.querySelector('[name="product"]') || {}).value || 'RATEB AI').trim();
+    var product = 'RATEB AI';
     var ratio = ((form.querySelector('[name="ratio"]') || {}).value || '1:1');
     var width = 768;
     var height = 768;
     if (ratio === '4:5') { width = 640; height = 800; }
-    if (ratio === '9:16') { width = 540; height = 960; }
+    if (ratio === '9:16') { width = 720; height = 1280; }
     var canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -1186,29 +1186,40 @@
     paint.addColorStop(1, '#5a3ec8');
     ctx.fillStyle = paint;
     ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#d6c7ff';
     ctx.textAlign = 'center';
     ctx.direction = 'rtl';
-    ctx.font = '700 ' + Math.round(width * 0.055) + 'px Tahoma, Arial, sans-serif';
-    ctx.fillText(product, width / 2, Math.round(height * 0.16));
-    var words = headline.split(/\s+/);
+    ctx.font = '700 ' + Math.round(width * 0.045) + 'px Tahoma, Arial, sans-serif';
+    ctx.fillText(product, width / 2, Math.round(height * 0.14));
+    var fontSize = Math.round(width * 0.062);
+    var words = headline.split(/\s+/).filter(Boolean);
     var lines = [];
-    var line = '';
-    var fontSize = Math.round(width * 0.07);
-    ctx.font = '700 ' + fontSize + 'px Tahoma, Arial, sans-serif';
-    words.forEach(function (word) {
-      var next = line === '' ? word : line + ' ' + word;
-      if (ctx.measureText(next).width > width * 0.8 && line !== '') {
-        lines.push(line);
-        line = word;
-      } else {
-        line = next;
-      }
-    });
-    if (line !== '') lines.push(line);
-    var top = Math.round(height * 0.38);
-    lines.slice(0, 6).forEach(function (row, index) {
-      ctx.fillText(row, width / 2, top + index * Math.round(fontSize * 1.45));
+    function measure(size) {
+      ctx.font = '700 ' + size + 'px Tahoma, Arial, sans-serif';
+      lines = [];
+      var line = '';
+      words.forEach(function (word) {
+        var next = line === '' ? word : line + ' ' + word;
+        if (ctx.measureText(next).width > width * 0.84 && line !== '') {
+          lines.push(line);
+          line = word;
+        } else {
+          line = next;
+        }
+      });
+      if (line !== '') lines.push(line);
+    }
+    measure(fontSize);
+    while (lines.length > 7 && fontSize > 28) {
+      fontSize -= 4;
+      measure(fontSize);
+    }
+    var gap = Math.round(fontSize * 1.4);
+    var block = lines.length * gap;
+    var top = Math.max(Math.round(height * 0.28), Math.round((height - block) / 2));
+    ctx.fillStyle = '#ffffff';
+    lines.forEach(function (row, index) {
+      ctx.fillText(row, width / 2, top + index * gap);
     });
     return new Promise(function (resolve) {
       canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
