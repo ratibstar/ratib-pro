@@ -414,7 +414,7 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
     $direction = rateb_prompt_plain($strategy['creative_direction'] ?? '', 'ar');
     $message = rateb_prompt_plain($strategy['core_message'] ?? '', 'ar');
     $idea = trim($product . ' ' . $copyLine . ' ' . $direction . ' ' . $message . ' ' . (string) ($campaign['title'] ?? '') . ' ' . (string) ($campaign['description'] ?? ''));
-    $prompt = ai_image_scene($idea) . ' ### person, woman, man, face, hijab, portrait, crowd, text, letters, calligraphy, logo, watermark, street';
+    $prompt = ai_image_scene($idea) . ' ### person, face, hijab, neon, purple room, cyberpunk, empty office, gaming chair, treadmill, wide room, text, letters, logo';
     if (mb_strlen($prompt) > $limit) {
         $prompt = rtrim(mb_substr($prompt, 0, $limit));
     }
@@ -424,24 +424,13 @@ function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
 function ai_image_scene(string $idea): string
 {
     $text = mb_strtolower($idea);
-    $parts = ['Commercial photograph of the advertised idea, no people'];
     if (preg_match('/فيديو|سناب|ستوري|ريلز|إعلان|اعلان|advertis|video|story/u', $text) === 1) {
-        $parts[] = 'a desk with one laptop showing a storyboard of advertising video frames and one phone showing a vertical silent video preview, plus a small cinema camera and a blank clapperboard';
-    }
-    if (preg_match('/ذكاء|اصطناعي|\bai\b|artificial/u', $text) === 1) {
-        $parts[] = 'the screens glow purple as an artificial intelligence tool building the video';
+        return 'close-up photograph, white desk, daylight, one smartphone standing upright playing a vertical product video, one open laptop behind it showing a video editing timeline, photorealistic advertising still, no people, no letters';
     }
     if (preg_match('/تمر|قهو|عطر|عطور|طعام|أكل|وجبه|بيتزا|حلويات/u', $text) === 1) {
-        $parts[] = 'the physical product from the offer sits in front of the camera as the hero object';
+        return 'close-up photograph of the physical product from the offer on a clean table, daylight, commercial food or goods photo, no people, no letters, no packaging text';
     }
-    if (preg_match('/متجر|تسوق|منتج|عروض|خصم/u', $text) === 1 && count($parts) === 1) {
-        $parts[] = 'the offered product centered on a clean table as the only subject';
-    }
-    if (count($parts) === 1) {
-        $parts[] = 'the offered product or service shown as one clear object on a clean table';
-    }
-    $parts[] = 'studio light, square or vertical framing, nothing written anywhere';
-    return implode(', ', $parts);
+    return 'close-up photograph of the offered product on a white table, daylight, commercial still, no people, no letters';
 }
 
 function ai_image_pending(string $jobId, int $wait = 0): void
