@@ -559,7 +559,7 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .voice-filters input,.voice-filters select{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 10px}
 .voice-picks{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}
 .voice-picks h3{width:100%;margin:8px 0 0;font-size:15px}
-.voice-picks label,.voice-picks button{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface2);color:var(--text);cursor:pointer;font:inherit}
+.voice-picks label:has(input:checked){border-color:#c4b5fd;background:#3b2a6d}
 .voice-picks input{position:absolute;opacity:0;pointer-events:none}
 .voice-picks bdi{unicode-bidi:isolate}
 .voice-place{color:var(--muted);font-size:12px}

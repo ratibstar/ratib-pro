@@ -1272,6 +1272,20 @@
       if (voiceTab) voiceTab.click();
       var status = document.getElementById(voiceForm.getAttribute('data-status') || 'voice-status');
       var button = voiceForm.querySelector('button');
+      var picked = voiceForm.querySelector('input[name="voice"]:checked') || voiceForm.querySelector('input[name="voice"]');
+      if (picked) picked.checked = true;
+      if (!voiceForm.querySelector('input[name="voice"]:checked')) {
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('is-busy');
+        }
+        var voiceStatus = document.getElementById(voiceForm.getAttribute('data-status') || 'voice-status');
+        if (voiceStatus) {
+          voiceStatus.className = 'notice is-error stage-status';
+          voiceStatus.textContent = language === 'ar' ? 'اختر الدولة ثم اللهجة، ويظهر الصوت الجاهز تلقائياً.' : 'Choose a country and a dialect. A ready voice is selected for you.';
+        }
+        return;
+      }
       document.querySelectorAll('input[name="lang"]').forEach(function (node) {
         node.value = language;
       });
@@ -1446,11 +1460,16 @@
               return;
             }
             if (note) note.textContent = '';
-            voices.filter(function (voice) {
+            var matched = voices.filter(function (voice) {
               if (voice._country !== countrySelect.value || voice._dialect !== dialectSelect.value) return false;
               if (q && String(voice.name || '').toLowerCase().indexOf(q) === -1) return false;
               return true;
-            }).forEach(function (voice) {
+            });
+            if (!matched.length) {
+              if (note) note.textContent = language === 'ar' ? 'لا يوجد صوت جاهز في هذه اللهجة. اختر لهجة أخرى.' : 'No ready voice in this dialect. Choose another one.';
+              return;
+            }
+            matched.forEach(function (voice) {
               var label = document.createElement(library.getAttribute('data-voice-choose') === '1' ? 'label' : 'button');
               label.type = library.getAttribute('data-voice-choose') === '1' ? '' : 'button';
               var input = document.createElement('input');
@@ -1464,6 +1483,9 @@
               label.appendChild(name);
               picks.appendChild(label);
             });
+            var chosen = picks.querySelector('input:checked');
+            var firstVoice = picks.querySelector('input[name="voice"]');
+            if (!chosen && firstVoice) firstVoice.checked = true;
           };
           countrySelect.addEventListener('change', function () { fillDialects(); draw(); });
           dialectSelect.addEventListener('change', draw);

@@ -47,7 +47,8 @@ $ai = require __DIR__ . '/../../config/ai.php';
 $sawtakKey = trim((string) ($ai['sawtak_api_key'] ?? ''));
 $wanted = (string) ($_POST['voice'] ?? '');
 $selected = rateb_sawtak_find($wanted);
-if ($selected === null || (string) ($selected['status'] ?? '') !== 'ready') {
+$voiceStatus = (string) ($selected['status'] ?? '');
+if ($selected === null || ($voiceStatus !== '' && $voiceStatus !== 'ready')) {
     http_response_code(422);
     echo json_encode(['error' => ui_language() === 'ar' ? 'اختر صوتاً جاهزاً من الكتالوج.' : 'Choose a ready voice from the catalog.', 'code' => 'invalid', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
