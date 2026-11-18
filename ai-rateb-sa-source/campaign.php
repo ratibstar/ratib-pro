@@ -233,16 +233,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <div class="workspace-head">
       <div>
         <h1><?= e((string) $campaign['title']) ?></h1>
-        <?php
-          $aiCfg = require __DIR__ . '/config/ai.php';
-          $providerGaps = [];
-          if (trim((string) ($aiCfg['api_key'] ?? '')) === '') { $providerGaps[] = $arabic ? 'النص' : 'text'; }
-          if (trim((string) ($aiCfg['horde_api_key'] ?? '')) === '') { $providerGaps[] = $arabic ? 'الصور' : 'images'; }
-          if (trim((string) ($aiCfg['sawtak_api_key'] ?? '')) === '') { $providerGaps[] = $arabic ? 'الصوت' : 'voice'; }
-        ?>
-        <?php if ($providerGaps !== []): ?>
-        <p class="alert"><?= $arabic ? 'غير مهيأ على الخادم: ' : 'Not configured on the server: ' ?><?= e(implode('، ', $providerGaps)) ?>. <?= $arabic ? 'أعد المحاولة بعد ضبط المفتاح. الرصيد لا يُخصم عند فشل المزود.' : 'Retry after the key is set. Credits are not kept when a provider fails.' ?></p>
-        <?php endif; ?>
         <span class="badge status-<?= e($status) ?>" data-i18n="status_<?= e($status) ?>"><?= e($statusLabels[$status] ?? $status) ?></span>
       </div>
     </div>
