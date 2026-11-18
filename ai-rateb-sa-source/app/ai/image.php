@@ -113,15 +113,24 @@ if ($usageId < 1 || !rateb_image_job_allows_new_reservation($decision)) {
 $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image');
 $modelList = json_decode($models['body'], true);
 $workers = 0;
+$imageModel = '';
+$preferred = ['Deliberate', 'Realistic Vision', 'ICBINP - I Can\'t Believe It\'s Not Photography', 'stable_diffusion'];
+$counts = [];
 if (is_array($modelList)) {
     foreach ($modelList as $row) {
-        if (is_array($row) && ($row['name'] ?? '') === 'Deliberate') {
-            $workers = (int) ($row['count'] ?? 0);
-            break;
+        if (is_array($row) && is_string($row['name'] ?? null)) {
+            $counts[$row['name']] = (int) ($row['count'] ?? 0);
         }
     }
 }
-if ($models['http'] !== 200 || $workers < 1) {
+foreach ($preferred as $name) {
+    if (($counts[$name] ?? 0) > 0) {
+        $imageModel = $name;
+        $workers = $counts[$name];
+        break;
+    }
+}
+if ($models['http'] !== 200 || $workers < 1 || $imageModel === '') {
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(503);
     echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers'], JSON_UNESCAPED_UNICODE);
@@ -145,7 +154,7 @@ $payload = json_encode([
     'nsfw' => false,
     'censor_nsfw' => true,
     'r2' => true,
-    'models' => ['Deliberate'],
+    'models' => [$imageModel],
 ], JSON_UNESCAPED_UNICODE);
 
 $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);
@@ -436,8 +445,7 @@ function ai_horde_request(string $method, string $url, ?string $body = null): ar
         $ai = require __DIR__ . '/../../config/ai.php';
         $hordeKey = trim((string) ($ai['horde_api_key'] ?? ''));
         if ($hordeKey === '') {
-            curl_close($ch);
-            return ['http' => 503, 'body' => '', 'effective' => $url];
+            $hordeKey = '0000000000';
         }
         $headers[] = 'apikey: ' . $hordeKey;
     }
