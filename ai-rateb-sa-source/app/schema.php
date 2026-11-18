@@ -264,6 +264,7 @@ function ensure_campaign_schema(PDO $pdo): void
         }
     }
 
+    $pdo->exec("UPDATE plans SET is_active = 1 WHERE code = 'free' AND is_active <> 1");
     $freeId = (int) $pdo->query("SELECT id FROM plans WHERE code = 'free' LIMIT 1")->fetchColumn();
     if ($freeId > 0) {
         $pdo->prepare("INSERT INTO subscriptions (user_id, plan_id, status, period_start, period_end)

@@ -726,6 +726,10 @@ function rateb_usage_begin(PDO $pdo, int $userId, ?int $campaignId, string $oper
     $pdo->beginTransaction();
     try {
         $plan = rateb_lock_plan($pdo, $userId);
+        if ((int) $plan['is_active'] !== 1 && (string) ($plan['code'] ?? '') === 'free') {
+            $pdo->prepare("UPDATE plans SET is_active = 1 WHERE id = ?")->execute([(int) $plan['plan_id']]);
+            $plan['is_active'] = 1;
+        }
         if ((int) $plan['is_active'] !== 1) {
             $pdo->rollBack();
             return ['ok' => false, 'code' => 'plan_inactive', 'id' => 0];
