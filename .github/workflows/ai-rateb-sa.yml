@@ -92,6 +92,7 @@ jobs:
           RATEB_AI_DB_PASSWORD: ${{ secrets.RATEB_AI_DB_PASSWORD || secrets.DB_PASSWORD || secrets.MYSQL_PASSWORD }}
           RATEB_AI_OWNER_BOOTSTRAP_PASSWORD: ${{ secrets.RATEB_AI_OWNER_BOOTSTRAP_PASSWORD || vars.RATEB_AI_OWNER_BOOTSTRAP_PASSWORD || '123456' }}
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if [ -z "${DEPLOY_SSH_HOST:-}" ] || [ -z "${DEPLOY_SSH_USER:-}" ] || [ -z "${DEPLOY_SSH_PRIVATE_KEY:-}" ]; then
@@ -137,6 +138,12 @@ jobs:
           CHANGED_MARKS=""
           BEFORE="${GITHUB_EVENT_BEFORE:-}"
           if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            DEPLOY_ALL=0
+            if ! COMPARE_FILES="$(gh api "repos/${GITHUB_REPOSITORY}/compare/${BEFORE}...${GITHUB_SHA}" --jq '.files[].filename')"; then
+              echo "::error::Could not list changed files. Refusing a full upload."
+              rm -f "$KEY"
+              exit 1
+            fi
             while IFS= read -r raw; do
               case "$raw" in
                 ai-rateb-sa-source/*)
@@ -144,10 +151,7 @@ jobs:
                   CHANGED_MARKS="${CHANGED_MARKS}|${rel}|"
                   ;;
               esac
-            done < <(git diff --name-only "$BEFORE" "$GITHUB_SHA" -- ai-rateb-sa-source/ .github/workflows/ai-rateb-sa.yml 2>/dev/null || true)
-            if [ -n "$CHANGED_MARKS" ]; then
-              DEPLOY_ALL=0
-            fi
+            done <<< "$COMPARE_FILES"
           fi
           should_deploy() {
             if [ "$DEPLOY_ALL" -eq 1 ]; then
