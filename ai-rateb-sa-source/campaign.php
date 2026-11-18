@@ -299,18 +299,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <button class="primary stage-go" type="submit" data-i18n="start_copy"><?= $arabic ? 'ابدأ كتابة الإعلان' : 'Generate Copy' ?></button>
           </form>
         <?php elseif ($key === 'images' && $copyApproved): ?>
-          <form id="imageForm" class="stage-action" data-status="stage-status" data-job-ttl="<?= (int) rateb_image_job_ttl() ?>">
-            <input type="hidden" name="csrf" value="<?= $csrf ?>">
-            <input type="hidden" name="campaign_id" value="<?= $id ?>">
-            <input type="hidden" name="headline" value="<?= e($imageHeadline) ?>">
-            <input type="hidden" name="product" value="<?= e($product) ?>">
-            <select name="ratio">
-              <option value="1:1"><?= $arabic ? '1:1 مربع للمنشورات' : '1:1 square post' ?></option>
-              <option value="4:5"><?= $arabic ? '4:5 عمودي لإنستغرام' : '4:5 Instagram portrait' ?></option>
-              <option value="9:16"><?= $arabic ? '9:16 ستوري وسناب' : '9:16 story' ?></option>
-            </select>
-            <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
-          </form>
+          <a class="primary stage-go" href="#images"><?= $arabic ? 'أرفق صورة من جهازك' : 'Attach an image' ?></a>
         <?php elseif ($key === 'voice' && $campaignImages !== []): ?>
           <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm"<?= $voiceEnglishBlocked ? ' disabled' : '' ?>><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
         <?php elseif ($key === 'video' && $campaignImages !== [] && !$approvedVideo): ?>
