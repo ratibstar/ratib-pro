@@ -23,9 +23,6 @@ if ($expected === '' || !hash_equals($expected, $csrf)) {
 
 set_time_limit(60);
 $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
-http_response_code(409);
-echo json_encode(['error' => 'توليد الصور متوقف حتى نربط مفتاح النموذج. أرفق الصورة من جهازك.', 'code' => 'image_paused'], JSON_UNESCAPED_UNICODE);
-exit;
 $now = time();
 $userId = (int) $_SESSION['user_id'];
 $campaignId = (int) $campaign['id'];
@@ -154,7 +151,7 @@ $payload = json_encode([
 ], JSON_UNESCAPED_UNICODE);
 
 $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);
-if ($submit['http'] !== 202) {
+if (in_array($submit['http'], [401, 403], true)) {
     $payload = json_encode([
         'prompt' => $prompt,
         'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
@@ -330,8 +327,14 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    if (!ai_image_url_allowed($imageUrl)) {
+    if ($imageUrl === '') {
         ai_image_pending($jobId, 3);
+    }
+    if (!ai_image_url_allowed($imageUrl)) {
+        ai_image_release($userId, $jobId, $usageId, 'failed');
+        http_response_code(502);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
     $download = ai_horde_request('GET', $imageUrl, null, 25);
@@ -515,7 +518,7 @@ function ai_image_url_allowed(string $url): bool
     if (filter_var($host, FILTER_VALIDATE_IP)) {
         return false;
     }
-    return !str_ends_with($host, '.local');
+    return str_ends_with($host, '.r2.cloudflarestorage.com') || $host === 'aihorde.net' || str_ends_with($host, '.aihorde.net');
 }
 
 function ai_horde_request(string $method, string $url, ?string $body = null, int $timeout = 20, bool $anonymous = false): array

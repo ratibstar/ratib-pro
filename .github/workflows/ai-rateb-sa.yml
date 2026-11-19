@@ -84,6 +84,7 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           SAWTAK_API_KEY: ${{ secrets.SAWTAK_API_KEY }}
           HORDE_API_KEY: ${{ secrets.HORDE_API_KEY }}
+          RUNWAY_API_KEY: ${{ secrets.RUNWAY_API_KEY }}
           MOYASAR_SECRET_KEY: ${{ secrets.MOYASAR_SECRET_KEY }}
           MOYASAR_WEBHOOK_SECRET: ${{ secrets.MOYASAR_WEBHOOK_SECRET }}
           RATEB_MAIL_ENABLED: ${{ secrets.RATEB_MAIL_ENABLED || '1' }}
@@ -381,6 +382,7 @@ jobs:
               "deepseek_api_key": os.environ.get("DEEPSEEK_API_KEY", ""),
               "sawtak_api_key": os.environ.get("SAWTAK_API_KEY", ""),
               "horde_api_key": os.environ.get("HORDE_API_KEY", ""),
+              "runway_api_key": os.environ.get("RUNWAY_API_KEY", ""),
               "moyasar_secret_key": os.environ.get("MOYASAR_SECRET_KEY", ""),
               "moyasar_webhook_secret": os.environ.get("MOYASAR_WEBHOOK_SECRET", ""),
               "mail_enabled": os.environ.get("RATEB_MAIL_ENABLED", "1"),
@@ -512,7 +514,7 @@ jobs:
           Path(os.environ["RUNNER_TEMP"], "opcache-reset.php").write_text(
               "<?php\n"
               "if (function_exists('opcache_invalidate')) {\n"
-              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/voice.php','app/ai/video.php','app/ai/video-status.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php'] as $rel) {\n"
+              "    foreach (['app/plans.php','app/schema.php','app/ai/generate.php','app/idea.php','app/ai/image.php','app/ai/voice.php','app/ai/video.php','app/ai/video-status.php','app/video/engine.php','app/video/provider.php','app/media/upload.php','app/media/library.php','campaign.php','index.php','dashboard.php','campaign-copy.php','campaign-new.php','brand.php','app/auth/login.php','app/auth/register.php','app/auth/google.php','app/auth/github.php','config/guard.php','app/nav.php','app/payment/webhook.php','app/payment/checkout.php','config/ai.php','config/ai.local.php'] as $rel) {\n"
               "        opcache_invalidate(__DIR__ . '/' . $rel, true);\n"
               "    }\n"
               "}\n"
@@ -535,6 +537,7 @@ jobs:
           from pathlib import Path
           marks = os.environ.get("UPLOADED_MARKS", "")
           rels = [part for part in marks.split("|") if part.endswith(".php")]
+          rels.append("config/ai.local.php")
           body = "<?php\nif (function_exists('opcache_invalidate')) {\n"
           for rel in rels:
               safe = rel.replace("\\", "\\\\").replace("'", "\\'")
