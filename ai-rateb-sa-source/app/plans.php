@@ -1771,31 +1771,38 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
     if (!$isMarketing || !$hasCreativeOutputs) {
         return $plan;
     }
-    $plan['subject'] = 'top-down commercial photo of blank white index cards, colorful magazine photo clippings, yellow sticky notes, and black markers arranged on a light oak desk';
+    $plan['subject'] = 'top-down commercial photo of scattered colorful advertising brochures and printed flyers covering a wooden table';
     $plan['elements'] = [
-        'blank white index cards with no writing',
-        'colorful magazine photo clippings',
-        'yellow sticky notes with no writing',
-        'black markers',
-        'soft natural desk shadows',
+        'colorful advertising brochures',
+        'printed marketing flyers',
+        'stacked leaflets',
+        'soft table shadows',
     ];
-    $plan['setting'] = 'bright modern marketing studio desk';
+    $plan['setting'] = 'bright marketing studio table';
     $plan['mood'] = 'professional clean commercial';
     $plan['avoid'] = array_values(array_unique(array_merge([
+        'gallery wall',
+        'home decor',
+        'portrait',
+        'people',
+        'human faces',
+        'empty desk',
+        'laptop',
+        'keyboard',
+        'computer',
+        'only sticky notes',
+        'only blank paper',
+        'empty stationery',
         'handwritten text',
         'written words',
         'letters on paper',
-        'notebook with writing',
+        'readable text',
         'neon orb',
         'glowing sphere',
         'particle network',
         'abstract fractal',
         'sci-fi hud',
         'analytics dashboard',
-        'landscape photography',
-        'nature scenery',
-        'roads',
-        'mountains',
         'computer dashboard',
         'computer monitor',
         'device screen',
@@ -1829,7 +1836,21 @@ function rateb_image_caption_hard_accept(array $facts, string $caption): bool
     if (!$isMarketing) {
         return false;
     }
-    return preg_match('/\b(index cards?|planning cards?|storyboard|sticky notes?|post-?it notes?|photo (prints?|clippings?)|magazine|markers?|advertisement mockups?|flat lay|studio desk|oak desk)\b/u', $caption) === 1;
+    // Sticky notes alone are not enough; require visible advertising creative outputs.
+    return rateb_image_caption_has_creative_outputs($caption);
+}
+
+function rateb_image_caption_has_creative_outputs(string $caption): bool
+{
+    $caption = mb_strtolower(trim($caption));
+    if ($caption === '') {
+        return false;
+    }
+    if (preg_match('/\b(brochures?|flyers?|leaflets?|mood board|advertisement|ad mockup|mockups?|printouts?|magazine covers?|storyboard|poster|printed ads?|collage|marketing materials?)\b/u', $caption) === 1) {
+        return true;
+    }
+    return preg_match('/\b(photos?|photographs?|pictures?)\b/u', $caption) === 1
+        && preg_match('/\b(board|collage|brochures?|flyers?|leaflets?|magazine|poster|marketing)\b/u', $caption) === 1;
 }
 
 /**
@@ -1851,9 +1872,12 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
         && preg_match('/\b(ad|advert|campaign|mockup|print|storyboard|calendar|planning card)\b/u', $caption) !== 1;
     $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1;
     $writtenPaper = preg_match('/\b(handwrit|writing on|written (on|text)|letters on|words on|notebook with text|notepad with text)\b/u', $caption) === 1;
-    $marketingDesk = preg_match('/\b(index cards?|planning cards?|storyboard|sticky notes?|post-?it notes?|photo (prints?|clippings?)|magazine|markers?|advertisement mockups?|flat lay|studio desk|oak desk)\b/u', $caption) === 1;
-    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || ($isMarketing && !$marketingDesk && preg_match('/\b(paper|notepad|notebook)\b/u', $caption) === 1)) {
-        return 'caption shows generic tech art instead of the campaign subject';
+    $creativeOutputs = rateb_image_caption_has_creative_outputs($caption);
+    $peopleHeavy = preg_match('/\b(women|woman|men|man|girl|boy|portrait|faces?|people)\b/u', $caption) === 1
+        && preg_match('/\b(magazine covers?|product (photos?|photographs?)|advertisement|mockup|printout|brochure|flyer)\b/u', $caption) !== 1;
+    $homeDecor = preg_match('/\b(living room|home decor|wicker basket|throw blanket|gallery wall)\b/u', $caption) === 1;
+    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || ($isMarketing && !$creativeOutputs) || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor)) {
+        return 'caption shows generic stationery instead of marketing creative outputs';
     }
     $topics = [
         ['/قهو|كوفي|coffee|espresso/u', '/coffee|espresso|cup|beans|cafe/'],
@@ -1904,11 +1928,11 @@ function rateb_image_fallback_plan(array $facts): ?array
         return [
             'sufficient' => true,
             'category' => 'digital_service',
-            'subject' => 'top-down commercial photo of blank white index cards, colorful magazine photo clippings, yellow sticky notes, and black markers arranged on a light oak desk',
-            'elements' => ['blank white index cards with no writing', 'colorful magazine photo clippings', 'yellow sticky notes with no writing', 'black markers'],
-            'setting' => 'bright modern marketing studio desk',
+            'subject' => 'top-down commercial photo of scattered colorful advertising brochures and printed flyers covering a wooden table',
+            'elements' => ['colorful advertising brochures', 'printed marketing flyers', 'stacked leaflets'],
+            'setting' => 'bright marketing studio table',
             'mood' => 'professional, clean, commercial',
-            'avoid' => ['handwritten text', 'written words', 'neon orb', 'glowing sphere', 'particle network', 'analytics dashboard', 'landscape'],
+            'avoid' => ['gallery wall', 'home decor', 'portrait', 'empty desk', 'laptop', 'neon orb', 'analytics dashboard'],
         ];
     }
     if ($digital) {
@@ -1950,10 +1974,10 @@ function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, in
     $category = (string) ($plan['category'] ?? 'other');
     $shots = match ($category) {
         'digital_service' => [
-            'top-down flat lay commercial photograph',
-            'hero product-style desk photograph at eye level',
-            'three-quarter angle commercial desk photograph',
-            'clean studio tabletop composition',
+            'overhead flat lay commercial photograph',
+            'front-facing mood board photograph',
+            'slightly angled creative wall photograph',
+            'clean studio wall composition',
         ],
         default => [
             'hero shot with the subject centered at eye level',
@@ -2012,8 +2036,19 @@ function rateb_image_model_preferences(string $category): array
         'Deliberate',
         'stable_diffusion',
     ];
+    $digital = [
+        'Dreamshaper',
+        'AbsoluteReality',
+        'Edge Of Realism',
+        'Realistic Vision',
+        'Deliberate 3.0',
+        'majicMIX realistic',
+        'Deliberate',
+        'stable_diffusion',
+    ];
     return match ($category) {
-        'physical_product', 'food', 'local_service', 'place', 'digital_service' => $photo,
+        'digital_service' => $digital,
+        'physical_product', 'food', 'local_service', 'place' => $photo,
         default => $photo,
     };
 }
