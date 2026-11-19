@@ -18,6 +18,14 @@ check(!str_contains($source, "\$_FILES['poster']"), 'a browser-drawn poster is n
 $page = (string) file_get_contents(dirname(__DIR__) . '/campaign.php');
 check(str_contains($page, 'id="imageForm"') && str_contains($page, 'name="ratio"'), 'the campaign page offers the AI image form');
 
+preg_match_all("/'(?:1:1|4:5|9:16)' => \[(\d+), (\d+)\]|default => \[(\d+), (\d+)\]/", $source, $sizes, PREG_SET_ORDER);
+$sizesOk = count($sizes) === 3;
+foreach ($sizes as $size) {
+    $dims = array_values(array_filter(array_slice($size, 1), static fn(string $v): bool => $v !== ''));
+    $sizesOk = $sizesOk && (int) $dims[0] % 64 === 0 && (int) $dims[1] % 64 === 0 && (int) $dims[0] * (int) $dims[1] <= 576 * 576;
+}
+check($sizesOk, 'every image size fits the Horde no-upfront-kudos limit of 576x576');
+
 if (preg_match('/function ai_image_url_allowed\(string \$url\): bool\s*\{.*?\n\}/s', $source, $match) === 1) {
     eval($match[0]);
 }

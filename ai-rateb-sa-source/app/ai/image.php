@@ -50,7 +50,7 @@ ai_image_dispatch($campaign, $decision, $postedJobId, $now);
 $ratio = (string) ($_POST['ratio'] ?? '1:1');
 $ratioSize = match ($ratio) {
     '4:5' => [512, 640],
-    '9:16' => [448, 768],
+    '9:16' => [384, 704],
     default => [512, 512],
 };
 if (!in_array($ratio, ['1:1', '4:5', '9:16'], true)) {
