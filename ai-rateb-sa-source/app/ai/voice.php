@@ -66,16 +66,6 @@ $gate = rateb_usage_begin(db(), $userId, (int) $campaign['id'], 'voice');
 if (!$gate['ok']) {
     rateb_deny((string) $gate['code']);
 }
-$charge = rateb_reservation_charge(db(), (int) $gate['id'], $userId, 'saudi_voice', (int) $campaign['id']);
-if ($charge !== 'ok') {
-    rateb_usage_finish(db(), (int) $gate['id'], 'failed');
-    if ($charge === 'credits') {
-        rateb_credit_stop($userId, 'saudi_voice');
-    }
-    http_response_code(409);
-    echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
 session_write_close();
 
 $payload = json_encode([

@@ -302,37 +302,37 @@ function audio(): array
 $voice = run_endpoint(voice_request(100, audio()), job_dir());
 $reservation = rows($voice, 'voice');
 check($voice['http'] === 200 && ($voice['json']['ok'] ?? false) === true && $voice['stores'] === 1, 'voice: a successful request stores the audio');
-check(balance($voice) === 85 && count(rows($voice, 'saudi_voice')) === 1 && rows($voice, 'saudi_voice_refund') === [], 'voice: success charges 15 credits once and refunds nothing');
-check(count($reservation) === 1 && $reservation[0]['status'] === 'completed' && (int) $reservation[0]['credits_deducted'] === 15, 'voice: the reservation completes with the 15-credit charge recorded');
-check(count($voice['calls']) === 1 && $voice['calls'][0]['balance'] === 85 && $voice['unexpected'] === [], 'voice: the credits are taken before the provider call');
+check(balance($voice) === 100 && rows($voice, 'saudi_voice') === [] && rows($voice, 'saudi_voice_refund') === [], 'voice: success does not charge credits');
+check(count($reservation) === 1 && $reservation[0]['status'] === 'completed' && (int) $reservation[0]['credits_deducted'] === 0, 'voice: the reservation completes without a credit charge');
+check(count($voice['calls']) === 1 && $voice['calls'][0]['balance'] === 100 && $voice['unexpected'] === [], 'voice: the provider is called without taking credits');
 check(count($voice['writes']) === 2, 'voice: the spoken script is saved after success');
 
 $down = run_endpoint(voice_request(100, ['http' => 500, 'body' => json_encode(['error' => ['code' => 'server_error']])]), job_dir());
-check($down['http'] === 502 && $down['calls'][0]['balance'] === 85, 'voice: a provider failure happens after the charge');
-check(balance($down) === 100 && count(rows($down, 'saudi_voice_refund')) === 1 && rows($down, 'voice')[0]['status'] === 'failed' && $down['stores'] === 0 && $down['writes'] === [], 'voice: a provider failure refunds once and saves nothing');
+check($down['http'] === 502 && $down['calls'][0]['balance'] === 100, 'voice: a provider failure happens with the balance untouched');
+check(balance($down) === 100 && rows($down, 'saudi_voice_refund') === [] && rows($down, 'voice')[0]['status'] === 'failed' && $down['stores'] === 0 && $down['writes'] === [], 'voice: a provider failure saves nothing and charges nothing');
 
 $terms = run_endpoint(voice_request(100, ['http' => 403, 'body' => json_encode(['error' => ['code' => 'model_terms_required']])]), job_dir());
-check($terms['http'] === 403 && ($terms['json']['code'] ?? '') === 'voice_terms' && balance($terms) === 100 && count(rows($terms, 'saudi_voice_refund')) === 1, 'voice: a terms refusal refunds the charge');
+check($terms['http'] === 403 && ($terms['json']['code'] ?? '') === 'voice_terms' && balance($terms) === 100 && rows($terms, 'saudi_voice_refund') === [], 'voice: a terms refusal charges nothing');
 
 $scenario = voice_request(100, audio());
 $scenario['storage_fails'] = true;
 $lost = run_endpoint($scenario, job_dir());
-check($lost['http'] === 500 && balance($lost) === 100 && count(rows($lost, 'saudi_voice_refund')) === 1 && rows($lost, 'voice')[0]['status'] === 'failed' && $lost['writes'] === [], 'voice: a storage failure refunds once and saves no script');
+check($lost['http'] === 500 && balance($lost) === 100 && rows($lost, 'saudi_voice_refund') === [] && rows($lost, 'voice')[0]['status'] === 'failed' && $lost['writes'] === [], 'voice: a storage failure saves no script and charges nothing');
 
 $poor = run_endpoint(voice_request(10, audio()), job_dir());
-check($poor['http'] === 402 && ($poor['json']['code'] ?? '') === 'credits' && $poor['calls'] === [], 'voice: a low balance stops before the provider call');
-check(balance($poor) === 10 && rows($poor, 'saudi_voice') === [] && rows($poor, 'voice')[0]['status'] === 'failed', 'voice: a low balance charges nothing and closes the reservation');
+check($poor['http'] === 200 && ($poor['json']['ok'] ?? false) === true && count($poor['calls']) === 1, 'voice: a low balance still generates the included voice');
+check(balance($poor) === 10 && rows($poor, 'saudi_voice') === [] && rows($poor, 'voice')[0]['status'] === 'completed', 'voice: a low balance is not charged');
 
 $scenario = voice_request(85, audio());
 $scenario['events'] = [1 => ['user_id' => USER, 'campaign_id' => CAMPAIGN, 'operation' => 'voice', 'status' => 'reserved', 'credits_deducted' => 15, 'age' => 601]];
 $scenario['next_id'] = 2;
 $swept = run_endpoint($scenario, job_dir());
 check($swept['events'][1]['status'] === 'failed' && count(rows($swept, 'saudi_voice_refund')) === 1, 'voice: a stale charged reservation is swept and refunded once');
-check($swept['http'] === 200 && balance($swept) === 85 && $swept['calls'][0]['balance'] === 85, 'voice: the sweep refund lands before the new charge, which is still taken once');
+check($swept['http'] === 200 && balance($swept) === 100 && $swept['calls'][0]['balance'] === 100, 'voice: the sweep refund lands and the new voice takes nothing');
 
 $scenario['events'][1]['age'] = 100;
 $fresh = run_endpoint($scenario, job_dir());
-check($fresh['events'][1]['status'] === 'reserved' && rows($fresh, 'saudi_voice_refund') === [] && balance($fresh) === 70, 'voice: a recent charged reservation is not swept');
+check($fresh['events'][1]['status'] === 'reserved' && rows($fresh, 'saudi_voice_refund') === [] && balance($fresh) === 85, 'voice: a recent charged reservation is not swept and the new voice takes nothing');
 
 echo $failures === 0 ? 'RESULT=PASS' : 'RESULT=FAIL failures=' . $failures, PHP_EOL;
 exit($failures === 0 ? 0 : 1);
