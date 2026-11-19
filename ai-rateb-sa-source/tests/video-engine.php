@@ -62,11 +62,12 @@ check(!str_contains($short[0]['prompt'], 'سعر') && str_contains($short[0]['pr
 check(str_contains($short[0]['prompt'], 'Quiet premium reveal'), 'prompt keeps the approved creative direction');
 check(!str_contains($short[0]['prompt'], 'logo applied'), 'prompt does not claim a logo was applied');
 $three = rateb_video_storyboard(['id' => 1], ['creative_direction' => 'Quiet premium reveal'], ['headline'], [['id' => 4], ['id' => 9], ['id' => 12]], 10);
-check(count($three) === 3 && array_sum(array_column($three, 'duration')) === 10, 'ten seconds with three images makes three scenes that still total ten seconds');
-check([$three[0]['image_id'], $three[1]['image_id'], $three[2]['image_id']] === [4, 9, 12], 'each attached image gets its own scene');
-check(rateb_video_clips_for_images(5, 3) === [2, 2, 1], 'five seconds splits across three attached images');
+check(count($three) === 6 && array_sum(array_column($three, 'duration')) === 10, 'ten seconds with three images loops twice with short beats');
+check(array_column($three, 'image_id') === [4, 9, 12, 4, 9, 12], 'attached images cycle so the gallery repeats');
+check(max(array_column($three, 'duration')) <= 2, 'slideshow beats stay short for faster switching');
+check(rateb_video_clips_for_images(5, 3) === [1, 1, 1, 1, 1], 'five seconds uses one-second beats across a repeated gallery');
 $full = rateb_video_storyboard(['id' => 1], ['core_message' => 'Message'], ['copy'], $images, 30);
-check(count($full) === 3 && $full[0]['duration'] === 10 && $full[2]['image_id'] === 4, 'thirty seconds uses three ten-second scenes');
+check(count($full) >= 4 && array_sum(array_column($full, 'duration')) === 30, 'thirty seconds still totals thirty with a looping slideshow');
 check(rateb_video_clips(15) === [10, 5], 'fifteen seconds is a ten-second scene plus five');
 $freePlan = ['code' => 'free', 'price_sar' => '0.00', 'video_max_seconds' => 8];
 check(rateb_video_duration_code($freePlan, 5) === '' && rateb_video_duration_code($freePlan, 10) === '', 'five and ten seconds stay free');

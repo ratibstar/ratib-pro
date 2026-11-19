@@ -72,8 +72,8 @@ function rateb_video_clips(int $seconds): array
 }
 
 /**
- * Split the selected duration across campaign images so every attached creative
- * appears in the video (slideshow), instead of one long scene that only uses the first image.
+ * Build a fast looping slideshow timeline: short beats that cycle every attached
+ * image at least twice when the selected duration allows it.
  *
  * @return array<int,int>
  */
@@ -84,21 +84,17 @@ function rateb_video_clips_for_images(int $seconds, int $imageCount): array
         return [];
     }
     $imageCount = max(1, $imageCount);
+    $total = array_sum($base);
     if ($imageCount === 1) {
         return $base;
     }
-    // Keep provider-friendly clip packing when it already has enough slots.
-    if (count($base) >= $imageCount) {
-        return $base;
+    // ~1–2s beats that cycle the gallery at least twice when duration allows.
+    $beat = $total <= 5 ? 1 : 2;
+    $target = $imageCount * 2;
+    if ($total >= $imageCount * $beat * 2) {
+        $target = $imageCount * max(2, intdiv($total, $imageCount * $beat));
     }
-    $scenes = min($imageCount, 6);
-    $total = array_sum($base);
-    if ($scenes > $total) {
-        $scenes = $total;
-    }
-    if ($scenes <= 1) {
-        return $base;
-    }
+    $scenes = max(1, min($total, max($imageCount, $target), 12));
     $each = intdiv($total, $scenes);
     $rem = $total % $scenes;
     $out = [];
@@ -440,6 +436,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
         return $job;
     }
     $provider = rateb_video_provider();
+    $localFrame = null;
     try {
         foreach ($scenes as $index => $scene) {
             if (!is_array($scene)) {
@@ -458,7 +455,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                 }
                 $sceneRatio = (string) ($scene['ratio'] ?? '9:16');
                 if (!$provider->configured() || (string) ($job['provider'] ?? '') === 'local') {
-                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $sceneRatio);
+                    $localFrame = rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $sceneRatio, $localFrame);
                     $scenes[$index]['status'] = 'ready';
                     $scenes[$index]['local'] = true;
                     $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
@@ -478,7 +475,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                     if ($providerError->getMessage() !== 'rejected_credit') {
                         throw $providerError;
                     }
-                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $sceneRatio);
+                    $localFrame = rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $sceneRatio, $localFrame);
                     $scenes[$index]['status'] = 'ready';
                     $scenes[$index]['local'] = true;
                     $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
@@ -552,7 +549,11 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
     }
 }
 
-function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds, string $ratio = '9:16'): void
+/**
+ * @param array{0:int,1:int}|null $forcedFrame Keep every scene identical for ffmpeg concat.
+ * @return array{0:int,1:int}
+ */
+function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds, string $ratio = '9:16', ?array $forcedFrame = null): array
 {
     // Encode from the original campaign file. Do not reuse rateb_video_prompt_jpeg()
     // here — that helper shrinks to 720x1280 for Runway and ruins local sharpness.
@@ -565,14 +566,26 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
         throw new RuntimeException('storage');
     }
     $clip = $dir . '/' . (int) $job['id'] . '-' . $index . '.mp4';
-    // Prefer a frame that fits the source: landscape uploads keep a wide canvas.
-    $info = @getimagesize($source);
-    $srcW = is_array($info) ? (int) $info[0] : 0;
-    $srcH = is_array($info) ? (int) $info[1] : 0;
-    if ($srcW > 0 && $srcH > 0 && $srcW >= (int) round($srcH * 1.2)) {
-        [$width, $height] = [1920, 1080];
+    if (is_array($forcedFrame) && count($forcedFrame) >= 2 && (int) $forcedFrame[0] > 1 && (int) $forcedFrame[1] > 1) {
+        $width = (int) $forcedFrame[0];
+        $height = (int) $forcedFrame[1];
     } else {
-        [$width, $height] = rateb_video_frame_size($ratio);
+        // Match the first source aspect (even dimensions) so the full creative fills
+        // the frame with contain-scale — no crop, minimal padding.
+        $info = @getimagesize($source);
+        $srcW = is_array($info) ? (int) $info[0] : 0;
+        $srcH = is_array($info) ? (int) $info[1] : 0;
+        if ($srcW > 0 && $srcH > 0) {
+            if ($srcW >= $srcH) {
+                $width = 1920;
+                $height = max(2, (int) (round($width * $srcH / $srcW / 2) * 2));
+            } else {
+                $height = 1920;
+                $width = max(2, (int) (round($height * $srcW / $srcH / 2) * 2));
+            }
+        } else {
+            [$width, $height] = rateb_video_frame_size($ratio);
+        }
     }
     $frames = max(1, $seconds) * 30;
     $ffmpeg = is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
@@ -596,6 +609,7 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
         throw new RuntimeException('storage');
     }
     chmod($clip, 0600);
+    return [$width, $height];
 }
 
 /** @param array<int,array<string,mixed>> $scenes */
