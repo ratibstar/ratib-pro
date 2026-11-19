@@ -271,9 +271,7 @@ function rateb_video_approved(PDO $pdo, int $campaignId, int $userId): ?array
 function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array $copyRows, array $images, int $seconds = 5): array
 {
     $provider = rateb_video_provider();
-    if (!$provider->configured()) {
-        return ['ok' => false, 'code' => 'not_configured', 'job_id' => 0];
-    }
+    $providerName = $provider->configured() ? $provider->name() : 'local';
     if ((string) ($strategyRow['approval_status'] ?? '') !== 'approved') {
         return ['ok' => false, 'code' => 'missing_copy', 'job_id' => 0];
     }
@@ -318,7 +316,7 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     $insert->execute([
         (int) $campaign['id'],
         (int) $campaign['user_id'],
-        $provider->name(),
+        $providerName,
         json_encode($scenes, JSON_UNESCAPED_UNICODE),
         (int) $gate['id'],
         !empty($gate['watermark']) ? 1 : 0,
@@ -360,12 +358,6 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
         return $job;
     }
     $provider = rateb_video_provider();
-    if (!$provider->configured()) {
-        rateb_video_fail($pdo, $job, 'not_configured');
-        $job['status'] = 'failed';
-        $job['error_code'] = 'not_configured';
-        return $job;
-    }
     try {
         foreach ($scenes as $index => $scene) {
             if (!is_array($scene)) {
@@ -381,6 +373,16 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                 $row = $image->fetch();
                 if (!$row) {
                     throw new RuntimeException('missing_image');
+                }
+                if (!$provider->configured() || (string) ($job['provider'] ?? '') === 'local') {
+                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration']);
+                    $scenes[$index]['status'] = 'ready';
+                    $scenes[$index]['local'] = true;
+                    $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
+                        json_encode($scenes, JSON_UNESCAPED_UNICODE),
+                        (int) $job['id'],
+                    ]);
+                    continue;
                 }
                 try {
                     $created = $provider->generateFromImage(
