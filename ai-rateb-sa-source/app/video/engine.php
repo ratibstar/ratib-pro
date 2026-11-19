@@ -459,6 +459,11 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
         $code = in_array($error->getMessage(), ['not_configured', 'auth', 'rejected', 'rejected_image', 'rejected_model', 'rejected_credit', 'timeout', 'provider', 'invalid', 'missing_image', 'storage', 'watermark'], true)
             ? $error->getMessage()
             : 'provider';
+        if ($error->getMessage() === 'deferred') {
+            $job['status'] = 'processing';
+            $job['error_code'] = '';
+            return $job;
+        }
         rateb_video_fail($pdo, $job, $code);
         $job['status'] = 'failed';
         $job['error_code'] = $code;
@@ -488,7 +493,7 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
         . ' -frames:v ' . $frames . ' -r 25 -vf scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p'
         . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
     if (!function_exists('proc_open')) {
-        throw new RuntimeException('storage');
+        throw new RuntimeException('deferred');
     }
     $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
     if (!is_resource($process)) {
@@ -540,11 +545,7 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     }
     $cmd .= ' -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . escapeshellarg($out);
     if (!function_exists('proc_open')) {
-        $fallback = rateb_video_single_clip($dir, $job, $scenes);
-        if ($fallback !== null) {
-            return $fallback;
-        }
-        throw new RuntimeException('storage');
+        throw new RuntimeException('deferred');
     }
     $process = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
     if (!is_resource($process)) {

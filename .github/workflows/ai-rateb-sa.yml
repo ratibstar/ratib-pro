@@ -247,7 +247,7 @@ jobs:
             "cli/reconcile-pending-payments.php"
             "cli/enforce-subscription-expiry.php"
             "cli/apply-commerce-schema.php"
-            "cli/restore-campaign-80-credits.php"
+            "cli/render-videos.php"
             "cli/run-commerce-now.php"
             "cli/set-platform-owner-password.php"
             "migrations/payment_commerce_schema.php"
@@ -454,11 +454,12 @@ jobs:
           mkdir -p "${TARGET}/storage"
           TMP="$(mktemp)"
           {
-            crontab -l 2>/dev/null | grep -v 'rateb-ai-commerce-cron' | grep -v 'notify-subscription-reminders.php' | grep -v 'reconcile-pending-payments.php' | grep -v 'enforce-subscription-expiry.php' || true
+            crontab -l 2>/dev/null | grep -v 'rateb-ai-commerce-cron' | grep -v 'notify-subscription-reminders.php' | grep -v 'reconcile-pending-payments.php' | grep -v 'enforce-subscription-expiry.php' | grep -v 'render-videos.php' || true
             echo "# rateb-ai-commerce-cron"
             echo "0 9 * * * cd ${TARGET} && ${PHP_BIN} cli/notify-subscription-reminders.php >> ${TARGET}/storage/cron-commerce.log 2>&1"
             echo "*/15 * * * * cd ${TARGET} && ${PHP_BIN} cli/reconcile-pending-payments.php 7 >> ${TARGET}/storage/cron-commerce.log 2>&1"
             echo "0 * * * * cd ${TARGET} && ${PHP_BIN} cli/enforce-subscription-expiry.php 120 >> ${TARGET}/storage/cron-commerce.log 2>&1"
+            echo "* * * * * cd ${TARGET} && ${PHP_BIN} cli/render-videos.php >> ${TARGET}/storage/cron-video.log 2>&1"
           } > "${TMP}"
           crontab "${TMP}"
           rm -f "${TMP}"
@@ -470,6 +471,26 @@ jobs:
           else
             echo "COMMERCE_OPS=skip_delta"
           fi
+          VIDEO_CRON="$("${SSH[@]}" "$REMOTE" "TARGET='${TARGET}' bash -s" <<'CRON'
+          set -eu
+          if ! command -v crontab >/dev/null 2>&1; then
+            echo "VIDEO_CRON=unavailable"
+            exit 0
+          fi
+          PHP_BIN="$(command -v php || echo php)"
+          mkdir -p "${TARGET}/storage"
+          TMP="$(mktemp)"
+          {
+            crontab -l 2>/dev/null | grep -v 'render-videos.php' || true
+            echo "* * * * * cd ${TARGET} && ${PHP_BIN} cli/render-videos.php >> ${TARGET}/storage/cron-video.log 2>&1"
+          } > "${TMP}"
+          crontab "${TMP}"
+          rm -f "${TMP}"
+          echo "VIDEO_CRON=installed"
+          cd "${TARGET}" && ${PHP_BIN} cli/render-videos.php || true
+          CRON
+          )" || true
+          echo "$VIDEO_CRON"
           BUILD_CODE="$(curl -sS -o "${RUNNER_TEMP}/live-build.txt" -w '%{http_code}' --max-time 20 "https://ai.rateb.sa/public/ai-build.txt" || true)"
           echo "LIVE_BUILD_HTTP=${BUILD_CODE}"
           head -3 "${RUNNER_TEMP}/live-build.txt" 2>/dev/null || true
