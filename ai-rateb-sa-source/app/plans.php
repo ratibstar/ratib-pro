@@ -32,6 +32,7 @@ function rateb_ui_error(string $code): string
         'image_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.',
         'image_provider' => $arabic ? 'تعذر توليد الصورة. حاول مرة أخرى.' : 'The image could not be generated. Try again.',
         'image_workers' => $arabic ? 'مزود الصور غير متاح الآن. حاول بعد قليل.' : 'The image provider is not available right now. Try again shortly.',
+        'image_irrelevant' => $arabic ? 'استبعدنا الصورة لأنها لا تمثل موضوع حملتك. لم تُحفظ ولم تُحتسب من حد الصور.' : 'We rejected the image because it did not represent your campaign. It was not saved or counted.',
         'voice_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصوت.' : 'Approve the copy first, then start the voice.',
         'voice_provider' => $arabic ? 'تعذر توليد الصوت. حاول مرة أخرى.' : 'The voice could not be generated. Try again.',
         'voice_english' => $arabic ? 'توليد الكلام الإنجليزي غير متاح حاليًا. نموذج الكلام الحالي عربي فقط.' : 'English speech is currently unavailable. The current speech model is Arabic only.',
@@ -1641,6 +1642,7 @@ function rateb_image_plan_parse(string $content, array $brandWords = [], array $
         return ['sufficient' => false];
     }
     $evidence = trim((string) ($data['evidence'] ?? ''));
+    $evidence = trim($evidence, " \t\n\r\0\x0B\"'“”‘’");
     $factText = implode("\n", array_intersect_key($facts, array_flip([
         'product', 'title', 'description', 'objective', 'audience', 'location',
         'core_message', 'creative_direction', 'channels', 'offer',
@@ -1715,9 +1717,9 @@ function rateb_image_plan_compatible(array $plan, array $facts): bool
 }
 
 /**
- * A generic analytics dashboard is not evidence of a marketing platform. When the
- * authoritative brief explicitly describes campaign/content/image creation, make
- * those real outputs the visible subject while preserving the model's evidence.
+ * Stable Diffusion invents abstract neon spheres when asked for "AI platforms".
+ * When the brief is a marketing/campaign service, force a photoreal commercial
+ * desk scene that shows planning cards, content sheets, and ad mockups.
  *
  * @param array<string,mixed> $plan
  * @param array<string,string> $facts
@@ -1734,15 +1736,26 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
     if (!$isMarketing || !$hasCreativeOutputs) {
         return $plan;
     }
-    $plan['subject'] = 'luminous AI network sphere connecting blank campaign calendar cards, content sheets, and colorful advertising image frames';
+    $plan['subject'] = 'top-down commercial photo of blank white index cards, colorful magazine photo clippings, yellow sticky notes, and black markers arranged on a light oak desk';
     $plan['elements'] = [
-        'blank campaign calendar cards',
-        'neatly arranged content sheets',
-        'colorful advertising image frames',
-        'connected workflow nodes',
+        'blank white index cards with no writing',
+        'colorful magazine photo clippings',
+        'yellow sticky notes with no writing',
+        'black markers',
+        'soft natural desk shadows',
     ];
-    $plan['setting'] = 'clean purple and teal studio background';
+    $plan['setting'] = 'bright modern marketing studio desk';
+    $plan['mood'] = 'professional clean commercial';
     $plan['avoid'] = array_values(array_unique(array_merge([
+        'handwritten text',
+        'written words',
+        'letters on paper',
+        'notebook with writing',
+        'neon orb',
+        'glowing sphere',
+        'particle network',
+        'abstract fractal',
+        'sci-fi hud',
         'analytics dashboard',
         'landscape photography',
         'nature scenery',
@@ -1762,6 +1775,43 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
         'face',
     ], (array) ($plan['avoid'] ?? []))));
     return $plan;
+}
+
+/**
+ * Deterministic reject for captions that are clearly generic tech art, before the
+ * language-model gate. Returns a short reason, or null when the caption may pass.
+ *
+ * @param array<string,string> $facts
+ */
+function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
+{
+    $caption = mb_strtolower(trim($caption));
+    if ($caption === '') {
+        return 'empty caption';
+    }
+    $source = mb_strtolower(rateb_image_subject_facts($facts));
+    $abstract = preg_match('/\b(neon|orb|glowing sphere|particle|fractal|holograph|sci-?fi|cyberpunk|wireframe|abstract (circles?|lights?|network|geometry)|luminous (sphere|network)|energy field)\b/u', $caption) === 1;
+    $trading = preg_match('/\b(stock (market|chart)|candlestick|trading (desk|screen|chart)|forex|crypto chart)\b/u', $caption) === 1;
+    $dashboardOnly = preg_match('/\b(analytics dashboard|kpi dashboard|generic dashboard|data dashboard)\b/u', $caption) === 1
+        && preg_match('/\b(ad|advert|campaign|mockup|print|storyboard|calendar|planning card)\b/u', $caption) !== 1;
+    $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1;
+    $writtenPaper = preg_match('/\b(handwrit|writing on|written (on|text)|letters on|words on|notebook with text|notepad with text)\b/u', $caption) === 1;
+    $marketingDesk = preg_match('/\b(index cards?|planning cards?|storyboard|sticky notes?|photo (prints?|clippings?)|magazine|markers?|advertisement mockups?|flat lay|studio desk|oak desk)\b/u', $caption) === 1;
+    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || ($isMarketing && !$marketingDesk && preg_match('/\b(paper|notepad|notebook)\b/u', $caption) === 1)) {
+        return 'caption shows generic tech art instead of the campaign subject';
+    }
+    $topics = [
+        ['/قهو|كوفي|coffee|espresso/u', '/coffee|espresso|cup|beans|cafe/'],
+        ['/تمر|تمور|dates/u', '/date|dates|fruit|gift box/'],
+        ['/عطر|عطور|بخور|عود|perfume|oud/u', '/perfume|fragrance|oud|bottle/'],
+        ['/مطعم|وجب|برجر|بيتزا|شاورما|طعام|restaurant|burger|pizza|meal/u', '/food|meal|dish|restaurant|burger|pizza|shawarma|plate/'],
+    ];
+    foreach ($topics as [$sourcePattern, $captionPattern]) {
+        if (preg_match($sourcePattern, $source) === 1 && preg_match($captionPattern, $caption) !== 1) {
+            return 'caption misses the concrete campaign product';
+        }
+    }
+    return null;
 }
 
 /**
@@ -1799,22 +1849,22 @@ function rateb_image_fallback_plan(array $facts): ?array
         return [
             'sufficient' => true,
             'category' => 'digital_service',
-            'subject' => 'laptop and smartphone on a desk, screens showing colorful AI-generated advertisement designs and a vertical video ad preview',
-            'elements' => ['laptop screen with a grid of ad design thumbnails', 'smartphone playing a vertical video ad', 'abstract glowing AI network accent'],
-            'setting' => 'modern minimalist work desk',
-            'mood' => 'innovative, bright, professional',
-            'avoid' => ['picture frame', 'lamp', 'empty room', 'landscape'],
+            'subject' => 'top-down commercial photo of blank white index cards, colorful magazine photo clippings, yellow sticky notes, and black markers arranged on a light oak desk',
+            'elements' => ['blank white index cards with no writing', 'colorful magazine photo clippings', 'yellow sticky notes with no writing', 'black markers'],
+            'setting' => 'bright modern marketing studio desk',
+            'mood' => 'professional, clean, commercial',
+            'avoid' => ['handwritten text', 'written words', 'neon orb', 'glowing sphere', 'particle network', 'analytics dashboard', 'landscape'],
         ];
     }
     if ($digital) {
         return [
             'sufficient' => true,
             'category' => 'digital_service',
-            'subject' => 'laptop and smartphone screens showing a clean modern app dashboard with abstract charts',
-            'elements' => ['laptop with dashboard', 'smartphone with app screen', 'abstract chart shapes'],
+            'subject' => 'photorealistic desk with a tablet showing a clean modern app interface made of abstract colorful shapes',
+            'elements' => ['tablet with app interface', 'notebook', 'soft desk lamp'],
             'setting' => 'modern minimalist work desk',
             'mood' => 'innovative, bright, professional',
-            'avoid' => ['picture frame', 'lamp', 'empty room', 'landscape'],
+            'avoid' => ['neon orb', 'glowing sphere', 'picture frame', 'empty room', 'landscape'],
         ];
     }
     return null;
@@ -1842,12 +1892,21 @@ function rateb_image_prompt_clip_list(string $text, int $limit): string
 
 function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, int $variant): string
 {
-    $shots = [
-        'hero shot with the subject centered at eye level',
-        'three-quarter angle close-up with shallow depth of field',
-        'in-use scene showing hands interacting with the subject',
-        'top-down flat lay composition',
-    ];
+    $category = (string) ($plan['category'] ?? 'other');
+    $shots = match ($category) {
+        'digital_service' => [
+            'top-down flat lay commercial photograph',
+            'hero product-style desk photograph at eye level',
+            'three-quarter angle commercial desk photograph',
+            'clean studio tabletop composition',
+        ],
+        default => [
+            'hero shot with the subject centered at eye level',
+            'three-quarter angle close-up with shallow depth of field',
+            'in-use scene showing hands interacting with the subject',
+            'top-down flat lay composition',
+        ],
+    };
     $layout = match ($ratio) {
         '9:16' => 'vertical mobile story layout, subject in the middle third, plain uncluttered space at the top and bottom',
         '4:5' => 'portrait feed layout, subject in the lower two thirds, plain empty space at the top',
@@ -1863,17 +1922,97 @@ function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, in
     $positive[] = (string) ($plan['mood'] ?? '');
     $positive[] = $shots[abs($variant) % count($shots)];
     $positive[] = $layout;
-    $positive[] = 'professional commercial advertising photograph, soft studio lighting, sharp focus, high detail';
+    $positive[] = 'photorealistic commercial advertising photograph, natural soft studio lighting, sharp focus, high detail, no abstract art';
     $positive = implode(', ', array_values(array_filter(array_map('trim', $positive), static fn(string $part): bool => $part !== '')));
-    $negative = ['text', 'words', 'letters', 'typography', 'arabic script', 'caption', 'watermark', 'signature', 'logo', 'brand name', 'blurry', 'lowres', 'jpeg artifacts', 'deformed', 'distorted', 'extra fingers', 'bad hands', 'cropped', 'out of frame', 'collage', 'split screen', 'cartoon', 'illustration', 'sci-fi hud', 'generic stock photo', 'unrelated objects', 'empty room', 'wall art', 'picture frame'];
-    if (($plan['category'] ?? '') !== 'local_service') {
-        $negative[] = 'face';
-    }
+    $negative = [];
     foreach ((array) ($plan['avoid'] ?? []) as $avoid) {
         $negative[] = (string) $avoid;
     }
+    $negative = array_merge($negative, [
+        'neon orb', 'glowing sphere', 'particle network', 'abstract fractal', 'sci-fi hud', 'anime',
+        'text', 'words', 'letters', 'typography', 'arabic script', 'caption', 'watermark', 'signature', 'logo', 'brand name',
+        'blurry', 'lowres', 'jpeg artifacts', 'deformed', 'distorted', 'extra fingers', 'bad hands', 'cropped', 'out of frame',
+        'collage', 'split screen', 'cartoon', 'illustration', 'generic stock photo', 'unrelated objects', 'empty room', 'wall art', 'picture frame',
+    ]);
+    if ($category !== 'local_service') {
+        $negative[] = 'face';
+    }
     $negative = implode(', ', array_values(array_unique(array_filter(array_map(static fn(string $part): string => strtolower(trim($part)), $negative)))));
     return rateb_image_prompt_clip_list($positive, 520) . ' ### ' . rateb_image_prompt_clip_list($negative, 480);
+}
+
+/** Prefer photorealistic SD1.5 models that follow commercial product prompts at 512–576px. */
+function rateb_image_model_preferences(string $category): array
+{
+    $photo = [
+        'AbsoluteReality',
+        'Edge Of Realism',
+        'Realistic Vision',
+        'majicMIX realistic',
+        'ICBINP - I Can\'t Believe It\'s Not Photography',
+        'ICBINP',
+        'Analog Madness',
+        'Dreamshaper',
+        'Deliberate 3.0',
+        'Deliberate',
+        'stable_diffusion',
+    ];
+    return match ($category) {
+        'physical_product', 'food', 'local_service', 'place', 'digital_service' => $photo,
+        default => $photo,
+    };
+}
+
+/**
+ * Pick up to three online preferred models so Horde can fall back if one worker pool empties.
+ *
+ * @param array<string,int> $counts
+ * @return list<string>
+ */
+function rateb_image_select_models(array $preferred, array $counts, int $max = 3): array
+{
+    $chosen = [];
+    foreach ($preferred as $name) {
+        if (($counts[$name] ?? 0) < 1) {
+            continue;
+        }
+        $chosen[] = $name;
+        if (count($chosen) >= $max) {
+            break;
+        }
+    }
+    return $chosen;
+}
+
+/** @return array<string,mixed> */
+function rateb_image_generation_params(int $width, int $height): array
+{
+    return [
+        'width' => $width,
+        'height' => $height,
+        'steps' => 30,
+        'cfg_scale' => 8.5,
+        'sampler_name' => 'k_euler_a',
+        'karras' => true,
+        'clip_skip' => 1,
+        'n' => 1,
+    ];
+}
+
+/** @return array{relevant:bool,reason:string}|null */
+function rateb_image_relevance_parse(string $content): ?array
+{
+    if (preg_match('/\{.*\}/s', $content, $match) !== 1) {
+        return null;
+    }
+    $data = json_decode($match[0], true);
+    if (!is_array($data) || !is_bool($data['relevant'] ?? null)) {
+        return null;
+    }
+    return [
+        'relevant' => $data['relevant'],
+        'reason' => mb_substr(trim((string) ($data['reason'] ?? '')), 0, 500),
+    ];
 }
 
 function rateb_image_prompt_log(array $entry): void
@@ -2100,6 +2239,7 @@ function rateb_image_job_directory(): string
 function rateb_image_job_normalize(array $job): array
 {
     $phase = (string) ($job['phase'] ?? 'pending');
+    $validationId = strtolower(trim((string) ($job['validation_id'] ?? '')));
     return [
         'job_id' => strtolower(trim((string) ($job['job_id'] ?? ''))),
         'user_id' => (int) ($job['user_id'] ?? 0),
@@ -2107,6 +2247,8 @@ function rateb_image_job_normalize(array $job): array
         'usage_id' => (int) ($job['usage_id'] ?? 0),
         'created' => (int) ($job['created'] ?? 0),
         'phase' => $phase === 'submitting' ? 'submitting' : 'pending',
+        'validation_id' => preg_match('/^[a-f0-9-]{36}$/', $validationId) === 1 ? $validationId : '',
+        'retry_used' => !empty($job['retry_used']) ? 1 : 0,
     ];
 }
 

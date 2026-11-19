@@ -180,6 +180,9 @@ final class FakeStatement extends PDOStatement
                 }
                 $this->result = [[0 => $count]];
                 return true;
+            case "SELECT stored_name FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = 'image' AND source = 'upload' ORDER BY id DESC LIMIT 1":
+                $this->result = [];
+                return true;
         }
         if (array_key_exists($this->sql, $db->reads)) {
             $this->result = $db->reads[$this->sql];

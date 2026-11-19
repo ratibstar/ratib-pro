@@ -19,7 +19,7 @@ $page = (string) file_get_contents(dirname(__DIR__) . '/campaign.php');
 check(str_contains($page, 'id="imageForm"') && str_contains($page, 'name="ratio"'), 'the campaign page offers the AI image form');
 
 preg_match_all("/'(?:1:1|4:5|9:16)' => \[(\d+), (\d+)\]|default => \[(\d+), (\d+)\]/", $source, $sizes, PREG_SET_ORDER);
-$sizesOk = count($sizes) === 3;
+$sizesOk = count($sizes) >= 3 && count($sizes) % 3 === 0;
 foreach ($sizes as $size) {
     $dims = array_values(array_filter(array_slice($size, 1), static fn(string $v): bool => $v !== ''));
     $sizesOk = $sizesOk && (int) $dims[0] % 64 === 0 && (int) $dims[1] % 64 === 0 && (int) $dims[0] * (int) $dims[1] <= 576 * 576;
@@ -44,6 +44,10 @@ check(preg_match("/if \(!ai_image_url_allowed\(\\\$imageUrl\)\) \{\s*ai_image_re
 check(str_contains($source, "'job_id' => \$jobId") && str_contains($source, "'prompt_sha256' => hash('sha256', \$prompt)"), 'the submitted prompt is logged against the Horde job id without a secret');
 check(str_contains($source, "(\$bound['campaign_id'] ?? 0) !== (int) \$campaign['id']"), 'a Horde result cannot be stored under a different campaign');
 check(!str_contains($source, 'rateb_image_fallback_plan($facts)'), 'the endpoint never guesses a fallback subject when understanding fails');
+check(str_contains($source, 'rateb_image_select_models') && str_contains($source, 'rateb_image_generation_params'), 'the endpoint selects online photoreal models with stronger generation params');
+check(str_contains($source, 'ai_campaign_upload_source_image') && str_contains($source, "source_processing'] = 'img2img'"), 'uploaded product photos can drive img2img');
+check(str_contains($source, 'rateb_image_caption_hard_reject'), 'generic tech-art captions are hard-rejected before storage');
+check(str_contains($source, 'ai_image_retry_unrelated'), 'an unrelated image gets one silent retry before failing the customer');
 
 echo $failures === 0 ? 'RESULT=PASS' . PHP_EOL : 'RESULT=FAIL failures=' . $failures . PHP_EOL;
 exit($failures === 0 ? 0 : 1);

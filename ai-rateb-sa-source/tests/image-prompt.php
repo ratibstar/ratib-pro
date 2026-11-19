@@ -83,6 +83,8 @@ check(rateb_image_plan_parse('{"subject":"منتج"}') === null, 'an Arabic subj
 $wrongPlan = '```json {"sufficient":true,"evidence":"منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية","category":"food","subject":"restaurant meal on a dining table","visual_elements":["plate of food"],"setting":"restaurant","mood":"warm","avoid":[]} ```';
 check(rateb_image_plan_parse($wrongPlan, ['rateb'], $groundedFacts) === null, 'a prompt subject that conflicts with the campaign topic is rejected');
 check(rateb_image_plan_parse(str_replace('منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية', 'claim not in brief', $rawPlan), ['rateb'], $groundedFacts) === null, 'model evidence must be an exact authoritative campaign fact');
+$quotedEvidence = str_replace('"evidence":"منصة تنشئ', '"evidence":"“منصة تنشئ', str_replace('التسويقية","category"', 'التسويقية”","category"', $rawPlan));
+check(is_array(rateb_image_plan_parse($quotedEvidence, ['rateb'], $groundedFacts)), 'quotation marks around an otherwise exact evidence quote are normalized');
 $genericMarketingPlan = [
     'sufficient' => true,
     'category' => 'digital_service',
@@ -95,14 +97,21 @@ $genericMarketingPlan = [
 ];
 $groundedMarketingPlan = rateb_image_plan_ground_marketing_service($genericMarketingPlan, $groundedFacts);
 check(!str_contains(strtolower($groundedMarketingPlan['subject']), 'dashboard'), 'a marketing platform cannot keep a generic dashboard as its visible subject');
-check(str_contains(strtolower($groundedMarketingPlan['subject']), 'campaign calendar cards') && str_contains(strtolower($groundedMarketingPlan['subject']), 'advertising image frames'), 'a marketing platform shows its stated planning and creative outputs');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'blank white index cards') && str_contains(strtolower($groundedMarketingPlan['subject']), 'photo clippings'), 'a marketing platform shows its stated planning and creative outputs');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'commercial photo') || str_contains(strtolower($groundedMarketingPlan['subject']), 'photorealistic'), 'a marketing platform uses a photorealistic commercial scene');
 $groundedMarketingPrompt = rateb_image_prompt_compose($groundedMarketingPlan, $groundedFacts, '1:1', 0);
-check(str_contains($groundedMarketingPrompt, 'analytics dashboard') && str_contains($groundedMarketingPrompt, 'computer monitor') && str_contains($groundedMarketingPrompt, 'landscape photography'), 'the grounded marketing prompt excludes screens, generic analytics, and unrelated stock imagery');
+check(str_contains($groundedMarketingPrompt, 'analytics dashboard') && str_contains($groundedMarketingPrompt, 'computer monitor') && str_contains($groundedMarketingPrompt, 'neon orb'), 'the grounded marketing prompt excludes screens, neon orbs, and unrelated stock imagery');
 $accountingPlan = rateb_image_plan_ground_marketing_service(
     ['category' => 'digital_service', 'subject' => 'accounting software dashboard', 'elements' => []],
     ['product' => 'برنامج محاسبة يدير الفواتير والمخزون']
 );
 check($accountingPlan['subject'] === 'accounting software dashboard', 'non-marketing digital services are not rewritten');
+check(rateb_image_caption_hard_reject($groundedFacts, 'a neon orb surrounded by glowing particle networks') !== null, 'abstract tech art captions are hard-rejected');
+check(rateb_image_caption_hard_reject($groundedFacts, 'white paper with writing on it next to a keyboard') !== null, 'a handwritten notepad caption is hard-rejected for marketing campaigns');
+check(rateb_image_caption_hard_reject($groundedFacts, 'top-down oak desk with blank index cards, yellow sticky notes, and colorful magazine photo clippings') === null, 'a relevant marketing desk caption is not hard-rejected');
+check(rateb_image_select_models(['Missing', 'Realistic Vision', 'Deliberate'], ['Realistic Vision' => 2, 'Deliberate' => 4], 2) === ['Realistic Vision', 'Deliberate'], 'online preferred models are selected in order');
+$params = rateb_image_generation_params(512, 512);
+check(($params['steps'] ?? 0) >= 30 && ($params['cfg_scale'] ?? 0) >= 8, 'generation params ask for stronger prompt adherence');
 
 $fallback = rateb_image_fallback_plan($facts);
 check(is_array($fallback), 'the old fallback remains testable but is not used by the endpoint');
@@ -113,7 +122,7 @@ $prompt = rateb_image_prompt_compose($plan, $facts, '9:16', 1);
 [$positive, $negative] = explode(' ### ', $prompt, 2) + ['', ''];
 check(str_starts_with($positive, $plan['subject']), 'the prompt leads with the campaign subject');
 check(str_contains($positive, 'plain uncluttered space at the top and bottom'), 'a story image keeps space for the Arabic text');
-check(str_contains($positive, 'three-quarter angle'), 'the variant picks the shot');
+check(str_contains($positive, 'hero product-style') || str_contains($positive, 'three-quarter angle') || str_contains($positive, 'flat lay'), 'the variant picks the shot');
 check(!str_contains($positive, 'ratio') && !str_contains($positive, ' not '), 'no ratio label or negation in the positive prompt');
 check(preg_match('/\p{Arabic}/u', $prompt) === 0, 'the prompt never asks for Arabic script');
 check(str_contains($negative, 'text') && str_contains($negative, 'arabic script') && str_contains($negative, 'logo') && str_contains($negative, 'landscape'), 'the negative prompt blocks text, logos, and the plan avoid list');
@@ -121,6 +130,11 @@ check(rateb_image_prompt_clip_list('alpha, beta gamma, delta', 15) === 'alpha', 
 $repeat = ['subject' => 'computer screen displaying AI analytics dashboard', 'elements' => ['AI analytics dashboard', 'performance graphs'], 'category' => 'digital_service'];
 check(substr_count(rateb_image_prompt_compose($repeat, $facts, '1:1', 0), 'AI analytics dashboard') === 1, 'an element that repeats the subject is dropped');
 check(rateb_image_prompt_compose($plan, $facts, '1:1', 0) !== rateb_image_prompt_compose($plan, $facts, '1:1', 2), 'each new image gets its own shot');
+check(in_array(rateb_image_model_preferences('digital_service')[0], ['AbsoluteReality', 'Realistic Vision'], true), 'digital campaigns prefer a photorealistic model over Deliberate');
+check(in_array(rateb_image_model_preferences('food')[0], ['AbsoluteReality', 'Realistic Vision'], true), 'physical campaigns prefer a photorealistic model');
+$relevant = rateb_image_relevance_parse('```json {"relevant":true,"reason":"The gift box and dates are visible."} ```');
+check(is_array($relevant) && $relevant['relevant'] === true, 'a valid relevance verdict is parsed');
+check(rateb_image_relevance_parse('{"relevant":"yes"}') === null, 'a non-boolean relevance verdict fails closed');
 
 echo $failures === 0 ? 'RESULT=PASS' : 'RESULT=FAIL (' . $failures . ')', PHP_EOL;
 exit($failures === 0 ? 0 : 1);

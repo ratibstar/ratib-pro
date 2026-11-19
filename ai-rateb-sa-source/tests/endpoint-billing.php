@@ -21,6 +21,7 @@ function check(bool $ok, string $name): void
 const USER = 15;
 const CAMPAIGN = 7;
 const JOB = 'a1b2c3d4-e5f6-4711-8899-aabbccddeeff';
+const VALIDATION = 'b2c3d4e5-f6a7-4822-9900-bbccddeeff11';
 const HORDE = 'https://aihorde.net/api/v2/';
 const SAWTAK = 'https://api.sawtakarabi.ai/v1/audio/speech';
 const IMAGE_URL = 'https://bucket.r2.cloudflarestorage.com/out.png';
@@ -180,6 +181,32 @@ function done_replies(string $imageUrl = IMAGE_URL): array
     return [
         check_reply(['done' => true]),
         ['method' => 'GET', 'url' => HORDE . 'generate/status/' . JOB, 'http' => 200, 'body' => json_encode(['generations' => [['img' => $imageUrl, 'model' => 'Deliberate']]])],
+        ['method' => 'POST', 'url' => HORDE . 'interrogate/async', 'http' => 202, 'body' => json_encode(['id' => VALIDATION])],
+    ];
+}
+
+function validation_done_replies(bool $relevant = true): array
+{
+    return [
+        check_reply(['done' => true]),
+        ['method' => 'GET', 'url' => HORDE . 'generate/status/' . JOB, 'http' => 200, 'body' => json_encode(['generations' => [['img' => IMAGE_URL, 'model' => 'Deliberate']]])],
+        ['method' => 'GET', 'url' => HORDE . 'interrogate/status/' . VALIDATION, 'http' => 200, 'body' => json_encode([
+            'state' => 'done',
+            'forms' => [[
+                'form' => 'caption',
+                'state' => 'done',
+                'result' => ['caption' => $relevant ? 'an elegant gift box filled with glossy dates' : 'abstract circles surrounded by white lights'],
+            ]],
+        ])],
+        [
+            'method' => 'POST',
+            'url' => 'https://understanding.test/v1/chat/completions',
+            'http' => 200,
+            'body' => json_encode(['choices' => [['message' => ['content' => json_encode([
+                'relevant' => $relevant,
+                'reason' => $relevant ? 'The advertised dates gift box is visible.' : 'The advertised dates are absent.',
+            ])]]]]),
+        ],
         ['method' => 'GET', 'url' => IMAGE_URL, 'http' => 200, 'body_b64' => PNG_B64],
     ];
 }
@@ -225,8 +252,11 @@ $again = run_endpoint($again, $dir);
 check(($again['json']['job_id'] ?? '') === JOB && balance($again) === 100 && $again['events'] == $pending['events'], 'image: a repeat request while pending resumes the job without a second charge');
 check(calls($again, 'POST') === [] && $again['unexpected'] === [], 'image: a repeat request while pending submits nothing');
 
-// Image: a finished job is stored and still uncharged until approval.
-$done = run_endpoint(poll($start, $poll, done_replies()), $dir);
+// Image: a finished generation is first captioned, then stored only after relevance passes.
+$validating = run_endpoint(poll($start, $poll, done_replies()), $dir);
+check(($validating['json']['pending'] ?? false) === true && $validating['stores'] === 0, 'image poll: a finished generation waits for visual validation before storage');
+check((job_store($dir)[0]['validation_id'] ?? '') === VALIDATION, 'image poll: the visual validation job is bound to the same generation');
+$done = run_endpoint(poll($start, $validating, validation_done_replies()), $dir);
 $reservation = rows($done, 'image');
 check($done['http'] === 200 && ($done['json']['ok'] ?? false) === true && $done['stores'] === 1, 'image poll: a finished job is stored');
 check(balance($done) === 100 && $reservation[0]['status'] === 'completed' && rows($done, 'ai_image') === [], 'image poll: completion stores the image without charging');
@@ -249,11 +279,21 @@ check($faulted['http'] === 502 && balance($faulted) === 100 && rows($faulted, 'a
 
 // Image: a storage failure after the provider finished charges nothing.
 [$dir, $start, $pending] = pending_image();
-$scenario = poll($start, $pending, done_replies());
+$validating = run_endpoint(poll($start, $pending, done_replies()), $dir);
+$scenario = poll($start, $validating, validation_done_replies());
 $scenario['storage_fails'] = true;
 $stored = run_endpoint($scenario, $dir);
 check($stored['http'] === 500 && ($stored['json']['code'] ?? '') === 'image_storage', 'image poll: a storage failure reports image_storage');
 check(balance($stored) === 100 && rows($stored, 'ai_image_refund') === [] && rows($stored, 'image')[0]['status'] === 'failed', 'image poll: a storage failure charges nothing');
+
+// Image: a visually unrelated result is rejected before storage and quota completion.
+[$dir, $start, $pending] = pending_image();
+$validating = run_endpoint(poll($start, $pending, done_replies()), $dir);
+$unrelatedReplies = validation_done_replies(false);
+array_pop($unrelatedReplies);
+$unrelated = run_endpoint(poll($start, $validating, $unrelatedReplies), $dir);
+check($unrelated['http'] === 422 && ($unrelated['json']['code'] ?? '') === 'image_irrelevant', 'image validation: an unrelated result is reported explicitly');
+check($unrelated['stores'] === 0 && rows($unrelated, 'image')[0]['status'] === 'failed' && job_store($dir) === [], 'image validation: an unrelated result is not stored or counted');
 
 // Image: an expired job is closed without a charge.
 [$dir, $start, $pending] = pending_image();
