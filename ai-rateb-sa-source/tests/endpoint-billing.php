@@ -125,6 +125,7 @@ function image_request(int $balance, array $provider): array
             ['output_type' => 'strategy', 'content' => json_encode($strategy), 'approval_status' => 'approved'],
         ]],
         ['sql' => 'SELECT brand_name, tone, primary_color, secondary_color, forbidden, offer_line FROM brand_kits WHERE user_id = ?', 'rows' => []],
+        ['sql' => "SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND kind = 'image' AND source = 'ai'", 'rows' => [['n' => 0]]],
     ];
     $scenario['provider'] = $provider;
     return $scenario;

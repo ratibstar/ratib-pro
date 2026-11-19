@@ -50,19 +50,13 @@ ai_image_dispatch($campaign, $decision, $postedJobId, $now);
 $ratio = (string) ($_POST['ratio'] ?? '1:1');
 $ratioSize = match ($ratio) {
     '4:5' => [512, 640],
-    '9:16' => [320, 576],
+    '9:16' => [448, 768],
     default => [512, 512],
 };
 if (!in_array($ratio, ['1:1', '4:5', '9:16'], true)) {
     $ratio = '1:1';
 }
-$ratioLead = 'ratio ' . $ratio . '. ';
-$prompt = $ratioLead . ai_campaign_image_prompt($campaign, 400 - mb_strlen($ratioLead));
-if ($prompt === $ratioLead) {
-    http_response_code(422);
-    echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+$prompt = ai_campaign_image_prompt($campaign, $ratio);
 $reservedId = 0;
 try {
     $decision = rateb_image_jobs_transaction($userId, static function (array $jobs) use ($userId, $campaignId, $postedJobId, $now, &$reservedId): array {
@@ -143,7 +137,7 @@ if ($imageModel === '') {
 
 $payload = json_encode([
     'prompt' => $prompt,
-    'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
+    'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 25, 'cfg_scale' => 7.5, 'n' => 1],
     'nsfw' => false,
     'censor_nsfw' => false,
     'r2' => true,
@@ -154,7 +148,7 @@ $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', 
 if (in_array($submit['http'], [401, 403], true)) {
     $payload = json_encode([
         'prompt' => $prompt,
-        'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 15, 'n' => 1],
+        'params' => ['width' => $ratioSize[0], 'height' => $ratioSize[1], 'steps' => 25, 'cfg_scale' => 7.5, 'n' => 1],
         'nsfw' => false,
         'censor_nsfw' => false,
         'r2' => true,
@@ -381,76 +375,80 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     exit;
 }
 
-function ai_campaign_image_prompt(array $campaign, int $limit = 400): string
+function ai_campaign_image_prompt(array $campaign, string $ratio): string
 {
     $rows = db()->prepare('SELECT output_type, content, approval_status FROM campaign_outputs WHERE campaign_id = ? ORDER BY id DESC');
     $rows->execute([(int) $campaign['id']]);
-    $strategy = null;
-    $copy = [];
-    foreach ($rows as $row) {
+    $outputs = $rows->fetchAll();
+    $strategyApproved = false;
+    $copyApproved = false;
+    foreach ($outputs as $row) {
         $type = (string) $row['output_type'];
-        if ($type === 'strategy' && $strategy === null && (string) $row['approval_status'] === 'approved') {
-            $document = rateb_strategy_document((string) $row['content']);
-            if ($document !== null) {
-                $strategy = $document;
-            }
-        } elseif (in_array($type, rateb_copy_types(), true) && (string) $row['approval_status'] === 'approved' && !isset($copy[$type])) {
-            $copy[$type] = trim((string) $row['content']);
+        if ((string) $row['approval_status'] !== 'approved') {
+            continue;
+        }
+        if ($type === 'strategy' && rateb_strategy_document((string) $row['content']) !== null) {
+            $strategyApproved = true;
+        } elseif (in_array($type, rateb_copy_types(), true) && trim((string) $row['content']) !== '') {
+            $copyApproved = true;
         }
     }
-    if ($strategy === null || $copy === []) {
+    if (!$strategyApproved || !$copyApproved) {
         http_response_code(409);
         echo json_encode(['error' => rateb_ui_error('image_locked'), 'code' => 'image_locked'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $copyLine = '';
-    foreach (array_merge(['headline'], rateb_copy_types()) as $type) {
-        if (empty($copy[$type])) {
-            continue;
-        }
-        $copyLine = rateb_prompt_plain($copy[$type], 'ar');
-        if ($copyLine !== '') {
-            break;
-        }
+    $brandRead = db()->prepare('SELECT brand_name, tone, primary_color, secondary_color, forbidden, offer_line FROM brand_kits WHERE user_id = ?');
+    $brandRead->execute([(int) ($campaign['user_id'] ?? 0)]);
+    $brand = $brandRead->fetch();
+    $facts = rateb_image_brief($campaign, $outputs, is_array($brand) ? $brand : []);
+    $plan = rateb_image_brief_sufficient($facts) ? ai_image_plan($facts) : ['sufficient' => false];
+    if (is_array($plan) && $plan['sufficient'] === false) {
+        http_response_code(422);
+        echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
+        exit;
     }
-    $product = trim((string) ($campaign['product_name'] ?? ''));
-    if ($product === '') {
-        $product = trim((string) ($campaign['title'] ?? ''));
+    $source = 'llm';
+    if ($plan === null) {
+        $plan = rateb_image_fallback_plan($facts);
+        $source = 'fallback';
     }
-    $direction = rateb_prompt_plain($strategy['creative_direction'] ?? '', 'ar');
-    $message = rateb_prompt_plain($strategy['core_message'] ?? '', 'ar');
-    $idea = trim($product . "\n" . $copyLine . "\n" . $direction . "\n" . $message . "\n" . (string) ($campaign['title'] ?? '') . "\n" . (string) ($campaign['description'] ?? ''));
-    $scene = ai_image_from_copy($idea);
-    if ($scene === '') {
-        $scene = ai_image_scene($idea);
+    if ($plan === null) {
+        http_response_code(503);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
+        exit;
     }
-    $prompt = $scene . ' ### user interface, hud, target, reticle, sci-fi, neon, purple room, landscape, hills, wallpaper, closed phone, person, face, text, letters, logo';
-    if (mb_strlen($prompt) > $limit) {
-        $prompt = rtrim(mb_substr($prompt, 0, $limit));
-    }
-    return trim($prompt);
+    $count = db()->prepare("SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND kind = 'image' AND source = 'ai'");
+    $count->execute([(int) $campaign['id']]);
+    $variant = (int) $count->fetchColumn();
+    $prompt = rateb_image_prompt_compose($plan, $facts, $ratio, $variant);
+    rateb_image_prompt_log(['campaign_id' => (int) $campaign['id'], 'ratio' => $ratio, 'variant' => $variant, 'source' => $source, 'subject' => (string) $plan['subject'], 'prompt' => $prompt]);
+    return $prompt;
 }
 
-function ai_image_from_copy(string $idea): string
+function ai_image_plan(array $facts): ?array
 {
-    $idea = trim($idea);
-    if ($idea === '') {
-        return '';
-    }
     $cfg = require __DIR__ . '/../../config/ai.php';
     $key = trim((string) ($cfg['api_key'] ?? ''));
     if ($key === '') {
-        return '';
+        return null;
     }
+    $system = 'You are the art director of one advertising photo for the campaign brief below. Use ONLY facts stated in the brief. '
+        . 'Never invent a business, product, place, feature, or offer the brief does not state. '
+        . 'Return JSON only: {"sufficient":true,"category":"physical_product|food|digital_service|local_service|place|other","subject":"...","visual_elements":["..."],"setting":"...","mood":"...","avoid":["..."]}. '
+        . 'sufficient is false when the brief does not say what is being advertised. '
+        . 'subject: at most 20 English words naming the concrete thing advertised as a camera would see it. For an app, platform, or online service, show the device screens displaying the result the service produces for its customer, as abstract shapes and images. '
+        . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone. '
+        . 'avoid: 3 to 8 short English phrases for objects a generic image might wrongly show that are unrelated to this campaign. '
+        . 'Never ask for text, letters, words, numbers, logos, signs, or brand names in the image. Do not write any brand name in any field. No faces unless the service itself is about people.';
     $body = json_encode([
         'model' => (string) ($cfg['model'] ?? 'deepseek-chat'),
         'messages' => [
-            ['role' => 'system', 'content' => 'Return JSON {"scene":"..."} only. scene is one English camera description of 35 words. It must depict the exact offer in the brief as a real advertisement a customer would recognize. Name the product. Show the result the customer gets, not a generic computer and not a control panel. No people, no readable text, no logo, no neon, no science-fiction interface.'],
-            ['role' => 'user', 'content' => $idea],
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user', 'content' => rateb_image_brief_text($facts)],
         ],
         'temperature' => 0.2,
-        'max_tokens' => 180,
-        'response_format' => ['type' => 'json_object'],
+        'max_tokens' => 1200,
     ], JSON_UNESCAPED_UNICODE);
     $ch = curl_init(rtrim((string) ($cfg['base_url'] ?? ''), '/') . '/chat/completions');
     curl_setopt_array($ch, [
@@ -458,42 +456,18 @@ function ai_image_from_copy(string $idea): string
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $key],
         CURLOPT_POSTFIELDS => $body,
-        CURLOPT_TIMEOUT => 12,
+        CURLOPT_TIMEOUT => 20,
         CURLOPT_CONNECTTIMEOUT => 5,
     ]);
     $raw = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     if ($raw === false || $code < 200 || $code >= 300) {
-        return '';
+        return null;
     }
     $data = json_decode((string) $raw, true);
     $content = is_array($data) ? (string) ($data['choices'][0]['message']['content'] ?? '') : '';
-    $parsed = json_decode($content, true);
-    $scene = is_array($parsed) ? trim((string) ($parsed['scene'] ?? '')) : '';
-    if ($scene === '' || preg_match('/\p{Arabic}/u', $scene) === 1 || mb_strlen($scene) < 20) {
-        return '';
-    }
-    return $scene;
-}
-
-function ai_image_scene(string $idea): string
-{
-    $text = mb_strtolower($idea);
-    $brand = 'the advertised product';
-    if (preg_match('/rateb\\s*ai|rateb/iu', $idea, $brandMatch) === 1) {
-        $brand = strtoupper(trim($brandMatch[0]));
-        if (!str_contains($brand, 'AI')) {
-            $brand .= ' AI';
-        }
-    }
-    if (preg_match('/فيديو|سناب|ستوري|ريلز|إعلان|اعلان|advertis|video|story/u', $text) === 1) {
-        return $brand . ' advertisement for a platform that creates advertising videos, the whole frame is a smartphone screen playing a vertical video ad, a laptop corner shows a video editing timeline, not a nature wallpaper, white desk, daylight, photorealistic';
-    }
-    if (preg_match('/تمر|قهو|عطر|عطور|طعام|أكل|وجبه|بيتزا|حلويات/u', $text) === 1) {
-        return 'close-up photograph of the physical product from the offer on a clean table, daylight, commercial food or goods photo, no people, no letters, no packaging text';
-    }
-    return 'close-up photograph of the offered product on a white table, daylight, commercial still, no people, no letters';
+    return rateb_image_plan_parse($content, rateb_image_brand_words($facts));
 }
 
 function ai_image_pending(string $jobId, int $wait = 0): void

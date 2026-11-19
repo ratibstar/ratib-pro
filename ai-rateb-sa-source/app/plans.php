@@ -1434,6 +1434,329 @@ function rateb_workspace_facts(PDO $pdo, array $campaign, array $brief): string
     return $lines === [] ? 'No facts were provided.' : implode("\n", $lines);
 }
 
+function rateb_image_fact(mixed $value): string
+{
+    $text = trim((string) preg_replace('/\s+/u', ' ', rateb_prompt_plain($value, 'ar')));
+    $bare = (string) preg_replace('/^[\s.،,:;!؟?_\-]+|[\s.،,:;!؟?_\-]+$/u', '', (string) preg_replace('/[\x{064B}-\x{065F}\x{0640}]/u', '', $text));
+    if ($bare === '' || preg_match('/^(لم\s*يحدد|غير\s*محدد|لا\s*يوجد|لا\s*شيء|الكل|الجميع|كل\s*الناس|n\/?a|none|not\s*specified|unspecified|all|everyone|-+)$/iu', $bare) === 1) {
+        return '';
+    }
+    return mb_substr($text, 0, 400);
+}
+
+/**
+ * Real campaign facts for image prompting, newest approved first, drafts only when no approved
+ * version exists. Placeholders such as "لم يُحدد" are dropped so they never reach the model.
+ *
+ * @param array<int,array<string,mixed>> $outputs campaign_outputs rows, newest first
+ * @param array<string,mixed> $brand
+ * @return array<string,string>
+ */
+function rateb_image_brief(array $campaign, array $outputs, array $brand = []): array
+{
+    $strategy = [];
+    $copy = [];
+    $platforms = [];
+    foreach ($outputs as $row) {
+        $type = (string) ($row['output_type'] ?? '');
+        $status = (string) ($row['approval_status'] ?? '');
+        if ($status === 'rejected') {
+            continue;
+        }
+        if ($type === 'strategy') {
+            if ($strategy === [] && $status === 'approved') {
+                $strategy = rateb_strategy_document((string) ($row['content'] ?? '')) ?? [];
+            }
+            continue;
+        }
+        if ($type === 'social_posts') {
+            $posts = json_decode((string) ($row['content'] ?? ''), true);
+            foreach (is_array($posts) ? array_keys($posts) : [] as $platform) {
+                if (is_string($platform) && preg_match('/^[a-z_]{1,20}$/', $platform) === 1) {
+                    $platforms[$platform] = true;
+                }
+            }
+            continue;
+        }
+        if (!in_array($type, ['headline', 'short_ad', 'ad_copy', 'product_description'], true)) {
+            continue;
+        }
+        $rank = $status === 'approved' ? 2 : 1;
+        if (isset($copy[$type]) && $copy[$type]['rank'] >= $rank) {
+            continue;
+        }
+        $text = rateb_image_fact($row['content'] ?? '');
+        if ($text !== '') {
+            $copy[$type] = ['rank' => $rank, 'text' => $text];
+        }
+    }
+    $facts = [
+        'product' => rateb_image_fact($campaign['product_name'] ?? ''),
+        'title' => rateb_image_fact($campaign['title'] ?? ''),
+        'description' => rateb_image_fact($campaign['description'] ?? ''),
+        'price' => rateb_image_fact($campaign['price'] ?? ''),
+        'objective' => rateb_image_fact($campaign['objective'] ?? ''),
+        'audience' => rateb_image_fact($campaign['target_customer'] ?? '') ?: rateb_image_fact($strategy['audience'] ?? ''),
+        'positioning' => rateb_image_fact($strategy['positioning'] ?? ''),
+        'core_message' => rateb_image_fact($strategy['core_message'] ?? ''),
+        'creative_direction' => rateb_image_fact($strategy['creative_direction'] ?? ''),
+        'tone' => rateb_image_fact($strategy['tone'] ?? '') ?: rateb_image_fact($brand['tone'] ?? ''),
+        'channels' => rateb_image_fact($strategy['channels'] ?? ''),
+        'platforms' => implode(', ', array_keys($platforms)),
+        'headline' => $copy['headline']['text'] ?? '',
+        'short_ad' => $copy['short_ad']['text'] ?? '',
+        'product_description' => $copy['product_description']['text'] ?? '',
+        'ad_copy' => $copy['ad_copy']['text'] ?? '',
+        'brand_name' => rateb_image_fact($brand['brand_name'] ?? ''),
+        'offer' => rateb_image_fact($brand['offer_line'] ?? ''),
+        'forbidden' => rateb_image_fact($brand['forbidden'] ?? ''),
+    ];
+    $seen = [];
+    foreach ($facts as $key => $value) {
+        $norm = mb_strtolower($value);
+        if ($value === '' || isset($seen[$norm])) {
+            unset($facts[$key]);
+            continue;
+        }
+        $seen[$norm] = true;
+    }
+    return $facts;
+}
+
+/** @param array<string,string> $facts */
+function rateb_image_brief_sufficient(array $facts): bool
+{
+    foreach (['product', 'title', 'description', 'positioning', 'product_description'] as $key) {
+        if (mb_strlen((string) preg_replace('/[^\p{L}]+/u', '', (string) ($facts[$key] ?? ''))) >= 4) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** @param array<string,string> $facts */
+function rateb_image_brief_text(array $facts): string
+{
+    $labels = [
+        'product' => 'Product or service',
+        'title' => 'Campaign name',
+        'description' => 'Campaign description',
+        'price' => 'Price',
+        'objective' => 'Marketing goal',
+        'audience' => 'Target audience',
+        'positioning' => 'Positioning',
+        'core_message' => 'Core message',
+        'creative_direction' => 'Creative direction',
+        'tone' => 'Tone',
+        'channels' => 'Channels',
+        'platforms' => 'Ad platforms',
+        'headline' => 'Headline',
+        'short_ad' => 'Short ad',
+        'product_description' => 'Product description',
+        'ad_copy' => 'Ad copy',
+        'brand_name' => 'Brand name',
+        'offer' => 'Current offer',
+        'forbidden' => 'Never show',
+    ];
+    $lines = [];
+    foreach ($labels as $key => $label) {
+        if (($facts[$key] ?? '') !== '') {
+            $lines[] = $label . ': ' . $facts[$key];
+        }
+    }
+    return implode("\n", $lines);
+}
+
+/** Latin brand words (e.g. RATEB) that must not be rendered as letters in the image. */
+function rateb_image_brand_words(array $facts): array
+{
+    $words = [];
+    foreach (['brand_name', 'product', 'title'] as $key) {
+        preg_match_all('/\b[A-Z][A-Z0-9]{2,}\b/', (string) ($facts[$key] ?? ''), $match);
+        foreach ($match[0] as $word) {
+            $words[strtolower($word)] = true;
+        }
+    }
+    if (preg_match_all('/[A-Za-z][A-Za-z0-9]{2,}/', (string) ($facts['brand_name'] ?? ''), $match) > 0) {
+        foreach ($match[0] as $word) {
+            $words[strtolower($word)] = true;
+        }
+    }
+    return array_keys($words);
+}
+
+function rateb_image_phrase(mixed $value, int $maxWords, array $drop = []): string
+{
+    if (!is_string($value) || preg_match('/\p{Arabic}/u', $value) === 1) {
+        return '';
+    }
+    $text = (string) preg_replace('/[^A-Za-z0-9 \-\']+/', ' ', $value);
+    $text = (string) preg_replace('/\b(with|showing|reading|saying|featuring)?\s*(the\s+)?(text|texts|words?|letters?|logos?|captions?|slogans?|headlines?|typography|watermarks?|signage|labels?|brand\s+names?)\b/i', ' ', $text);
+    foreach ($drop as $word) {
+        $text = (string) preg_replace('/\b' . preg_quote($word, '/') . '\b/i', ' ', $text);
+    }
+    $words = preg_split('/\s+/', trim($text)) ?: [];
+    return trim(implode(' ', array_slice(array_filter($words, static fn(string $w): bool => $w !== ''), 0, $maxWords)));
+}
+
+/**
+ * Validates the art-direction JSON returned by the language model.
+ *
+ * @return array<string,mixed>|null null when unusable, ['sufficient' => false] when the brief does not say what is sold
+ */
+function rateb_image_plan_parse(string $content, array $brandWords = []): ?array
+{
+    if (preg_match('/\{.*\}/s', $content, $match) !== 1) {
+        return null;
+    }
+    $data = json_decode($match[0], true);
+    if (!is_array($data)) {
+        return null;
+    }
+    if (($data['sufficient'] ?? true) === false) {
+        return ['sufficient' => false];
+    }
+    $subject = rateb_image_phrase($data['subject'] ?? '', 22, $brandWords);
+    if (mb_strlen($subject) < 8) {
+        return null;
+    }
+    $list = static function (mixed $items, int $count, int $words) use ($brandWords): array {
+        $out = [];
+        foreach (is_array($items) ? $items : [] as $item) {
+            $phrase = rateb_image_phrase($item, $words, $brandWords);
+            if ($phrase !== '' && !in_array(strtolower($phrase), array_map('strtolower', $out), true)) {
+                $out[] = $phrase;
+            }
+            if (count($out) >= $count) {
+                break;
+            }
+        }
+        return $out;
+    };
+    $category = (string) ($data['category'] ?? '');
+    return [
+        'sufficient' => true,
+        'category' => in_array($category, ['physical_product', 'food', 'digital_service', 'local_service', 'place', 'other'], true) ? $category : 'other',
+        'subject' => $subject,
+        'elements' => $list($data['visual_elements'] ?? [], 5, 7),
+        'setting' => rateb_image_phrase($data['setting'] ?? '', 12, $brandWords),
+        'mood' => rateb_image_phrase($data['mood'] ?? '', 8, $brandWords),
+        'avoid' => $list($data['avoid'] ?? [], 8, 4),
+    ];
+}
+
+/**
+ * Keyword plan used only when the language model is unavailable. Returns null instead of
+ * guessing when the brief matches no known category.
+ *
+ * @param array<string,string> $facts
+ * @return array<string,mixed>|null
+ */
+function rateb_image_fallback_plan(array $facts): ?array
+{
+    $text = mb_strtolower(implode(' ', array_intersect_key($facts, array_flip(['product', 'title', 'description', 'positioning', 'product_description', 'headline', 'short_ad']))));
+    $digital = preg_match('/منص|تطبيق|برنامج|برمج|موقع|نظام|ذكاء|اصطناع|رقمي|platform|software|\bapp\b|saas|\bai\b/u', $text) === 1;
+    $marketing = preg_match('/إعلان|اعلان|تسويق|حمل|محتوى|فيديو|تصميم|advert|\bads?\b|marketing|campaign|video/u', $text) === 1;
+    $catalog = [
+        ['/قهو|كوفي|coffee|espresso/u', 'food', 'freshly brewed specialty coffee cup with roasted coffee beans', ['ceramic coffee cup', 'roasted coffee beans', 'rising steam'], 'cafe counter with warm wood'],
+        ['/تمر|تمور|dates/u', 'food', 'premium Saudi dates arranged in an elegant gift box', ['glossy dates', 'elegant open gift box', 'small brass dish'], 'clean marble table'],
+        ['/عطر|عطور|بخور|عود|perfume|oud/u', 'physical_product', 'luxury perfume bottle with oud wood pieces', ['glass perfume bottle', 'oud wood chips', 'soft fabric drape'], 'dark elegant studio surface'],
+        ['/حلويات|حلى|كيك|شوكولات|dessert|cake|chocolate/u', 'food', 'fresh desserts and cakes beautifully plated', ['plated dessert', 'cake slice', 'fresh berries'], 'bright bakery counter'],
+        ['/مطعم|وجب|برجر|بيتزا|شاورما|طعام|أكل|restaurant|burger|pizza|meal/u', 'food', 'appetizing freshly served restaurant meal', ['main dish on a plate', 'fresh side ingredients', 'cold drink'], 'restaurant table'],
+        ['/عباي|ملابس|أزياء|فستان|ثوب|abaya|fashion|clothing|dress/u', 'physical_product', 'elegant clothing collection displayed on a garment rack', ['folded fabric', 'garment rack', 'fabric texture detail'], 'bright boutique interior'],
+        ['/سيار|car rental|\bcars?\b/u', 'physical_product', 'clean modern car parked in bright daylight', ['glossy car body', 'alloy wheel', 'clean road'], 'modern city street'],
+        ['/عقار|شقة|شقق|فيلا|أرض|real estate|apartment|villa/u', 'place', 'modern residential building and bright furnished living space', ['building facade', 'furnished living room', 'large windows'], 'sunny residential neighborhood'],
+        ['/أسنان|اسنان|dental|dentist/u', 'local_service', 'modern dental clinic treatment room', ['dental chair', 'clean instruments tray', 'bright clinic lighting'], 'clean clinic interior'],
+        ['/عياد|تجميل|بشر|صالون|سبا|clinic|beauty|skin|salon|spa/u', 'local_service', 'calm modern beauty clinic with skincare products', ['skincare bottles', 'soft towels', 'treatment bed'], 'clean bright clinic interior'],
+        ['/دور|تدريب|تعليم|كورس|أكاديمي|course|training|academy|education/u', 'digital_service', 'laptop showing an online course lesson with notebook and pen', ['laptop with video lesson', 'open notebook', 'coffee mug'], 'tidy study desk'],
+        ['/نادي|رياض|لياق|جيم|gym|fitness/u', 'local_service', 'modern gym with dumbbells and training equipment', ['dumbbells', 'training bench', 'water bottle'], 'bright modern gym'],
+    ];
+    foreach ($catalog as [$pattern, $category, $subject, $elements, $setting]) {
+        if (preg_match($pattern, $text) === 1) {
+            return ['sufficient' => true, 'category' => $category, 'subject' => $subject, 'elements' => $elements, 'setting' => $setting, 'mood' => 'bright, clean, trustworthy', 'avoid' => []];
+        }
+    }
+    if ($digital && $marketing) {
+        return [
+            'sufficient' => true,
+            'category' => 'digital_service',
+            'subject' => 'laptop and smartphone on a desk, screens showing colorful AI-generated advertisement designs and a vertical video ad preview',
+            'elements' => ['laptop screen with a grid of ad design thumbnails', 'smartphone playing a vertical video ad', 'abstract glowing AI network accent'],
+            'setting' => 'modern minimalist work desk',
+            'mood' => 'innovative, bright, professional',
+            'avoid' => ['picture frame', 'lamp', 'empty room', 'landscape'],
+        ];
+    }
+    if ($digital) {
+        return [
+            'sufficient' => true,
+            'category' => 'digital_service',
+            'subject' => 'laptop and smartphone screens showing a clean modern app dashboard with abstract charts',
+            'elements' => ['laptop with dashboard', 'smartphone with app screen', 'abstract chart shapes'],
+            'setting' => 'modern minimalist work desk',
+            'mood' => 'innovative, bright, professional',
+            'avoid' => ['picture frame', 'lamp', 'empty room', 'landscape'],
+        ];
+    }
+    return null;
+}
+
+/**
+ * Final Stable Diffusion prompt ("positive ### negative") for one image. The variant picks a
+ * different shot per image so repeated images of the same campaign are not identical.
+ *
+ * @param array<string,mixed> $plan
+ * @param array<string,string> $facts
+ */
+function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, int $variant): string
+{
+    $shots = [
+        'hero shot with the subject centered at eye level',
+        'three-quarter angle close-up with shallow depth of field',
+        'in-use scene showing hands interacting with the subject',
+        'top-down flat lay composition',
+    ];
+    $layout = match ($ratio) {
+        '9:16' => 'vertical mobile story layout, subject in the middle third, plain uncluttered space at the top and bottom',
+        '4:5' => 'portrait feed layout, subject in the lower two thirds, plain empty space at the top',
+        default => 'square layout, subject in the lower two thirds, plain empty space at the top',
+    };
+    $positive = [(string) $plan['subject']];
+    foreach ((array) ($plan['elements'] ?? []) as $element) {
+        if (stripos((string) $plan['subject'], (string) $element) === false) {
+            $positive[] = (string) $element;
+        }
+    }
+    $positive[] = (string) ($plan['setting'] ?? '');
+    $positive[] = (string) ($plan['mood'] ?? '');
+    $positive[] = $shots[abs($variant) % count($shots)];
+    $positive[] = $layout;
+    $positive[] = 'professional commercial advertising photograph, soft studio lighting, sharp focus, high detail';
+    $positive = implode(', ', array_values(array_filter(array_map('trim', $positive), static fn(string $part): bool => $part !== '')));
+    $negative = ['text', 'words', 'letters', 'typography', 'arabic script', 'caption', 'watermark', 'signature', 'logo', 'brand name', 'blurry', 'lowres', 'jpeg artifacts', 'deformed', 'distorted', 'extra fingers', 'bad hands', 'cropped', 'out of frame', 'collage', 'split screen', 'cartoon', 'illustration', 'sci-fi hud', 'generic stock photo', 'unrelated objects', 'empty room', 'wall art', 'picture frame'];
+    if (($plan['category'] ?? '') !== 'local_service') {
+        $negative[] = 'face';
+    }
+    foreach ((array) ($plan['avoid'] ?? []) as $avoid) {
+        $negative[] = (string) $avoid;
+    }
+    $negative = implode(', ', array_values(array_unique(array_filter(array_map(static fn(string $part): string => strtolower(trim($part)), $negative)))));
+    return rtrim(mb_substr($positive, 0, 520), ' ,') . ' ### ' . rtrim(mb_substr($negative, 0, 480), ' ,');
+}
+
+function rateb_image_prompt_log(array $entry): void
+{
+    $dir = rateb_image_job_directory();
+    if (!is_dir($dir) && !@mkdir($dir, 0700, true) && !is_dir($dir)) {
+        return;
+    }
+    $file = $dir . DIRECTORY_SEPARATOR . 'prompts.log';
+    if (is_file($file) && (int) @filesize($file) > 1048576) {
+        @rename($file, $file . '.1');
+    }
+    @file_put_contents($file, json_encode(['at' => date('c')] + $entry, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+}
+
 function rateb_image_job_ttl(): int
 {
     return 900;
