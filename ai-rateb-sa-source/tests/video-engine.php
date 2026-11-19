@@ -56,11 +56,15 @@ putenv('RATEB_PRIVATE_VIDEO_URL');
 putenv('RATEB_PRIVATE_VIDEO_TOKEN');
 
 $images = [['id' => 4], ['id' => 9]];
-$short = rateb_video_storyboard(['id' => 1], ['creative_direction' => 'Quiet premium reveal'], ['headline'], $images, 5);
+$short = rateb_video_storyboard(['id' => 1], ['creative_direction' => 'Quiet premium reveal'], ['headline'], [['id' => 4]], 5);
 check(count($short) === 1 && $short[0]['duration'] === 5 && $short[0]['image_id'] === 4, 'five seconds is one free scene');
 check(!str_contains($short[0]['prompt'], 'سعر') && str_contains($short[0]['prompt'], 'no text'), 'prompt asks for motion without rendered text');
 check(str_contains($short[0]['prompt'], 'Quiet premium reveal'), 'prompt keeps the approved creative direction');
 check(!str_contains($short[0]['prompt'], 'logo applied'), 'prompt does not claim a logo was applied');
+$three = rateb_video_storyboard(['id' => 1], ['creative_direction' => 'Quiet premium reveal'], ['headline'], [['id' => 4], ['id' => 9], ['id' => 12]], 10);
+check(count($three) === 3 && array_sum(array_column($three, 'duration')) === 10, 'ten seconds with three images makes three scenes that still total ten seconds');
+check([$three[0]['image_id'], $three[1]['image_id'], $three[2]['image_id']] === [4, 9, 12], 'each attached image gets its own scene');
+check(rateb_video_clips_for_images(5, 3) === [2, 2, 1], 'five seconds splits across three attached images');
 $full = rateb_video_storyboard(['id' => 1], ['core_message' => 'Message'], ['copy'], $images, 30);
 check(count($full) === 3 && $full[0]['duration'] === 10 && $full[2]['image_id'] === 4, 'thirty seconds uses three ten-second scenes');
 check(rateb_video_clips(15) === [10, 5], 'fifteen seconds is a ten-second scene plus five');

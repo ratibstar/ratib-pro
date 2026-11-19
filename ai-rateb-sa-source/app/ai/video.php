@@ -28,7 +28,7 @@ foreach ($outputs as $row) {
         $copy[] = $row;
     }
 }
-$images = db()->prepare("SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = 'image' ORDER BY (source = 'ai') DESC, id DESC");
+$images = db()->prepare("SELECT * FROM campaign_media WHERE campaign_id = ? AND user_id = ? AND kind = 'image' ORDER BY id ASC");
 $images->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
 $seconds = (int) ($_POST['seconds'] ?? 5);
 $result = rateb_video_start(db(), $campaign, $strategy ?: [], $copy, $images->fetchAll(), $seconds);

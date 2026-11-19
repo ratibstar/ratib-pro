@@ -27,6 +27,43 @@ function rateb_video_clips(int $seconds): array
     };
 }
 
+/**
+ * Split the selected duration across campaign images so every attached creative
+ * appears in the video (slideshow), instead of one long scene that only uses the first image.
+ *
+ * @return array<int,int>
+ */
+function rateb_video_clips_for_images(int $seconds, int $imageCount): array
+{
+    $base = rateb_video_clips($seconds);
+    if ($base === []) {
+        return [];
+    }
+    $imageCount = max(1, $imageCount);
+    if ($imageCount === 1) {
+        return $base;
+    }
+    // Keep provider-friendly clip packing when it already has enough slots.
+    if (count($base) >= $imageCount) {
+        return $base;
+    }
+    $scenes = min($imageCount, 6);
+    $total = array_sum($base);
+    if ($scenes > $total) {
+        $scenes = $total;
+    }
+    if ($scenes <= 1) {
+        return $base;
+    }
+    $each = intdiv($total, $scenes);
+    $rem = $total % $scenes;
+    $out = [];
+    for ($i = 0; $i < $scenes; $i++) {
+        $out[] = $each + ($i < $rem ? 1 : 0);
+    }
+    return $out;
+}
+
 function rateb_video_copy_text(string $content, string $prefer = 'ar', int $limit = 180): string
 {
     $content = trim($content);
@@ -98,7 +135,8 @@ function rateb_video_copy_parts(array $rows, string $prefer = 'ar'): array
 /** @param array<int,array<string,mixed>> $images @param array<string,mixed> $brand */
 function rateb_video_storyboard(array $campaign, array $strategy, array $copyParts, array $images, int $planSeconds, array $brand = [], string $prefer = 'ar'): array
 {
-    $clips = rateb_video_clips($planSeconds);
+    $images = array_values(array_filter($images, 'is_array'));
+    $clips = rateb_video_clips_for_images($planSeconds, count($images));
     if ($clips === [] || $images === []) {
         return [];
     }
@@ -533,13 +571,18 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     if ((int) $job['watermark'] === 1) {
         $filter .= ",drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
     }
+    $totalSeconds = 0;
+    foreach ($scenes as $scene) {
+        $totalSeconds += max(1, (int) ($scene['duration'] ?? 0));
+    }
     $cmd = escapeshellarg($ffmpeg) . ' -y -f concat -safe 0 -i ' . escapeshellarg($list);
     if ($audioPath !== '' && is_file($audioPath)) {
         $cmd .= ' -i ' . escapeshellarg($audioPath);
-        $cmd .= ' -filter_complex ' . escapeshellarg('[0:v]' . $filter . '[v]');
-        $cmd .= ' -map [v] -map 1:a -shortest';
+        // Pad short voiceovers with silence so every slideshow scene is kept (-shortest used to drop trailing images).
+        $cmd .= ' -filter_complex ' . escapeshellarg('[0:v]' . $filter . '[v];[1:a]apad=whole_dur=' . $totalSeconds . '[a]');
+        $cmd .= ' -map [v] -map [a] -t ' . $totalSeconds;
     } else {
-        $cmd .= ' -vf ' . escapeshellarg($filter) . ' -an';
+        $cmd .= ' -vf ' . escapeshellarg($filter) . ' -an -t ' . $totalSeconds;
     }
     $cmd .= ' -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . escapeshellarg($out);
     if (!function_exists('proc_open')) {
