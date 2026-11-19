@@ -248,6 +248,7 @@ jobs:
             "cli/enforce-subscription-expiry.php"
             "cli/apply-commerce-schema.php"
             "cli/refund-campaign-80-voice.php"
+            "cli/restore-campaign-80-credits-again.php"
             "cli/run-commerce-now.php"
             "cli/set-platform-owner-password.php"
             "migrations/payment_commerce_schema.php"
@@ -444,6 +445,8 @@ jobs:
           echo "$RESTORE_OUT"
           VOICE_REFUND_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/refund-campaign-80-voice.php" 2>&1)" || true
           echo "$VOICE_REFUND_OUT"
+          RESTORE_AGAIN_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/restore-campaign-80-credits-again.php" 2>&1)" || true
+          echo "$RESTORE_AGAIN_OUT"
           COMMERCE_OUT="$("${SSH[@]}" "$REMOTE" "cd '${TARGET}' && php cli/run-commerce-now.php" 2>&1)" || true
           echo "$COMMERCE_OUT"
           CRON_OUT="$("${SSH[@]}" "$REMOTE" "TARGET='${TARGET}' bash -s" <<'CRON'
