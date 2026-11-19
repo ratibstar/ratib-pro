@@ -44,6 +44,7 @@ check(preg_match("/if \(!ai_image_url_allowed\(\\\$imageUrl\)\) \{\s*ai_image_re
 check(str_contains($source, "'job_id' => \$jobId") && str_contains($source, "'prompt_sha256' => hash('sha256', \$prompt)"), 'the submitted prompt is logged against the Horde job id without a secret');
 check(str_contains($source, "(\$bound['campaign_id'] ?? 0) !== (int) \$campaign['id']"), 'a Horde result cannot be stored under a different campaign');
 check(!str_contains($source, 'rateb_image_fallback_plan($facts)'), 'the endpoint never guesses a fallback subject when understanding fails');
+check(str_contains($source, 'rateb_image_plan_recover_marketing'), 'a marketing brief can recover with the grounded desk scene when the art director reply is unusable');
 check(str_contains($source, 'rateb_image_select_models') && str_contains($source, 'rateb_image_generation_params'), 'the endpoint selects online photoreal models with stronger generation params');
 check(str_contains($source, 'ai_campaign_upload_source_image') && str_contains($source, "source_processing'] = 'img2img'"), 'uploaded product photos can drive img2img');
 check(str_contains($source, 'rateb_image_caption_hard_reject'), 'generic tech-art captions are hard-rejected before storage');

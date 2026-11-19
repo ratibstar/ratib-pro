@@ -106,9 +106,13 @@ $accountingPlan = rateb_image_plan_ground_marketing_service(
     ['product' => 'برنامج محاسبة يدير الفواتير والمخزون']
 );
 check($accountingPlan['subject'] === 'accounting software dashboard', 'non-marketing digital services are not rewritten');
+$recovered = rateb_image_plan_recover_marketing($groundedFacts);
+check(is_array($recovered) && ($recovered['category'] ?? '') === 'digital_service', 'a sufficient marketing brief can recover when the art director reply is unusable');
+check(rateb_image_plan_recover_marketing(['product' => 'برنامج محاسبة يدير الفواتير']) === null, 'non-marketing digital briefs do not use the marketing recovery path');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a neon orb surrounded by glowing particle networks') !== null, 'abstract tech art captions are hard-rejected');
 check(rateb_image_caption_hard_reject($groundedFacts, 'white paper with writing on it next to a keyboard') !== null, 'a handwritten notepad caption is hard-rejected for marketing campaigns');
 check(rateb_image_caption_hard_reject($groundedFacts, 'top-down oak desk with blank index cards, yellow sticky notes, and colorful magazine photo clippings') === null, 'a relevant marketing desk caption is not hard-rejected');
+check(rateb_image_caption_hard_accept($groundedFacts, 'several colors of post-it notes are arranged in a square formation on a pink background'), 'a marketing post-it flat-lay is hard-accepted without waiting on the language gate');
 check(rateb_image_select_models(['Missing', 'Realistic Vision', 'Deliberate'], ['Realistic Vision' => 2, 'Deliberate' => 4], 2) === ['Realistic Vision', 'Deliberate'], 'online preferred models are selected in order');
 $params = rateb_image_generation_params(512, 512);
 check(($params['steps'] ?? 0) >= 30 && ($params['cfg_scale'] ?? 0) >= 8, 'generation params ask for stronger prompt adherence');

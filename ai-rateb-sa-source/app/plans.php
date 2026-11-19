@@ -1643,10 +1643,10 @@ function rateb_image_plan_parse(string $content, array $brandWords = [], array $
     }
     $evidence = trim((string) ($data['evidence'] ?? ''));
     $evidence = trim($evidence, " \t\n\r\0\x0B\"'“”‘’");
-    $factText = implode("\n", array_intersect_key($facts, array_flip([
-        'product', 'title', 'description', 'objective', 'audience', 'location',
-        'core_message', 'creative_direction', 'channels', 'offer',
-    ])));
+    // Exact quote may come from any campaign fact already shown to the model, including
+    // approved copy that restates the same capability. Subject invention is still blocked
+    // by rateb_image_plan_compatible() and the art-director instructions.
+    $factText = implode("\n", array_values(array_filter(array_map('strval', $facts), static fn(string $v): bool => $v !== '')));
     if ($facts !== [] && (mb_strlen($evidence) < 4 || !str_contains($factText, $evidence))) {
         return null;
     }
@@ -1717,6 +1717,41 @@ function rateb_image_plan_compatible(array $plan, array $facts): bool
 }
 
 /**
+ * When the art director reply is unusable but the brief already proves a marketing
+ * platform, recover with the grounded photoreal desk scene instead of blocking the customer.
+ *
+ * @param array<string,string> $facts
+ * @return array<string,mixed>|null
+ */
+function rateb_image_plan_recover_marketing(array $facts): ?array
+{
+    if (!rateb_image_brief_sufficient($facts)) {
+        return null;
+    }
+    $source = mb_strtolower(rateb_image_subject_facts($facts));
+    $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1;
+    $hasCreativeOutputs = preg_match('/محتوى|صور|تصميم|content|images?|visuals?|design/u', $source) === 1;
+    $digital = preg_match('/منص|تطبيق|برنامج|برمج|موقع|نظام|ذكاء|اصطناع|رقمي|platform|software|\\bapp\\b|saas|\\bai\\b/u', $source) === 1;
+    if (!$digital || !$isMarketing || !$hasCreativeOutputs) {
+        return null;
+    }
+    $evidence = (string) ($facts['description'] ?? $facts['product'] ?? $facts['title'] ?? '');
+    if (mb_strlen($evidence) < 4) {
+        return null;
+    }
+    return rateb_image_plan_ground_marketing_service([
+        'sufficient' => true,
+        'category' => 'digital_service',
+        'subject' => 'marketing studio desk',
+        'elements' => ['blank planning cards'],
+        'setting' => 'studio desk',
+        'mood' => 'professional',
+        'avoid' => [],
+        'evidence' => mb_substr($evidence, 0, 120),
+    ], $facts);
+}
+
+/**
  * Stable Diffusion invents abstract neon spheres when asked for "AI platforms".
  * When the brief is a marketing/campaign service, force a photoreal commercial
  * desk scene that shows planning cards, content sheets, and ad mockups.
@@ -1778,6 +1813,26 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
 }
 
 /**
+ * Deterministic accept for marketing-desk captions so a correct flat-lay is not
+ * rejected by an over-strict language-model gate asking for brand UI.
+ *
+ * @param array<string,string> $facts
+ */
+function rateb_image_caption_hard_accept(array $facts, string $caption): bool
+{
+    $caption = mb_strtolower(trim($caption));
+    if ($caption === '' || rateb_image_caption_hard_reject($facts, $caption) !== null) {
+        return false;
+    }
+    $source = mb_strtolower(rateb_image_subject_facts($facts));
+    $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1;
+    if (!$isMarketing) {
+        return false;
+    }
+    return preg_match('/\b(index cards?|planning cards?|storyboard|sticky notes?|post-?it notes?|photo (prints?|clippings?)|magazine|markers?|advertisement mockups?|flat lay|studio desk|oak desk)\b/u', $caption) === 1;
+}
+
+/**
  * Deterministic reject for captions that are clearly generic tech art, before the
  * language-model gate. Returns a short reason, or null when the caption may pass.
  *
@@ -1796,7 +1851,7 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
         && preg_match('/\b(ad|advert|campaign|mockup|print|storyboard|calendar|planning card)\b/u', $caption) !== 1;
     $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1;
     $writtenPaper = preg_match('/\b(handwrit|writing on|written (on|text)|letters on|words on|notebook with text|notepad with text)\b/u', $caption) === 1;
-    $marketingDesk = preg_match('/\b(index cards?|planning cards?|storyboard|sticky notes?|photo (prints?|clippings?)|magazine|markers?|advertisement mockups?|flat lay|studio desk|oak desk)\b/u', $caption) === 1;
+    $marketingDesk = preg_match('/\b(index cards?|planning cards?|storyboard|sticky notes?|post-?it notes?|photo (prints?|clippings?)|magazine|markers?|advertisement mockups?|flat lay|studio desk|oak desk)\b/u', $caption) === 1;
     if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || ($isMarketing && !$marketingDesk && preg_match('/\b(paper|notepad|notebook)\b/u', $caption) === 1)) {
         return 'caption shows generic tech art instead of the campaign subject';
     }
