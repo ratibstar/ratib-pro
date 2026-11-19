@@ -488,7 +488,7 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
     $frames = max(1, $seconds) * 25;
     $ffmpeg = is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
     $cmd = escapeshellarg($ffmpeg) . ' -y -loop 1 -i ' . escapeshellarg($still)
-        . ' -frames:v ' . $frames . ' -r 25 -vf scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p'
+        . ' -frames:v ' . $frames . ' -r 25 -vf ' . escapeshellarg('scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p')
         . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
     if (!function_exists('proc_open')) {
         throw new RuntimeException('deferred');

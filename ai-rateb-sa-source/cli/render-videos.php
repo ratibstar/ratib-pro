@@ -11,6 +11,23 @@ if (!$pdo instanceof PDO) {
     exit(1);
 }
 
+if (!function_exists('db')) {
+    function db(): PDO
+    {
+        $pdo = $GLOBALS['pdo'] ?? null;
+        if (!$pdo instanceof PDO) {
+            throw new RuntimeException('No database');
+        }
+        return $pdo;
+    }
+}
+
+$renderLock = fopen(dirname(__DIR__) . '/storage/video-render.lock', 'c');
+if ($renderLock === false || !flock($renderLock, LOCK_EX | LOCK_NB)) {
+    echo "render_videos=locked\n";
+    exit(0);
+}
+
 $rows = $pdo->query("SELECT * FROM video_jobs WHERE status IN ('queued', 'processing') ORDER BY id ASC LIMIT 5");
 $count = 0;
 foreach ($rows as $job) {

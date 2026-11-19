@@ -500,6 +500,7 @@ function admin_provider_rows(array $cfg): array
 
 function admin_provider_snapshot(): array
 {
+    require_once dirname(__DIR__) . '/app/video/provider.php';
     $ai = require dirname(__DIR__) . '/config/ai.php';
     $flag = static fn (string $value): string => trim($value) !== '' ? '1' : '';
     $deepseek = $flag((string) getenv('DEEPSEEK_API_KEY'));
@@ -512,10 +513,10 @@ function admin_provider_snapshot(): array
         'groq_present' => $groqKey,
         'horde_present' => $flag((string) ($ai['horde_api_key'] ?? '')),
         'sawtak_present' => $flag((string) ($ai['sawtak_api_key'] ?? '')),
-        'runway_present' => $flag((string) getenv('RUNWAY_API_KEY')),
-        'wan_url_present' => $flag((string) getenv('RATEB_PRIVATE_VIDEO_URL')),
-        'wan_token_present' => $flag((string) getenv('RATEB_PRIVATE_VIDEO_TOKEN')),
-        'video_provider' => strtolower(trim((string) getenv('RATEB_VIDEO_PROVIDER'))),
+        'runway_present' => $flag((string) rateb_video_env('RUNWAY_API_KEY')),
+        'wan_url_present' => $flag((string) rateb_video_env('RATEB_PRIVATE_VIDEO_URL')),
+        'wan_token_present' => $flag((string) rateb_video_env('RATEB_PRIVATE_VIDEO_TOKEN')),
+        'video_provider' => strtolower(trim((string) rateb_video_env('RATEB_VIDEO_PROVIDER'))),
     ]);
 }
 

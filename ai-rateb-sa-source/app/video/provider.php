@@ -22,9 +22,57 @@ interface RatebVideoProvider
     public function downloadResult(string $url): string;
 }
 
+
+/**
+ * Video secrets follow the same local file as the other AI keys.
+ * FPM gets RUNWAY_API_KEY from the .user.ini auto_prepend_file; CLI/cron loads the same file here.
+ * ai.local.php is the last fallback.
+ * Environment wins when it is set. The value is never logged.
+ */
+function rateb_video_env(string $name): string
+{
+    $value = trim((string) getenv($name));
+    if ($value !== '') {
+        return $value;
+    }
+    static $prepended = false;
+    if (!$prepended && PHP_SAPI === 'cli') {
+        $prepended = true;
+        $ini = dirname(__DIR__, 2) . '/.user.ini';
+        if (is_readable($ini) && preg_match('/^\s*auto_prepend_file\s*=\s*"?([^"\r\n]+?)"?\s*$/m', (string) file_get_contents($ini), $match)) {
+            $prepend = trim($match[1]);
+            if (is_readable($prepend)) {
+                require_once $prepend;
+                $value = trim((string) getenv($name));
+                if ($value !== '') {
+                    return $value;
+                }
+            }
+        }
+    }
+    static $local = null;
+    if ($local === null) {
+        $local = [];
+        $file = dirname(__DIR__, 2) . '/config/ai.local.php';
+        if (is_file($file)) {
+            $loaded = require $file;
+            if (is_array($loaded)) {
+                $local = $loaded;
+            }
+        }
+    }
+    $map = [
+        'RUNWAY_API_KEY' => 'runway_api_key',
+        'RATEB_VIDEO_PROVIDER' => 'video_provider',
+        'RATEB_PRIVATE_VIDEO_URL' => 'private_video_url',
+        'RATEB_PRIVATE_VIDEO_TOKEN' => 'private_video_token',
+    ];
+    $key = $map[$name] ?? '';
+    return $key === '' ? '' : trim((string) ($local[$key] ?? ''));
+}
 function rateb_video_provider(): RatebVideoProvider
 {
-    $choice = strtolower(trim((string) getenv('RATEB_VIDEO_PROVIDER')));
+    $choice = strtolower(trim((string) rateb_video_env('RATEB_VIDEO_PROVIDER')));
     if ($choice === 'private') {
         return new PrivateVideoProvider();
     }
@@ -159,7 +207,7 @@ final class PrivateVideoProvider implements RatebVideoProvider
 
     private function baseUrl(): string
     {
-        $url = rtrim(trim((string) getenv('RATEB_PRIVATE_VIDEO_URL')), '/');
+        $url = rtrim(trim((string) rateb_video_env('RATEB_PRIVATE_VIDEO_URL')), '/');
         $parts = parse_url($url);
         $scheme = strtolower((string) ($parts['scheme'] ?? ''));
         $host = (string) ($parts['host'] ?? '');
@@ -171,7 +219,7 @@ final class PrivateVideoProvider implements RatebVideoProvider
 
     private function token(): string
     {
-        return trim((string) getenv('RATEB_PRIVATE_VIDEO_TOKEN'));
+        return trim((string) rateb_video_env('RATEB_PRIVATE_VIDEO_TOKEN'));
     }
 
     private function urlAllowed(string $url): bool
@@ -196,7 +244,7 @@ final class RunwayVideoProvider implements RatebVideoProvider
 
     public function configured(): bool
     {
-        return trim((string) getenv('RUNWAY_API_KEY')) !== '';
+        return trim((string) rateb_video_env('RUNWAY_API_KEY')) !== '';
     }
 
     public function generateFromImage(string $imageDataUri, string $prompt, int $seconds, string $ratio): array
@@ -296,7 +344,7 @@ final class RunwayVideoProvider implements RatebVideoProvider
     /** @param array<string,mixed>|null $payload @return array<string,mixed> */
     private function request(string $method, string $path, ?array $payload): array
     {
-        $key = trim((string) getenv('RUNWAY_API_KEY'));
+        $key = trim((string) rateb_video_env('RUNWAY_API_KEY'));
         if ($key === '') {
             throw new RuntimeException('not_configured');
         }
