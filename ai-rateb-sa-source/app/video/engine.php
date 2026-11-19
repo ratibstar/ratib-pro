@@ -20,13 +20,37 @@ function rateb_video_frame_size(string $ratio = '9:16'): array
     return $ratio === '1:1' ? [1080, 1080] : [1080, 1920];
 }
 
-function rateb_video_scale_filter(int $width, int $height, bool $fill = true): string
+function rateb_video_scale_filter(int $width, int $height, bool $fill = false): string
 {
+    // Default is contain (decrease+pad): keep the full creative visible.
+    // Cover/crop (increase) cuts text and UI off the edges of landscape uploads.
     $mode = $fill ? 'increase' : 'decrease';
     $padOrCrop = $fill
         ? "crop={$width}:{$height}"
         : "pad={$width}:{$height}:(ow-iw)/2:(oh-ih)/2:color=0x0C0C10";
     return "scale={$width}:{$height}:force_original_aspect_ratio={$mode}:flags=lanczos,{$padOrCrop},setsar=1,format=yuv420p";
+}
+
+/**
+ * Pick an output frame that matches the dominant attached image aspect so
+ * landscape creatives are not forced into a square crop.
+ *
+ * @param array<int,array<string,mixed>> $scenes
+ * @return array{0:int,1:int,2:string}
+ */
+function rateb_video_frame_for_scenes(array $scenes): array
+{
+    $ratio = '9:16';
+    foreach ($scenes as $scene) {
+        if ((string) ($scene['ratio'] ?? '') === '1:1') {
+            $ratio = '1:1';
+            break;
+        }
+    }
+    // Landscape sources marked 1:1 in the campaign UI still need a wide frame
+    // when the files themselves are wider than tall — checked at encode time via path.
+    [$w, $h] = rateb_video_frame_size($ratio);
+    return [$w, $h, $ratio];
 }
 
 function rateb_video_clip_seconds(): int
@@ -541,10 +565,18 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
         throw new RuntimeException('storage');
     }
     $clip = $dir . '/' . (int) $job['id'] . '-' . $index . '.mp4';
-    [$width, $height] = rateb_video_frame_size($ratio);
+    // Prefer a frame that fits the source: landscape uploads keep a wide canvas.
+    $info = @getimagesize($source);
+    $srcW = is_array($info) ? (int) $info[0] : 0;
+    $srcH = is_array($info) ? (int) $info[1] : 0;
+    if ($srcW > 0 && $srcH > 0 && $srcW >= (int) round($srcH * 1.2)) {
+        [$width, $height] = [1920, 1080];
+    } else {
+        [$width, $height] = rateb_video_frame_size($ratio);
+    }
     $frames = max(1, $seconds) * 30;
     $ffmpeg = is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
-    $vf = rateb_video_scale_filter($width, $height, true);
+    $vf = rateb_video_scale_filter($width, $height, false);
     $cmd = escapeshellarg($ffmpeg) . ' -y -loop 1 -i ' . escapeshellarg($source)
         . ' -frames:v ' . $frames . ' -r 30 -vf ' . escapeshellarg($vf)
         . ' -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -an ' . escapeshellarg($clip);
@@ -586,15 +618,28 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     $voice->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
     $audio = $voice->fetch();
     $audioPath = $audio ? media_absolute_path($audio) : '';
-    $ratio = '9:16';
-    foreach ($scenes as $scene) {
-        if ((string) ($scene['ratio'] ?? '') === '1:1') {
-            $ratio = '1:1';
-            break;
+    // Compose into the largest clip frame already produced so mixed scenes stay sharp
+    // without a second crop. Fall back to storyboard ratio when clips are missing sizes.
+    $width = 0;
+    $height = 0;
+    foreach ($scenes as $index => $scene) {
+        $clipPath = $dir . '/' . (int) $job['id'] . '-' . $index . '.mp4';
+        if (!is_file($clipPath)) {
+            continue;
+        }
+        $ffprobe = is_file('/home/admin/bin/ffprobe') ? '/home/admin/bin/ffprobe' : 'ffprobe';
+        $probe = [];
+        exec(escapeshellarg($ffprobe) . ' -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 ' . escapeshellarg($clipPath), $probe);
+        if (isset($probe[0]) && preg_match('/^(\d+),(\d+)$/', trim($probe[0]), $m) === 1) {
+            $width = max($width, (int) $m[1]);
+            $height = max($height, (int) $m[2]);
         }
     }
-    [$width, $height] = rateb_video_frame_size($ratio);
-    $filter = rateb_video_scale_filter($width, $height, true);
+    if ($width < 2 || $height < 2) {
+        [$width, $height] = rateb_video_frame_for_scenes($scenes);
+    }
+    // Contain again at compose time — never crop away creative content.
+    $filter = rateb_video_scale_filter($width, $height, false);
     if ((int) $job['watermark'] === 1) {
         $filter .= ",drawtext=text='RATEB AI':fontsize=36:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
     }

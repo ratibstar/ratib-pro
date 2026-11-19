@@ -78,7 +78,8 @@ check($none === [], 'no image produces no storyboard');
 check(rateb_video_ratio() === '720:1280', 'primary ratio is vertical 9:16');
 check(rateb_video_frame_size('1:1') === [1080, 1080], 'local square campaigns encode at 1080 square for readability');
 check(rateb_video_frame_size('9:16') === [1080, 1920], 'local vertical campaigns encode at 1080p');
-check(str_contains(rateb_video_scale_filter(1080, 1080, true), 'increase') && str_contains(rateb_video_scale_filter(1080, 1080, true), 'crop=1080:1080'), 'local clips fill the frame instead of letterboxing');
+check(str_contains(rateb_video_scale_filter(1080, 1080, false), 'decrease') && str_contains(rateb_video_scale_filter(1080, 1080, false), 'pad=1080:1080'), 'local clips keep the full image visible with padding');
+check(str_contains(rateb_video_scale_filter(1080, 1080, true), 'increase'), 'cover mode remains available when explicitly requested');
 check(rateb_video_prompt_jpeg('not-an-image') === null, 'an unreadable image is not sent to the provider');
 if (function_exists('imagecreatetruecolor')) {
     $wide = imagecreatetruecolor(2000, 200);
