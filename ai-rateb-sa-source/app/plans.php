@@ -1754,7 +1754,7 @@ function rateb_image_plan_recover_marketing(array $facts): ?array
 /**
  * Stable Diffusion invents abstract neon spheres when asked for "AI platforms".
  * When the brief is a marketing/campaign service, force a photoreal commercial
- * desk scene that shows planning cards, content sheets, and ad mockups.
+ * desk scene that shows social ad mockups, storyboard cards, and advertising flyers.
  *
  * @param array<string,mixed> $plan
  * @param array<string,string> $facts
@@ -1771,14 +1771,14 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
     if (!$isMarketing || !$hasCreativeOutputs) {
         return $plan;
     }
-    $plan['subject'] = 'top-down commercial photo of scattered colorful advertising brochures and printed flyers covering a wooden table';
+    $plan['subject'] = 'top-down commercial photo of colorful advertising posters and printed marketing flyers spread across a wooden desk';
     $plan['elements'] = [
-        'colorful advertising brochures',
+        'colorful advertising posters',
         'printed marketing flyers',
-        'stacked leaflets',
-        'soft table shadows',
+        'stacked campaign printouts',
+        'soft studio shadows',
     ];
-    $plan['setting'] = 'bright marketing studio table';
+    $plan['setting'] = 'bright marketing studio desk';
     $plan['mood'] = 'professional clean commercial';
     $plan['avoid'] = array_values(array_unique(array_merge([
         'gallery wall',
@@ -1793,6 +1793,9 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
         'only sticky notes',
         'only blank paper',
         'empty stationery',
+        'random magazines',
+        'unrelated magazine covers',
+        'architecture magazine',
         'handwritten text',
         'written words',
         'letters on paper',
@@ -1846,11 +1849,16 @@ function rateb_image_caption_has_creative_outputs(string $caption): bool
     if ($caption === '') {
         return false;
     }
-    if (preg_match('/\b(brochures?|flyers?|leaflets?|mood board|advertisement|ad mockup|mockups?|printouts?|magazine covers?|storyboard|poster|printed ads?|collage|marketing materials?)\b/u', $caption) === 1) {
+    if (preg_match('/\b(brochures?|flyers?|leaflets?|mood board|advertisement|ad mockups?|mockups?|printouts?|storyboards?|posters?|printed ads?|social media ads?|campaign cards?|collage|marketing materials?)\b/u', $caption) === 1) {
+        return true;
+    }
+    // Magazine stacks alone drift to unrelated covers; require an advertising cue.
+    if (preg_match('/\bmagazine covers?\b/u', $caption) === 1
+        && preg_match('/\b(advert|ad |ads|marketing|campaign|flyer|brochure|mockup)\b/u', $caption) === 1) {
         return true;
     }
     return preg_match('/\b(photos?|photographs?|pictures?)\b/u', $caption) === 1
-        && preg_match('/\b(board|collage|brochures?|flyers?|leaflets?|magazine|poster|marketing)\b/u', $caption) === 1;
+        && preg_match('/\b(board|collage|brochures?|flyers?|leaflets?|poster|marketing|storyboard|mockup)\b/u', $caption) === 1;
 }
 
 /**
@@ -1928,11 +1936,11 @@ function rateb_image_fallback_plan(array $facts): ?array
         return [
             'sufficient' => true,
             'category' => 'digital_service',
-            'subject' => 'top-down commercial photo of scattered colorful advertising brochures and printed flyers covering a wooden table',
-            'elements' => ['colorful advertising brochures', 'printed marketing flyers', 'stacked leaflets'],
-            'setting' => 'bright marketing studio table',
+            'subject' => 'top-down commercial photo of colorful advertising posters and printed marketing flyers spread across a wooden desk',
+            'elements' => ['colorful advertising posters', 'printed marketing flyers', 'stacked campaign printouts'],
+            'setting' => 'bright marketing studio desk',
             'mood' => 'professional, clean, commercial',
-            'avoid' => ['gallery wall', 'home decor', 'portrait', 'empty desk', 'laptop', 'neon orb', 'analytics dashboard'],
+            'avoid' => ['gallery wall', 'home decor', 'portrait', 'empty desk', 'laptop', 'random magazines', 'neon orb', 'analytics dashboard'],
         ];
     }
     if ($digital) {
@@ -2037,12 +2045,12 @@ function rateb_image_model_preferences(string $category): array
         'stable_diffusion',
     ];
     $digital = [
-        'Dreamshaper',
         'AbsoluteReality',
         'Edge Of Realism',
         'Realistic Vision',
-        'Deliberate 3.0',
         'majicMIX realistic',
+        'Dreamshaper',
+        'Deliberate 3.0',
         'Deliberate',
         'stable_diffusion',
     ];

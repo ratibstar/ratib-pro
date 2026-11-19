@@ -97,7 +97,7 @@ $genericMarketingPlan = [
 ];
 $groundedMarketingPlan = rateb_image_plan_ground_marketing_service($genericMarketingPlan, $groundedFacts);
 check(!str_contains(strtolower($groundedMarketingPlan['subject']), 'dashboard'), 'a marketing platform cannot keep a generic dashboard as its visible subject');
-check(str_contains(strtolower($groundedMarketingPlan['subject']), 'brochures') && str_contains(strtolower($groundedMarketingPlan['subject']), 'flyers'), 'a marketing platform shows its stated planning and creative outputs');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'advertising posters') && str_contains(strtolower($groundedMarketingPlan['subject']), 'marketing flyers'), 'a marketing platform shows advertising posters and marketing flyers');
 check(str_contains(strtolower($groundedMarketingPlan['subject']), 'commercial photo') || str_contains(strtolower($groundedMarketingPlan['subject']), 'photorealistic'), 'a marketing platform uses a photorealistic commercial scene');
 $groundedMarketingPrompt = rateb_image_prompt_compose($groundedMarketingPlan, $groundedFacts, '1:1', 0);
 check(str_contains($groundedMarketingPrompt, 'analytics dashboard') && str_contains($groundedMarketingPrompt, 'computer monitor') && str_contains($groundedMarketingPrompt, 'neon orb'), 'the grounded marketing prompt excludes screens, neon orbs, and unrelated stock imagery');
@@ -114,12 +114,15 @@ check(rateb_image_caption_hard_reject($groundedFacts, 'white paper with writing 
 check(rateb_image_caption_hard_reject($groundedFacts, 'several colors of post-it notes are arranged in a square formation on a pink background') !== null, 'sticky notes alone are hard-rejected for marketing campaigns');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a wooden desk with three drawers and a chair') !== null, 'furniture-only captions are hard-rejected for marketing campaigns');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a photo collage featuring women photos on the wall') !== null, 'people-heavy collages are hard-rejected for marketing campaigns');
-check(rateb_image_caption_hard_reject($groundedFacts, 'scattered colorful advertising brochures and printed flyers on a wooden table') === null, 'a relevant marketing brochure caption is not hard-rejected');
-check(rateb_image_caption_hard_accept($groundedFacts, 'scattered colorful advertising brochures and printed flyers on a wooden table'), 'a marketing brochure flat-lay is hard-accepted without waiting on the language gate');
+check(rateb_image_caption_hard_reject($groundedFacts, 'colorful advertising posters and printed marketing flyers on a wooden desk') === null, 'a relevant advertising-poster caption is not hard-rejected');
+check(rateb_image_caption_hard_accept($groundedFacts, 'colorful advertising posters and printed marketing flyers on a wooden desk'), 'an advertising-poster flat-lay is hard-accepted without waiting on the language gate');
 check(rateb_image_caption_has_creative_outputs('three colorful brochures next to each other on a table'), 'plural brochures are recognized as creative marketing outputs');
+check(rateb_image_caption_has_creative_outputs('two posters sitting on top of a table next to a cup of coffee'), 'plural posters are recognized as creative marketing outputs');
+check(!rateb_image_caption_has_creative_outputs('several magazine covers stacked on a wooden table'), 'unrelated magazine stacks alone are not treated as campaign creatives');
 check(rateb_image_caption_hard_reject($groundedFacts, 'several pictures mounted on the wall of a living room') !== null, 'home-decor gallery walls are hard-rejected for marketing campaigns');
 check(!rateb_image_caption_hard_accept($groundedFacts, 'several colors of post-it notes are arranged in a square formation on a pink background'), 'sticky notes alone are not hard-accepted for marketing campaigns');
 check(rateb_image_select_models(['Missing', 'Realistic Vision', 'Deliberate'], ['Realistic Vision' => 2, 'Deliberate' => 4], 2) === ['Realistic Vision', 'Deliberate'], 'online preferred models are selected in order');
+check(rateb_image_model_preferences('digital_service')[0] === 'AbsoluteReality', 'digital campaigns prefer AbsoluteReality over Dreamshaper for photoreal marketing scenes');
 $params = rateb_image_generation_params(512, 512);
 check(($params['steps'] ?? 0) >= 30 && ($params['cfg_scale'] ?? 0) >= 8, 'generation params ask for stronger prompt adherence');
 
@@ -140,7 +143,6 @@ check(rateb_image_prompt_clip_list('alpha, beta gamma, delta', 15) === 'alpha', 
 $repeat = ['subject' => 'computer screen displaying AI analytics dashboard', 'elements' => ['AI analytics dashboard', 'performance graphs'], 'category' => 'digital_service'];
 check(substr_count(rateb_image_prompt_compose($repeat, $facts, '1:1', 0), 'AI analytics dashboard') === 1, 'an element that repeats the subject is dropped');
 check(rateb_image_prompt_compose($plan, $facts, '1:1', 0) !== rateb_image_prompt_compose($plan, $facts, '1:1', 2), 'each new image gets its own shot');
-check(rateb_image_model_preferences('digital_service')[0] === 'Dreamshaper', 'digital campaigns prefer Dreamshaper for creative marketing scenes');
 check(in_array(rateb_image_model_preferences('food')[0], ['AbsoluteReality', 'Realistic Vision'], true), 'physical campaigns prefer a photorealistic model');
 $relevant = rateb_image_relevance_parse('```json {"relevant":true,"reason":"The gift box and dates are visible."} ```');
 check(is_array($relevant) && $relevant['relevant'] === true, 'a valid relevance verdict is parsed');
