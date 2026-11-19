@@ -1715,6 +1715,56 @@ function rateb_image_plan_compatible(array $plan, array $facts): bool
 }
 
 /**
+ * A generic analytics dashboard is not evidence of a marketing platform. When the
+ * authoritative brief explicitly describes campaign/content/image creation, make
+ * those real outputs the visible subject while preserving the model's evidence.
+ *
+ * @param array<string,mixed> $plan
+ * @param array<string,string> $facts
+ * @return array<string,mixed>
+ */
+function rateb_image_plan_ground_marketing_service(array $plan, array $facts): array
+{
+    if (($plan['category'] ?? '') !== 'digital_service') {
+        return $plan;
+    }
+    $source = mb_strtolower(rateb_image_subject_facts($facts));
+    $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1;
+    $hasCreativeOutputs = preg_match('/محتوى|صور|تصميم|content|images?|visuals?|design/u', $source) === 1;
+    if (!$isMarketing || !$hasCreativeOutputs) {
+        return $plan;
+    }
+    $plan['subject'] = 'luminous AI network sphere connecting blank campaign calendar cards, content sheets, and colorful advertising image frames';
+    $plan['elements'] = [
+        'blank campaign calendar cards',
+        'neatly arranged content sheets',
+        'colorful advertising image frames',
+        'connected workflow nodes',
+    ];
+    $plan['setting'] = 'clean purple and teal studio background';
+    $plan['avoid'] = array_values(array_unique(array_merge([
+        'analytics dashboard',
+        'landscape photography',
+        'nature scenery',
+        'roads',
+        'mountains',
+        'computer dashboard',
+        'computer monitor',
+        'device screen',
+        'financial charts',
+        'performance graphs',
+        'trading software',
+        'stock market charts',
+        'coding interface',
+        'generic software screen',
+        'office worker',
+        'person',
+        'face',
+    ], (array) ($plan['avoid'] ?? []))));
+    return $plan;
+}
+
+/**
  * Keyword plan used only when the language model is unavailable. Returns null instead of
  * guessing when the brief matches no known category.
  *
@@ -1777,6 +1827,19 @@ function rateb_image_fallback_plan(array $facts): ?array
  * @param array<string,mixed> $plan
  * @param array<string,string> $facts
  */
+function rateb_image_prompt_clip_list(string $text, int $limit): string
+{
+    $kept = [];
+    foreach (array_filter(array_map('trim', explode(',', $text))) as $part) {
+        $candidate = $kept === [] ? $part : implode(', ', $kept) . ', ' . $part;
+        if (mb_strlen($candidate) > $limit) {
+            break;
+        }
+        $kept[] = $part;
+    }
+    return implode(', ', $kept);
+}
+
 function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, int $variant): string
 {
     $shots = [
@@ -1810,7 +1873,7 @@ function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, in
         $negative[] = (string) $avoid;
     }
     $negative = implode(', ', array_values(array_unique(array_filter(array_map(static fn(string $part): string => strtolower(trim($part)), $negative)))));
-    return rtrim(mb_substr($positive, 0, 520), ' ,') . ' ### ' . rtrim(mb_substr($negative, 0, 480), ' ,');
+    return rateb_image_prompt_clip_list($positive, 520) . ' ### ' . rateb_image_prompt_clip_list($negative, 480);
 }
 
 function rateb_image_prompt_log(array $entry): void

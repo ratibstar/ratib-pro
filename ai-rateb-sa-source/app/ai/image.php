@@ -447,6 +447,14 @@ function ai_campaign_image_prompt(array $context, int $userId, int $usageId): ar
     }
     $plan = $understanding['plan'] ?? null;
     if (!is_array($plan) || ($plan['sufficient'] ?? false) !== true) {
+        rateb_image_prompt_log([
+            'campaign_id' => (int) $campaign['id'],
+            'user_id' => (int) ($campaign['user_id'] ?? 0),
+            'usage_id' => $usageId,
+            'status' => 'understanding_' . (string) ($understanding['status'] ?? 'invalid'),
+            'authoritative_brief' => rateb_image_brief_text($facts),
+            'llm_response' => (string) ($understanding['raw'] ?? ''),
+        ]);
         ai_image_release($userId, '', $usageId, 'failed');
         http_response_code(422);
         echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
@@ -483,6 +491,7 @@ function ai_image_plan(array $facts): array
         . 'Return JSON only: {"sufficient":true,"evidence":"exact quote from an authoritative fact that proves the visible subject","category":"physical_product|food|digital_service|local_service|place|other","subject":"...","visual_elements":["..."],"setting":"...","mood":"...","avoid":["..."]}. '
         . 'Approved copy is style only and MUST NOT be used as evidence or as a source of product features. sufficient is false when the authoritative facts do not say what is being advertised or what a digital service actually does. '
         . 'subject: at most 20 English words naming the concrete thing advertised as a camera would see it. For an app, platform, or online service, show the device screens displaying the result the service produces for its customer, as abstract shapes and images. '
+        . 'For a marketing or campaign platform, never use a generic dashboard or analytics charts as the subject; show its stated creative outputs such as campaign planning cards, content drafts, and advertising image previews. '
         . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone. '
         . 'avoid: 3 to 8 short English phrases for objects a generic image might wrongly show that are unrelated to this campaign. '
         . 'Never ask for text, letters, words, numbers, logos, signs, or brand names in the image. Do not write any brand name in any field. No faces unless the service itself is about people.';
@@ -515,6 +524,9 @@ function ai_image_plan(array $facts): array
     $plan = rateb_image_plan_parse($content, rateb_image_brand_words($facts), $facts);
     if ($plan === null) {
         return ['status' => 'invalid', 'raw' => $content];
+    }
+    if (($plan['sufficient'] ?? false) === true) {
+        $plan = rateb_image_plan_ground_marketing_service($plan, $facts);
     }
     return ['status' => ($plan['sufficient'] ?? false) === true ? 'ok' : 'insufficient', 'plan' => $plan, 'raw' => $content];
 }
