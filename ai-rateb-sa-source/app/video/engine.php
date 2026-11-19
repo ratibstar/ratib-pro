@@ -442,7 +442,9 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                 (int) $job['id'],
             ]);
         }
-        $final = rateb_video_compose($pdo, $job, $campaign, $scenes);
+        $final = count($scenes) === 1
+            ? (rateb_video_single_clip(MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips', $job, $scenes) ?? rateb_video_compose($pdo, $job, $campaign, $scenes))
+            : rateb_video_compose($pdo, $job, $campaign, $scenes);
         $mediaId = media_store_bytes($campaign, 'video', 'ai', 'campaign.mp4', 'video/mp4', $final);
         $pdo->prepare("UPDATE video_jobs SET status = 'completed', output_media_id = ?, error_code = '' WHERE id = ?")->execute([
             $mediaId,
@@ -481,12 +483,10 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
         throw new RuntimeException('storage');
     }
     $frames = max(1, $seconds) * 25;
-    $zoom = $index % 2 === 0 ? "min(zoom+0.0009,1.15)" : "if(eq(on,0),1.15,max(zoom-0.0009,1))";
-    $filter = 'scale=1440:2560,zoompan=z=' . "'" . $zoom . "'" . ':d=' . $frames
-        . ":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280:fps=25,format=yuv420p";
     $ffmpeg = is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
-    $cmd = escapeshellarg($ffmpeg) . ' -y -i ' . escapeshellarg($still) . ' -vf ' . escapeshellarg($filter)
-        . ' -frames:v ' . $frames . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
+    $cmd = escapeshellarg($ffmpeg) . ' -y -loop 1 -i ' . escapeshellarg($still)
+        . ' -frames:v ' . $frames . ' -r 25 -vf scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p'
+        . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
     if (!function_exists('proc_open')) {
         throw new RuntimeException('storage');
     }
