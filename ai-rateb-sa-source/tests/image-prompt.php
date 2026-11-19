@@ -57,7 +57,9 @@ check(rateb_image_brand_words($facts) === ['rateb'], 'the Latin brand word is fo
 $plan = rateb_image_plan_parse('```json {"sufficient":true,"category":"digital_service","subject":"RATEB laptop showing AI generated video ads with the text RATEB AI","visual_elements":["smartphone with vertical video ad","logo of the brand","منصة","grid of ad thumbnails"],"setting":"modern desk","mood":"innovative","avoid":["picture frame","landscape"]} ```', ['rateb']);
 check(is_array($plan) && $plan['sufficient'] === true, 'a fenced JSON plan is accepted');
 check(is_array($plan) && stripos($plan['subject'], 'rateb') === false && stripos($plan['subject'], 'text') === false, 'brand words and text requests are removed from the subject');
-check(is_array($plan) && $plan['elements'] === ['smartphone with vertical video ad', 'of the brand', 'grid of ad thumbnails'], 'arabic and logo requests are removed from elements');
+check(is_array($plan) && $plan['elements'] === ['smartphone with vertical video ad', 'brand', 'grid of ad thumbnails'], 'arabic and logo requests are removed from elements');
+$leftover = rateb_image_plan_parse('{"subject":"tablet showing an analytics dashboard","avoid":["or text","mobile phone","physical product or"]}');
+check(is_array($leftover) && $leftover['avoid'] === ['mobile phone', 'physical product'], 'connector words left after removing text requests are dropped');
 check(rateb_image_plan_parse('{"sufficient":false}') === ['sufficient' => false], 'the model can say the brief is insufficient');
 check(rateb_image_plan_parse('no json here') === null, 'a non-JSON reply is unusable');
 check(rateb_image_plan_parse('{"subject":"منتج"}') === null, 'an Arabic subject is unusable');

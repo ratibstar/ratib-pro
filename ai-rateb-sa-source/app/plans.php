@@ -1595,8 +1595,15 @@ function rateb_image_phrase(mixed $value, int $maxWords, array $drop = []): stri
     foreach ($drop as $word) {
         $text = (string) preg_replace('/\b' . preg_quote($word, '/') . '\b/i', ' ', $text);
     }
-    $words = preg_split('/\s+/', trim($text)) ?: [];
-    return trim(implode(' ', array_slice(array_filter($words, static fn(string $w): bool => $w !== ''), 0, $maxWords)));
+    $words = array_values(array_filter(preg_split('/\s+/', trim($text)) ?: [], static fn(string $w): bool => $w !== ''));
+    $joiners = ['a', 'an', 'and', 'or', 'of', 'the', 'with', 'no', 'not', 'any', 'for', 'in', 'on'];
+    while ($words !== [] && in_array(strtolower($words[0]), $joiners, true)) {
+        array_shift($words);
+    }
+    while ($words !== [] && in_array(strtolower($words[count($words) - 1]), $joiners, true)) {
+        array_pop($words);
+    }
+    return trim(implode(' ', array_slice($words, 0, $maxWords)));
 }
 
 /**
