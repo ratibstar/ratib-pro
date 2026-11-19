@@ -124,9 +124,30 @@ function image_request(int $balance, array $provider): array
             ['output_type' => 'headline', 'content' => 'Fresh dates for Ramadan', 'approval_status' => 'approved'],
             ['output_type' => 'strategy', 'content' => json_encode($strategy), 'approval_status' => 'approved'],
         ]],
+        ['sql' => 'SELECT * FROM campaign_briefs WHERE campaign_id = ? AND user_id = ? LIMIT 1', 'rows' => [[
+            'product' => 'Dates gift box',
+            'description' => 'Premium Saudi dates for family gifting',
+            'audience' => 'Families',
+            'objective' => 'Gifts',
+        ]]],
         ['sql' => 'SELECT brand_name, tone, primary_color, secondary_color, forbidden, offer_line FROM brand_kits WHERE user_id = ?', 'rows' => []],
         ['sql' => "SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND kind = 'image' AND source = 'ai'", 'rows' => [['n' => 0]]],
     ];
+    array_unshift($provider, [
+        'method' => 'POST',
+        'url' => 'https://understanding.test/v1/chat/completions',
+        'http' => 200,
+        'body' => json_encode(['choices' => [['message' => ['content' => json_encode([
+            'sufficient' => true,
+            'evidence' => 'Premium Saudi dates for family gifting',
+            'category' => 'food',
+            'subject' => 'premium Saudi dates in an elegant gift box',
+            'visual_elements' => ['glossy dates', 'open gift box'],
+            'setting' => 'clean marble table',
+            'mood' => 'warm premium',
+            'avoid' => ['laptop'],
+        ])]]]]),
+    ]);
     $scenario['provider'] = $provider;
     return $scenario;
 }
@@ -259,13 +280,13 @@ check($invalid['http'] === 502 && balance($invalid) === 100 && rows($invalid, 'a
 $dir = job_dir();
 $idle = run_endpoint(image_request(100, [models(0)]), $dir);
 check($idle['http'] === 503 && ($idle['json']['code'] ?? '') === 'image_workers', 'image: no workers reports image_workers');
-check(balance($idle) === 100 && rows($idle, 'ai_image') === [] && calls($idle, 'POST') === [] && rows($idle, 'image')[0]['status'] === 'failed', 'image: no workers charges nothing, submits nothing, and closes the reservation');
+check(balance($idle) === 100 && rows($idle, 'ai_image') === [] && calls($idle, 'POST', HORDE) === [] && rows($idle, 'image')[0]['status'] === 'failed', 'image: no workers charges nothing, submits nothing, and closes the reservation');
 
 // Image: a low balance can still request an image. The charge happens on approval.
 $dir = job_dir();
 $poor = run_endpoint(image_request(5, [models(), submit()]), $dir);
 check($poor['http'] === 200 && ($poor['json']['pending'] ?? false) === true, 'image: a low balance still starts the image');
-check(balance($poor) === 5 && rows($poor, 'ai_image') === [] && count(calls($poor, 'POST')) === 1, 'image: a low balance is not charged before approval');
+check(balance($poor) === 5 && rows($poor, 'ai_image') === [] && count(calls($poor, 'POST', HORDE)) === 1, 'image: a low balance is not charged before approval');
 
 // Image: the plan limit is enforced before any provider call or charge.
 $dir = job_dir();
@@ -275,6 +296,34 @@ $scenario['events'] = [1 => ['user_id' => USER, 'campaign_id' => CAMPAIGN, 'oper
 $scenario['next_id'] = 2;
 $limited = run_endpoint($scenario, $dir);
 check($limited['http'] === 402 && ($limited['json']['code'] ?? '') === 'plan_limit' && $limited['calls'] === [] && balance($limited) === 100 && count($limited['events']) === 1, 'image: the plan limit denies the request before any charge or provider call');
+
+// Image: campaign 80's real brief names a platform but never says what it does.
+$dir = job_dir();
+$vague = image_request(100, [models(), submit()]);
+$vague['campaign'] = [
+    'id' => CAMPAIGN,
+    'user_id' => USER,
+    'title' => 'منصة RATEB AI وابغا لها اعلان',
+    'product_name' => 'منصة RATEB AI وابغا لها اعلان',
+    'description' => 'عندي منصة RATEB AI وابغا لها اعلان',
+    'target_customer' => 'الكل',
+    'objective' => 'عملاء',
+];
+foreach ($vague['reads'] as &$read) {
+    if (str_starts_with($read['sql'], 'SELECT * FROM campaign_briefs')) {
+        $read['rows'] = [[
+            'product' => 'منصة RATEB AI وابغا لها اعلان',
+            'description' => 'عندي منصة RATEB AI وابغا لها اعلان',
+            'audience' => 'الكل',
+            'objective' => 'عملاء',
+            'core_message' => 'عندي منصة RATEB AI وابغا لها اعلان',
+        ]];
+    }
+}
+unset($read);
+$vagueResult = run_endpoint($vague, $dir);
+check($vagueResult['http'] === 422 && ($vagueResult['json']['code'] ?? '') === 'brief_missing', 'image: campaign 80 stops and asks for facts instead of guessing a dashboard');
+check($vagueResult['events'] === [] && $vagueResult['calls'] === [], 'image: an insufficient real brief creates no usage record and calls no provider');
 
 // Voice.
 function riff(): string

@@ -31,6 +31,15 @@ $campaign = [
     'target_customer' => 'الكل',
     'objective' => 'عملاء',
 ];
+$campaignBrief = [
+    'product' => 'منصة RATEB AI وابغا لها اعلان',
+    'description' => 'عندي منصة RATEB AI وابغا لها اعلان',
+    'audience' => 'الكل',
+    'objective' => 'عملاء',
+    'core_message' => 'عندي منصة RATEB AI وابغا لها اعلان',
+    'channels' => '',
+    'brand_tone' => '',
+];
 $outputs = [
     ['output_type' => 'social_posts', 'approval_status' => 'draft', 'content' => '{"snapchat":"a","instagram":"b","x":"c"}'],
     ['output_type' => 'headline', 'approval_status' => 'draft', 'content' => 'منصة RATEB AI تقدم حلولًا ذكية. اكتشف إمكانيات الذكاء الاصطناعي الآن!'],
@@ -39,22 +48,30 @@ $outputs = [
     ['output_type' => 'short_ad', 'approval_status' => 'approved', 'content' => 'اكتشف رتب للذكاء الاصطناعي الآن.'],
     ['output_type' => 'short_ad', 'approval_status' => 'draft', 'content' => 'نسخة أقدم'],
 ];
-$facts = rateb_image_brief($campaign, $outputs);
+$facts = rateb_image_brief($campaign, $campaignBrief, $outputs);
 $brief = rateb_image_brief_text($facts);
 
 check(!str_contains($brief, 'لم يُحدد') && !str_contains($brief, 'الكل'), 'placeholders never reach the brief');
 check(($facts['product'] ?? '') === $campaign['product_name'], 'the product comes from the campaign');
 check(!isset($facts['title']), 'a title equal to the product is not repeated');
 check(($facts['objective'] ?? '') === 'عملاء', 'the marketing goal is kept');
-check(($facts['short_ad'] ?? '') === 'اكتشف رتب للذكاء الاصطناعي الآن.', 'the approved copy wins over an older draft');
-check(str_contains($facts['headline'] ?? '', 'حلولًا ذكية'), 'a draft headline is used when none is approved');
-check(($facts['platforms'] ?? '') === 'snapchat, instagram, x', 'ad platforms come from the social posts');
-check(!isset($facts['creative_direction'], $facts['channels'], $facts['tone'], $facts['audience']), 'empty strategy fields are dropped');
-check(rateb_image_brief_sufficient($facts), 'campaign 80 has enough to describe the product');
-check(!rateb_image_brief_sufficient(rateb_image_brief(['product_name' => 'لم يُحدد', 'title' => '', 'description' => 'الكل'], [])), 'a placeholder-only brief is insufficient');
+check(($facts['short_ad'] ?? '') === 'اكتشف رتب للذكاء الاصطناعي الآن.', 'approved copy is available for style');
+check(!isset($facts['headline']), 'a draft headline is never mixed into image facts');
+check(!isset($facts['platforms']), 'draft social platforms are never mixed into image facts');
+check(!isset($facts['creative_direction'], $facts['channels'], $facts['tone'], $facts['audience']), 'empty authoritative fields are dropped');
+check(!isset($facts['positioning'], $facts['product_description'], $facts['ad_copy']), 'generated strategy and draft copy cannot add product claims');
+check(!rateb_image_brief_sufficient($facts), 'campaign 80 is rejected because it never says what the platform does');
+check(!rateb_image_brief_sufficient(rateb_image_brief(['product_name' => 'لم يُحدد', 'title' => '', 'description' => 'الكل'], [], [])), 'a placeholder-only brief is insufficient');
 check(rateb_image_brand_words($facts) === ['rateb'], 'the Latin brand word is found so it is never drawn');
 
-$plan = rateb_image_plan_parse('```json {"sufficient":true,"category":"digital_service","subject":"RATEB laptop showing AI generated video ads with the text RATEB AI","visual_elements":["smartphone with vertical video ad","logo of the brand","منصة","grid of ad thumbnails"],"setting":"modern desk","mood":"innovative","avoid":["picture frame","landscape"]} ```', ['rateb']);
+$groundedFacts = rateb_image_brief(
+    ['product_name' => 'منصة RATEB AI', 'title' => 'RATEB AI'],
+    ['product' => 'منصة RATEB AI', 'description' => 'منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية'],
+    []
+);
+check(rateb_image_brief_sufficient($groundedFacts), 'a digital-service brief with a concrete capability is sufficient');
+$rawPlan = '```json {"sufficient":true,"evidence":"منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية","category":"digital_service","subject":"RATEB laptop showing AI generated video ads with the text RATEB AI","visual_elements":["smartphone with vertical video ad","logo of the brand","منصة","grid of ad thumbnails"],"setting":"modern desk","mood":"innovative","avoid":["picture frame","landscape"]} ```';
+$plan = rateb_image_plan_parse($rawPlan, ['rateb'], $groundedFacts);
 check(is_array($plan) && $plan['sufficient'] === true, 'a fenced JSON plan is accepted');
 check(is_array($plan) && stripos($plan['subject'], 'rateb') === false && stripos($plan['subject'], 'text') === false, 'brand words and text requests are removed from the subject');
 check(is_array($plan) && $plan['elements'] === ['smartphone with vertical video ad', 'brand', 'grid of ad thumbnails'], 'arabic and logo requests are removed from elements');
@@ -63,9 +80,12 @@ check(is_array($leftover) && $leftover['avoid'] === ['mobile phone', 'physical p
 check(rateb_image_plan_parse('{"sufficient":false}') === ['sufficient' => false], 'the model can say the brief is insufficient');
 check(rateb_image_plan_parse('no json here') === null, 'a non-JSON reply is unusable');
 check(rateb_image_plan_parse('{"subject":"منتج"}') === null, 'an Arabic subject is unusable');
+$wrongPlan = '```json {"sufficient":true,"evidence":"منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية","category":"food","subject":"restaurant meal on a dining table","visual_elements":["plate of food"],"setting":"restaurant","mood":"warm","avoid":[]} ```';
+check(rateb_image_plan_parse($wrongPlan, ['rateb'], $groundedFacts) === null, 'a prompt subject that conflicts with the campaign topic is rejected');
+check(rateb_image_plan_parse(str_replace('منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية', 'claim not in brief', $rawPlan), ['rateb'], $groundedFacts) === null, 'model evidence must be an exact authoritative campaign fact');
 
 $fallback = rateb_image_fallback_plan($facts);
-check(is_array($fallback) && $fallback['category'] === 'digital_service' && str_contains($fallback['subject'], 'advertisement'), 'the fallback for campaign 80 is an AI ad platform, not a generic product');
+check(is_array($fallback), 'the old fallback remains testable but is not used by the endpoint');
 check(rateb_image_fallback_plan(['product' => 'Dates gift box'])['category'] === 'food', 'an English dates product falls back to food');
 check(rateb_image_fallback_plan(['product' => 'خدمات متنوعة']) === null, 'an unknown business is not guessed');
 

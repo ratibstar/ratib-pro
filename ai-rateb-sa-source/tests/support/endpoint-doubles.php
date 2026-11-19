@@ -98,7 +98,13 @@ function header(string $header, bool $replace = true, int $code = 0): void
 
 function ai_config(): array
 {
-    return ['horde_api_key' => 'test-horde-key', 'sawtak_api_key' => 'test-sawtak-key'];
+    return [
+        'api_key' => 'test-understanding-key',
+        'base_url' => 'https://understanding.test/v1',
+        'model' => 'test-model',
+        'horde_api_key' => 'test-horde-key',
+        'sawtak_api_key' => 'test-sawtak-key',
+    ];
 }
 
 function media_owned_campaign(int $campaignId): array

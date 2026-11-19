@@ -1445,28 +1445,24 @@ function rateb_image_fact(mixed $value): string
 }
 
 /**
- * Real campaign facts for image prompting, newest approved first, drafts only when no approved
- * version exists. Placeholders such as "لم يُحدد" are dropped so they never reach the model.
+ * Real campaign facts for image prompting. Campaign/campaign_briefs are authoritative.
+ * Generated outputs may supply approved copy, but never new product facts; drafts are ignored.
  *
  * @param array<int,array<string,mixed>> $outputs campaign_outputs rows, newest first
  * @param array<string,mixed> $brand
  * @return array<string,string>
  */
-function rateb_image_brief(array $campaign, array $outputs, array $brand = []): array
+function rateb_image_brief(array $campaign, array $brief, array $outputs, array $brand = []): array
 {
-    $strategy = [];
     $copy = [];
     $platforms = [];
     foreach ($outputs as $row) {
         $type = (string) ($row['output_type'] ?? '');
         $status = (string) ($row['approval_status'] ?? '');
-        if ($status === 'rejected') {
+        if ($status !== 'approved') {
             continue;
         }
         if ($type === 'strategy') {
-            if ($strategy === [] && $status === 'approved') {
-                $strategy = rateb_strategy_document((string) ($row['content'] ?? '')) ?? [];
-            }
             continue;
         }
         if ($type === 'social_posts') {
@@ -1481,32 +1477,31 @@ function rateb_image_brief(array $campaign, array $outputs, array $brand = []): 
         if (!in_array($type, ['headline', 'short_ad', 'ad_copy', 'product_description'], true)) {
             continue;
         }
-        $rank = $status === 'approved' ? 2 : 1;
-        if (isset($copy[$type]) && $copy[$type]['rank'] >= $rank) {
+        if (isset($copy[$type])) {
             continue;
         }
         $text = rateb_image_fact($row['content'] ?? '');
         if ($text !== '') {
-            $copy[$type] = ['rank' => $rank, 'text' => $text];
+            $copy[$type] = $text;
         }
     }
     $facts = [
-        'product' => rateb_image_fact($campaign['product_name'] ?? ''),
+        'product' => rateb_image_fact($brief['product'] ?? '') ?: rateb_image_fact($campaign['product_name'] ?? ''),
         'title' => rateb_image_fact($campaign['title'] ?? ''),
-        'description' => rateb_image_fact($campaign['description'] ?? ''),
+        'description' => rateb_image_fact($brief['description'] ?? '') ?: rateb_image_fact($campaign['description'] ?? ''),
         'price' => rateb_image_fact($campaign['price'] ?? ''),
-        'objective' => rateb_image_fact($campaign['objective'] ?? ''),
-        'audience' => rateb_image_fact($campaign['target_customer'] ?? '') ?: rateb_image_fact($strategy['audience'] ?? ''),
-        'positioning' => rateb_image_fact($strategy['positioning'] ?? ''),
-        'core_message' => rateb_image_fact($strategy['core_message'] ?? ''),
-        'creative_direction' => rateb_image_fact($strategy['creative_direction'] ?? ''),
-        'tone' => rateb_image_fact($strategy['tone'] ?? '') ?: rateb_image_fact($brand['tone'] ?? ''),
-        'channels' => rateb_image_fact($strategy['channels'] ?? ''),
+        'objective' => rateb_image_fact($brief['objective'] ?? '') ?: rateb_image_fact($campaign['objective'] ?? ''),
+        'audience' => rateb_image_fact($brief['audience'] ?? '') ?: rateb_image_fact($campaign['target_customer'] ?? ''),
+        'location' => rateb_image_fact($brief['location'] ?? ''),
+        'core_message' => rateb_image_fact($brief['core_message'] ?? ''),
+        'creative_direction' => rateb_image_fact($brief['creative_direction'] ?? ''),
+        'tone' => rateb_image_fact($brief['brand_tone'] ?? '') ?: rateb_image_fact($brand['tone'] ?? ''),
+        'channels' => rateb_image_fact($brief['channels'] ?? ''),
         'platforms' => implode(', ', array_keys($platforms)),
-        'headline' => $copy['headline']['text'] ?? '',
-        'short_ad' => $copy['short_ad']['text'] ?? '',
-        'product_description' => $copy['product_description']['text'] ?? '',
-        'ad_copy' => $copy['ad_copy']['text'] ?? '',
+        'headline' => $copy['headline'] ?? '',
+        'short_ad' => $copy['short_ad'] ?? '',
+        'product_description' => $copy['product_description'] ?? '',
+        'ad_copy' => $copy['ad_copy'] ?? '',
         'brand_name' => rateb_image_fact($brand['brand_name'] ?? ''),
         'offer' => rateb_image_fact($brand['offer_line'] ?? ''),
         'forbidden' => rateb_image_fact($brand['forbidden'] ?? ''),
@@ -1526,12 +1521,34 @@ function rateb_image_brief(array $campaign, array $outputs, array $brand = []): 
 /** @param array<string,string> $facts */
 function rateb_image_brief_sufficient(array $facts): bool
 {
-    foreach (['product', 'title', 'description', 'positioning', 'product_description'] as $key) {
-        if (mb_strlen((string) preg_replace('/[^\p{L}]+/u', '', (string) ($facts[$key] ?? ''))) >= 4) {
-            return true;
-        }
+    $product = trim((string) ($facts['product'] ?? $facts['title'] ?? ''));
+    if (mb_strlen((string) preg_replace('/[^\p{L}]+/u', '', $product)) < 4) {
+        return false;
     }
-    return false;
+    $authoritative = rateb_image_subject_facts($facts);
+    $authoritative = mb_strtolower($authoritative);
+    $concrete = '/قهو|تمر|تمور|عطر|بخور|عود|حلويات|كيك|شوكولات|مطعم|وجب|برجر|بيتزا|شاورما|عباي|ملابس|أزياء|فستان|ثوب|سيار|عقار|شقة|فيلا|أسنان|عياد|تجميل|صالون|سبا|دور(?:ة|ات)|تدريب|تعليم|نادي|رياض|لياق|coffee|dates|perfume|restaurant|burger|pizza|fashion|clothing|\\bcars?\\b|real estate|apartment|villa|dental|clinic|salon|course|training|education|gym|fitness/u';
+    if (preg_match($concrete, $authoritative) === 1) {
+        return true;
+    }
+    $digital = preg_match('/منص|تطبيق|برنامج|برمج|موقع|نظام|ذكاء|اصطناع|رقمي|platform|software|\\bapp\\b|saas|\\bai\\b/u', $authoritative) === 1;
+    if ($digital) {
+        return preg_match('/ينشئ|ينتج|يولد|يصمم|يدير|يحلل|يحجز|يبيع|يربط|يرسل|يترجم|يكتب|إنشاء|انشاء|توليد|تصميم|إدارة|ادارة|تحليل|حجز|متجر|محاسب|رواتب|موارد بشرية|مخزون|فواتير|إعلانات|اعلانات|فيديوهات|صور|محتوى|creates?|generates?|designs?|manages?|analy[sz]es?|books?|sells?|connects?|accounting|payroll|inventory|invoices?|human resources|advertis|videos?|images?|content/u', $authoritative) === 1;
+    }
+    $generic = '/^(خدمة|خدمات|منتج|منتجات|شركة|مؤسسة|متجر|مشروع|business|company|service|services|product|products|store|project)(\s+(جديد|جديدة|متنوع|متنوعة|new|various))?$/u';
+    return preg_match($generic, mb_strtolower($product)) !== 1;
+}
+
+/** Authoritative subject facts with "make me an ad" request language removed. */
+function rateb_image_subject_facts(array $facts): string
+{
+    $text = implode(' ', array_intersect_key($facts, array_flip([
+        'product', 'title', 'description', 'objective', 'audience', 'location',
+        'core_message', 'creative_direction', 'channels', 'offer',
+    ])));
+    $text = (string) preg_replace('/(?:^|\s)و?(?:أبغى|ابغى|أبي|ابي|أريد|اريد|نريد|احتاج|أحتاج)\s*(?:لها|له|عنها|عنه)?\s*(?:إعلان|اعلان|حملة)(?=\s|$)/u', ' ', $text);
+    $text = (string) preg_replace('/\b(?:make|create|need|want)\s+(?:me\s+)?(?:an?\s+)?(?:ad|advertisement|campaign)\s+(?:for|about)\b/i', ' ', $text);
+    return trim((string) preg_replace('/\s+/u', ' ', $text));
 }
 
 /** @param array<string,string> $facts */
@@ -1544,16 +1561,16 @@ function rateb_image_brief_text(array $facts): string
         'price' => 'Price',
         'objective' => 'Marketing goal',
         'audience' => 'Target audience',
-        'positioning' => 'Positioning',
+        'location' => 'Location',
         'core_message' => 'Core message',
         'creative_direction' => 'Creative direction',
         'tone' => 'Tone',
         'channels' => 'Channels',
         'platforms' => 'Ad platforms',
-        'headline' => 'Headline',
-        'short_ad' => 'Short ad',
-        'product_description' => 'Product description',
-        'ad_copy' => 'Ad copy',
+        'headline' => 'Approved headline (style only, not product facts)',
+        'short_ad' => 'Approved short ad (style only, not product facts)',
+        'product_description' => 'Approved product copy (style only, not product facts)',
+        'ad_copy' => 'Approved ad copy (style only, not product facts)',
         'brand_name' => 'Brand name',
         'offer' => 'Current offer',
         'forbidden' => 'Never show',
@@ -1611,7 +1628,7 @@ function rateb_image_phrase(mixed $value, int $maxWords, array $drop = []): stri
  *
  * @return array<string,mixed>|null null when unusable, ['sufficient' => false] when the brief does not say what is sold
  */
-function rateb_image_plan_parse(string $content, array $brandWords = []): ?array
+function rateb_image_plan_parse(string $content, array $brandWords = [], array $facts = []): ?array
 {
     if (preg_match('/\{.*\}/s', $content, $match) !== 1) {
         return null;
@@ -1622,6 +1639,14 @@ function rateb_image_plan_parse(string $content, array $brandWords = []): ?array
     }
     if (($data['sufficient'] ?? true) === false) {
         return ['sufficient' => false];
+    }
+    $evidence = trim((string) ($data['evidence'] ?? ''));
+    $factText = implode("\n", array_intersect_key($facts, array_flip([
+        'product', 'title', 'description', 'objective', 'audience', 'location',
+        'core_message', 'creative_direction', 'channels', 'offer',
+    ])));
+    if ($facts !== [] && (mb_strlen($evidence) < 4 || !str_contains($factText, $evidence))) {
+        return null;
     }
     $subject = rateb_image_phrase($data['subject'] ?? '', 22, $brandWords);
     if (mb_strlen($subject) < 8) {
@@ -1641,7 +1666,7 @@ function rateb_image_plan_parse(string $content, array $brandWords = []): ?array
         return $out;
     };
     $category = (string) ($data['category'] ?? '');
-    return [
+    $plan = [
         'sufficient' => true,
         'category' => in_array($category, ['physical_product', 'food', 'digital_service', 'local_service', 'place', 'other'], true) ? $category : 'other',
         'subject' => $subject,
@@ -1649,7 +1674,44 @@ function rateb_image_plan_parse(string $content, array $brandWords = []): ?array
         'setting' => rateb_image_phrase($data['setting'] ?? '', 12, $brandWords),
         'mood' => rateb_image_phrase($data['mood'] ?? '', 8, $brandWords),
         'avoid' => $list($data['avoid'] ?? [], 8, 4),
+        'evidence' => $evidence,
     ];
+    return $facts === [] || rateb_image_plan_compatible($plan, $facts) ? $plan : null;
+}
+
+/** The visible subject must preserve every concrete topic explicitly stated by the user. */
+function rateb_image_plan_compatible(array $plan, array $facts): bool
+{
+    $source = mb_strtolower(rateb_image_subject_facts($facts));
+    $visual = strtolower(implode(' ', [
+        (string) ($plan['subject'] ?? ''),
+        implode(' ', (array) ($plan['elements'] ?? [])),
+        (string) ($plan['setting'] ?? ''),
+    ]));
+    $topics = [
+        ['/إعلان|اعلان|تسويق|حملات|محتوى|فيديو|تصميم|advert|marketing|campaign|content|video|design/u', '/ad|advert|marketing|campaign|content|video|design/'],
+        ['/قهو|كوفي|coffee|espresso/u', '/coffee|espresso|cup|beans/'],
+        ['/تمر|تمور|dates/u', '/date|dates|fruit|gift box/'],
+        ['/عطر|عطور|بخور|عود|perfume|oud/u', '/perfume|fragrance|oud|bottle/'],
+        ['/مطعم|وجب|برجر|بيتزا|شاورما|طعام|restaurant|burger|pizza|meal/u', '/food|meal|dish|restaurant|burger|pizza|shawarma/'],
+        ['/ملابس|أزياء|عباي|فستان|ثوب|fashion|clothing|dress/u', '/fashion|clothing|garment|dress|abaya|fabric/'],
+        ['/سيار|\\bcars?\\b/u', '/car|vehicle|automobile/'],
+        ['/عقار|شقة|فيلا|real estate|apartment|villa/u', '/building|home|house|apartment|villa|property|interior/'],
+        ['/أسنان|اسنان|dental|dentist/u', '/dental|dentist|teeth|clinic/'],
+        ['/تدريب|تعليم|دورة|course|training|education/u', '/course|training|lesson|education|learning/'],
+        ['/رياض|لياق|نادي|gym|fitness/u', '/gym|fitness|training|exercise|dumbbell/'],
+    ];
+    $matched = false;
+    foreach ($topics as [$sourcePattern, $visualPattern]) {
+        if (preg_match($sourcePattern, $source) !== 1) {
+            continue;
+        }
+        $matched = true;
+        if (preg_match($visualPattern, $visual) !== 1) {
+            return false;
+        }
+    }
+    return $matched || trim((string) ($plan['evidence'] ?? '')) !== '';
 }
 
 /**

@@ -41,6 +41,9 @@ if (function_exists('ai_image_url_allowed')) {
 check(str_contains($source, "if (in_array(\$submit['http'], [401, 403], true)) {"), 'only a rejected key falls back to an anonymous submit');
 check(preg_match("/if \(\\\$imageUrl === ''\) \{\s*ai_image_pending/", $source) === 1, 'a missing result url keeps the job pending');
 check(preg_match("/if \(!ai_image_url_allowed\(\\\$imageUrl\)\) \{\s*ai_image_release\(\\\$userId, \\\$jobId, \\\$usageId, 'failed'\)/", $source) === 1, 'an untrusted result url fails and releases the reservation');
+check(str_contains($source, "'job_id' => \$jobId") && str_contains($source, "'prompt_sha256' => hash('sha256', \$prompt)"), 'the submitted prompt is logged against the Horde job id without a secret');
+check(str_contains($source, "(\$bound['campaign_id'] ?? 0) !== (int) \$campaign['id']"), 'a Horde result cannot be stored under a different campaign');
+check(!str_contains($source, 'rateb_image_fallback_plan($facts)'), 'the endpoint never guesses a fallback subject when understanding fails');
 
 echo $failures === 0 ? 'RESULT=PASS' . PHP_EOL : 'RESULT=FAIL failures=' . $failures . PHP_EOL;
 exit($failures === 0 ? 0 : 1);

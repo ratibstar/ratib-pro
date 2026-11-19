@@ -56,7 +56,7 @@ $ratioSize = match ($ratio) {
 if (!in_array($ratio, ['1:1', '4:5', '9:16'], true)) {
     $ratio = '1:1';
 }
-$prompt = ai_campaign_image_prompt($campaign, $ratio);
+$promptContext = ai_campaign_image_context($campaign, $ratio);
 $reservedId = 0;
 try {
     $decision = rateb_image_jobs_transaction($userId, static function (array $jobs) use ($userId, $campaignId, $postedJobId, $now, &$reservedId): array {
@@ -103,6 +103,8 @@ if ($usageId < 1 || !rateb_image_job_allows_new_reservation($decision)) {
     echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+$promptData = ai_campaign_image_prompt($promptContext, $userId, $usageId);
+$prompt = (string) $promptData['prompt'];
 
 $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image', null, 8);
 $modelList = json_decode($models['body'], true);
@@ -168,6 +170,12 @@ if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
     echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+rateb_image_prompt_log($promptData['audit'] + [
+    'job_id' => $jobId,
+    'usage_id' => $usageId,
+    'model' => $imageModel,
+    'prompt_sha256' => hash('sha256', $prompt),
+]);
 $record = rateb_image_job_record($jobId, $userId, $campaignId, $usageId, $now, 'pending');
 try {
     rateb_image_jobs_transaction($userId, static function (array $jobs) use ($record): array {
@@ -291,7 +299,14 @@ function ai_image_dispatch(array $campaign, array $decision, string $postedJobId
 function ai_horde_finish_job(array $campaign, string $jobId): void
 {
     $userId = (int) ($_SESSION['user_id'] ?? 0);
-    $usageId = (int) ($_SESSION['ai_image_jobs'][$jobId]['usage_id'] ?? 0);
+    $bound = $_SESSION['ai_image_jobs'][$jobId] ?? null;
+    $usageId = is_array($bound) ? (int) ($bound['usage_id'] ?? 0) : 0;
+    if (!is_array($bound) || (int) ($bound['campaign_id'] ?? 0) !== (int) $campaign['id'] || $usageId < 1) {
+        ai_image_release($userId, $jobId, $usageId, 'failed');
+        http_response_code(409);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_job_mismatch'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     $check = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/check/' . rawurlencode($jobId));
     $state = json_decode($check['body'], true);
     if (is_array($state) && !empty($state['faulted'])) {
@@ -375,7 +390,8 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     exit;
 }
 
-function ai_campaign_image_prompt(array $campaign, string $ratio): string
+/** @return array{campaign:array<string,mixed>,ratio:string,facts:array<string,string>,variant:int} */
+function ai_campaign_image_context(array $campaign, string $ratio): array
 {
     $rows = db()->prepare('SELECT output_type, content, approval_status FROM campaign_outputs WHERE campaign_id = ? ORDER BY id DESC');
     $rows->execute([(int) $campaign['id']]);
@@ -398,45 +414,74 @@ function ai_campaign_image_prompt(array $campaign, string $ratio): string
         echo json_encode(['error' => rateb_ui_error('image_locked'), 'code' => 'image_locked'], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    $briefRead = db()->prepare('SELECT * FROM campaign_briefs WHERE campaign_id = ? AND user_id = ? LIMIT 1');
+    $briefRead->execute([(int) $campaign['id'], (int) ($campaign['user_id'] ?? 0)]);
+    $brief = $briefRead->fetch();
     $brandRead = db()->prepare('SELECT brand_name, tone, primary_color, secondary_color, forbidden, offer_line FROM brand_kits WHERE user_id = ?');
     $brandRead->execute([(int) ($campaign['user_id'] ?? 0)]);
     $brand = $brandRead->fetch();
-    $facts = rateb_image_brief($campaign, $outputs, is_array($brand) ? $brand : []);
-    $plan = rateb_image_brief_sufficient($facts) ? ai_image_plan($facts) : ['sufficient' => false];
-    if (is_array($plan) && $plan['sufficient'] === false) {
+    $facts = rateb_image_brief($campaign, is_array($brief) ? $brief : [], $outputs, is_array($brand) ? $brand : []);
+    if (!rateb_image_brief_sufficient($facts)) {
         http_response_code(422);
         echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $source = 'llm';
-    if ($plan === null) {
-        $plan = rateb_image_fallback_plan($facts);
-        $source = 'fallback';
-    }
-    if ($plan === null) {
+    $count = db()->prepare("SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND kind = 'image' AND source = 'ai'");
+    $count->execute([(int) $campaign['id']]);
+    return ['campaign' => $campaign, 'ratio' => $ratio, 'facts' => $facts, 'variant' => (int) $count->fetchColumn()];
+}
+
+/** @return array{prompt:string,audit:array<string,mixed>} */
+function ai_campaign_image_prompt(array $context, int $userId, int $usageId): array
+{
+    $campaign = $context['campaign'];
+    $ratio = (string) $context['ratio'];
+    $facts = $context['facts'];
+    $variant = (int) $context['variant'];
+    $understanding = ai_image_plan($facts);
+    if ($understanding['status'] === 'unavailable') {
+        ai_image_release($userId, '', $usageId, 'failed');
         http_response_code(503);
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $count = db()->prepare("SELECT COUNT(*) FROM campaign_media WHERE campaign_id = ? AND kind = 'image' AND source = 'ai'");
-    $count->execute([(int) $campaign['id']]);
-    $variant = (int) $count->fetchColumn();
+    $plan = $understanding['plan'] ?? null;
+    if (!is_array($plan) || ($plan['sufficient'] ?? false) !== true) {
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(422);
+        echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     $prompt = rateb_image_prompt_compose($plan, $facts, $ratio, $variant);
-    rateb_image_prompt_log(['campaign_id' => (int) $campaign['id'], 'ratio' => $ratio, 'variant' => $variant, 'source' => $source, 'subject' => (string) $plan['subject'], 'prompt' => $prompt]);
-    return $prompt;
+    return [
+        'prompt' => $prompt,
+        'audit' => [
+            'campaign_id' => (int) $campaign['id'],
+            'user_id' => (int) ($campaign['user_id'] ?? 0),
+            'ratio' => $ratio,
+            'variant' => $variant,
+            'source' => 'llm',
+            'authoritative_brief' => rateb_image_brief_text($facts),
+            'llm_response' => (string) ($understanding['raw'] ?? ''),
+            'subject' => (string) $plan['subject'],
+            'evidence' => (string) ($plan['evidence'] ?? ''),
+            'prompt' => $prompt,
+        ],
+    ];
 }
 
-function ai_image_plan(array $facts): ?array
+/** @return array{status:string,plan?:array<string,mixed>,raw?:string} */
+function ai_image_plan(array $facts): array
 {
     $cfg = require __DIR__ . '/../../config/ai.php';
     $key = trim((string) ($cfg['api_key'] ?? ''));
     if ($key === '') {
-        return null;
+        return ['status' => 'unavailable'];
     }
     $system = 'You are the art director of one advertising photo for the campaign brief below. Use ONLY facts stated in the brief. '
         . 'Never invent a business, product, place, feature, or offer the brief does not state. '
-        . 'Return JSON only: {"sufficient":true,"category":"physical_product|food|digital_service|local_service|place|other","subject":"...","visual_elements":["..."],"setting":"...","mood":"...","avoid":["..."]}. '
-        . 'sufficient is false when the brief does not say what is being advertised. '
+        . 'Return JSON only: {"sufficient":true,"evidence":"exact quote from an authoritative fact that proves the visible subject","category":"physical_product|food|digital_service|local_service|place|other","subject":"...","visual_elements":["..."],"setting":"...","mood":"...","avoid":["..."]}. '
+        . 'Approved copy is style only and MUST NOT be used as evidence or as a source of product features. sufficient is false when the authoritative facts do not say what is being advertised or what a digital service actually does. '
         . 'subject: at most 20 English words naming the concrete thing advertised as a camera would see it. For an app, platform, or online service, show the device screens displaying the result the service produces for its customer, as abstract shapes and images. '
         . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone. '
         . 'avoid: 3 to 8 short English phrases for objects a generic image might wrongly show that are unrelated to this campaign. '
@@ -463,11 +508,15 @@ function ai_image_plan(array $facts): ?array
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     if ($raw === false || $code < 200 || $code >= 300) {
-        return null;
+        return ['status' => 'unavailable'];
     }
     $data = json_decode((string) $raw, true);
     $content = is_array($data) ? (string) ($data['choices'][0]['message']['content'] ?? '') : '';
-    return rateb_image_plan_parse($content, rateb_image_brand_words($facts));
+    $plan = rateb_image_plan_parse($content, rateb_image_brand_words($facts), $facts);
+    if ($plan === null) {
+        return ['status' => 'invalid', 'raw' => $content];
+    }
+    return ['status' => ($plan['sufficient'] ?? false) === true ? 'ok' : 'insufficient', 'plan' => $plan, 'raw' => $content];
 }
 
 function ai_image_pending(string $jobId, int $wait = 0): void
