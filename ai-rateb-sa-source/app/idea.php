@@ -108,6 +108,13 @@ function rateb_idea_clean(string $value): string
     return mb_substr($value, 0, 240);
 }
 
+function rateb_idea_description_clean(string $value): string
+{
+    $value = trim(preg_replace('/\s+/u', ' ', $value) ?? '');
+    $value = preg_replace('/^[\s.،,]+|[\s.،,]+$/u', '', $value) ?? $value;
+    return mb_substr($value, 0, 4000);
+}
+
 function rateb_video_seconds(string $bytes, string $mime): ?int
 {
     if ($mime === 'video/mp4') {
@@ -503,9 +510,9 @@ function rateb_edit_changes(string $note, array $brief): ?array
         $changes['brand_tone'] = 'enthusiastic';
     }
     if (preg_match('/(?:غيّر|غير|صحح|خلّ|خل)\s+الفكرة\s+(?:إلى|الى)\s+(.+)/u', $note, $match) === 1) {
-        $changes['description'] = mb_substr(rateb_idea_clean($match[1]), 0, 4000);
+        $changes['description'] = rateb_idea_description_clean($match[1]);
     } elseif (preg_match('/\b(?:change|correct)\s+the\s+idea\s+to\s+(.+)/i', $note, $match) === 1) {
-        $changes['description'] = mb_substr(rateb_idea_clean($match[1]), 0, 4000);
+        $changes['description'] = rateb_idea_description_clean($match[1]);
     }
     if (preg_match('/(?:غيّر|غير|صحح|خلّ|خل)\s+المنتج\s+(?:إلى|الى)\s+(.+)/u', $note, $match) === 1) {
         $changes['product'] = mb_substr(rateb_idea_clean($match[1]), 0, 255);
@@ -514,6 +521,15 @@ function rateb_edit_changes(string $note, array $brief): ?array
         $changes['title'] = mb_substr(rateb_idea_clean($match[1]), 0, 120);
     } elseif (preg_match('/\brename\s+the\s+campaign\s+to\s+(.+)/i', $note, $match) === 1) {
         $changes['title'] = mb_substr(rateb_idea_clean($match[1]), 0, 120);
+    }
+    // The editor also accepts a complete replacement description directly. This is
+    // intentionally deterministic so saving a brief never consumes AI usage.
+    if ($changes === [] && mb_strlen($note) >= 30) {
+        $descriptive = preg_match('/(?:منصة|برنامج|تطبيق|نظام|خدمة|منتج|متجر|مطعم|شركة|مؤسسة|مشروع)\b/u', $note) === 1
+            || preg_match('/\b(?:platform|software|application|app|system|service|product|store|restaurant|company|business)\b/i', $note) === 1;
+        if ($descriptive && count(preg_split('/\s+/u', $note) ?: []) >= 6) {
+            $changes['description'] = rateb_idea_description_clean($note);
+        }
     }
     return $changes === [] ? null : $changes;
 }

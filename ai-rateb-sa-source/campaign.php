@@ -336,10 +336,10 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
       <input type="hidden" name="campaign_id" value="<?= $id ?>">
       <input type="hidden" name="stage" value="edit">
         <label>
-          <span data-i18n="edit_lead"><?= $arabic ? 'اكتب التغيير الذي تبيه' : 'Write the change you want' ?></span>
-          <textarea name="note" rows="3" data-i18n-placeholder="edit_placeholder" placeholder="<?= $arabic ? 'مثال: غيّر الفكرة إلى ترويج لبرنامج رتب' : 'Example: change the idea to a RATEB promotion' ?>"></textarea>
+          <span data-i18n="edit_lead"><?= $arabic ? 'اكتب الوصف الجديد أو التغيير الذي تبيه' : 'Write the new description or the change you want' ?></span>
+          <textarea name="note" rows="3" data-i18n-placeholder="edit_placeholder" placeholder="<?= $arabic ? 'اكتب وصف الحملة مباشرة، أو مثال: غيّر الموقع إلى جدة' : 'Write the campaign description directly, or for example: change the location to Jeddah' ?>"></textarea>
         </label>
-        <p class="muted" data-i18n="edit_example"><?= $arabic ? 'اكتب التغيير بصراحة. مثال: غيّر الفكرة إلى ترويج لبرنامج رتب، أو غيّر الموقع إلى جدة.' : 'Say what should change. Example: change the idea to a RATEB promotion, or change the location to Jeddah.' ?></p>
+        <p class="muted" data-i18n="edit_example"><?= $arabic ? 'اكتب الوصف الجديد مباشرة، أو اطلب تغييراً محدداً مثل: غيّر الموقع إلى جدة.' : 'Write the new description directly, or request a specific change such as: change the location to Jeddah.' ?></p>
       <button class="primary" type="submit" data-i18n="update_idea"><?= $arabic ? 'حدّث الفكرة' : 'Update the idea' ?></button>
     </form>
     <p id="edit-status" class="muted"></p>
