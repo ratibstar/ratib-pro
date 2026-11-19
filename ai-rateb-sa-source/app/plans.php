@@ -305,19 +305,27 @@ function rateb_refund_credits(int $userId, string $featureType, ?int $campaignId
     $pdo = db();
     $pdo->beginTransaction();
     try {
-        $charges = $pdo->prepare('SELECT id, credits_deducted FROM usage_events WHERE user_id = ? AND operation = ? AND status = \'completed\' AND credits_deducted > 0 AND ((? IS NULL AND campaign_id IS NULL) OR campaign_id = ?) ORDER BY id DESC LIMIT 1 FOR UPDATE');
+        $charges = $pdo->prepare('SELECT id, credits_deducted FROM usage_events WHERE user_id = ? AND operation = ? AND status = \'completed\' AND credits_deducted > 0 AND ((? IS NULL AND campaign_id IS NULL) OR campaign_id = ?) ORDER BY id DESC');
         $charges->execute([$userId, $featureType, $campaignId, $campaignId]);
-        $charge = $charges->fetch();
-        if (!$charge) {
-            $pdo->commit();
-            return false;
+        $charge = null;
+        $chargeId = 0;
+        $amount = 0;
+        $key = '';
+        foreach ($charges as $candidate) {
+            $candidateId = (int) $candidate['id'];
+            $candidateKey = $featureType . '_charge:' . $candidateId . ':refund';
+            $taken = $pdo->prepare('SELECT id FROM usage_events WHERE idempotency_key = ?');
+            $taken->execute([$candidateKey]);
+            if ($taken->fetchColumn() !== false) {
+                continue;
+            }
+            $charge = $candidate;
+            $chargeId = $candidateId;
+            $amount = (int) $candidate['credits_deducted'];
+            $key = $candidateKey;
+            break;
         }
-        $chargeId = (int) $charge['id'];
-        $amount = (int) $charge['credits_deducted'];
-        $key = $featureType . '_charge:' . $chargeId . ':refund';
-        $taken = $pdo->prepare('SELECT id FROM usage_events WHERE idempotency_key = ? FOR UPDATE');
-        $taken->execute([$key]);
-        if ($taken->fetchColumn() !== false) {
+        if (!$charge) {
             $pdo->commit();
             return false;
         }

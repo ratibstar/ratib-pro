@@ -306,17 +306,12 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     if ($scenes === []) {
         return ['ok' => false, 'code' => 'invalid', 'job_id' => 0];
     }
-    if (!rateb_check_and_deduct_credits((int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id'])) {
-        $lockCode = rateb_feature_locked((int) $campaign['user_id'], 'video_storyboard') ? 'package' : 'credits';
-        return ['ok' => false, 'code' => $lockCode, 'job_id' => 0];
-    }
     $seconds = 0;
     foreach ($scenes as $scene) {
         $seconds += (int) $scene['duration'];
     }
     $gate = rateb_usage_begin($pdo, (int) $campaign['user_id'], (int) $campaign['id'], 'video', $seconds);
     if (!$gate['ok']) {
-        rateb_refund_credits((int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id']);
         return ['ok' => false, 'code' => (string) $gate['code'], 'job_id' => 0];
     }
     $insert = $pdo->prepare('INSERT INTO video_jobs (campaign_id, user_id, status, provider, storyboard, usage_id, watermark, approval_status) VALUES (?, ?, \'queued\', ?, ?, ?, ?, \'draft\')');
@@ -446,6 +441,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
             ? (rateb_video_single_clip(MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips', $job, $scenes) ?? rateb_video_compose($pdo, $job, $campaign, $scenes))
             : rateb_video_compose($pdo, $job, $campaign, $scenes);
         $mediaId = media_store_bytes($campaign, 'video', 'ai', 'campaign.mp4', 'video/mp4', $final);
+        rateb_check_and_deduct_credits((int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id']);
         $pdo->prepare("UPDATE video_jobs SET status = 'completed', output_media_id = ?, error_code = '' WHERE id = ?")->execute([
             $mediaId,
             (int) $job['id'],

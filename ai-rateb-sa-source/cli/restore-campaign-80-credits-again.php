@@ -9,7 +9,7 @@ if (!$pdo instanceof PDO) {
     exit(1);
 }
 
-$key = 'restore_balance_65:campaign:80:second';
+$key = 'restore_balance_65:campaign:80:third';
 $seen = $pdo->prepare('SELECT id FROM usage_events WHERE idempotency_key = ? LIMIT 1');
 $seen->execute([$key]);
 if ($seen->fetch()) {
