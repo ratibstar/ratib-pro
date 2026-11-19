@@ -91,6 +91,9 @@ if (function_exists('imagecreatetruecolor')) {
 }
 check(rateb_video_message('not_configured', true) === 'توليد الفيديو غير مُعد على الخادم.', 'arabic missing-provider message');
 check(rateb_video_message('not_configured', false) === 'Video generation is not configured.', 'english missing-provider message');
+$engineSource = (string) file_get_contents(__DIR__ . '/../app/video/engine.php');
+check(str_contains($engineSource, 'rateb_video_compose($pdo, $job, $campaign, $scenes)'), 'final video always goes through compose so voiceover can be muxed');
+check(preg_match('/count\(\$scenes\)\s*===\s*1\s*\?\s*\(rateb_video_single_clip/', $engineSource) !== 1, 'single-scene jobs do not skip audio muxing via the silent clip shortcut');
 check(str_contains(file_get_contents(__DIR__ . '/../app/vision.php'), 'return null;'), 'vision stays disabled without a provider');
 
 $status = (new ReflectionMethod(RunwayVideoProvider::class, 'getTaskStatus'));

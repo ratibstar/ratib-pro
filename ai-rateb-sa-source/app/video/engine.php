@@ -439,9 +439,9 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                 (int) $job['id'],
             ]);
         }
-        $final = count($scenes) === 1
-            ? (rateb_video_single_clip(MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips', $job, $scenes) ?? rateb_video_compose($pdo, $job, $campaign, $scenes))
-            : rateb_video_compose($pdo, $job, $campaign, $scenes);
+        // Always compose the final file so campaign voiceover audio is muxed in.
+        // A single silent clip shortcut used to skip audio entirely for one-scene jobs.
+        $final = rateb_video_compose($pdo, $job, $campaign, $scenes);
         $mediaId = media_store_bytes($campaign, 'video', 'ai', 'campaign.mp4', 'video/mp4', $final);
         rateb_check_and_deduct_credits((int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id']);
         $pdo->prepare("UPDATE video_jobs SET status = 'completed', output_media_id = ?, error_code = '' WHERE id = ?")->execute([
