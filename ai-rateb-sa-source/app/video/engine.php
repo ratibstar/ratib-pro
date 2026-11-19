@@ -9,6 +9,26 @@ function rateb_video_ratio(): string
     return '720:1280';
 }
 
+/**
+ * Local slideshow output size. Keep Runway prompts at 720x1280, but encode local
+ * videos sharper and in the campaign aspect so square creatives stay readable.
+ *
+ * @return array{0:int,1:int}
+ */
+function rateb_video_frame_size(string $ratio = '9:16'): array
+{
+    return $ratio === '1:1' ? [1080, 1080] : [1080, 1920];
+}
+
+function rateb_video_scale_filter(int $width, int $height, bool $fill = true): string
+{
+    $mode = $fill ? 'increase' : 'decrease';
+    $padOrCrop = $fill
+        ? "crop={$width}:{$height}"
+        : "pad={$width}:{$height}:(ow-iw)/2:(oh-ih)/2:color=0x0C0C10";
+    return "scale={$width}:{$height}:force_original_aspect_ratio={$mode}:flags=lanczos,{$padOrCrop},setsar=1,format=yuv420p";
+}
+
 function rateb_video_clip_seconds(): int
 {
     return 5;
@@ -412,8 +432,9 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                 if (!$row) {
                     throw new RuntimeException('missing_image');
                 }
+                $sceneRatio = (string) ($scene['ratio'] ?? '9:16');
                 if (!$provider->configured() || (string) ($job['provider'] ?? '') === 'local') {
-                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration']);
+                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $sceneRatio);
                     $scenes[$index]['status'] = 'ready';
                     $scenes[$index]['local'] = true;
                     $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
@@ -433,7 +454,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                     if ($providerError->getMessage() !== 'rejected_credit') {
                         throw $providerError;
                     }
-                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration']);
+                    rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $sceneRatio);
                     $scenes[$index]['status'] = 'ready';
                     $scenes[$index]['local'] = true;
                     $pdo->prepare("UPDATE video_jobs SET status = 'processing', storyboard = ? WHERE id = ?")->execute([
@@ -507,27 +528,26 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
     }
 }
 
-function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds): void
+function rateb_video_local_clip(array $campaign, array $job, int $index, array $imageRow, int $seconds, string $ratio = '9:16'): void
 {
-    $bytes = file_get_contents(media_absolute_path($imageRow));
-    $jpeg = is_string($bytes) ? rateb_video_prompt_jpeg($bytes) : null;
-    if (!is_string($jpeg)) {
+    // Encode from the original campaign file. Do not reuse rateb_video_prompt_jpeg()
+    // here — that helper shrinks to 720x1280 for Runway and ruins local sharpness.
+    $source = media_absolute_path($imageRow);
+    if (!is_file($source)) {
         throw new RuntimeException('rejected_image');
     }
     $dir = MEDIA_ROOT . '/' . (int) $campaign['id'] . '/clips';
     if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
         throw new RuntimeException('storage');
     }
-    $still = $dir . '/still-' . (int) $job['id'] . '-' . $index . '.jpg';
     $clip = $dir . '/' . (int) $job['id'] . '-' . $index . '.mp4';
-    if (file_put_contents($still, $jpeg, LOCK_EX) === false) {
-        throw new RuntimeException('storage');
-    }
-    $frames = max(1, $seconds) * 25;
+    [$width, $height] = rateb_video_frame_size($ratio);
+    $frames = max(1, $seconds) * 30;
     $ffmpeg = is_file('/home/admin/bin/ffmpeg') ? '/home/admin/bin/ffmpeg' : 'ffmpeg';
-    $cmd = escapeshellarg($ffmpeg) . ' -y -loop 1 -i ' . escapeshellarg($still)
-        . ' -frames:v ' . $frames . ' -r 25 -vf ' . escapeshellarg('scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p')
-        . ' -c:v libx264 -preset veryfast -crf 23 -an ' . escapeshellarg($clip);
+    $vf = rateb_video_scale_filter($width, $height, true);
+    $cmd = escapeshellarg($ffmpeg) . ' -y -loop 1 -i ' . escapeshellarg($source)
+        . ' -frames:v ' . $frames . ' -r 30 -vf ' . escapeshellarg($vf)
+        . ' -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -an ' . escapeshellarg($clip);
     if (!function_exists('proc_open')) {
         throw new RuntimeException('deferred');
     }
@@ -540,7 +560,6 @@ function rateb_video_local_clip(array $campaign, array $job, int $index, array $
     fclose($pipes[1]);
     fclose($pipes[2]);
     $code = proc_close($process);
-    @unlink($still);
     if ($code !== 0 || !is_file($clip) || filesize($clip) < 1000) {
         throw new RuntimeException('storage');
     }
@@ -567,9 +586,17 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     $voice->execute([(int) $campaign['id'], (int) $campaign['user_id']]);
     $audio = $voice->fetch();
     $audioPath = $audio ? media_absolute_path($audio) : '';
-    $filter = 'scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2,format=yuv420p';
+    $ratio = '9:16';
+    foreach ($scenes as $scene) {
+        if ((string) ($scene['ratio'] ?? '') === '1:1') {
+            $ratio = '1:1';
+            break;
+        }
+    }
+    [$width, $height] = rateb_video_frame_size($ratio);
+    $filter = rateb_video_scale_filter($width, $height, true);
     if ((int) $job['watermark'] === 1) {
-        $filter .= ",drawtext=text='RATEB AI':fontsize=28:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
+        $filter .= ",drawtext=text='RATEB AI':fontsize=36:fontcolor=white:box=1:boxcolor=black@0.45:x=w-tw-24:y=h-th-24";
     }
     $totalSeconds = 0;
     foreach ($scenes as $scene) {
@@ -584,7 +611,7 @@ function rateb_video_compose(PDO $pdo, array $job, array $campaign, array $scene
     } else {
         $cmd .= ' -vf ' . escapeshellarg($filter) . ' -an -t ' . $totalSeconds;
     }
-    $cmd .= ' -c:v libx264 -preset veryfast -crf 23 -c:a aac -movflags +faststart ' . escapeshellarg($out);
+    $cmd .= ' -c:v libx264 -preset medium -crf 18 -c:a aac -b:a 192k -movflags +faststart ' . escapeshellarg($out);
     if (!function_exists('proc_open')) {
         throw new RuntimeException('deferred');
     }
