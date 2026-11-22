@@ -244,12 +244,15 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav44">
-<style>.goal-pick{display:grid;gap:6px;margin:14px 0}.goal-pick select{width:100%;border-radius:14px;padding:12px;font:inherit}</style>
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav70">
+<style>.goal-pick{display:grid;gap:6px;margin:10px 0}.goal-pick select{width:100%;border-radius:12px;padding:10px;font:inherit}</style>
 </head>
-<body class="studio page-new">
+<body class="studio page-new campaign-wizard">
 <?php rateb_site_header('/campaign-new.php', $userId > 0); ?>
-<main class="wrap idea-shell">
+<div class="campaign-wizard-backdrop" aria-hidden="true"></div>
+<div class="campaign-wizard-panel" role="dialog" aria-modal="true" aria-label="<?= $arabic ? 'إنشاء حملة' : 'Create campaign' ?>">
+  <a class="auth-x campaign-wizard-close" href="/dashboard" aria-label="<?= $arabic ? 'إغلاق' : 'Close' ?>">×</a>
+  <div class="campaign-wizard-body">
 <?php if ($view === 'reading'): ?>
   <section class="card idea-card" id="reading-flow">
     <h1 data-i18n="reading_title"><?= $arabic ? 'RATEB يفهم فكرتك...' : 'RATEB is understanding your idea...' ?></h1>
@@ -466,21 +469,9 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
     <?php endif; ?>
   </section>
 <?php endif; ?>
-</main>
-<section class="wrap idea-shell">
-  <div class="voice-library" data-voice-library>
-    <h2>الأصوات</h2>
-    <div class="voice-filters">
-      <input type="search" data-voice-search placeholder="ابحث بالاسم">
-      <select data-voice-country><option value="">اختر الدولة</option></select>
-      <select data-voice-dialect disabled><option value="">اختر اللهجة</option></select>
-    </div>
-    <p class="muted" data-voice-note></p>
-    <div class="voice-picks" data-voice-picks></div>
-    <audio data-voice-player controls preload="none" hidden></audio>
   </div>
-</section>
+</div>
 <?php rateb_auth_dialog('/campaign-new.php'); ?>
-<script src="/public/assets/js/app.js?v=nav40"></script>
+<script src="/public/assets/js/app.js?v=nav70"></script>
 </body>
 </html>
