@@ -39,6 +39,7 @@ $wallet = rateb_account_credits($pdo, $userId);
     <p class="muted" data-i18n="account_lead"><?= $arabic ? 'بيانات الدخول الخاصة بك. البريد ثابت؛ يمكنك تحديث الاسم وكلمة المرور.' : 'Your sign-in details. Email stays fixed; you can update your name and password.' ?></p>
     <p class="muted"><?= $arabic ? 'الباقة:' : 'Plan:' ?> <?= e((string) $wallet['package_type']) ?> · <?= $arabic ? 'الرصيد:' : 'Credits:' ?> <?= (int) $wallet['credits_balance'] ?>
       · <a href="/billing.php" data-i18n="nav_billing"><?= $arabic ? 'الفوترة' : 'Billing' ?></a>
+      · <a href="/brand.php" data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></a>
     </p>
 
     <?php if ($flash === 'profile'): ?><p class="notice" data-i18n="account_saved"><?= $arabic ? 'تم حفظ الاسم.' : 'Name saved.' ?></p><?php endif; ?>

@@ -65,7 +65,7 @@ function rateb_safe_next(string $next, ?string $role = null): string
     if ($next === '') {
         return '/dashboard';
     }
-    $allowed = ['/dashboard', '/campaign-new.php'];
+    $allowed = ['/dashboard', '/campaign-new.php', '/brand.php'];
     if ($role === 'owner') {
         $allowed[] = '/admin';
         $allowed[] = '/admin/';

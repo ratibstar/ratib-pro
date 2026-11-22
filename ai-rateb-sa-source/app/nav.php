@@ -3,11 +3,15 @@ declare(strict_types=1);
 
 function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): void
 {
+    $workspace = [
+        ['/dashboard', 'dashboard', 'Dashboard'],
+        ['/campaign-new.php', 'new_campaign', 'New Campaign'],
+    ];
+    if ($loggedIn) {
+        $workspace[] = ['/brand.php', 'brand_kit', 'Brand kit'];
+    }
     $groups = [
-        [
-            ['/dashboard', 'dashboard', 'Dashboard'],
-            ['/campaign-new.php', 'new_campaign', 'New Campaign'],
-        ],
+        $workspace,
         [
             ['/#workflow', 'nav_how', 'How it works'],
             ['/#samples', 'nav_samples', 'Examples'],
