@@ -162,8 +162,6 @@ function rateb_campaign_dialog(): void
     $open = isset($_GET['campaign']) && (string) $_GET['campaign'] === '1';
     $language = 'auto';
     echo '<dialog class="studio-popup campaign-modal" id="campaign-modal"' . ($open ? ' data-campaign-autoopen="1"' : '') . '>';
-    echo '<button type="button" class="auth-x" data-campaign-close aria-label="Close">×</button>';
-    echo '<div class="studio-popup-card">';
     echo '<ol class="campaign-wizard-steps" aria-label="' . ($ar ? 'خطوات إنشاء الحملة' : 'Campaign creation steps') . '">';
     $modalSteps = $ar
         ? ['الفكرة', 'الفهم', 'التوضيح', 'الاعتماد']
@@ -173,6 +171,8 @@ function rateb_campaign_dialog(): void
         echo '<li class="' . $state . '"><span class="step-num">' . ($i + 1) . '</span><span class="step-label">' . e($label) . '</span></li>';
     }
     echo '</ol>';
+    echo '<div class="studio-popup-card">';
+    echo '<button type="button" class="auth-x" data-campaign-close aria-label="Close">×</button>';
     echo '<h2 data-i18n="idea_title">' . ($ar ? 'وش تبي تسوّق اليوم؟' : 'What do you want to market today?') . '</h2>';
     echo '<p class="muted studio-popup-lead" data-i18n="idea_lead">' . ($ar ? 'اكتب فكرتك بطريقتك...' : 'Describe the idea in your own words.') . '</p>';
     echo '<form id="idea-form-modal" method="post" action="/campaign-new.php" enctype="multipart/form-data" class="studio-popup-form">';

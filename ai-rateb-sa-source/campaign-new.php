@@ -252,14 +252,13 @@ if ($wizardIndex === false) {
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav71">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav72">
 <style>.goal-pick{display:grid;gap:6px;margin:10px 0}.goal-pick select{width:100%;border-radius:12px;padding:10px;font:inherit}</style>
 </head>
 <body class="studio page-new campaign-wizard">
 <?php rateb_site_header('/campaign-new.php', $userId > 0); ?>
 <div class="campaign-wizard-backdrop" aria-hidden="true"></div>
-<div class="campaign-wizard-panel" role="dialog" aria-modal="true" aria-label="<?= $arabic ? 'إنشاء حملة' : 'Create campaign' ?>">
-  <a class="auth-x campaign-wizard-close" href="/dashboard" aria-label="<?= $arabic ? 'إغلاق' : 'Close' ?>">×</a>
+<div class="campaign-wizard-stack" role="dialog" aria-modal="true" aria-label="<?= $arabic ? 'إنشاء حملة' : 'Create campaign' ?>">
   <ol class="campaign-wizard-steps" aria-label="<?= $arabic ? 'خطوات إنشاء الحملة' : 'Campaign creation steps' ?>">
 <?php foreach ($wizardOrder as $i => $stepKey):
     $state = $i < $wizardIndex ? 'is-done' : ($i === $wizardIndex ? 'is-current' : 'is-todo');
@@ -267,6 +266,8 @@ if ($wizardIndex === false) {
     <li class="<?= e($state) ?>"><span class="step-num"><?= $i + 1 ?></span><span class="step-label"><?= e($wizardSteps[$stepKey]) ?></span></li>
 <?php endforeach; ?>
   </ol>
+  <div class="campaign-wizard-panel">
+  <a class="auth-x campaign-wizard-close" href="/dashboard" aria-label="<?= $arabic ? 'إغلاق' : 'Close' ?>">×</a>
   <div class="campaign-wizard-body">
 <?php if ($view === 'reading'): ?>
   <section class="card idea-card" id="reading-flow">
@@ -485,8 +486,9 @@ if ($wizardIndex === false) {
   </section>
 <?php endif; ?>
   </div>
+  </div>
 </div>
 <?php rateb_auth_dialog('/campaign-new.php'); ?>
-<script src="/public/assets/js/app.js?v=nav70"></script>
+<script src="/public/assets/js/app.js?v=nav72"></script>
 </body>
 </html>

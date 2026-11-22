@@ -322,10 +322,16 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .studio-popup-logo img{max-height:56px;width:auto}
 .studio-popup .button,.studio-popup .idea-go{width:100%;border-radius:12px}
 .brand-modal{width:min(720px,calc(100% - 28px))}
-.campaign-modal{width:min(620px,calc(100% - 28px))}
+.campaign-modal{width:min(640px,calc(100% - 28px));background:transparent;box-shadow:none;border:0;overflow:visible;padding:0;gap:10px;align-content:start}
+.campaign-modal[open]{display:grid}
+.campaign-modal .studio-popup-card{position:relative;border-radius:22px;background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px rgba(28,20,51,.34);max-height:min(78vh,720px);overflow:auto}
+[data-theme=light] .campaign-modal .studio-popup-card{background:#fff;border-color:rgba(76,29,149,.12)}
+.campaign-modal .auth-x{position:absolute;top:12px;inset-inline-start:12px;z-index:2}
 @media (max-width:720px){.studio-popup-grid{grid-template-columns:1fr}}
 body.studio .studio-popup{background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid rgba(255,255,255,.12)}
+body.studio .campaign-modal{background:transparent;border:0}
 [data-theme=light] body.studio .studio-popup{background:#fff;border-color:rgba(76,29,149,.12)}
+[data-theme=light] body.studio .campaign-modal{background:transparent;border:0}
 .account-modal{position:fixed;inset:0;margin:auto;width:min(460px,calc(100% - 28px));height:fit-content;max-height:min(92vh,720px);overflow:auto;border:0;border-radius:20px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 22px 50px rgba(28,20,51,.32)}
 .account-modal::backdrop{background:rgba(20,12,40,.55);backdrop-filter:blur(6px)}
 .account-modal-card{padding:24px 22px 18px;display:grid;gap:8px}
@@ -542,17 +548,19 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .idea-card h1{font-size:clamp(32px,5vw,46px);line-height:1.25;margin-bottom:8px}
 .campaign-wizard{min-height:100vh}
 .campaign-wizard-backdrop{position:fixed;inset:0;z-index:40;background:rgba(20,12,40,.58);backdrop-filter:blur(7px)}
-.campaign-wizard-panel{position:fixed;inset:0;z-index:41;margin:auto;width:min(640px,calc(100% - 28px));height:fit-content;max-height:min(92vh,860px);overflow:auto;border-radius:22px;background:var(--surface);color:var(--text);box-shadow:0 24px 60px rgba(28,20,51,.4);border:1px solid rgba(255,255,255,.12)}
+.campaign-wizard-stack{position:fixed;inset:0;z-index:41;margin:auto;width:min(640px,calc(100% - 28px));height:fit-content;max-height:min(94vh,900px);display:grid;gap:10px;align-content:center;pointer-events:none}
+.campaign-wizard-stack > *{pointer-events:auto}
+.campaign-wizard-panel{position:relative;width:100%;max-height:min(78vh,760px);overflow:auto;border-radius:22px;background:var(--surface);color:var(--text);box-shadow:0 24px 60px rgba(28,20,51,.4);border:1px solid rgba(255,255,255,.12)}
 [data-theme=light] .campaign-wizard-panel{background:#fff;border-color:rgba(76,29,149,.12)}
 .campaign-wizard-close{position:absolute;top:12px;inset-inline-start:12px;z-index:2;text-decoration:none;display:grid;place-items:center}
-.campaign-wizard-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;list-style:none;margin:0;padding:44px 16px 0;position:relative}
-.campaign-wizard-steps li{display:grid;justify-items:center;gap:4px;text-align:center;opacity:.45}
-.campaign-wizard-steps .step-num{width:26px;height:26px;border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:800;border:1px solid var(--border);background:var(--bg)}
-.campaign-wizard-steps .step-label{font-size:11px;font-weight:700;line-height:1.2}
+.campaign-wizard-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;list-style:none;margin:0;padding:10px 12px 8px;position:relative;border-radius:999px;background:color-mix(in srgb,var(--accent) 22%,rgba(28,18,48,.78));border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 28px rgba(20,12,40,.28);color:#fff}
+.campaign-wizard-steps::before{content:"";position:absolute;top:22px;inset-inline:14%;height:2px;background:rgba(255,255,255,.22);z-index:0}
+.campaign-wizard-steps li{display:grid;justify-items:center;gap:3px;text-align:center;opacity:.48;position:relative;z-index:1}
+.campaign-wizard-steps .step-num{width:26px;height:26px;border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,.28);background:rgba(20,12,40,.55);color:#fff}
+.campaign-wizard-steps .step-label{font-size:11px;font-weight:700;line-height:1.2;color:rgba(255,255,255,.88)}
 .campaign-wizard-steps .is-done,.campaign-wizard-steps .is-current{opacity:1}
-.campaign-wizard-steps .is-done .step-num{background:color-mix(in srgb,var(--accent) 22%,var(--bg));border-color:color-mix(in srgb,var(--accent) 55%,var(--border));color:var(--accent)}
-.campaign-wizard-steps .is-current .step-num{background:var(--accent);border-color:var(--accent);color:#fff}
-.campaign-modal .campaign-wizard-steps{padding:8px 0 4px}
+.campaign-wizard-steps .is-done .step-num{background:color-mix(in srgb,var(--accent) 55%,#fff);border-color:transparent;color:#1e1140}
+.campaign-wizard-steps .is-current .step-num{background:#fff;border-color:#fff;color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
 .campaign-wizard-body{padding:14px 16px 16px}
 .campaign-wizard .idea-card{margin:0;border:0;box-shadow:none;background:transparent;padding:8px 8px 4px;border-radius:0}
 .campaign-wizard .idea-card h1{font-size:clamp(22px,4vw,30px);margin:0 0 8px;text-align:center}
