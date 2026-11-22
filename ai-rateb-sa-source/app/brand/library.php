@@ -6,35 +6,15 @@ require_once __DIR__ . '/../auth/account-state.php';
 
 const BRAND_ROOT = '/home/admin/.brand-kits';
 
-function brand_owned(): array
+function brand_empty_kit(): array
 {
-    rateb_block_disabled_session(db());
-    if (empty($_SESSION['user_id'])) {
-        return [
-            'brand_name' => '',
-            'logo_stored' => null,
-            'logo_mime' => null,
-            'primary_color' => '#0f766e',
-            'secondary_color' => '#111827',
-            'preferred_language' => 'en',
-            'tone' => '',
-            'contact' => '',
-            'audience' => '',
-            'offer_line' => '',
-            'forbidden' => '',
-            'dialect' => '',
-        ];
-    }
-    $stmt = db()->prepare('SELECT * FROM brand_kits WHERE user_id = ?');
-    $stmt->execute([$_SESSION['user_id']]);
-    $row = $stmt->fetch();
-    return $row ?: [
+    return [
         'brand_name' => '',
         'logo_stored' => null,
         'logo_mime' => null,
         'primary_color' => '#0f766e',
         'secondary_color' => '#111827',
-        'preferred_language' => 'en',
+        'preferred_language' => 'ar',
         'tone' => '',
         'contact' => '',
         'audience' => '',
@@ -44,7 +24,27 @@ function brand_owned(): array
     ];
 }
 
-function brand_store_logo(array $file): array
+function brand_for_user(int $userId): array
+{
+    if ($userId < 1) {
+        return brand_empty_kit();
+    }
+    $stmt = db()->prepare('SELECT * FROM brand_kits WHERE user_id = ?');
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch();
+    return $row ?: brand_empty_kit();
+}
+
+function brand_owned(): array
+{
+    rateb_block_disabled_session(db());
+    if (empty($_SESSION['user_id'])) {
+        return brand_empty_kit();
+    }
+    return brand_for_user((int) $_SESSION['user_id']);
+}
+
+function brand_store_logo(array $file, ?int $forUserId = null): array
 {
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
         return ['stored' => null, 'mime' => null];
@@ -65,7 +65,10 @@ function brand_store_logo(array $file): array
     if (!isset($map[$mime]) || $info === false || image_type_to_mime_type((int) $info[2]) !== $mime) {
         throw new RuntimeException('type');
     }
-    $userId = (int) $_SESSION['user_id'];
+    $userId = $forUserId !== null && $forUserId > 0 ? $forUserId : (int) $_SESSION['user_id'];
+    if ($userId < 1) {
+        throw new RuntimeException('upload');
+    }
     $dir = BRAND_ROOT . '/' . $userId;
     if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
         throw new RuntimeException('upload');

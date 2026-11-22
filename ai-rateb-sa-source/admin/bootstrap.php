@@ -192,6 +192,10 @@ function admin_flash(string $code): string
         'missing' => admin_t('The record was not found.', 'السجل غير موجود.'),
         'schema' => admin_t('Apply the admin migration before this action.', 'طبّق ترحيل الإدارة قبل هذا الإجراء.'),
         'saved' => admin_t('Saved.', 'تم الحفظ.'),
+        'brand_saved' => admin_t('Brand identity saved.', 'تم حفظ هوية العلامة.'),
+        'brand_size' => admin_t('The logo file is too large.', 'ملف الشعار كبير جداً.'),
+        'brand_type' => admin_t('The logo file type is not allowed.', 'نوع ملف الشعار غير مسموح.'),
+        'brand_upload' => admin_t('The logo could not be uploaded.', 'تعذر رفع الشعار.'),
         'owner_only' => admin_t('Only the platform owner can do this.', 'فقط مالك المنصة يمكنه ذلك.'),
         default => admin_t('The action was not completed.', 'لم يكتمل الإجراء.'),
     };
