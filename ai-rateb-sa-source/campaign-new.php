@@ -235,6 +235,14 @@ foreach ($files as $file) {
 }
 $langKey = ['ar' => 'lang_ar', 'en' => 'lang_en', 'bilingual' => 'lang_bilingual', 'auto' => 'lang_auto'][$language];
 $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one', 'video_long', 'video_unknown', 'plan_images', 'plan_videos', 'ask_required', 'save_failed'];
+$wizardSteps = $arabic
+    ? ['idea' => 'الفكرة', 'reading' => 'الفهم', 'ask' => 'التوضيح', 'confirm' => 'الاعتماد']
+    : ['idea' => 'Idea', 'reading' => 'Understanding', 'ask' => 'Clarify', 'confirm' => 'Confirm'];
+$wizardOrder = ['idea', 'reading', 'ask', 'confirm'];
+$wizardIndex = array_search($view, $wizardOrder, true);
+if ($wizardIndex === false) {
+    $wizardIndex = 0;
+}
 ?>
 <!doctype html>
 <html lang="<?= $arabic ? 'ar' : 'en' ?>" dir="<?= $arabic ? 'rtl' : 'ltr' ?>" data-theme="light">
@@ -244,7 +252,7 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav70">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav71">
 <style>.goal-pick{display:grid;gap:6px;margin:10px 0}.goal-pick select{width:100%;border-radius:12px;padding:10px;font:inherit}</style>
 </head>
 <body class="studio page-new campaign-wizard">
@@ -252,6 +260,13 @@ $errorKeys = ['idea_required', 'idea_long', 'file_type', 'file_size', 'video_one
 <div class="campaign-wizard-backdrop" aria-hidden="true"></div>
 <div class="campaign-wizard-panel" role="dialog" aria-modal="true" aria-label="<?= $arabic ? 'إنشاء حملة' : 'Create campaign' ?>">
   <a class="auth-x campaign-wizard-close" href="/dashboard" aria-label="<?= $arabic ? 'إغلاق' : 'Close' ?>">×</a>
+  <ol class="campaign-wizard-steps" aria-label="<?= $arabic ? 'خطوات إنشاء الحملة' : 'Campaign creation steps' ?>">
+<?php foreach ($wizardOrder as $i => $stepKey):
+    $state = $i < $wizardIndex ? 'is-done' : ($i === $wizardIndex ? 'is-current' : 'is-todo');
+?>
+    <li class="<?= e($state) ?>"><span class="step-num"><?= $i + 1 ?></span><span class="step-label"><?= e($wizardSteps[$stepKey]) ?></span></li>
+<?php endforeach; ?>
+  </ol>
   <div class="campaign-wizard-body">
 <?php if ($view === 'reading'): ?>
   <section class="card idea-card" id="reading-flow">

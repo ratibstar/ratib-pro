@@ -545,7 +545,15 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .campaign-wizard-panel{position:fixed;inset:0;z-index:41;margin:auto;width:min(640px,calc(100% - 28px));height:fit-content;max-height:min(92vh,860px);overflow:auto;border-radius:22px;background:var(--surface);color:var(--text);box-shadow:0 24px 60px rgba(28,20,51,.4);border:1px solid rgba(255,255,255,.12)}
 [data-theme=light] .campaign-wizard-panel{background:#fff;border-color:rgba(76,29,149,.12)}
 .campaign-wizard-close{position:absolute;top:12px;inset-inline-start:12px;z-index:2;text-decoration:none;display:grid;place-items:center}
-.campaign-wizard-body{padding:18px 16px 16px}
+.campaign-wizard-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;list-style:none;margin:0;padding:44px 16px 0;position:relative}
+.campaign-wizard-steps li{display:grid;justify-items:center;gap:4px;text-align:center;opacity:.45}
+.campaign-wizard-steps .step-num{width:26px;height:26px;border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:800;border:1px solid var(--border);background:var(--bg)}
+.campaign-wizard-steps .step-label{font-size:11px;font-weight:700;line-height:1.2}
+.campaign-wizard-steps .is-done,.campaign-wizard-steps .is-current{opacity:1}
+.campaign-wizard-steps .is-done .step-num{background:color-mix(in srgb,var(--accent) 22%,var(--bg));border-color:color-mix(in srgb,var(--accent) 55%,var(--border));color:var(--accent)}
+.campaign-wizard-steps .is-current .step-num{background:var(--accent);border-color:var(--accent);color:#fff}
+.campaign-modal .campaign-wizard-steps{padding:8px 0 4px}
+.campaign-wizard-body{padding:14px 16px 16px}
 .campaign-wizard .idea-card{margin:0;border:0;box-shadow:none;background:transparent;padding:8px 8px 4px;border-radius:0}
 .campaign-wizard .idea-card h1{font-size:clamp(22px,4vw,30px);margin:0 0 8px;text-align:center}
 .campaign-wizard .idea-card .muted{text-align:center}
