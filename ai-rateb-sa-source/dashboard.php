@@ -211,8 +211,8 @@ foreach ($pricingPlans as $planRow) {
       </a>
       <a class="showcase-card show-video" href="/campaign-new.php">
         <span class="show-mark">06</span>
-        <h3 data-i18n="show_video_title">Video ideas</h3>
-        <p data-i18n="show_video_body">Shot ideas and scripts. Video rendering stays unavailable.</p>
+        <h3 data-i18n="show_video_title">Short video</h3>
+        <p data-i18n="show_video_body">Build a short campaign video from your images and voice, or upload your own.</p>
       </a>
       <a class="showcase-card show-planner" href="/campaign-new.php">
         <span class="show-mark">07</span>

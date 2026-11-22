@@ -73,18 +73,18 @@ foreach (admin_billing_truth() as $line) {
 echo '</ul><p>' . admin_h(admin_t('Recorded inconsistencies. This screen does not grant credits or rewrite balances.', 'تعارضات مسجّلة. هذه الشاشة لا تمنح نقاطًا ولا تعيد كتابة الأرصدة.')) . '</p><ul>';
 $notes = $adminLang === 'ar'
     ? [
-        'أسعار plans (79 / 199 / 399 / 799) تختلف عن أسعار Moyasar في checkout (99 و 249) لـ starter و pro فقط.',
+        'الأسعار العامة المعروضة: مجانية 0، أساسية 111، احترافية 399 (من جدول plans). نمو وأعمال في الكتالوج وليستا في مسار الشراء العام حالياً.',
         'الدفع يحدّث users.package_type والرصيد. هذه الشاشة تحدّث subscriptions فقط ولا تغيّر package_type ولا النقاط.',
         'users.subscription_expires_at يُقرأ ولا يُكتب في هذا التطبيق. نهاية الاشتراك الفعلية هي subscriptions.period_end.',
         'إيصال الدفع لا ينشئ صف اشتراك. الاشتراك المجاني يُنشأ من ensure_campaign_schema أو rateb_lock_plan.',
-        'حدث الدفع في usage_events يسجّل credits_deducted = 0 رغم إضافة النقاط إلى الرصيد.',
+        'حدث الدفع في usage_events يسجّل credits_deducted = 0 رغم إضافة النقاط إلى الرصيد. الاستردادات في /admin/refunds.php.',
     ]
     : [
-        'plans prices (79 / 199 / 399 / 799) differ from Moyasar checkout amounts (99 and 249) for starter and pro only.',
+        'Public display prices: free 0, starter 111, pro 399 (from the plans table). Growth and business stay in the catalog and are not on the public checkout path yet.',
         'Payment updates users.package_type and the credit balance. This screen updates subscriptions only. It does not change package_type or credits.',
         'users.subscription_expires_at is read and never written. The subscription end that this app stores is subscriptions.period_end.',
         'A payment receipt does not insert a subscription. The free subscription is created by ensure_campaign_schema or rateb_lock_plan.',
-        'The payment usage event stores credits_deducted = 0 even though credits are added to the balance.',
+        'The payment usage event stores credits_deducted = 0 even though credits are added to the balance. Refunds live on /admin/refunds.php.',
     ];
 foreach ($notes as $note) {
     echo '<li>' . admin_h($note) . '</li>';

@@ -91,6 +91,14 @@ function rateb_public_gate_is_marketing_path(string $path): bool
         '/forgot-password.php',
         '/reset-password',
         '/reset-password.php',
+        '/contact',
+        '/contact.php',
+        '/privacy',
+        '/privacy.php',
+        '/terms',
+        '/terms.php',
+        '/pricing',
+        '/pricing.php',
     ];
     return in_array($path, $marketing, true);
 }

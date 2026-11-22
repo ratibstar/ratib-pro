@@ -31,8 +31,8 @@ admin_crud_toolbar([
 echo '<section class="stats"><article class="stat"><b>' . admin_h(admin_halalas_to_sar($sum)) . '</b><span>' . admin_h(admin_t('Confirmed revenue SAR', 'إيراد مؤكد بالريال')) . '</span></article>';
 echo '<article class="stat"><b>' . (int) $total . '</b><span>' . admin_h(admin_t('Receipts', 'الإيصالات')) . '</span></article></section>';
 echo '<p class="note">' . admin_h(admin_t(
-    'A row exists only after the webhook re-fetched the Moyasar payment and saw status paid. Currency is SAR. Amount is stored in halalas. There is no refund record in this database. The callback URL still carries the Moyasar secret; that flow was not changed in this release.',
-    'يُنشأ الصف بعد أن يعيد الويب هوك جلب عملية Moyasar ويتأكد أن حالتها paid. العملة ريال. المبلغ بالهللة. لا يوجد سجل استرداد. رابط الاستدعاء ما زال يحمل سر Moyasar، ولم يُغيّر مسار الدفع في هذا الإصدار.'
+    'A row exists only after the webhook re-fetched the Moyasar payment and saw status paid. Currency is SAR. Amount is stored in halalas. Manual refunds are recorded on /admin/refunds.php. Checkout remains paused until Moyasar keys are fully configured.',
+    'يُنشأ الصف بعد أن يعيد الويب هوك جلب عملية Moyasar ويتأكد أن حالتها paid. العملة ريال. المبلغ بالهللة. الاستردادات اليدوية في /admin/refunds.php. الشراء متوقف حتى اكتمال إعداد مفاتيح Moyasar.'
 )) . '</p>';
 admin_table_open();
 echo '<tr>';

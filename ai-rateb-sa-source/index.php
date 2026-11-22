@@ -23,7 +23,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav44">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav52">
 </head>
 <body class="studio home">
 <?php rateb_site_header('', $loggedIn, !$loggedIn); ?>
@@ -32,7 +32,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
         <div class="landing-copy">
             <p class="eyebrow" data-i18n="workspace">AI CAMPAIGN WORKSPACE</p>
             <h1 data-i18n="studio_headline">Turn your idea into a complete marketing campaign with AI</h1>
-            <p class="studio-lead" data-i18n="studio_lead">Strategy, ad copy, social posts, images, Saudi Arabic voice, and a content plan — in one creative studio.</p>
+            <p class="studio-lead" data-i18n="studio_lead">Strategy, ad copy, social posts, uploaded campaign images, Saudi Arabic voice, and short video — in one creative studio.</p>
             <div class="landing-actions">
                 <button type="button" class="button studio-cta" data-auth="register" data-i18n="studio_cta">Start a new campaign</button>
                 <a class="button quiet" href="#workflow" data-i18n="home_how">See how it works</a>
@@ -124,8 +124,8 @@ if ($loggedIn && !isset($_GET['pricing'])) {
             <article class="showcase-card show-images demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg">
                 <div class="preview preview-image"><span class="orb"></span><span class="orb small"></span></div>
                 <span class="show-mark">04</span>
-                <h3 data-i18n="show_images_title">AI images</h3>
-                <p data-i18n="show_images_body">Campaign visuals generated for this brand.</p>
+                <h3 data-i18n="show_images_title">Campaign images</h3>
+                <p data-i18n="show_images_body">Attach your product photos and campaign visuals.</p>
             </article>
             <article class="showcase-card show-voice demo-hit" tabindex="0" role="button" data-kind="audio" data-src="/public/assets/demo/voice-calm.mp3">
                 <div class="preview preview-wave"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
@@ -136,8 +136,8 @@ if ($loggedIn && !isset($_GET['pricing'])) {
             <article class="showcase-card show-video demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-product.mp4">
                 <div class="preview preview-reel"><span class="mini-play"></span></div>
                 <span class="show-mark">06</span>
-                <h3 data-i18n="show_video_title">Video ideas</h3>
-                <p data-i18n="show_video_body">Shot ideas and scripts. Video rendering stays unavailable.</p>
+                <h3 data-i18n="show_video_title">Short video</h3>
+                <p data-i18n="show_video_body">Build a short campaign video from your images and voice, or upload your own.</p>
             </article>
             <article class="showcase-card show-planner demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-evening.jpg">
                 <div class="preview preview-cal"><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
@@ -157,7 +157,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
                 <p><?= (int) ($pricingByCode['free']['credits'] ?? 50) ?> <span data-i18n="plan_free_credits">welcoming credits</span></p>
                 <ul>
                     <li data-i18n="plan_free_text">Text modules</li>
-                    <li data-i18n="plan_free_image">Square images 1:1</li>
+                    <li data-i18n="plan_free_image">Upload campaign images</li>
                     <li><span class="badge" data-i18n="plan_upgrade">Saudi voice and two short videos a month included</span></li>
                 </ul>
                 <button type="button" class="button" data-auth="register" data-i18n="plan_cta">Subscribe now</button>
@@ -191,7 +191,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
         <div class="section-head">
             <div>
                 <h2 data-i18n="gallery_title">See what RATEB AI can make</h2>
-                <p class="muted" data-i18n="gallery_note">Visual examples only. Video generation is not available yet.</p>
+                <p class="muted" data-i18n="gallery_note">Examples of the formats RATEB AI helps you prepare.</p>
             </div>
         </div>
         <div class="gallery-layout">
@@ -246,7 +246,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
             <article class="format format-story demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-story.jpg"><span data-i18n="format_stories">Stories</span><b data-i18n="sample_story">Today’s offer</b></article>
             <article class="format format-feed demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-perfume.jpg"><span data-i18n="format_feed">Feed ad</span><p data-i18n="sample_ad">A quiet evening fragrance, with a soft oud note.</p></article>
             <article class="format format-product demo-hit" tabindex="0" role="button" data-kind="image" data-src="/public/assets/demo/demo-hospitality.jpg"><span data-i18n="format_product">Product ad</span><div class="product-art"></div></article>
-            <article class="format format-short demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-social.mp4"><span data-i18n="format_short">Short video</span><small data-i18n="gallery_note">Visual examples only. Video generation is not available yet.</small></article>
+            <article class="format format-short demo-hit" tabindex="0" role="button" data-kind="video" data-src="/public/assets/demo/reel-social.mp4"><span data-i18n="format_short">Short video</span><small data-i18n="demo_example">Example</small></article>
         </div>
     </section>
 
@@ -255,6 +255,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
         <button type="button" class="button studio-cta" data-auth="register" data-i18n="studio_cta">Start a new campaign</button>
     </section>
 </main>
+<?php rateb_site_footer(); ?>
 <dialog class="demo-viewer" id="demo-viewer">
     <form method="dialog" class="demo-bar">
         <p data-i18n="demo_example">Example</p>
@@ -307,6 +308,6 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav40"></script>
+<script src="/public/assets/js/app.js?v=nav52"></script>
 </body>
 </html>

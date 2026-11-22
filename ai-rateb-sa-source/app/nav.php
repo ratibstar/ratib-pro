@@ -88,3 +88,33 @@ function rateb_social_buttons(): string
     $github = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.5 2 2 6.6 2 12.2c0 4.5 2.9 8.3 6.9 9.6.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.4-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.4 9.4 0 0 1 5 0c2-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5 4-1.3 6.9-5.1 6.9-9.6C22 6.6 17.5 2 12 2z"/></svg>';
     return '<div class="social-auth"><button type="button" class="social-btn" data-provider="google"><span class="social-mark" aria-hidden="true">' . $google . '</span><span data-i18n="continue_google">Continue with Google</span><span></span></button><button type="button" class="social-btn" data-provider="github"><span class="social-mark" aria-hidden="true">' . $github . '</span><span data-i18n="continue_github">Continue with GitHub</span><span></span></button></div>';
 }
+
+function rateb_support_inbox(): string
+{
+    require_once __DIR__ . '/notify/mail.php';
+    $from = trim((string) (rateb_mail_config()['from'] ?? ''));
+    if ($from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL)) {
+        return $from;
+    }
+    return 'support@ai.rateb.sa';
+}
+
+function rateb_site_footer(string $here = ''): void
+{
+    $links = [
+        ['/contact', 'nav_contact', 'Contact'],
+        ['/privacy', 'nav_privacy', 'Privacy'],
+        ['/terms', 'nav_terms', 'Terms'],
+        ['/?pricing=1#pricing', 'nav_pricing', 'Pricing'],
+    ];
+    echo '<footer class="site-footer"><div class="site-shell footer-shell">';
+    echo '<p class="footer-brand">RATEB <span>AI</span></p>';
+    echo '<nav class="footer-nav" aria-label="Legal">';
+    foreach ($links as $item) {
+        $class = $item[0] === $here ? ' class="is-here" aria-current="page"' : '';
+        echo '<a' . $class . ' href="' . e($item[0]) . '" data-i18n="' . e($item[1]) . '">' . e($item[2]) . '</a>';
+    }
+    echo '</nav>';
+    echo '<p class="footer-copy muted" data-i18n="footer_copy">© RATEB AI. Campaign workspace for Saudi marketers.</p>';
+    echo '</div></footer>';
+}

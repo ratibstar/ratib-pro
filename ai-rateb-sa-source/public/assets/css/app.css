@@ -680,3 +680,17 @@ body.studio .site-bar .edge-auth .register:hover{transform:translateY(-1px);box-
   body.studio .site-bar .edge-auth .register{padding:0 12px;font-size:13px}
   body.studio .site-bar .edge-auth #theme{display:none}
 }
+.site-footer{margin-top:48px;padding:28px 0 36px;border-top:1px solid var(--border);background:var(--surface)}
+.footer-shell{display:grid;gap:14px;align-items:center}
+.footer-brand{margin:0;font-weight:800;font-size:18px}
+.footer-brand span{color:var(--accent)}
+.footer-nav{display:flex;flex-wrap:wrap;gap:14px}
+.footer-nav a{color:var(--muted);text-decoration:none}
+.footer-nav a.is-here,.footer-nav a:hover{color:var(--text)}
+.footer-copy{margin:0;font-size:13px}
+.page-legal .legal-page{max-width:760px}
+.page-legal .legal-copy h2{margin-top:28px;font-size:20px}
+.page-legal .legal-form{display:grid;gap:14px;margin-top:18px}
+.page-legal .legal-form label{display:grid;gap:6px}
+.page-legal .legal-form input,.page-legal .legal-form textarea{width:100%;border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--bg);color:var(--text)}
+@media (min-width:800px){.footer-shell{grid-template-columns:auto 1fr auto}.footer-nav{justify-content:center}.footer-copy{text-align:end}}

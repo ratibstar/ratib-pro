@@ -51,4 +51,8 @@ Require all denied
     RewriteRule ^login/?$ login.php [END,QSA]
     RewriteRule ^register/?$ register.php [END,QSA]
     RewriteRule ^dashboard/?$ dashboard.php [END,QSA]
+    RewriteRule ^contact/?$ contact.php [END,QSA]
+    RewriteRule ^privacy/?$ privacy.php [END,QSA]
+    RewriteRule ^terms/?$ terms.php [END,QSA]
+    RewriteRule ^pricing/?$ pricing.php [END,QSA]
 </IfModule>

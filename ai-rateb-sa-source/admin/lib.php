@@ -528,7 +528,7 @@ function admin_billing_truth(): array
         'wallet' => 'users.credits_balance is the only spendable balance',
         'package_field' => 'users.package_type is written only by the Moyasar webhook',
         'expiry' => 'subscriptions.period_end is the stored period end; users.subscription_expires_at is unused',
-        'payment' => 'payment_receipts is the paid-money record; checkout prices are 99 and 249 SAR for starter and pro',
+        'payment' => 'payment_receipts is the paid-money record; public starter/pro prices come from plans (currently 111 and 399 SAR). Refunds are on /admin/refunds.php',
         'reconcile' => 'do not copy package_type onto subscriptions or grant credits automatically',
     ];
 }
