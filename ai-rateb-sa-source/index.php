@@ -23,7 +23,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav64">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav65">
 </head>
 <body class="studio home">
 <?php rateb_site_header('', $loggedIn, !$loggedIn); ?>
@@ -90,9 +90,9 @@ if ($loggedIn && !isset($_GET['pricing'])) {
         <h3 data-i18n="sample_voices">Voices</h3>
         <div class="voice-library" data-voice-library>
           <div class="voice-filters">
-            <input type="search" data-voice-search placeholder="ابحث بالاسم">
-            <select data-voice-country><option value="">اختر الدولة</option></select>
-            <select data-voice-dialect><option value="">اختر اللهجة</option></select>
+            <input type="search" data-voice-search data-i18n-placeholder="voice_search" placeholder="ابحث بالاسم">
+            <select data-voice-country><option value="" data-i18n="voice_country">اختر الدولة</option></select>
+            <select data-voice-dialect><option value="" data-i18n="voice_dialect">اختر اللهجة</option></select>
           </div>
           <p class="muted" data-voice-note></p>
           <div class="voice-picks" data-voice-picks></div>
@@ -330,6 +330,6 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav64"></script>
+<script src="/public/assets/js/app.js?v=nav65"></script>
 </body>
 </html>

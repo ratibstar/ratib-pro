@@ -97,7 +97,11 @@ function require_login(): void
 
 function ui_language(): string
 {
-    return (($_COOKIE['rateb_ui_lang'] ?? '') === 'ar') ? 'ar' : 'en';
+    $cookie = (string) ($_COOKIE['rateb_ui_lang'] ?? '');
+    if ($cookie === 'en' || $cookie === 'ar') {
+        return $cookie;
+    }
+    return 'ar';
 }
 
 function require_admin(PDO $pdo): array

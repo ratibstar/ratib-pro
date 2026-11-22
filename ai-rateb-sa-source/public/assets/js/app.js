@@ -424,6 +424,9 @@
       sample_photos: 'Pictures',
       sample_videos: 'Videos',
       sample_voices: 'Voices',
+      voice_search: 'Search by name',
+      voice_country: 'Choose a country',
+      voice_dialect: 'Choose a dialect',
       voice_calm: 'Calm voice',
       voice_warm: 'Warm voice',
       voice_clear: 'Clear voice',
@@ -853,6 +856,9 @@
       sample_photos: 'الصور',
       sample_videos: 'الفيديو',
       sample_voices: 'الأصوات',
+      voice_search: 'ابحث بالاسم',
+      voice_country: 'اختر الدولة',
+      voice_dialect: 'اختر اللهجة',
       voice_calm: 'صوت هادئ',
       voice_warm: 'صوت دافئ',
       voice_clear: 'صوت واضح',
@@ -906,7 +912,27 @@
   };
 
   var langButton = document.getElementById('lang');
-  var language = localStorage.getItem('rateb-lang') === 'ar' ? 'ar' : 'en';
+  var storedLang = localStorage.getItem('rateb-lang');
+  var cookieLang = (document.cookie.match(/(?:^|; )rateb_ui_lang=([^;]*)/) || [])[1] || '';
+  try { cookieLang = decodeURIComponent(cookieLang); } catch (err) { cookieLang = ''; }
+  var language = storedLang === 'en' || storedLang === 'ar'
+    ? storedLang
+    : (cookieLang === 'en' || cookieLang === 'ar' ? cookieLang : 'ar');
+
+  function applyVoiceFilters() {
+    document.querySelectorAll('[data-voice-library]').forEach(function (library) {
+      var searchInput = library.querySelector('[data-voice-search]');
+      var countrySelect = library.querySelector('[data-voice-country]');
+      var dialectSelect = library.querySelector('[data-voice-dialect]');
+      if (searchInput) searchInput.placeholder = language === 'ar' ? 'ابحث بالاسم' : 'Search by name';
+      if (countrySelect && countrySelect.options[0]) {
+        countrySelect.options[0].textContent = language === 'ar' ? 'اختر الدولة' : 'Choose a country';
+      }
+      if (dialectSelect && dialectSelect.options[0]) {
+        dialectSelect.options[0].textContent = language === 'ar' ? 'اختر اللهجة' : 'Choose a dialect';
+      }
+    });
+  }
 
   function apply() {
     var labels = dict[language];
@@ -924,6 +950,7 @@
         ? 'مين تبي يوصل له ' + (product || 'هذا المنتج') + '؟'
         : 'Who do you want to reach' + (product ? ' with ' + product : '') + '?';
     });
+    applyVoiceFilters();
     root.lang = language;
     root.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.cookie = 'rateb_ui_lang=' + language + ';path=/;SameSite=Lax';
@@ -1447,18 +1474,25 @@
     });
     var libraries = document.querySelectorAll('[data-voice-library]');
     if (libraries.length) {
-      fetch('/app/ai/voices.php', { credentials: 'same-origin' }).then(function (response) { return response.json(); }).then(function (payload) {
+      fetch('/app/ai/voices.php', { credentials: 'same-origin' }).then(function (response) {
+        return response.text().then(function (raw) {
+          var payload = null;
+          try { payload = raw ? JSON.parse(raw) : null; } catch (err) { payload = null; }
+          return { okHttp: response.ok, payload: payload };
+        });
+      }).then(function (result) {
+        var payload = result && result.payload;
         libraries.forEach(function (library) {
           var note = library.querySelector('[data-voice-note]');
           var picks = library.querySelector('[data-voice-picks]');
           var countrySelect = library.querySelector('[data-voice-country]');
           var dialectSelect = library.querySelector('[data-voice-dialect]');
           var searchInput = library.querySelector('[data-voice-search]');
-          if (searchInput) searchInput.placeholder = language === 'ar' ? 'ابحث بالاسم' : 'Search by name';
-          if (countrySelect && countrySelect.options[0]) countrySelect.options[0].textContent = language === 'ar' ? 'اختر الدولة' : 'Choose a country';
-          if (dialectSelect && dialectSelect.options[0]) dialectSelect.options[0].textContent = language === 'ar' ? 'اختر اللهجة' : 'Choose a dialect';
+          applyVoiceFilters();
           if (!payload || !payload.ok) {
-            if (note) note.textContent = (payload && payload.error) || (language === 'ar' ? 'تعذر تحميل كتالوج الأصوات.' : 'The voice catalog could not be loaded.');
+            if (note) {
+              note.textContent = language === 'ar' ? 'تعذر تحميل كتالوج الأصوات.' : 'The voice catalog could not be loaded.';
+            }
             return;
           }
           var voices = payload.voices || [];
