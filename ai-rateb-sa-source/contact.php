@@ -15,7 +15,7 @@ $name = '';
 $email = '';
 $message = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     verify_csrf();
     $name = trim((string) ($_POST['name'] ?? ''));
     $email = trim((string) ($_POST['email'] ?? ''));
