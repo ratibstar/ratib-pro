@@ -16,9 +16,6 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
             ['/#create', 'nav_create', 'What it creates'],
         ],
     ];
-    if ($loggedIn) {
-        $groups[0][] = ['/account', 'nav_account', 'My account'];
-    }
     $credits = null;
     if ($loggedIn && function_exists('rateb_account_credits') && !empty($_SESSION['user_id'])) {
         $pdo = function_exists('db') ? db() : ($GLOBALS['pdo'] ?? null);
@@ -52,7 +49,13 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '<button type="button" id="lang" class="icon">AR</button>';
     echo '<button type="button" id="theme" class="icon">☾</button>';
     if ($loggedIn) {
-        echo '<a class="bar-logout" href="/logout.php" data-i18n="logout">Logout</a>';
+        $accountHere = $here === '/account';
+        echo '<details class="account-menu' . ($accountHere ? ' is-here' : '') . '">';
+        echo '<summary class="account-menu-toggle" data-i18n="nav_account">My account</summary>';
+        echo '<div class="account-menu-panel" role="menu">';
+        echo '<a href="/account" role="menuitem"' . ($accountHere ? ' class="is-here" aria-current="page"' : '') . ' data-i18n="account_menu_profile">Profile</a>';
+        echo '<a class="account-logout" href="/logout.php" role="menuitem" data-i18n="logout">Logout</a>';
+        echo '</div></details>';
     } else {
         echo '<button type="button" class="login" data-auth="login" data-i18n="login">Login</button>';
         echo '<button type="button" class="register" data-auth="register" data-i18n="create_account">Create Account</button>';

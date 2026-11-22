@@ -290,6 +290,19 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .home-bar .logo,.site-bar .logo{justify-self:center}
 .bar-side{flex:0 0 auto;margin-inline-start:auto}
 .bar-logout{display:inline-flex;align-items:center;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:800;font-size:14px;text-decoration:none;white-space:nowrap}
+.site-bar,.site-bar .site-shell,.site-bar .edge-auth{overflow:visible}
+.account-menu{position:relative;flex:0 0 auto;z-index:50}
+.account-menu-toggle{list-style:none;display:inline-flex;align-items:center;gap:3px;height:26px;padding:0 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:12px;line-height:1;cursor:pointer;white-space:nowrap;user-select:none}
+.account-menu-toggle::-webkit-details-marker{display:none}
+.account-menu-toggle::marker{content:""}
+.account-menu-toggle::after{content:"";width:0;height:0;border-inline-start:3.5px solid transparent;border-inline-end:3.5px solid transparent;border-top:4px solid currentColor;opacity:.65;margin-inline-start:1px}
+.account-menu.is-here .account-menu-toggle,.account-menu[open] .account-menu-toggle{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.account-menu-panel{position:absolute;top:calc(100% + 6px);inset-inline-end:0;z-index:60;min-width:132px;padding:5px;border-radius:10px;border:1px solid var(--border);background:var(--surface);box-shadow:0 14px 32px rgba(28,20,51,.22);display:grid;gap:2px}
+.account-menu-panel a{display:block;padding:7px 9px;border-radius:7px;color:var(--text);text-decoration:none;font-size:12px;font-weight:700}
+.account-menu-panel a:hover{background:var(--surface2)}
+.account-menu-panel a.is-here{color:var(--accent)}
+.account-menu-panel .account-logout{color:#b91c1c}
+.account-menu-panel .account-logout:hover{background:rgba(239,68,68,.12)}
 .home-bar .logo,.site-bar .logo{font-size:34px;font-weight:800;text-decoration:none;color:var(--text);white-space:nowrap}
 .home-bar .logo,.site-bar .logo span{background:linear-gradient(90deg,#6d28d9,#0f766e);-webkit-background-clip:text;background-clip:text;color:transparent}
 .home-bar .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -626,6 +639,18 @@ body.studio .site-bar .edge-auth .icon:hover{background:rgba(255,255,255,.14)}
 body.studio .site-bar .bar-logout{height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px}
 body.studio .site-bar .bar-logout:hover{background:rgba(239,68,68,.22);border-color:rgba(248,113,113,.4)}
 [data-theme=light] body.studio .site-bar .bar-logout{color:#3b2a66;border-color:rgba(76,29,149,.16);background:rgba(255,255,255,.7)}
+body.studio .site-bar .account-menu-toggle{height:26px;padding:0 8px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:rgba(255,255,255,.88);font-size:12px}
+body.studio .site-bar .account-menu-toggle:hover,body.studio .site-bar .account-menu[open] .account-menu-toggle,body.studio .site-bar .account-menu.is-here .account-menu-toggle{color:#fff;background:rgba(255,255,255,.14)}
+[data-theme=light] body.studio .site-bar .account-menu-toggle{color:#3b2a66;border-color:rgba(76,29,149,.16);background:rgba(255,255,255,.7)}
+[data-theme=light] body.studio .site-bar .account-menu-toggle:hover,[data-theme=light] body.studio .site-bar .account-menu[open] .account-menu-toggle,[data-theme=light] body.studio .site-bar .account-menu.is-here .account-menu-toggle{background:rgba(109,40,217,.1);color:#1e0b47}
+body.studio .site-bar .account-menu-panel{background:rgba(24,14,52,.96);border-color:rgba(255,255,255,.14);box-shadow:0 16px 36px rgba(10,4,30,.4)}
+body.studio .site-bar .account-menu-panel a{color:rgba(255,255,255,.9)}
+body.studio .site-bar .account-menu-panel a:hover{background:rgba(255,255,255,.1)}
+body.studio .site-bar .account-menu-panel a.is-here{color:#c4b5fd}
+body.studio .site-bar .account-menu-panel .account-logout{color:#fca5a5}
+[data-theme=light] body.studio .site-bar .account-menu-panel{background:rgba(255,255,255,.98);border-color:rgba(76,29,149,.14);box-shadow:0 14px 32px rgba(76,29,149,.16)}
+[data-theme=light] body.studio .site-bar .account-menu-panel a{color:#3b2a66}
+[data-theme=light] body.studio .site-bar .account-menu-panel .account-logout{color:#b91c1c}
 body.studio .site-bar .edge-auth .login{height:38px;padding:0 14px;border-radius:12px;color:#fff;background:transparent}
 body.studio .site-bar .edge-auth .login:hover{background:rgba(255,255,255,.1)}
 [data-theme=light] body.studio .site-bar .edge-auth .login{color:#3b2a66}
@@ -661,6 +686,7 @@ body.studio .site-bar .edge-auth .register:hover{transform:translateY(-1px);box-
   body.studio .site-bar .edge-auth .icon{width:46px;min-width:46px;height:46px;font-size:14px}
   body.studio .site-bar .edge-auth .login,body.studio .site-bar .edge-auth .register{height:46px;padding:0 20px;font-size:16px}
   .site-bar .credit-chip,body.studio .site-bar .bar-logout{height:46px;font-size:16px}
+  body.studio .site-bar .account-menu-toggle{height:28px;font-size:12px}
   .home-section,.studio-hero,.landing-hero{scroll-margin-top:104px}
 }
 @media (min-width:1700px){
@@ -670,6 +696,7 @@ body.studio .site-bar .edge-auth .register:hover{transform:translateY(-1px);box-
   body.studio .site-bar .edge-auth .icon{width:50px;min-width:50px;height:50px;font-size:15px;border-radius:14px}
   body.studio .site-bar .edge-auth .login,body.studio .site-bar .edge-auth .register{height:50px;padding:0 24px;font-size:18px;border-radius:14px}
   .site-bar .credit-chip,body.studio .site-bar .bar-logout{height:50px;font-size:17px}
+  body.studio .site-bar .account-menu-toggle{height:28px;font-size:12.5px;padding:0 9px}
   .home-section,.studio-hero,.landing-hero{scroll-margin-top:112px}
 }
 @media (max-width:640px){
