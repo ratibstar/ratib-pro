@@ -1953,6 +1953,14 @@
   }
   bindStudioPopup('brand-modal', 'data-brand-open', 'data-brand-close', 'data-brand-autoopen');
   bindStudioPopup('campaign-modal', 'data-campaign-open', 'data-campaign-close', 'data-campaign-autoopen');
+  document.querySelectorAll('[data-brand-color-for]').forEach(function (picker) {
+    var target = document.getElementById(picker.getAttribute('data-brand-color-for') || '');
+    if (!target) return;
+    picker.addEventListener('input', function () { target.value = picker.value; });
+    target.addEventListener('input', function () {
+      if (/^#[0-9a-fA-F]{6}$/.test(target.value)) picker.value = target.value;
+    });
+  });
 
   var checkoutModal = document.getElementById('checkoutModal');
   var pricingModal = document.getElementById('pricingModal');

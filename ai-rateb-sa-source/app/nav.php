@@ -99,30 +99,53 @@ function rateb_brand_dialog(): void
     if ($error !== '') {
         echo '<p class="notice is-error">' . ($ar ? 'تعذر حفظ الملف.' : 'The file could not be saved.') . '</p>';
     }
+    $hints = brand_field_suggestions($ar);
+    $pickOrType = $ar ? 'اختر من القائمة أو اكتب يدوياً' : 'Pick a suggestion or type your own';
     echo '<form method="post" action="/app/brand/save.php" enctype="multipart/form-data" class="studio-popup-form">';
     echo '<input type="hidden" name="csrf" value="' . e(csrf_token()) . '">';
     echo '<input type="hidden" name="modal" value="1">';
+    echo '<p class="muted tiny studio-popup-hint">' . e($pickOrType) . '</p>';
     echo '<div class="studio-popup-grid">';
     echo '<label><span data-i18n="brand_name">' . ($ar ? 'اسم العلامة' : 'Brand name') . '</span><input name="brand_name" value="' . e((string) $brand['brand_name']) . '"></label>';
-    echo '<label><span data-i18n="brand_tone">' . ($ar ? 'نبرة الخطاب' : 'Tone of voice') . '</span><input name="tone" value="' . e((string) $brand['tone']) . '"></label>';
-    echo '<label><span>' . ($ar ? 'الجمهور' : 'Audience') . '</span><input name="audience" value="' . e((string) ($brand['audience'] ?? '')) . '"></label>';
-    echo '<label><span>' . ($ar ? 'العرض الحالي' : 'Current offer') . '</span><input name="offer_line" value="' . e((string) ($brand['offer_line'] ?? '')) . '"></label>';
-    echo '<label><span>' . ($ar ? 'ممنوع ذكره' : 'Do not mention') . '</span><input name="forbidden" value="' . e((string) ($brand['forbidden'] ?? '')) . '"></label>';
+    echo '<label><span data-i18n="brand_tone">' . ($ar ? 'نبرة الخطاب' : 'Tone of voice') . '</span><input name="tone" list="brand-tone-list" value="' . e((string) $brand['tone']) . '" placeholder="' . e($pickOrType) . '"></label>';
+    echo '<label><span>' . ($ar ? 'الجمهور' : 'Audience') . '</span><input name="audience" list="brand-audience-list" value="' . e((string) ($brand['audience'] ?? '')) . '" placeholder="' . e($pickOrType) . '"></label>';
+    echo '<label><span>' . ($ar ? 'العرض الحالي' : 'Current offer') . '</span><input name="offer_line" list="brand-offer-list" value="' . e((string) ($brand['offer_line'] ?? '')) . '" placeholder="' . e($pickOrType) . '"></label>';
+    echo '<label><span>' . ($ar ? 'ممنوع ذكره' : 'Do not mention') . '</span><input name="forbidden" list="brand-forbidden-list" value="' . e((string) ($brand['forbidden'] ?? '')) . '" placeholder="' . e($pickOrType) . '"></label>';
     echo '<label><span>' . ($ar ? 'اللهجة' : 'Dialect') . '</span><select name="dialect">';
     foreach (['' => ($ar ? 'بدون تحديد' : 'Unspecified'), 'najdi' => ($ar ? 'نجدية' : 'Najdi'), 'hijazi' => ($ar ? 'حجازية' : 'Hijazi'), 'khaleeji' => ($ar ? 'خليجية' : 'Khaleeji'), 'fusha' => ($ar ? 'فصحى إعلانية' : 'Ad Fusha')] as $code => $label) {
         $sel = (($brand['dialect'] ?? '') === $code) ? ' selected' : '';
         echo '<option value="' . e((string) $code) . '"' . $sel . '>' . e($label) . '</option>';
     }
     echo '</select></label>';
-    echo '<label><span data-i18n="brand_contact">' . ($ar ? 'بيانات التواصل' : 'Contact') . '</span><input name="contact" value="' . e((string) $brand['contact']) . '"></label>';
+    echo '<label><span data-i18n="brand_contact">' . ($ar ? 'بيانات التواصل' : 'Contact') . '</span><input name="contact" value="' . e((string) $brand['contact']) . '" placeholder="' . e($ar ? 'جوال / واتساب / موقع' : 'Phone / WhatsApp / website') . '"></label>';
     echo '<label><span data-i18n="brand_language">' . ($ar ? 'اللغة المفضلة' : 'Preferred language') . '</span><select name="preferred_language">';
     echo '<option value="ar"' . ((($brand['preferred_language'] ?? '') === 'ar') ? ' selected' : '') . '>العربية</option>';
     echo '<option value="en"' . ((($brand['preferred_language'] ?? '') === 'en') ? ' selected' : '') . '>English</option>';
     echo '</select></label>';
-    echo '<label><span data-i18n="brand_primary">' . ($ar ? 'اللون الأساسي' : 'Primary color') . '</span><input name="primary_color" value="' . e((string) $brand['primary_color']) . '"></label>';
-    echo '<label><span data-i18n="brand_secondary">' . ($ar ? 'اللون الثانوي' : 'Secondary color') . '</span><input name="secondary_color" value="' . e((string) $brand['secondary_color']) . '"></label>';
+    $primary = e((string) $brand['primary_color']);
+    $secondary = e((string) $brand['secondary_color']);
+    echo '<label><span data-i18n="brand_primary">' . ($ar ? 'اللون الأساسي' : 'Primary color') . '</span><span class="brand-color-row"><input type="color" value="' . $primary . '" data-brand-color-for="brand-primary-hex"><input id="brand-primary-hex" name="primary_color" list="brand-color-list" value="' . $primary . '"></span></label>';
+    echo '<label><span data-i18n="brand_secondary">' . ($ar ? 'اللون الثانوي' : 'Secondary color') . '</span><span class="brand-color-row"><input type="color" value="' . $secondary . '" data-brand-color-for="brand-secondary-hex"><input id="brand-secondary-hex" name="secondary_color" list="brand-color-list" value="' . $secondary . '"></span></label>';
     echo '<label class="studio-popup-span"><span data-i18n="brand_logo">' . ($ar ? 'الشعار' : 'Logo') . '</span><input type="file" name="logo" accept="image/jpeg,image/png,image/webp,image/gif"></label>';
     echo '</div>';
+    echo '<datalist id="brand-color-list"><option value="#0f766e"></option><option value="#6d28d9"></option><option value="#111827"></option><option value="#b45309"></option><option value="#be123c"></option><option value="#0369a1"></option></datalist>';
+    echo '<datalist id="brand-tone-list">';
+    foreach ($hints['tone'] as $opt) {
+        echo '<option value="' . e($opt) . '"></option>';
+    }
+    echo '</datalist><datalist id="brand-audience-list">';
+    foreach ($hints['audience'] as $opt) {
+        echo '<option value="' . e($opt) . '"></option>';
+    }
+    echo '</datalist><datalist id="brand-offer-list">';
+    foreach ($hints['offer_line'] as $opt) {
+        echo '<option value="' . e($opt) . '"></option>';
+    }
+    echo '</datalist><datalist id="brand-forbidden-list">';
+    foreach ($hints['forbidden'] as $opt) {
+        echo '<option value="' . e($opt) . '"></option>';
+    }
+    echo '</datalist>';
     if (!empty($brand['logo_stored'])) {
         echo '<p class="studio-popup-logo"><img class="brand-logo" src="/app/brand/logo.php" alt=""></p>';
     }

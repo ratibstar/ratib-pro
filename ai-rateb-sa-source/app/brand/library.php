@@ -6,6 +6,29 @@ require_once __DIR__ . '/../auth/account-state.php';
 
 const BRAND_ROOT = '/home/admin/.brand-kits';
 
+/**
+ * Preset suggestions for brand fields (pick or type freely via datalist).
+ *
+ * @return array{tone:list<string>,audience:list<string>,offer_line:list<string>,forbidden:list<string>}
+ */
+function brand_field_suggestions(bool $arabic = true): array
+{
+    if ($arabic) {
+        return [
+            'tone' => ['رسمي وواضح', 'ودي وقريب', 'فاخر وراقي', 'حماسي وترويجي', 'بسيط وعملي', 'مرح وخفيف'],
+            'audience' => ['العائلات في السعودية', 'الشباب من 18 إلى 35', 'أصحاب المشاريع الصغيرة', 'عملاء التجزئة', 'زوار الرياض وجدة', 'المهتمون بالضيافة والعطور'],
+            'offer_line' => ['خصم الإطلاق', 'توصيل مجاني داخل المدينة', 'عرض نهاية الأسبوع', 'باقة تجريبية', 'اشترِ واحد واحصل على الثاني', 'عرض لفترة محدودة'],
+            'forbidden' => ['منافسين بالاسم', 'وعود طبية', 'أسعار غير مؤكدة', 'مقارنات سلبية', 'عروض منتهية'],
+        ];
+    }
+    return [
+        'tone' => ['Formal and clear', 'Warm and friendly', 'Premium and refined', 'Energetic and promotional', 'Simple and practical', 'Light and playful'],
+        'audience' => ['Families in Saudi Arabia', 'Young adults 18–35', 'Small business owners', 'Retail shoppers', 'Visitors in Riyadh and Jeddah', 'Hospitality and fragrance buyers'],
+        'offer_line' => ['Launch discount', 'Free delivery in the city', 'Weekend offer', 'Trial package', 'Buy one get one', 'Limited-time offer'],
+        'forbidden' => ['Competitor names', 'Medical claims', 'Unconfirmed prices', 'Negative comparisons', 'Expired offers'],
+    ];
+}
+
 function brand_empty_kit(): array
 {
     return [

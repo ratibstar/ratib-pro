@@ -315,6 +315,9 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .studio-popup-grid input,.studio-popup-grid select,.studio-popup-form textarea,.studio-popup-form select{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--bg);color:var(--text);font:inherit}
 .studio-popup-form textarea.idea-box{min-height:110px;resize:vertical}
 .studio-popup-span{grid-column:1 / -1}
+.studio-popup-hint{margin:0;text-align:center;font-size:12px}
+.brand-color-row{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:center}
+.brand-color-row input[type=color]{width:44px;height:38px;padding:0;border:1px solid var(--border);border-radius:10px;background:transparent;cursor:pointer}
 .studio-popup-logo{margin:0;text-align:center}
 .studio-popup-logo img{max-height:56px;width:auto}
 .studio-popup .button,.studio-popup .idea-go{width:100%;border-radius:12px}
