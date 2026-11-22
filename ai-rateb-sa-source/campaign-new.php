@@ -30,6 +30,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['draft'])) {
 
 $draft = is_array($_SESSION['campaign_draft'] ?? null) ? $_SESSION['campaign_draft'] : [];
 
+if (
+    $userId > 0
+    && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET'
+    && !isset($_GET['view'])
+    && !isset($_GET['draft'])
+    && !isset($_GET['auth'])
+    && trim((string) ($draft['idea'] ?? '')) === ''
+    && !is_array($draft['extract'] ?? null)
+) {
+    header('Location: /dashboard?campaign=1');
+    exit;
+}
+
 if ($userId < 1 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $pendingIdea = trim((string) ($_POST['idea'] ?? ''));
     if ($pendingIdea !== '') {

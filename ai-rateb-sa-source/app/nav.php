@@ -39,6 +39,14 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
                 echo '<button type="button" data-pricing-open data-i18n="nav_pricing">Pricing</button>';
                 continue;
             }
+            if ($loggedIn && $item[1] === 'brand_kit') {
+                echo '<button type="button" data-brand-open data-i18n="brand_kit">Brand kit</button>';
+                continue;
+            }
+            if ($loggedIn && $item[1] === 'new_campaign') {
+                echo '<button type="button" data-campaign-open data-i18n="new_campaign">New Campaign</button>';
+                continue;
+            }
             echo '<a' . $class . ' href="' . e($item[0]) . '" data-i18n="' . e($item[1]) . '">' . e($item[2]) . '</a>';
         }
     }
@@ -61,7 +69,108 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     if ($loggedIn) {
         rateb_account_dialog($here);
         rateb_checkout_dialog();
+        rateb_brand_dialog();
+        rateb_campaign_dialog();
     }
+}
+
+function rateb_brand_dialog(): void
+{
+    if (empty($_SESSION['user_id'])) {
+        return;
+    }
+    require_once __DIR__ . '/brand/library.php';
+    $ar = ui_language() === 'ar';
+    $brand = brand_owned();
+    $error = (string) ($_GET['brand_error'] ?? '');
+    if (!in_array($error, ['size', 'type', 'upload'], true)) {
+        $error = '';
+    }
+    $open = isset($_GET['brand']) && (string) $_GET['brand'] === '1';
+    $saved = isset($_GET['saved']) && (string) $_GET['saved'] === '1' && $open;
+    echo '<dialog class="studio-popup brand-modal" id="brand-modal"' . ($open ? ' data-brand-autoopen="1"' : '') . '>';
+    echo '<button type="button" class="auth-x" data-brand-close aria-label="Close">×</button>';
+    echo '<div class="studio-popup-card">';
+    echo '<h2 data-i18n="brand_kit_title">' . ($ar ? 'هوية العلامة' : 'Brand kit') . '</h2>';
+    echo '<p class="muted studio-popup-lead">' . ($ar ? 'كل حملة لاحقة تقرأ هذه الذاكرة.' : 'Later campaigns read this memory.') . '</p>';
+    if ($saved) {
+        echo '<p class="notice" data-i18n="brand_saved">' . ($ar ? 'تم حفظ هوية العلامة.' : 'Brand kit saved.') . '</p>';
+    }
+    if ($error !== '') {
+        echo '<p class="notice is-error">' . ($ar ? 'تعذر حفظ الملف.' : 'The file could not be saved.') . '</p>';
+    }
+    echo '<form method="post" action="/app/brand/save.php" enctype="multipart/form-data" class="studio-popup-form">';
+    echo '<input type="hidden" name="csrf" value="' . e(csrf_token()) . '">';
+    echo '<input type="hidden" name="modal" value="1">';
+    echo '<div class="studio-popup-grid">';
+    echo '<label><span data-i18n="brand_name">' . ($ar ? 'اسم العلامة' : 'Brand name') . '</span><input name="brand_name" value="' . e((string) $brand['brand_name']) . '"></label>';
+    echo '<label><span data-i18n="brand_tone">' . ($ar ? 'نبرة الخطاب' : 'Tone of voice') . '</span><input name="tone" value="' . e((string) $brand['tone']) . '"></label>';
+    echo '<label><span>' . ($ar ? 'الجمهور' : 'Audience') . '</span><input name="audience" value="' . e((string) ($brand['audience'] ?? '')) . '"></label>';
+    echo '<label><span>' . ($ar ? 'العرض الحالي' : 'Current offer') . '</span><input name="offer_line" value="' . e((string) ($brand['offer_line'] ?? '')) . '"></label>';
+    echo '<label><span>' . ($ar ? 'ممنوع ذكره' : 'Do not mention') . '</span><input name="forbidden" value="' . e((string) ($brand['forbidden'] ?? '')) . '"></label>';
+    echo '<label><span>' . ($ar ? 'اللهجة' : 'Dialect') . '</span><select name="dialect">';
+    foreach (['' => ($ar ? 'بدون تحديد' : 'Unspecified'), 'najdi' => ($ar ? 'نجدية' : 'Najdi'), 'hijazi' => ($ar ? 'حجازية' : 'Hijazi'), 'khaleeji' => ($ar ? 'خليجية' : 'Khaleeji'), 'fusha' => ($ar ? 'فصحى إعلانية' : 'Ad Fusha')] as $code => $label) {
+        $sel = (($brand['dialect'] ?? '') === $code) ? ' selected' : '';
+        echo '<option value="' . e((string) $code) . '"' . $sel . '>' . e($label) . '</option>';
+    }
+    echo '</select></label>';
+    echo '<label><span data-i18n="brand_contact">' . ($ar ? 'بيانات التواصل' : 'Contact') . '</span><input name="contact" value="' . e((string) $brand['contact']) . '"></label>';
+    echo '<label><span data-i18n="brand_language">' . ($ar ? 'اللغة المفضلة' : 'Preferred language') . '</span><select name="preferred_language">';
+    echo '<option value="ar"' . ((($brand['preferred_language'] ?? '') === 'ar') ? ' selected' : '') . '>العربية</option>';
+    echo '<option value="en"' . ((($brand['preferred_language'] ?? '') === 'en') ? ' selected' : '') . '>English</option>';
+    echo '</select></label>';
+    echo '<label><span data-i18n="brand_primary">' . ($ar ? 'اللون الأساسي' : 'Primary color') . '</span><input name="primary_color" value="' . e((string) $brand['primary_color']) . '"></label>';
+    echo '<label><span data-i18n="brand_secondary">' . ($ar ? 'اللون الثانوي' : 'Secondary color') . '</span><input name="secondary_color" value="' . e((string) $brand['secondary_color']) . '"></label>';
+    echo '<label class="studio-popup-span"><span data-i18n="brand_logo">' . ($ar ? 'الشعار' : 'Logo') . '</span><input type="file" name="logo" accept="image/jpeg,image/png,image/webp,image/gif"></label>';
+    echo '</div>';
+    if (!empty($brand['logo_stored'])) {
+        echo '<p class="studio-popup-logo"><img class="brand-logo" src="/app/brand/logo.php" alt=""></p>';
+    }
+    echo '<button class="button studio-cta" type="submit" data-i18n="save_brand">' . ($ar ? 'حفظ هوية العلامة' : 'Save brand kit') . '</button>';
+    echo '</form></div></dialog>';
+}
+
+function rateb_campaign_dialog(): void
+{
+    if (empty($_SESSION['user_id'])) {
+        return;
+    }
+    $ar = ui_language() === 'ar';
+    $open = isset($_GET['campaign']) && (string) $_GET['campaign'] === '1';
+    $language = 'auto';
+    echo '<dialog class="studio-popup campaign-modal" id="campaign-modal"' . ($open ? ' data-campaign-autoopen="1"' : '') . '>';
+    echo '<button type="button" class="auth-x" data-campaign-close aria-label="Close">×</button>';
+    echo '<div class="studio-popup-card">';
+    echo '<h2 data-i18n="idea_title">' . ($ar ? 'وش تبي تسوّق اليوم؟' : 'What do you want to market today?') . '</h2>';
+    echo '<p class="muted studio-popup-lead" data-i18n="idea_lead">' . ($ar ? 'اكتب فكرتك بطريقتك...' : 'Describe the idea in your own words.') . '</p>';
+    echo '<form id="idea-form-modal" method="post" action="/campaign-new.php" enctype="multipart/form-data" class="studio-popup-form">';
+    echo '<input type="hidden" name="csrf" value="' . e(csrf_token()) . '">';
+    echo '<input type="hidden" name="step" value="understand">';
+    echo '<textarea class="idea-box" name="idea" required maxlength="2000" data-i18n-placeholder="idea_placeholder" placeholder="' . e($ar ? 'مثال: عندي عطر جديد وأبغى أطلقه في الرياض وأزيد مبيعات الواتساب.' : 'Example: I have a new fragrance and I want to launch it in Riyadh and increase WhatsApp sales.') . '"></textarea>';
+    echo '<label class="goal-pick"><span>' . ($ar ? 'هدف الحملة' : 'Campaign goal') . '</span><select name="objective">';
+    $goals = [
+        '' => $ar ? 'خل RATEB يفهم الهدف من النص' : 'Let RATEB read the goal from the text',
+        'conversion' => $ar ? 'زيادة مبيعات / تحويلات' : 'Sales / conversions',
+        'awareness' => $ar ? 'زيادة وعي / انتشار' : 'Awareness / reach',
+        'traffic' => $ar ? 'جلب زوار للموقع' : 'Website traffic',
+        'leads' => $ar ? 'جمع بيانات عملاء محتملين' : 'Leads',
+    ];
+    foreach ($goals as $value => $label) {
+        echo '<option value="' . e((string) $value) . '">' . e($label) . '</option>';
+    }
+    echo '</select></label>';
+    echo '<div class="pick-grid" id="idea-picks-modal"></div>';
+    echo '<div class="idea-tools"><label class="attach"><input id="idea-files-modal" type="file" name="files[]" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" multiple><span data-i18n="idea_attach">' . ($ar ? '＋ أضف صورًا أو فيديو' : '＋ Add photos or a video') . '</span></label>';
+    echo '<p class="muted" data-i18n="idea_optional">' . ($ar ? 'المرفقات اختيارية.' : 'Attachments are optional.') . '</p></div>';
+    echo '<div class="lang-block"><p class="lang-title" data-i18n="campaign_language">' . ($ar ? 'لغة الحملة' : 'Campaign language') . '</p>';
+    echo '<div class="lang-choices">';
+    foreach (['ar' => ($ar ? 'العربية' : 'Arabic'), 'en' => ($ar ? 'الإنجليزية' : 'English'), 'bilingual' => ($ar ? 'العربية والإنجليزية' : 'Arabic and English'), 'auto' => ($ar ? 'خل RATEB يختار' : 'Let RATEB choose')] as $value => $label) {
+        $checked = $language === $value ? ' checked' : '';
+        echo '<label class="lang-choice"><input type="radio" name="campaign_language" value="' . e($value) . '"' . $checked . '><span>' . e($label) . '</span></label>';
+    }
+    echo '</div></div>';
+    echo '<button class="primary idea-go" type="submit" data-i18n="idea_submit">' . ($ar ? '✨ ابنِ حملتي' : '✨ Build my campaign') . '</button>';
+    echo '</form></div></dialog>';
 }
 
 function rateb_checkout_dialog(): void

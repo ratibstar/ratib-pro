@@ -304,6 +304,25 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .site-bar,.site-bar .site-shell,.site-bar .edge-auth{overflow:visible}
 .account-menu-toggle{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:12px;line-height:1;cursor:pointer;white-space:nowrap;user-select:none}
 .account-menu-toggle:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.studio-popup{position:fixed;inset:0;margin:auto;width:min(680px,calc(100% - 28px));height:fit-content;max-height:min(92vh,820px);overflow:auto;border:0;border-radius:22px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 24px 60px rgba(28,20,51,.34)}
+.studio-popup::backdrop{background:rgba(20,12,40,.55);backdrop-filter:blur(6px)}
+.studio-popup-card{padding:22px 20px 18px;display:grid;gap:10px}
+.studio-popup h2{margin:0;font-size:22px;font-weight:800;text-align:center}
+.studio-popup-lead{margin:0;text-align:center;font-size:13px}
+.studio-popup-form{display:grid;gap:10px}
+.studio-popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.studio-popup-grid label,.studio-popup-form>label{display:grid;gap:4px;font-size:12px;font-weight:700}
+.studio-popup-grid input,.studio-popup-grid select,.studio-popup-form textarea,.studio-popup-form select{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--bg);color:var(--text);font:inherit}
+.studio-popup-form textarea.idea-box{min-height:110px;resize:vertical}
+.studio-popup-span{grid-column:1 / -1}
+.studio-popup-logo{margin:0;text-align:center}
+.studio-popup-logo img{max-height:56px;width:auto}
+.studio-popup .button,.studio-popup .idea-go{width:100%;border-radius:12px}
+.brand-modal{width:min(720px,calc(100% - 28px))}
+.campaign-modal{width:min(620px,calc(100% - 28px))}
+@media (max-width:720px){.studio-popup-grid{grid-template-columns:1fr}}
+body.studio .studio-popup{background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid rgba(255,255,255,.12)}
+[data-theme=light] body.studio .studio-popup{background:#fff;border-color:rgba(76,29,149,.12)}
 .account-modal{position:fixed;inset:0;margin:auto;width:min(460px,calc(100% - 28px));height:fit-content;max-height:min(92vh,720px);overflow:auto;border:0;border-radius:20px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 22px 50px rgba(28,20,51,.32)}
 .account-modal::backdrop{background:rgba(20,12,40,.55);backdrop-filter:blur(6px)}
 .account-modal-card{padding:24px 22px 18px;display:grid;gap:8px}
@@ -315,6 +334,7 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .account-modal-form label{display:grid;gap:4px;font-size:12px;font-weight:700}
 .account-modal-form input{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--bg);color:var(--text);font:inherit}
 .account-modal-form .button,.account-modal-form button[type=submit]{width:100%;margin-top:2px;border-radius:10px;padding:10px 12px;font-size:13px}
+button.linkish{display:inline;padding:0;border:0;background:none;color:var(--accent);font:inherit;font-weight:800;cursor:pointer;text-decoration:underline}
 .account-modal-logout{display:block;margin-top:6px;padding:10px 12px;border-radius:10px;border:1px solid rgba(185,28,28,.28);background:rgba(239,68,68,.08);color:#b91c1c;text-align:center;text-decoration:none;font-size:13px;font-weight:800}
 .account-modal-logout:hover{background:rgba(239,68,68,.16)}
 body.studio .account-modal{background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid rgba(255,255,255,.12)}

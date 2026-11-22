@@ -1776,26 +1776,26 @@
   }
 
   var savedIdea = window.sessionStorage ? sessionStorage.getItem('rateb-idea') : '';
-  var ideaBox = document.querySelector('#idea-form [name="idea"]');
+  var ideaBox = document.querySelector('#idea-form [name="idea"], #idea-form-modal [name="idea"]');
   if (savedIdea && ideaBox && !ideaBox.value) {
     ideaBox.value = savedIdea;
     sessionStorage.removeItem('rateb-idea');
   }
-  var ideaForm = document.getElementById('idea-form');
-  var ideaFiles = document.getElementById('idea-files');
-  var ideaPicks = document.getElementById('idea-picks');
-  if (ideaForm && ideaFiles && ideaPicks) {
+  function bindIdeaUploader(formId, filesId, picksId) {
+    var ideaForm = document.getElementById(formId);
+    var ideaFiles = document.getElementById(filesId);
+    var ideaPicks = document.getElementById(picksId);
+    if (!ideaForm || !ideaFiles || !ideaPicks) return;
     var picked = [];
     var imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     var videoTypes = ['video/mp4', 'video/webm'];
     function ideaNotice(key) {
-      var old = document.getElementById('idea-client-error');
+      var old = ideaForm.querySelector('.idea-client-error');
       if (old) old.remove();
       var labels = dict[language] || dict.en;
       if (!labels[key]) return;
       var note = document.createElement('p');
-      note.id = 'idea-client-error';
-      note.className = 'idea-error';
+      note.className = 'idea-error idea-client-error';
       note.textContent = labels[key];
       ideaForm.insertBefore(note, ideaForm.firstChild);
     }
@@ -1896,6 +1896,8 @@
       xhr.send(data);
     });
   }
+  bindIdeaUploader('idea-form', 'idea-files', 'idea-picks');
+  bindIdeaUploader('idea-form-modal', 'idea-files-modal', 'idea-picks-modal');
 
   var accountModal = document.getElementById('account-modal');
   function openAccountModal() {
@@ -1925,6 +1927,32 @@
       openAccountModal();
     }
   }
+
+  function bindStudioPopup(id, openAttr, closeAttr, autoAttr) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    function openModal() {
+      if (typeof modal.showModal === 'function' && !modal.open) modal.showModal();
+    }
+    function closeModal() {
+      if (modal.open) modal.close();
+    }
+    document.querySelectorAll('[' + openAttr + ']').forEach(function (node) {
+      node.addEventListener('click', function (event) {
+        event.preventDefault();
+        openModal();
+      });
+    });
+    document.querySelectorAll('[' + closeAttr + ']').forEach(function (node) {
+      node.addEventListener('click', closeModal);
+    });
+    modal.addEventListener('click', function (event) {
+      if (event.target === modal) closeModal();
+    });
+    if (modal.getAttribute(autoAttr) === '1') openModal();
+  }
+  bindStudioPopup('brand-modal', 'data-brand-open', 'data-brand-close', 'data-brand-autoopen');
+  bindStudioPopup('campaign-modal', 'data-campaign-open', 'data-campaign-close', 'data-campaign-autoopen');
 
   var checkoutModal = document.getElementById('checkoutModal');
   var pricingModal = document.getElementById('pricingModal');

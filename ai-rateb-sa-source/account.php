@@ -28,7 +28,7 @@ $wallet = rateb_account_credits($pdo, $userId);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RATEB AI — <?= $arabic ? 'حسابي' : 'My account' ?></title>
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav61">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav68">
 </head>
 <body class="studio page-account">
 <?php rateb_site_header('/account', true); ?>
@@ -39,7 +39,7 @@ $wallet = rateb_account_credits($pdo, $userId);
     <p class="muted" data-i18n="account_lead"><?= $arabic ? 'بيانات الدخول الخاصة بك. البريد ثابت؛ يمكنك تحديث الاسم وكلمة المرور.' : 'Your sign-in details. Email stays fixed; you can update your name and password.' ?></p>
     <p class="muted"><?= $arabic ? 'الباقة:' : 'Plan:' ?> <?= e((string) $wallet['package_type']) ?> · <?= $arabic ? 'الرصيد:' : 'Credits:' ?> <?= (int) $wallet['credits_balance'] ?>
       · <a href="/billing.php" data-i18n="nav_billing"><?= $arabic ? 'الفوترة' : 'Billing' ?></a>
-      · <a href="/brand.php" data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></a>
+      · <button type="button" class="linkish" data-brand-open data-i18n="brand_kit"><?= $arabic ? 'هوية العلامة' : 'Brand kit' ?></button>
     </p>
 
     <?php if ($flash === 'profile'): ?><p class="notice" data-i18n="account_saved"><?= $arabic ? 'تم حفظ الاسم.' : 'Name saved.' ?></p><?php endif; ?>
@@ -93,6 +93,6 @@ $wallet = rateb_account_credits($pdo, $userId);
   </section>
 </main>
 <?php rateb_site_footer('/account'); ?>
-<script src="/public/assets/js/app.js?v=nav61"></script>
+<script src="/public/assets/js/app.js?v=nav68"></script>
 </body>
 </html>

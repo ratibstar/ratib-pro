@@ -46,7 +46,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav65">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav68">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard', !empty($_SESSION['user_id'])); ?>
@@ -71,7 +71,7 @@ foreach ($pricingPlans as $planRow) {
       <h1 data-i18n="studio_headline">Turn your idea into a complete marketing campaign with AI</h1>
       <p class="studio-lead" data-i18n="studio_lead">Strategy, ad copy, social posts, images, Saudi Arabic voice, and a content plan — in one creative studio.</p>
       <?php if ($user['name'] !== ''): ?><p class="studio-hello"><span data-i18n="welcome">Welcome</span>, <?= e($user['name']) ?></p><?php endif; ?>
-      <a class="button studio-cta" href="/campaign-new.php" data-i18n="studio_cta">Start a new campaign</a>
+      <button type="button" class="button studio-cta" data-campaign-open data-i18n="studio_cta">Start a new campaign</button>
     </div>
     <div>
       <p class="flow-label" data-i18n="studio_flow_label">How a campaign comes together</p>
@@ -89,7 +89,7 @@ foreach ($pricingPlans as $planRow) {
   <section class="studio-block" id="library">
     <div class="section-head">
       <h2 data-i18n="your_campaigns">Your campaigns</h2>
-      <a class="button quiet" href="/campaign-new.php" data-i18n="new_campaign_button">+ New Campaign</a>
+      <button type="button" class="button quiet" data-campaign-open data-i18n="new_campaign_button">+ New Campaign</button>
     </div>
     <?php if (($_GET['copy_error'] ?? '') === '1'): ?>
       <p class="alert" data-i18n="copy_failed">The campaign could not be copied.</p>
@@ -98,7 +98,7 @@ foreach ($pricingPlans as $planRow) {
       <div class="empty studio-empty">
         <h3 data-i18n="no_campaigns">No campaigns yet</h3>
         <p class="muted" data-i18n="no_campaigns_lead">Create your first campaign to get started.</p>
-        <a class="button studio-cta" href="/campaign-new.php" data-i18n="create_campaign">Create Campaign</a>
+        <button type="button" class="button studio-cta" data-campaign-open data-i18n="create_campaign">Create Campaign</button>
       </div>
     <?php else: ?>
       <div class="campaign-board">
@@ -284,6 +284,6 @@ document.querySelectorAll('[data-pricing-close]').forEach(function (node) {
   });
 });
 </script>
-<script src="/public/assets/js/app.js?v=nav65"></script>
+<script src="/public/assets/js/app.js?v=nav68"></script>
 </body>
 </html>
