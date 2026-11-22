@@ -23,12 +23,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['site_settings'])) {
         $notice = 'saved';
     }
 }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['feature_settings'])) {
+    verify_csrf();
+    if (!admin_actor_is_owner($adminActor)) {
+        $notice = 'owner_only';
+    } else {
+        ensure_platform_settings_schema($pdo);
+        $bits = [];
+        foreach (array_keys(rateb_feature_catalog()) as $featureKey) {
+            $on = isset($_POST[$featureKey]) ? '1' : '0';
+            platform_set_setting($pdo, $featureKey, $on, (int) ($adminUser['id'] ?? 0));
+            $bits[] = $featureKey . '=' . $on;
+        }
+        admin_audit($pdo, $adminActor, 'platform_feature_settings', 'platform_settings', 0, 'owner', implode(';', $bits));
+        $notice = 'saved';
+    }
+}
 
 ensure_platform_settings_schema($pdo);
 $publicOn = platform_setting_bool($pdo, 'public_site_enabled', true);
 $maintOn = platform_setting_bool($pdo, 'maintenance_mode', false);
 $msgEn = platform_setting($pdo, 'maintenance_message_en', '') ?? '';
 $msgAr = platform_setting($pdo, 'maintenance_message_ar', '') ?? '';
+$featureFlags = rateb_features($pdo);
 
 admin_start(admin_t('System', 'النظام'));
 admin_operations_nav_toolbar($adminActor, [
@@ -56,6 +73,21 @@ if (admin_actor_is_owner($adminActor)) {
         'Preview: open https://ai.rateb.sa/ in a private window after saving. Logged-in users reach /dashboard directly.',
         'معاينة: افتح https://ai.rateb.sa/ في نافذة خاصة بعد الحفظ. المستخدمون المسجّلون يدخلون /dashboard مباشرة.'
     )) . '</p>';
+    admin_panel_close();
+
+    admin_panel_open(admin_t('Customer features', 'ميزات العملاء'), admin_t(
+        'Turning a feature off hides it completely from the campaign workspace and blocks its APIs. Not button-only.',
+        'إيقاف الميزة يخفيها بالكامل من مساحة الحملة ويمنع واجهاتها البرمجية. ليس إخفاء أزرار فقط.'
+    ));
+    echo '<form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="' . admin_h(csrf_token()) . '"><input type="hidden" name="feature_settings" value="1">';
+    foreach (rateb_feature_catalog() as $featureKey => $meta) {
+        $on = !empty($featureFlags[$featureKey]);
+        $label = admin_t((string) $meta['en'], (string) $meta['ar']);
+        $note = admin_t((string) $meta['note_en'], (string) $meta['note_ar']);
+        echo '<p class="full"><label><input type="checkbox" name="' . admin_h($featureKey) . '"' . ($on ? ' checked' : '') . '> <strong>' . admin_h($label) . '</strong></label>';
+        echo '<br><span class="note">' . admin_h($note) . ' · <span class="pill ' . ($on ? 'ok' : 'bad') . '">' . admin_h($on ? admin_t('Visible', 'ظاهر') : admin_t('Hidden', 'مخفي')) . '</span></span></p>';
+    }
+    echo '<p class="full"><button type="submit" class="btn primary">' . admin_h(admin_t('Save feature visibility', 'حفظ ظهور الميزات')) . '</button></p></form>';
     admin_panel_close();
 }
 $truth = admin_billing_truth();

@@ -6,6 +6,7 @@ require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/../media/library.php';
 require_once __DIR__ . '/../video/engine.php';
 require_login();
+rateb_feature_require('feature_ai_video');
 
 $campaign = media_owned_campaign((int) ($_GET['campaign_id'] ?? 0));
 session_write_close();

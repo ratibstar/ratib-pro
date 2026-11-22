@@ -7,6 +7,7 @@ require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/../watermark.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
+rateb_feature_require('feature_ai_image');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

@@ -40,6 +40,7 @@ function rateb_ui_error(string $code): string
         'image_timeout' => $arabic ? 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.' : 'Image generation timed out. No new image was saved.',
         'image_storage' => $arabic ? 'تعذر حفظ الصورة، وأُعيدت النقاط. حاول مرة أخرى.' : 'The image could not be saved and the credits were returned. Try again.',
         'write_busy' => $arabic ? 'RATEB يكتب الآن.' : 'RATEB is already writing.',
+        'feature_disabled' => $arabic ? 'هذه الميزة معطّلة من الإدارة.' : 'This feature is disabled by the administrator.',
     ];
     return $messages[$code] ?? ($arabic ? 'تعذر تنفيذ الطلب.' : 'The request could not be completed.');
 }

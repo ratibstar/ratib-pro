@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../media/library.php';
 require_login();
+rateb_feature_require('feature_ai_video');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

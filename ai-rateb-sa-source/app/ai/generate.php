@@ -114,6 +114,12 @@ if ($stage === 'edit') {
 if ($stage !== 'strategy' && $stage !== 'copy') {
     rateb_fail(400, 'invalid_output');
 }
+if ($stage === 'strategy') {
+    rateb_feature_require('feature_ai_strategy');
+}
+if ($stage === 'copy') {
+    rateb_feature_require('feature_ai_copy');
+}
 $briefReady = trim((string) ($brief['product'] ?? $campaign['product_name'] ?? '')) !== ''
     || trim((string) ($brief['description'] ?? $campaign['description'] ?? '')) !== '';
 if (!$briefReady) {

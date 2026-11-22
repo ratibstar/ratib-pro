@@ -5,6 +5,7 @@ require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../plans.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
+rateb_feature_require('feature_ai_copy');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Method not allowed']);
