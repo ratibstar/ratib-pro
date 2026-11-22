@@ -162,10 +162,10 @@ function rateb_campaign_dialog(): void
     $open = isset($_GET['campaign']) && (string) $_GET['campaign'] === '1';
     $language = 'auto';
     echo '<dialog class="studio-popup campaign-modal" id="campaign-modal"' . ($open ? ' data-campaign-autoopen="1"' : '') . '>';
-    echo '<ol class="campaign-wizard-steps" aria-label="' . ($ar ? 'خطوات إنشاء الحملة' : 'Campaign creation steps') . '">';
+    echo '<ol class="campaign-wizard-steps campaign-journey-steps" aria-label="' . ($ar ? 'خطوات الحملة حتى الفيديو' : 'Campaign steps through video') . '">';
     $modalSteps = $ar
-        ? ['الفكرة', 'الفهم', 'التوضيح', 'الاعتماد']
-        : ['Idea', 'Understanding', 'Clarify', 'Confirm'];
+        ? ['الفكرة', 'الاستراتيجية', 'النص', 'الصور', 'الصوت', 'الفيديو']
+        : ['Idea', 'Strategy', 'Copy', 'Images', 'Voice', 'Video'];
     foreach ($modalSteps as $i => $label) {
         $state = $i === 0 ? 'is-current' : 'is-todo';
         echo '<li class="' . $state . '"><span class="step-num">' . ($i + 1) . '</span><span class="step-label">' . e($label) . '</span></li>';
