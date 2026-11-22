@@ -291,34 +291,25 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .bar-side{flex:0 0 auto;margin-inline-start:auto}
 .bar-logout{display:inline-flex;align-items:center;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:800;font-size:14px;text-decoration:none;white-space:nowrap}
 .site-bar,.site-bar .site-shell,.site-bar .edge-auth{overflow:visible}
-.account-menu{position:relative;flex:0 0 auto;z-index:50}
-.account-menu-toggle{list-style:none;display:inline-flex;align-items:center;gap:3px;height:26px;padding:0 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:12px;line-height:1;cursor:pointer;white-space:nowrap;user-select:none}
-.account-menu-toggle::-webkit-details-marker{display:none}
-.account-menu-toggle::marker{content:""}
-.account-menu-toggle::after{content:"";width:0;height:0;border-inline-start:3.5px solid transparent;border-inline-end:3.5px solid transparent;border-top:4px solid currentColor;opacity:.65;margin-inline-start:1px}
-.account-menu.is-here .account-menu-toggle,.account-menu[open] .account-menu-toggle{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
-.account-menu-panel{position:absolute;top:calc(100% + 6px);inset-inline-end:0;z-index:60;min-width:148px;padding:5px;border-radius:10px;border:1px solid var(--border);background:var(--surface);box-shadow:0 14px 32px rgba(28,20,51,.22);display:grid;gap:2px}
-.account-menu-panel a,.account-menu-panel .account-menu-item{display:block;width:100%;padding:7px 9px;border:0;border-radius:7px;background:transparent;color:var(--text);text-align:inherit;text-decoration:none;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
-.account-menu-panel a:hover,.account-menu-panel .account-menu-item:hover{background:var(--surface2)}
-.account-menu-panel a.is-here{color:var(--accent)}
-.account-menu-panel .account-logout{color:#b91c1c}
-.account-menu-panel .account-logout:hover{background:rgba(239,68,68,.12)}
-.account-modal{width:min(460px,calc(100% - 28px));max-height:none;overflow:visible;border:0;border-radius:20px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 22px 50px rgba(28,20,51,.32)}
+.account-menu-toggle{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font:inherit;font-weight:700;font-size:12px;line-height:1;cursor:pointer;white-space:nowrap;user-select:none}
+.account-menu-toggle:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.account-modal{position:fixed;inset:0;margin:auto;width:min(460px,calc(100% - 28px));height:fit-content;max-height:min(92vh,720px);overflow:auto;border:0;border-radius:20px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 22px 50px rgba(28,20,51,.32)}
 .account-modal::backdrop{background:rgba(20,12,40,.55);backdrop-filter:blur(6px)}
 .account-modal-card{padding:24px 22px 18px;display:grid;gap:8px}
-.account-modal h2{margin:0;font-size:20px;font-weight:800}
+.account-modal h2{margin:0;font-size:20px;font-weight:800;text-align:center}
 .account-modal h3{margin:0;font-size:15px;font-weight:800}
-.account-modal-meta,.account-modal .tiny{margin:0;font-size:12px}
+.account-modal-meta,.account-modal .tiny{margin:0;font-size:12px;text-align:center}
 .account-modal-rule{border:0;border-top:1px solid var(--border);margin:2px 0}
 .account-modal-form{display:grid;gap:7px}
 .account-modal-form label{display:grid;gap:4px;font-size:12px;font-weight:700}
 .account-modal-form input{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--bg);color:var(--text);font:inherit}
 .account-modal-form .button,.account-modal-form button[type=submit]{width:100%;margin-top:2px;border-radius:10px;padding:10px 12px;font-size:13px}
-@media (max-height:720px){
-  .account-modal{max-height:min(92vh,640px);overflow:auto}
-}
+.account-modal-logout{display:block;margin-top:6px;padding:10px 12px;border-radius:10px;border:1px solid rgba(185,28,28,.28);background:rgba(239,68,68,.08);color:#b91c1c;text-align:center;text-decoration:none;font-size:13px;font-weight:800}
+.account-modal-logout:hover{background:rgba(239,68,68,.16)}
 body.studio .account-modal{background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid rgba(255,255,255,.12)}
 [data-theme=light] body.studio .account-modal{background:#fff;border-color:rgba(76,29,149,.12)}
+body.studio .account-modal-logout{border-color:rgba(248,113,113,.35);background:rgba(239,68,68,.14);color:#fecaca}
+[data-theme=light] body.studio .account-modal-logout{border-color:rgba(185,28,28,.22);background:rgba(239,68,68,.08);color:#b91c1c}
 .home-bar .logo,.site-bar .logo{font-size:34px;font-weight:800;text-decoration:none;color:var(--text);white-space:nowrap}
 .home-bar .logo,.site-bar .logo span{background:linear-gradient(90deg,#6d28d9,#0f766e);-webkit-background-clip:text;background-clip:text;color:transparent}
 .home-bar .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -655,18 +646,10 @@ body.studio .site-bar .edge-auth .icon:hover{background:rgba(255,255,255,.14)}
 body.studio .site-bar .bar-logout{height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px}
 body.studio .site-bar .bar-logout:hover{background:rgba(239,68,68,.22);border-color:rgba(248,113,113,.4)}
 [data-theme=light] body.studio .site-bar .bar-logout{color:#3b2a66;border-color:rgba(76,29,149,.16);background:rgba(255,255,255,.7)}
-body.studio .site-bar .account-menu-toggle{height:26px;padding:0 8px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:rgba(255,255,255,.88);font-size:12px}
-body.studio .site-bar .account-menu-toggle:hover,body.studio .site-bar .account-menu[open] .account-menu-toggle,body.studio .site-bar .account-menu.is-here .account-menu-toggle{color:#fff;background:rgba(255,255,255,.14)}
+body.studio .site-bar .account-menu-toggle{height:26px;padding:0 10px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:rgba(255,255,255,.88);font-size:12px}
+body.studio .site-bar .account-menu-toggle:hover{color:#fff;background:rgba(255,255,255,.14)}
 [data-theme=light] body.studio .site-bar .account-menu-toggle{color:#3b2a66;border-color:rgba(76,29,149,.16);background:rgba(255,255,255,.7)}
-[data-theme=light] body.studio .site-bar .account-menu-toggle:hover,[data-theme=light] body.studio .site-bar .account-menu[open] .account-menu-toggle,[data-theme=light] body.studio .site-bar .account-menu.is-here .account-menu-toggle{background:rgba(109,40,217,.1);color:#1e0b47}
-body.studio .site-bar .account-menu-panel{background:rgba(24,14,52,.96);border-color:rgba(255,255,255,.14);box-shadow:0 16px 36px rgba(10,4,30,.4)}
-body.studio .site-bar .account-menu-panel a,body.studio .site-bar .account-menu-panel .account-menu-item{color:rgba(255,255,255,.9)}
-body.studio .site-bar .account-menu-panel a:hover,body.studio .site-bar .account-menu-panel .account-menu-item:hover{background:rgba(255,255,255,.1)}
-body.studio .site-bar .account-menu-panel a.is-here{color:#c4b5fd}
-body.studio .site-bar .account-menu-panel .account-logout{color:#fca5a5}
-[data-theme=light] body.studio .site-bar .account-menu-panel{background:rgba(255,255,255,.98);border-color:rgba(76,29,149,.14);box-shadow:0 14px 32px rgba(76,29,149,.16)}
-[data-theme=light] body.studio .site-bar .account-menu-panel a,[data-theme=light] body.studio .site-bar .account-menu-panel .account-menu-item{color:#3b2a66}
-[data-theme=light] body.studio .site-bar .account-menu-panel .account-logout{color:#b91c1c}
+[data-theme=light] body.studio .site-bar .account-menu-toggle:hover{background:rgba(109,40,217,.1);color:#1e0b47}
 body.studio .site-bar .edge-auth .login{height:38px;padding:0 14px;border-radius:12px;color:#fff;background:transparent}
 body.studio .site-bar .edge-auth .login:hover{background:rgba(255,255,255,.1)}
 [data-theme=light] body.studio .site-bar .edge-auth .login{color:#3b2a66}

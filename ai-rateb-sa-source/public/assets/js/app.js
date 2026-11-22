@@ -1866,9 +1866,6 @@
   var accountModal = document.getElementById('account-modal');
   function openAccountModal() {
     if (!accountModal) return;
-    document.querySelectorAll('.account-menu[open]').forEach(function (menu) {
-      menu.removeAttribute('open');
-    });
     if (typeof accountModal.showModal === 'function' && !accountModal.open) {
       accountModal.showModal();
     }

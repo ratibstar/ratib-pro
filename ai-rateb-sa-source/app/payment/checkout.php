@@ -92,7 +92,7 @@ $arabic = ui_language() === 'ar';
 $price = number_format($selected['amount'] / 100, $packageCode === 'usage' ? 2 : 0);
 $title = $packageCode === 'usage' ? ($arabic ? 'النقاط المستخدمة' : 'Credits used') : ($packageCode === 'starter' ? ($arabic ? 'باقة الانطلاق' : 'Starter') : ($arabic ? 'الباقة الاحترافية' : 'Pro'));
 echo '<!doctype html><html lang="' . ($arabic ? 'ar' : 'en') . '" dir="' . ($arabic ? 'rtl' : 'ltr') . '" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
-echo '<title>RATEB AI</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap"><link rel="stylesheet" href="/public/assets/css/theme.css"><link rel="stylesheet" href="/public/assets/css/app.css?v=nav40"></head>';
+echo '<title>RATEB AI</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap"><link rel="stylesheet" href="/public/assets/css/theme.css"><link rel="stylesheet" href="/public/assets/css/app.css?v=nav61"></head>';
 echo '<body class="studio">';
 rateb_site_header('/credits.php', true);
 echo '<main class="container studio-page"><p class="eyebrow">' . ($arabic ? 'الدفع عبر ميسر' : 'Payments by Moyasar') . '</p>';
@@ -107,4 +107,4 @@ if (!$configured) {
     echo '<button class="button" type="submit">' . ($arabic ? ($packageCode === 'usage' ? 'ادفع قيمة النقاط' : 'تأكيد الشراء عبر ميسر') : ($packageCode === 'usage' ? 'Pay for the credits used' : 'Confirm purchase with Moyasar')) . '</button></form>';
 }
 echo '</article></div><p><a href="/credits.php">' . ($arabic ? 'رجوع إلى الباقات' : 'Back to packages') . '</a></p></main>';
-echo '<script src="/public/assets/js/app.js?v=nav42"></script></body></html>';
+echo '<script src="/public/assets/js/app.js?v=nav61"></script></body></html>';

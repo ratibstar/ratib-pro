@@ -49,12 +49,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '<button type="button" id="lang" class="icon">AR</button>';
     echo '<button type="button" id="theme" class="icon">☾</button>';
     if ($loggedIn) {
-        echo '<details class="account-menu">';
-        echo '<summary class="account-menu-toggle" data-i18n="nav_account">My account</summary>';
-        echo '<div class="account-menu-panel" role="menu">';
-        echo '<button type="button" class="account-menu-item" data-account-open role="menuitem" data-i18n="account_menu_profile">Personal profile</button>';
-        echo '<a class="account-logout" href="/logout.php" role="menuitem" data-i18n="logout">Logout</a>';
-        echo '</div></details>';
+        echo '<button type="button" class="account-menu-toggle" data-account-open data-i18n="nav_account">My account</button>';
     } else {
         echo '<button type="button" class="login" data-auth="login" data-i18n="login">Login</button>';
         echo '<button type="button" class="register" data-auth="register" data-i18n="create_account">Create Account</button>';
@@ -98,7 +93,7 @@ function rateb_account_dialog(string $here = ''): void
     echo '<dialog class="account-modal" id="account-modal"' . ($open ? ' data-account-autoopen="1"' : '') . '>';
     echo '<button type="button" class="auth-x" data-account-close aria-label="Close">×</button>';
     echo '<div class="account-modal-card">';
-    echo '<h2 data-i18n="account_menu_profile">' . ($arabic ? 'الملف الشخصي' : 'Personal profile') . '</h2>';
+    echo '<h2 data-i18n="nav_account">' . ($arabic ? 'حسابي' : 'My account') . '</h2>';
     echo '<p class="muted account-modal-meta">' . ($arabic ? 'الباقة:' : 'Plan:') . ' ' . e((string) $wallet['package_type'])
         . ' · ' . ($arabic ? 'الرصيد:' : 'Credits:') . ' ' . (int) $wallet['credits_balance'] . '</p>';
 
@@ -158,7 +153,9 @@ function rateb_account_dialog(string $here = ''): void
     echo '<label><span data-i18n="account_confirm_password">' . ($arabic ? 'تأكيد كلمة المرور' : 'Confirm password') . '</span>';
     echo '<input type="password" name="confirm_password" minlength="8" required autocomplete="new-password"></label>';
     echo '<button class="button primary" type="submit" data-i18n="account_save_password">' . ($arabic ? 'تحديث كلمة المرور' : 'Update password') . '</button>';
-    echo '</form></div></dialog>';
+    echo '</form>';
+    echo '<a class="account-modal-logout" href="/logout.php" data-i18n="logout">' . ($arabic ? 'تسجيل الخروج' : 'Logout') . '</a>';
+    echo '</div></dialog>';
 }
 
 function rateb_auth_dialog(string $next): void

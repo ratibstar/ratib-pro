@@ -46,7 +46,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav60">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav61">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard', !empty($_SESSION['user_id'])); ?>
@@ -276,6 +276,6 @@ document.querySelectorAll('[data-pricing-close]').forEach(function (node) {
   });
 });
 </script>
-<script src="/public/assets/js/app.js?v=nav59"></script>
+<script src="/public/assets/js/app.js?v=nav61"></script>
 </body>
 </html>
