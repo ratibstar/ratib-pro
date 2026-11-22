@@ -1,10 +1,28 @@
 <?php
 declare(strict_types=1);
 
-function password_reset_deliver(string $email, string $token): bool
+require_once __DIR__ . '/../notify/mail.php';
+
+function password_reset_deliver(PDO $pdo, string $email, string $token, ?int $userId = null): bool
 {
-    unset($email, $token);
-    return false;
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
+        return false;
+    }
+    $origin = function_exists('rateb_app_origin') ? rateb_app_origin() : 'https://ai.rateb.sa';
+    $link = rtrim($origin, '/') . '/reset-password.php?token=' . rawurlencode($token);
+    $arabic = function_exists('ui_language') && ui_language() === 'ar';
+    if ($arabic) {
+        $subject = 'استعادة كلمة مرور RATEB AI';
+        $body = "طلبت إعادة تعيين كلمة المرور لحساب RATEB AI.\n\n"
+            . "افتح هذا الرابط خلال 60 دقيقة:\n{$link}\n\n"
+            . "إن لم تطلب ذلك، تجاهل الرسالة.";
+    } else {
+        $subject = 'RATEB AI password reset';
+        $body = "You asked to reset your RATEB AI password.\n\n"
+            . "Open this link within 60 minutes:\n{$link}\n\n"
+            . "If you did not request this, ignore the email.";
+    }
+    return rateb_mail_send($pdo, $email, $subject, $body, 'password_reset', $userId, 'password_reset');
 }
 
 function password_reset_limited(): bool
@@ -45,7 +63,7 @@ function password_reset_request(PDO $pdo, string $email): void
     $token = bin2hex(random_bytes(32));
     $pdo->prepare('UPDATE password_resets SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL')->execute([$userId]);
     $pdo->prepare('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 60 MINUTE))')->execute([$userId, hash('sha256', $token)]);
-    password_reset_deliver($email, $token);
+    password_reset_deliver($pdo, $email, $token, $userId);
 }
 
 function password_reset_find(PDO $pdo, string $token): ?array
