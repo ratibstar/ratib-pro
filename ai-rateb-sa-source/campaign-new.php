@@ -248,7 +248,7 @@ $journeyOrder = array_keys($journeySteps);
 <title>RATEB AI</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav73">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav74">
 <style>.goal-pick{display:grid;gap:6px;margin:10px 0}.goal-pick select{width:100%;border-radius:12px;padding:10px;font:inherit}</style>
 </head>
 <body class="studio page-new campaign-wizard">
