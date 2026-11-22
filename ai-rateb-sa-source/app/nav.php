@@ -57,7 +57,67 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '</div></div></header>';
     if ($loggedIn) {
         rateb_account_dialog($here);
+        rateb_checkout_dialog();
     }
+}
+
+function rateb_checkout_dialog(): void
+{
+    if (empty($_SESSION['user_id'])) {
+        return;
+    }
+    require_once __DIR__ . '/plans.php';
+    $pdo = function_exists('db') ? db() : ($GLOBALS['pdo'] ?? null);
+    if (!$pdo instanceof PDO) {
+        return;
+    }
+    $ar = ui_language() === 'ar';
+    $cfgPath = dirname(__DIR__) . '/config/ai.php';
+    $aiCfg = is_file($cfgPath) ? require $cfgPath : [];
+    $checkoutReady = rateb_moyasar_configured(is_array($aiCfg) ? $aiCfg : []);
+    $map = [];
+    foreach (['starter', 'pro'] as $code) {
+        $pkg = rateb_paid_package($code, $pdo);
+        if ($pkg === null) {
+            continue;
+        }
+        $map[$code] = [
+            'name' => $ar ? (string) $pkg['name_ar'] : (string) $pkg['name_en'],
+            'price' => rateb_format_sar_price((float) $pkg['price_sar']),
+            'credits' => (int) $pkg['credits'],
+        ];
+    }
+    $auto = (string) ($_GET['checkout'] ?? '');
+    if ($auto === '' || !isset($map[$auto])) {
+        $auto = '';
+    }
+    $packagesJson = htmlspecialchars((string) json_encode($map, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+    $confirmLabel = $ar ? 'تأكيد الشراء عبر ميسر' : 'Confirm purchase with Moyasar';
+    $confirmDisabled = $ar ? 'تأكيد الشراء' : 'Confirm purchase';
+    $alert = $ar ? 'الدفع الإلكتروني غير متاح مؤقتًا.' : 'Online payment is temporarily unavailable.';
+    $back = $ar ? 'رجوع إلى الباقات' : 'Back to packages';
+    $payVia = $ar ? 'الدفع عبر ميسر' : 'Payments by Moyasar';
+    $creditsWord = $ar ? 'نقطة' : 'credits';
+    echo '<dialog class="checkout-modal" id="checkoutModal" data-packages="' . $packagesJson . '" data-credits-word="' . e($creditsWord) . '"' . ($auto !== '' ? ' data-checkout-autoopen="' . e($auto) . '"' : '') . '>';
+    echo '<button type="button" class="auth-x" data-checkout-close aria-label="Close">×</button>';
+    echo '<div class="checkout-modal-card">';
+    echo '<p class="eyebrow">' . e($payVia) . '</p>';
+    echo '<h2 id="checkout-title"></h2>';
+    echo '<p class="price-amount"><b id="checkout-price">0</b> <span>' . ($ar ? 'ر.س' : 'SAR') . '</span></p>';
+    echo '<p id="checkout-credits">0 ' . e($creditsWord) . '</p>';
+    if (!$checkoutReady) {
+        echo '<p class="alert">' . e($alert) . '</p>';
+        echo '<button class="button" type="button" disabled>' . e($confirmDisabled) . '</button>';
+    } else {
+        echo '<form method="post" action="/app/payment/checkout.php" id="checkout-form">';
+        echo '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
+        echo '<input type="hidden" name="package" id="checkout-package" value="">';
+        echo '<input type="hidden" name="campaign" value="0">';
+        echo '<button class="button" type="submit">' . e($confirmLabel) . '</button>';
+        echo '</form>';
+    }
+    echo '<button type="button" class="checkout-back" data-checkout-back>' . e($back) . '</button>';
+    echo '</div></dialog>';
 }
 
 function rateb_account_dialog(string $here = ''): void

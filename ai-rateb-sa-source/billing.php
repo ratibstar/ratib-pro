@@ -64,10 +64,17 @@ if ($subscription && ($subscription['period_end'] ?? '') !== '') {
 <title>RATEB AI — <?= $ar ? 'الفواتير والاشتراك' : 'Billing' ?></title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav44">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav63">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/billing.php', true); ?>
+<?php
+$renewPkgCode = in_array($renewCode, ['starter', 'pro'], true) ? $renewCode : 'starter';
+$renewPkg = rateb_paid_package($renewPkgCode, $pdo);
+$renewName = $renewPkg ? ($ar ? (string) $renewPkg['name_ar'] : (string) $renewPkg['name_en']) : $renewPkgCode;
+$renewPrice = $renewPkg ? rateb_format_sar_price((float) $renewPkg['price_sar']) : '0';
+$renewCredits = $renewPkg ? (int) $renewPkg['credits'] : 0;
+?>
 <main class="container studio-page" style="max-width:920px;margin:24px auto">
 <h1><?= $ar ? 'الفواتير والاشتراك' : 'Billing & subscription' ?></h1>
 <?php if ($daysLeft !== null && $daysLeft < 0): ?>
@@ -85,7 +92,15 @@ if ($subscription && ($subscription['period_end'] ?? '') !== '') {
 <?php if ($daysLeft !== null): ?> · <?= $daysLeft >= 0 ? (($ar ? 'متبقي ' : '') . $daysLeft . ($ar ? ' يوم' : ' days left')) : ($ar ? 'منتهٍ' : 'Expired') ?><?php endif; ?></p>
 <?php endif; ?>
 <p>
-<a class="button" href="/app/payment/checkout.php?package=<?= rawurlencode(in_array($renewCode, ['starter', 'pro'], true) ? $renewCode : 'starter') ?>"><?= $ar ? 'تجديد / ترقية' : 'Renew / upgrade' ?></a>
+<button
+  type="button"
+  class="button"
+  data-checkout-open
+  data-package="<?= e($renewPkgCode) ?>"
+  data-name="<?= e($renewName) ?>"
+  data-price="<?= e($renewPrice) ?>"
+  data-credits="<?= (int) $renewCredits ?>"
+><?= $ar ? 'تجديد / ترقية' : 'Renew / upgrade' ?></button>
 <a class="btn quiet" style="margin-inline-start:8px" href="/credits.php"><?= $ar ? 'كل الباقات' : 'All plans' ?></a>
 </p>
 </section>
@@ -106,5 +121,6 @@ if ($subscription && ($subscription['period_end'] ?? '') !== '') {
 <?php endif; ?>
 </table>
 </main>
+<script src="/public/assets/js/app.js?v=nav63"></script>
 </body>
 </html>

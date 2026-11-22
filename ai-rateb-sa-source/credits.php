@@ -31,7 +31,7 @@ foreach (['starter', 'pro'] as $code) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RATEB AI — <?= $ar ? 'الباقات' : 'Plans' ?></title>
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav44">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav63">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/credits.php', true); ?>
@@ -44,11 +44,20 @@ foreach (['starter', 'pro'] as $code) {
 <p class="eyebrow"><?= e($ar ? $pkg['name_ar'] : $pkg['name_en']) ?></p>
 <p class="price-amount"><b><?= e($pkg['price']) ?></b> <span><?= $ar ? 'ر.س' : 'SAR' ?></span></p>
 <p><?= (int) $pkg['credits'] ?> <?= $ar ? 'نقطة' : 'credits' ?></p>
-<a class="button studio-cta" href="/app/payment/checkout.php?package=<?= rawurlencode($pkg['code']) ?>"><?= $ar ? 'اشترك / جدّد' : 'Subscribe / renew' ?></a>
+<button
+  type="button"
+  class="button studio-cta"
+  data-checkout-open
+  data-package="<?= e($pkg['code']) ?>"
+  data-name="<?= e($ar ? $pkg['name_ar'] : $pkg['name_en']) ?>"
+  data-price="<?= e($pkg['price']) ?>"
+  data-credits="<?= (int) $pkg['credits'] ?>"
+><?= $ar ? 'اشترك / جدّد' : 'Subscribe / renew' ?></button>
 </article>
 <?php endforeach; ?>
 </div>
 <p><a href="/billing.php"><?= $ar ? 'الفواتير والاشتراك' : 'Billing & receipts' ?></a> · <a href="/dashboard"><?= $ar ? 'لوحة التحكم' : 'Dashboard' ?></a></p>
 </main>
+<script src="/public/assets/js/app.js?v=nav63"></script>
 </body>
 </html>

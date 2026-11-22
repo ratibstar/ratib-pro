@@ -46,7 +46,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav62">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav63">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard', !empty($_SESSION['user_id'])); ?>
@@ -57,8 +57,6 @@ $planNames = [];
 foreach ($pricingPlans as $planRow) {
     $planNames[$planRow['code']] = $planRow['name_ar'];
 }
-$aiCfg = require __DIR__ . '/config/ai.php';
-$checkoutReady = rateb_moyasar_configured(is_array($aiCfg) ? $aiCfg : []);
 ?>
 <p class="muted" style="width:min(1800px,calc(100% - 36px));margin:12px auto 0">الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
 <main class="container studio-page">
@@ -264,27 +262,6 @@ $checkoutReady = rateb_moyasar_configured(is_array($aiCfg) ? $aiCfg : []);
     </div>
   </div>
 </dialog>
-<dialog class="checkout-modal" id="checkoutModal">
-  <button type="button" class="auth-x" data-checkout-close aria-label="Close">×</button>
-  <div class="checkout-modal-card">
-    <p class="eyebrow">الدفع عبر ميسر</p>
-    <h2 id="checkout-title">باقة الانطلاق</h2>
-    <p class="price-amount"><b id="checkout-price">0</b> <span>ر.س</span></p>
-    <p id="checkout-credits">0 نقطة</p>
-    <?php if (!$checkoutReady): ?>
-    <p class="alert">الدفع الإلكتروني غير متاح مؤقتًا.</p>
-    <button class="button" type="button" disabled>تأكيد الشراء</button>
-    <?php else: ?>
-    <form method="post" action="/app/payment/checkout.php" id="checkout-form">
-      <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-      <input type="hidden" name="package" id="checkout-package" value="">
-      <input type="hidden" name="campaign" value="0">
-      <button class="button" type="submit">تأكيد الشراء عبر ميسر</button>
-    </form>
-    <?php endif; ?>
-    <button type="button" class="checkout-back" data-checkout-close>رجوع إلى الباقات</button>
-  </div>
-</dialog>
 <dialog class="demo-viewer" id="demo-viewer">
   <form method="dialog" class="demo-bar">
     <p data-i18n="demo_example">Example</p>
@@ -306,36 +283,7 @@ document.querySelectorAll('[data-pricing-close]').forEach(function (node) {
     if (modal) modal.close();
   });
 });
-(function () {
-  var pricingModal = document.getElementById('pricingModal');
-  var checkoutModal = document.getElementById('checkoutModal');
-  if (!checkoutModal) return;
-  function openCheckout(btn) {
-    var title = document.getElementById('checkout-title');
-    var price = document.getElementById('checkout-price');
-    var credits = document.getElementById('checkout-credits');
-    var pack = document.getElementById('checkout-package');
-    if (title) title.textContent = btn.getAttribute('data-name') || '';
-    if (price) price.textContent = btn.getAttribute('data-price') || '0';
-    if (credits) credits.textContent = (btn.getAttribute('data-credits') || '0') + ' نقطة';
-    if (pack) pack.value = btn.getAttribute('data-package') || '';
-    if (pricingModal && pricingModal.open) pricingModal.close();
-    if (checkoutModal.showModal) checkoutModal.showModal();
-  }
-  function closeCheckout() {
-    if (checkoutModal.open) checkoutModal.close();
-  }
-  document.querySelectorAll('[data-checkout-open]').forEach(function (btn) {
-    btn.addEventListener('click', function () { openCheckout(btn); });
-  });
-  document.querySelectorAll('[data-checkout-close]').forEach(function (btn) {
-    btn.addEventListener('click', closeCheckout);
-  });
-  checkoutModal.addEventListener('click', function (event) {
-    if (event.target === checkoutModal) closeCheckout();
-  });
-})();
 </script>
-<script src="/public/assets/js/app.js?v=nav62"></script>
+<script src="/public/assets/js/app.js?v=nav63"></script>
 </body>
 </html>

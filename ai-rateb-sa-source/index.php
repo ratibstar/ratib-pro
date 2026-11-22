@@ -23,7 +23,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav52">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav63">
 </head>
 <body class="studio home">
 <?php rateb_site_header('', $loggedIn, !$loggedIn); ?>
@@ -171,7 +171,18 @@ if ($loggedIn && !isset($_GET['pricing'])) {
                     <li data-i18n="plan_starter_ratios">Flexible image ratios</li>
                     <li data-i18n="plan_starter_voice">3 voice tones</li>
                 </ul>
-                <?php if ($loggedIn): ?><a class="button studio-cta" href="/credits.php#starter" data-i18n="plan_cta">Subscribe now</a><?php else: ?><button type="button" class="button studio-cta" data-auth="register" data-i18n="plan_cta">Subscribe now</button><?php endif; ?>
+                <?php if ($loggedIn): ?>
+                <button
+                  type="button"
+                  class="button studio-cta"
+                  data-checkout-open
+                  data-package="starter"
+                  data-name="<?= e((string) ($pricingByCode['starter']['name_ar'] ?? 'Starter')) ?>"
+                  data-price="<?= e(rateb_format_sar_price((float) ($pricingByCode['starter']['price_sar'] ?? 0))) ?>"
+                  data-credits="<?= (int) ($pricingByCode['starter']['credits'] ?? 500) ?>"
+                  data-i18n="plan_cta"
+                >Subscribe now</button>
+                <?php else: ?><button type="button" class="button studio-cta" data-auth="register" data-i18n="plan_cta">Subscribe now</button><?php endif; ?>
             </article>
             <article class="price-card">
                 <p class="eyebrow" data-i18n="plan_pro">Pro</p>
@@ -182,7 +193,18 @@ if ($loggedIn && !isset($_GET['pricing'])) {
                     <li data-i18n="plan_pro_board">Full structured storyboard</li>
                     <li data-i18n="plan_pro_priority">Priority generation</li>
                 </ul>
-                <?php if ($loggedIn): ?><a class="button" href="/credits.php#pro" data-i18n="plan_cta">Subscribe now</a><?php else: ?><button type="button" class="button" data-auth="register" data-i18n="plan_cta">Subscribe now</button><?php endif; ?>
+                <?php if ($loggedIn): ?>
+                <button
+                  type="button"
+                  class="button"
+                  data-checkout-open
+                  data-package="pro"
+                  data-name="<?= e((string) ($pricingByCode['pro']['name_ar'] ?? 'Pro')) ?>"
+                  data-price="<?= e(rateb_format_sar_price((float) ($pricingByCode['pro']['price_sar'] ?? 0))) ?>"
+                  data-credits="<?= (int) ($pricingByCode['pro']['credits'] ?? 2500) ?>"
+                  data-i18n="plan_cta"
+                >Subscribe now</button>
+                <?php else: ?><button type="button" class="button" data-auth="register" data-i18n="plan_cta">Subscribe now</button><?php endif; ?>
             </article>
         </div>
     </section>
@@ -308,6 +330,6 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav52"></script>
+<script src="/public/assets/js/app.js?v=nav63"></script>
 </body>
 </html>

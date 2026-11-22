@@ -32,6 +32,11 @@ if ($selected === null) {
     exit('Unknown package');
 }
 
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST' && $packageCode !== 'usage') {
+    header('Location: /credits.php?checkout=' . rawurlencode($packageCode) . '#' . rawurlencode($packageCode));
+    exit;
+}
+
 $cfg = require __DIR__ . '/../../config/ai.php';
 $secret = (string) ($cfg['moyasar_secret_key'] ?? '');
 $configured = rateb_moyasar_configured($cfg);

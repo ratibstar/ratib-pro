@@ -1892,6 +1892,67 @@
     }
   }
 
+  var checkoutModal = document.getElementById('checkoutModal');
+  var pricingModal = document.getElementById('pricingModal');
+  function checkoutPackages() {
+    if (!checkoutModal) return {};
+    try {
+      return JSON.parse(checkoutModal.getAttribute('data-packages') || '{}') || {};
+    } catch (err) {
+      return {};
+    }
+  }
+  function fillCheckout(code, fallback) {
+    if (!checkoutModal) return;
+    var pkg = checkoutPackages()[code] || fallback || {};
+    var title = document.getElementById('checkout-title');
+    var price = document.getElementById('checkout-price');
+    var credits = document.getElementById('checkout-credits');
+    var pack = document.getElementById('checkout-package');
+    var word = checkoutModal.getAttribute('data-credits-word') || 'credits';
+    if (title) title.textContent = pkg.name || '';
+    if (price) price.textContent = pkg.price || '0';
+    if (credits) credits.textContent = String(pkg.credits != null ? pkg.credits : '0') + ' ' + word;
+    if (pack) pack.value = code || '';
+  }
+  function openCheckoutModal(code, fallback) {
+    if (!checkoutModal || !code) return;
+    fillCheckout(code, fallback);
+    if (pricingModal && pricingModal.open) pricingModal.close();
+    if (typeof checkoutModal.showModal === 'function' && !checkoutModal.open) {
+      checkoutModal.showModal();
+    }
+  }
+  function closeCheckoutModal(backToPricing) {
+    if (checkoutModal && checkoutModal.open) checkoutModal.close();
+    if (backToPricing && pricingModal && typeof pricingModal.showModal === 'function') {
+      pricingModal.showModal();
+    }
+  }
+  document.querySelectorAll('[data-checkout-open]').forEach(function (btn) {
+    btn.addEventListener('click', function (event) {
+      event.preventDefault();
+      openCheckoutModal(btn.getAttribute('data-package') || '', {
+        name: btn.getAttribute('data-name') || '',
+        price: btn.getAttribute('data-price') || '0',
+        credits: btn.getAttribute('data-credits') || '0'
+      });
+    });
+  });
+  document.querySelectorAll('[data-checkout-close]').forEach(function (btn) {
+    btn.addEventListener('click', function () { closeCheckoutModal(false); });
+  });
+  document.querySelectorAll('[data-checkout-back]').forEach(function (btn) {
+    btn.addEventListener('click', function () { closeCheckoutModal(!!pricingModal); });
+  });
+  if (checkoutModal) {
+    checkoutModal.addEventListener('click', function (event) {
+      if (event.target === checkoutModal) closeCheckoutModal(false);
+    });
+    var autoCode = checkoutModal.getAttribute('data-checkout-autoopen') || '';
+    if (autoCode) openCheckoutModal(autoCode);
+  }
+
   var authModal = document.getElementById('auth-modal');
   function paintGoogle() {
     if (!authModal || !window.google || !google.accounts || !google.accounts.id) return;
