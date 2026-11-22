@@ -15,6 +15,7 @@ $assert = static function (bool $ok, string $label) use (&$fail): void {
 $assert(rateb_public_gate_is_always_exempt('/admin/'), 'admin always exempt');
 $assert(rateb_public_gate_is_always_exempt('/hr/employees.php'), 'hr workspace exempt');
 $assert(rateb_public_gate_is_always_exempt('/dashboard'), 'dashboard exempt');
+$assert(rateb_public_gate_is_always_exempt('/account'), 'account exempt');
 $assert(!rateb_public_gate_is_always_exempt('/'), 'home not always exempt');
 $assert(rateb_public_gate_is_marketing_path('/'), 'home is marketing');
 $assert(rateb_public_gate_is_marketing_path('/register.php'), 'register is marketing');

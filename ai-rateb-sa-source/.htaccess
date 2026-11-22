@@ -55,4 +55,5 @@ Require all denied
     RewriteRule ^privacy/?$ privacy.php [END,QSA]
     RewriteRule ^terms/?$ terms.php [END,QSA]
     RewriteRule ^pricing/?$ pricing.php [END,QSA]
+    RewriteRule ^account/?$ account.php [END,QSA]
 </IfModule>

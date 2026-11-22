@@ -64,6 +64,8 @@ function rateb_public_gate_is_always_exempt(string $path): bool
         '/billing',
         '/credits.php',
         '/credits',
+        '/account',
+        '/app/account',
         '/app/payment',
         '/campaign',
         '/brand',

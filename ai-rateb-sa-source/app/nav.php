@@ -16,6 +16,9 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
             ['/#create', 'nav_create', 'What it creates'],
         ],
     ];
+    if ($loggedIn) {
+        $groups[0][] = ['/account', 'nav_account', 'My account'];
+    }
     $credits = null;
     if ($loggedIn && function_exists('rateb_account_credits') && !empty($_SESSION['user_id'])) {
         $pdo = function_exists('db') ? db() : ($GLOBALS['pdo'] ?? null);
