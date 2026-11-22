@@ -303,17 +303,20 @@ body.home{font-family:Tajawal,Manrope,"Segoe UI",Arial,sans-serif}
 .account-menu-panel a.is-here{color:var(--accent)}
 .account-menu-panel .account-logout{color:#b91c1c}
 .account-menu-panel .account-logout:hover{background:rgba(239,68,68,.12)}
-.account-modal{width:min(360px,calc(100% - 28px));max-height:min(86vh,560px);overflow:auto;border:0;border-radius:18px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 22px 50px rgba(28,20,51,.32)}
+.account-modal{width:min(460px,calc(100% - 28px));max-height:none;overflow:visible;border:0;border-radius:20px;padding:0;background:var(--surface);color:var(--text);box-shadow:0 22px 50px rgba(28,20,51,.32)}
 .account-modal::backdrop{background:rgba(20,12,40,.55);backdrop-filter:blur(6px)}
-.account-modal-card{padding:22px 18px 16px;display:grid;gap:10px}
-.account-modal h2{margin:0;font-size:18px;font-weight:800}
-.account-modal h3{margin:0;font-size:14px;font-weight:800}
+.account-modal-card{padding:24px 22px 18px;display:grid;gap:8px}
+.account-modal h2{margin:0;font-size:20px;font-weight:800}
+.account-modal h3{margin:0;font-size:15px;font-weight:800}
 .account-modal-meta,.account-modal .tiny{margin:0;font-size:12px}
-.account-modal-rule{border:0;border-top:1px solid var(--border);margin:4px 0}
-.account-modal-form{display:grid;gap:8px}
+.account-modal-rule{border:0;border-top:1px solid var(--border);margin:2px 0}
+.account-modal-form{display:grid;gap:7px}
 .account-modal-form label{display:grid;gap:4px;font-size:12px;font-weight:700}
-.account-modal-form input{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:var(--bg);color:var(--text);font:inherit}
+.account-modal-form input{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 11px;background:var(--bg);color:var(--text);font:inherit}
 .account-modal-form .button,.account-modal-form button[type=submit]{width:100%;margin-top:2px;border-radius:10px;padding:10px 12px;font-size:13px}
+@media (max-height:720px){
+  .account-modal{max-height:min(92vh,640px);overflow:auto}
+}
 body.studio .account-modal{background:color-mix(in srgb,var(--surface) 94%,transparent);border:1px solid rgba(255,255,255,.12)}
 [data-theme=light] body.studio .account-modal{background:#fff;border-color:rgba(76,29,149,.12)}
 .home-bar .logo,.site-bar .logo{font-size:34px;font-weight:800;text-decoration:none;color:var(--text);white-space:nowrap}
