@@ -23,7 +23,7 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     <title>RATEB AI — AI Campaign Generator</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
     <link rel="stylesheet" href="/public/assets/css/theme.css">
-    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav63">
+    <link rel="stylesheet" href="/public/assets/css/app.css?v=nav64">
 </head>
 <body class="studio home">
 <?php rateb_site_header('', $loggedIn, !$loggedIn); ?>
@@ -330,6 +330,6 @@ if ($loggedIn && !isset($_GET['pricing'])) {
     </form>
 </dialog>
 <?php if ($googleClient !== ''): ?><script src="https://accounts.google.com/gsi/client" async defer></script><?php endif; ?>
-<script src="/public/assets/js/app.js?v=nav63"></script>
+<script src="/public/assets/js/app.js?v=nav64"></script>
 </body>
 </html>
