@@ -49,11 +49,10 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '<button type="button" id="lang" class="icon">AR</button>';
     echo '<button type="button" id="theme" class="icon">☾</button>';
     if ($loggedIn) {
-        $accountHere = $here === '/account';
-        echo '<details class="account-menu' . ($accountHere ? ' is-here' : '') . '">';
+        echo '<details class="account-menu">';
         echo '<summary class="account-menu-toggle" data-i18n="nav_account">My account</summary>';
         echo '<div class="account-menu-panel" role="menu">';
-        echo '<a href="/account" role="menuitem"' . ($accountHere ? ' class="is-here" aria-current="page"' : '') . ' data-i18n="account_menu_profile">Profile</a>';
+        echo '<button type="button" class="account-menu-item" data-account-open role="menuitem" data-i18n="account_menu_profile">Personal profile</button>';
         echo '<a class="account-logout" href="/logout.php" role="menuitem" data-i18n="logout">Logout</a>';
         echo '</div></details>';
     } else {
@@ -61,6 +60,105 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
         echo '<button type="button" class="register" data-auth="register" data-i18n="create_account">Create Account</button>';
     }
     echo '</div></div></header>';
+    if ($loggedIn) {
+        rateb_account_dialog($here);
+    }
+}
+
+function rateb_account_dialog(string $here = ''): void
+{
+    if (empty($_SESSION['user_id'])) {
+        return;
+    }
+    $pdo = function_exists('db') ? db() : ($GLOBALS['pdo'] ?? null);
+    if (!$pdo instanceof PDO) {
+        return;
+    }
+    $userId = (int) $_SESSION['user_id'];
+    $stmt = $pdo->prepare('SELECT id, name, email, password_hash FROM users WHERE id = ? LIMIT 1');
+    $stmt->execute([$userId]);
+    $user = $stmt->fetch();
+    if (!$user) {
+        return;
+    }
+
+    $arabic = function_exists('ui_language') && ui_language() === 'ar';
+    $hasPassword = trim((string) ($user['password_hash'] ?? '')) !== '';
+    $flash = (string) ($_GET['ok'] ?? '');
+    $error = (string) ($_GET['error'] ?? '');
+    $returnPath = (string) (parse_url($_SERVER['REQUEST_URI'] ?? $here, PHP_URL_PATH) ?: ($here !== '' ? $here : '/dashboard'));
+    if ($returnPath === '' || $returnPath[0] !== '/') {
+        $returnPath = '/dashboard';
+    }
+    $wallet = function_exists('rateb_account_credits')
+        ? rateb_account_credits($pdo, $userId)
+        : ['package_type' => 'free', 'credits_balance' => 0];
+    $open = isset($_GET['account']) && (string) $_GET['account'] === '1';
+
+    echo '<dialog class="account-modal" id="account-modal"' . ($open ? ' data-account-autoopen="1"' : '') . '>';
+    echo '<button type="button" class="auth-x" data-account-close aria-label="Close">×</button>';
+    echo '<div class="account-modal-card">';
+    echo '<h2 data-i18n="account_menu_profile">' . ($arabic ? 'الملف الشخصي' : 'Personal profile') . '</h2>';
+    echo '<p class="muted account-modal-meta">' . ($arabic ? 'الباقة:' : 'Plan:') . ' ' . e((string) $wallet['package_type'])
+        . ' · ' . ($arabic ? 'الرصيد:' : 'Credits:') . ' ' . (int) $wallet['credits_balance'] . '</p>';
+
+    if ($flash === 'profile') {
+        echo '<p class="notice" data-i18n="account_saved">' . ($arabic ? 'تم حفظ الاسم.' : 'Name saved.') . '</p>';
+    }
+    if ($flash === 'password') {
+        echo '<p class="notice" data-i18n="account_password_saved">' . ($arabic ? 'تم تحديث كلمة المرور.' : 'Password updated.') . '</p>';
+    }
+    if ($error === 'name') {
+        echo '<p class="notice is-error" data-i18n="account_name_invalid">' . ($arabic ? 'اكتب اسماً صالحاً.' : 'Enter a valid name.') . '</p>';
+    }
+    if ($error === 'password_current') {
+        echo '<p class="notice is-error" data-i18n="account_password_current">' . ($arabic ? 'كلمة المرور الحالية غير صحيحة.' : 'Current password is incorrect.') . '</p>';
+    }
+    if ($error === 'password_short') {
+        echo '<p class="notice is-error" data-i18n="account_password_short">' . ($arabic ? 'كلمة المرور الجديدة تحتاج 8 أحرف على الأقل.' : 'New password needs at least 8 characters.') . '</p>';
+    }
+    if ($error === 'password_match') {
+        echo '<p class="notice is-error" data-i18n="account_password_match">' . ($arabic ? 'تأكيد كلمة المرور غير متطابق.' : 'Password confirmation does not match.') . '</p>';
+    }
+    if ($error === 'password_missing') {
+        echo '<p class="notice is-error" data-i18n="account_password_missing">' . ($arabic ? 'هذا الحساب بلا كلمة مرور محلية. عيّن كلمة مرور جديدة مباشرة.' : 'This account has no local password yet. Set a new password directly.') . '</p>';
+    }
+    if ($error === 'csrf' || $error === 'save') {
+        echo '<p class="notice is-error" data-i18n="account_save_failed">' . ($arabic ? 'تعذر الحفظ. حاول مرة أخرى.' : 'Could not save. Try again.') . '</p>';
+    }
+
+    echo '<form method="post" action="/app/account/save.php" class="account-modal-form" data-account-profile>';
+    echo '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
+    echo '<input type="hidden" name="action" value="profile">';
+    echo '<input type="hidden" name="return" value="' . e($returnPath) . '">';
+    echo '<input type="hidden" name="modal" value="1">';
+    echo '<label><span data-i18n="name">' . ($arabic ? 'الاسم' : 'Name') . '</span>';
+    echo '<input name="name" required maxlength="120" value="' . e((string) $user['name']) . '"></label>';
+    echo '<label><span data-i18n="email">' . ($arabic ? 'البريد' : 'Email') . '</span>';
+    echo '<input type="email" value="' . e((string) $user['email']) . '" readonly></label>';
+    echo '<p class="muted tiny" data-i18n="account_email_note">' . ($arabic ? 'لتغيير البريد تواصل مع الدعم من صفحة التواصل.' : 'To change email, contact support from the contact page.') . '</p>';
+    echo '<button class="button studio-cta" type="submit" data-i18n="account_save_name">' . ($arabic ? 'حفظ الاسم' : 'Save name') . '</button>';
+    echo '</form>';
+
+    echo '<hr class="account-modal-rule">';
+    echo '<h3 data-i18n="account_password_title">' . ($arabic ? 'كلمة المرور' : 'Password') . '</h3>';
+    echo '<form method="post" action="/app/account/save.php" class="account-modal-form" data-account-password>';
+    echo '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
+    echo '<input type="hidden" name="action" value="password">';
+    echo '<input type="hidden" name="return" value="' . e($returnPath) . '">';
+    echo '<input type="hidden" name="modal" value="1">';
+    if ($hasPassword) {
+        echo '<label><span data-i18n="account_current_password">' . ($arabic ? 'كلمة المرور الحالية' : 'Current password') . '</span>';
+        echo '<input type="password" name="current_password" required autocomplete="current-password"></label>';
+    } else {
+        echo '<p class="muted tiny" data-i18n="account_set_password_lead">' . ($arabic ? 'حسابك دخل عبر مزود خارجي. يمكنك تعيين كلمة مرور للدخول بالبريد.' : 'You signed in with an external provider. You can set a password for email login.') . '</p>';
+    }
+    echo '<label><span data-i18n="account_new_password">' . ($arabic ? 'كلمة المرور الجديدة' : 'New password') . '</span>';
+    echo '<input type="password" name="new_password" minlength="8" required autocomplete="new-password"></label>';
+    echo '<label><span data-i18n="account_confirm_password">' . ($arabic ? 'تأكيد كلمة المرور' : 'Confirm password') . '</span>';
+    echo '<input type="password" name="confirm_password" minlength="8" required autocomplete="new-password"></label>';
+    echo '<button class="button primary" type="submit" data-i18n="account_save_password">' . ($arabic ? 'تحديث كلمة المرور' : 'Update password') . '</button>';
+    echo '</form></div></dialog>';
 }
 
 function rateb_auth_dialog(string $next): void

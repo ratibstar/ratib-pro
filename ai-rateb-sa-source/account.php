@@ -28,7 +28,7 @@ $wallet = rateb_account_credits($pdo, $userId);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RATEB AI — <?= $arabic ? 'حسابي' : 'My account' ?></title>
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav58">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav59">
 </head>
 <body class="studio page-account">
 <?php rateb_site_header('/account', true); ?>
@@ -93,6 +93,6 @@ $wallet = rateb_account_credits($pdo, $userId);
   </section>
 </main>
 <?php rateb_site_footer('/account'); ?>
-<script src="/public/assets/js/app.js?v=nav58"></script>
+<script src="/public/assets/js/app.js?v=nav59"></script>
 </body>
 </html>

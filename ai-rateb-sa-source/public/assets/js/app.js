@@ -392,7 +392,7 @@
       nav_privacy: 'Privacy',
       nav_terms: 'Terms',
       nav_account: 'My account',
-      account_menu_profile: 'Profile',
+      account_menu_profile: 'Personal profile',
       nav_billing: 'Billing',
       account_title: 'My account',
       account_lead: 'Your sign-in details. Email stays fixed; you can update your name and password.',
@@ -821,7 +821,7 @@
       nav_privacy: 'الخصوصية',
       nav_terms: 'الشروط',
       nav_account: 'حسابي',
-      account_menu_profile: 'الملف',
+      account_menu_profile: 'الملف الشخصي',
       nav_billing: 'الفوترة',
       account_title: 'حسابي',
       account_lead: 'بيانات الدخول الخاصة بك. البريد ثابت؛ يمكنك تحديث الاسم وكلمة المرور.',
@@ -1861,6 +1861,38 @@
       };
       xhr.send(data);
     });
+  }
+
+  var accountModal = document.getElementById('account-modal');
+  function openAccountModal() {
+    if (!accountModal) return;
+    document.querySelectorAll('.account-menu[open]').forEach(function (menu) {
+      menu.removeAttribute('open');
+    });
+    if (typeof accountModal.showModal === 'function' && !accountModal.open) {
+      accountModal.showModal();
+    }
+  }
+  function closeAccountModal() {
+    if (accountModal && accountModal.open) accountModal.close();
+  }
+  document.querySelectorAll('[data-account-open]').forEach(function (node) {
+    node.addEventListener('click', function (event) {
+      event.preventDefault();
+      openAccountModal();
+    });
+  });
+  if (accountModal) {
+    var accountCloser = accountModal.querySelector('[data-account-close]');
+    if (accountCloser) {
+      accountCloser.addEventListener('click', closeAccountModal);
+    }
+    accountModal.addEventListener('click', function (event) {
+      if (event.target === accountModal) closeAccountModal();
+    });
+    if (accountModal.getAttribute('data-account-autoopen') === '1') {
+      openAccountModal();
+    }
   }
 
   var authModal = document.getElementById('auth-modal');
