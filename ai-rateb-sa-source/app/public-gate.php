@@ -212,33 +212,49 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     $msg = $ar ? $msgAr : $msgEn;
     $title = $mode === 'maintenance' ? ($ar ? 'صيانة' : 'Maintenance') : ($ar ? 'غير متاح' : 'Unavailable');
     $adminLabel = $ar ? 'لوحة الإدارة' : 'Admin console';
-    $hint = $mode === 'maintenance'
-        ? ($ar
-            ? 'الموقع متوقف بالكامل أثناء الصيانة. لوحة الإدارة فقط تبقى متاحة.'
-            : 'The whole site is locked during maintenance. Only the admin console stays available.')
-        : ($ar
-            ? 'الموقع العام غير متاح حاليًا.'
-            : 'The public site is currently unavailable.');
+    $howTitle = $ar ? 'كيف يعمل RATEB AI' : 'How RATEB AI works';
+    $lead = $ar
+        ? 'حوّل فكرتك إلى حملة تسويقية كاملة: استراتيجية، نص، صور، صوت، وفيديو.'
+        : 'Turn your idea into a full campaign: strategy, copy, images, voice, and video.';
+    $steps = $ar
+        ? ['الفكرة', 'الاستراتيجية', 'النص', 'الصور', 'الصوت', 'الفيديو']
+        : ['Idea', 'Strategy', 'Copy', 'Images', 'Voice', 'Video'];
     echo '<!doctype html><html lang="' . ($ar ? 'ar' : 'en') . '" dir="' . ($ar ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>RATEB AI — ' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
     echo '<style>';
-    echo '*{box-sizing:border-box}body{margin:0;font-family:' . ($ar ? 'Tajawal,Manrope' : 'Manrope,Tajawal') . ',sans-serif;background:#070b14;color:#e8eef7;display:grid;place-items:center;min-height:100vh;padding:28px}';
-    echo '.box{width:min(720px,100%);background:#10192b;border:1px solid #2b3b58;border-radius:28px;padding:42px 36px;box-shadow:0 28px 70px rgba(0,0,0,.45)}';
-    echo 'h1{color:#67e8f9;font-size:clamp(2rem,4vw,2.75rem);line-height:1.2;margin:0 0 18px;font-weight:800}';
-    echo 'p{color:#c5d0e0;line-height:1.7;font-size:clamp(1.1rem,2.2vw,1.35rem);margin:0 0 14px}';
-    echo '.hint{color:#93a4bd;font-size:1rem;margin:0 0 28px}';
-    echo '.actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}';
-    echo 'a.btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 24px;border-radius:999px;font-size:1.15rem;font-weight:800;text-decoration:none}';
-    echo 'a.btn-primary{background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff}';
-    echo '@media (max-width:560px){.box{padding:28px 20px}a.btn{width:100%}}';
-    echo '</style></head><body>';
-    echo '<div class="box"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
-    echo '<p>' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p>';
-    echo '<p class="hint">' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '</p>';
-    echo '<div class="actions">';
+    echo '*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:' . ($ar ? 'Tajawal,Manrope' : 'Manrope,Tajawal') . ',sans-serif;color:#e8eef7;display:grid;place-items:center;padding:28px;position:relative;overflow:hidden;';
+    echo 'background:#070b14;background-image:radial-gradient(900px 420px at 12% -10%,rgba(109,40,217,.45),transparent 58%),radial-gradient(780px 420px at 100% 0%,rgba(20,184,166,.28),transparent 55%),radial-gradient(700px 380px at 50% 110%,rgba(249,115,22,.18),transparent 50%),linear-gradient(160deg,#0b1020 0%,#1e1b4b 42%,#0f766e22 100%)}';
+    echo 'body::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.05) 0 1px,transparent 1.5px),radial-gradient(circle at 80% 70%,rgba(255,255,255,.04) 0 1px,transparent 1.5px);background-size:48px 48px;opacity:.55;pointer-events:none}';
+    echo '.shell{position:relative;z-index:1;width:min(920px,100%);display:grid;gap:18px}';
+    echo '.brand{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}';
+    echo '.brand-mark{font-size:clamp(1.35rem,2.4vw,1.7rem);font-weight:800;letter-spacing:.02em}';
+    echo '.brand-mark span{color:#67e8f9}';
+    echo '.panel{border-radius:28px;padding:36px 32px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(145deg,rgba(24,16,48,.88),rgba(15,23,42,.82));box-shadow:0 30px 80px rgba(0,0,0,.4);backdrop-filter:blur(10px)}';
+    echo 'h1{color:#67e8f9;font-size:clamp(2rem,4vw,2.8rem);line-height:1.15;margin:0 0 14px;font-weight:800}';
+    echo '.msg{color:#d7e0ee;line-height:1.7;font-size:clamp(1.08rem,2vw,1.3rem);margin:0 0 10px}';
+    echo '.lead{color:#a8b7cd;margin:0 0 22px;font-size:1.02rem;line-height:1.65}';
+    echo '.how{margin:0 0 24px;padding:18px 16px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}';
+    echo '.how h2{margin:0 0 14px;font-size:1.05rem;font-weight:800;color:#fff}';
+    echo '.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}';
+    echo '.steps li{display:grid;justify-items:center;gap:8px;text-align:center;min-width:0}';
+    echo '.steps .num{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;font-weight:800;font-size:.95rem;color:#fff;background:linear-gradient(135deg,#6d28d9,#0f766e);box-shadow:0 0 0 3px rgba(109,40,217,.22)}';
+    echo '.steps .label{font-size:.9rem;font-weight:700;color:#dbe4f2;line-height:1.25}';
+    echo '.actions{display:flex;flex-wrap:wrap;gap:12px}';
+    echo 'a.btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 26px;border-radius:999px;font-size:1.12rem;font-weight:800;text-decoration:none;color:#fff;background:linear-gradient(90deg,#6d28d9,#0f766e);box-shadow:0 12px 30px rgba(109,40,217,.35)}';
+    echo '@media (max-width:720px){.panel{padding:28px 18px}.steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px}a.btn{width:100%}}';
+    echo '</style></head><body><div class="shell">';
+    echo '<div class="brand"><div class="brand-mark">RATEB <span>AI</span></div></div>';
+    echo '<div class="panel"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
+    echo '<p class="msg">' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p>';
     if ($mode === 'maintenance') {
-        echo '<a class="btn btn-primary" href="/admin">' . htmlspecialchars($adminLabel, ENT_QUOTES, 'UTF-8') . '</a>';
+        echo '<p class="lead">' . htmlspecialchars($lead, ENT_QUOTES, 'UTF-8') . '</p>';
+        echo '<section class="how"><h2>' . htmlspecialchars($howTitle, ENT_QUOTES, 'UTF-8') . '</h2><ol class="steps">';
+        foreach ($steps as $i => $label) {
+            echo '<li><span class="num">' . ($i + 1) . '</span><span class="label">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span></li>';
+        }
+        echo '</ol></section>';
+        echo '<div class="actions"><a class="btn" href="/admin">' . htmlspecialchars($adminLabel, ENT_QUOTES, 'UTF-8') . '</a></div>';
     }
     echo '</div></div></body></html>';
     exit;

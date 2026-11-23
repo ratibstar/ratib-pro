@@ -83,6 +83,10 @@ function admin_staff_login_screen(object $pdo): void
 
     $h = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     $t = static fn (string $en, string $ar): string => $adminLang === 'ar' ? $ar : $en;
+    $maintOn = function_exists('platform_setting_bool') ? platform_setting_bool($pdo, 'maintenance_mode', false) : false;
+    $howSteps = $adminLang === 'ar'
+        ? ['الفكرة', 'الاستراتيجية', 'النص', 'الصور', 'الصوت', 'الفيديو']
+        : ['Idea', 'Strategy', 'Copy', 'Images', 'Voice', 'Video'];
     ?>
 <!doctype html>
 <html lang="<?= $h($adminLang) ?>" dir="<?= $h($dir) ?>">
@@ -91,31 +95,48 @@ function admin_staff_login_screen(object $pdo): void
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title><?= $h($t('Admin sign-in', 'دخول الإدارة')) ?> — RATEB AI</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
-    <link rel="stylesheet" href="/admin/admin.css?v=14">
+    <link rel="stylesheet" href="/admin/admin.css?v=15">
 </head>
-<body class="admin-app">
+<body class="admin-app admin-login-brand">
 <div class="login-screen">
-    <div class="login-card">
-        <p class="login-brand">RATEB <span style="color:var(--cyan)">AI</span></p>
-        <h1><?= $h($t('Administration console', 'لوحة إدارة المنصة')) ?></h1>
-        <p class="note"><?= $h($t(
-            'You are on the official admin URL (/admin). After sign-in you get the dashboard, finance, customers, and settings.',
-            'أنت على رابط الإدارة الرسمي (/admin). بعد الدخول تظهر اللوحة والتحليلات والمالية والعملاء والإعدادات.'
-        )) ?></p>
-        <?php if ($siteCustomerNote !== ''): ?>
-        <p class="flash ok" style="margin-top:12px"><?= $h($siteCustomerNote) ?></p>
-        <?php endif; ?>
-        <h2 class="login-sub" style="margin:16px 0 8px;font-size:1rem;color:var(--muted,#93a4bd)"><?= $h($t('Platform staff', 'موظفو المنصة')) ?></h2>
-        <?php if ($message !== ''): ?><p class="flash bad"><?= $h($message) ?></p><?php endif; ?>
-        <form class="stack" method="post" action="/admin">
-            <input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>">
-            <label><?= $h($t('Email or username', 'البريد أو اسم المستخدم')) ?><input type="text" name="email" required autocomplete="username" inputmode="email" placeholder="admin@rateb.sa"></label>
-            <label><?= $h($t('Password', 'كلمة المرور')) ?><input type="password" name="password" required autocomplete="current-password"></label>
-            <button type="submit" class="btn primary" style="width:100%"><?= $h($t('Sign in', 'دخول')) ?></button>
-        </form>
-        <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line,#243049);text-align:center">
-            <p class="note" style="margin-bottom:10px"><?= $h($t('Platform owner?', 'مالك المنصة؟')) ?> <?= $h($t('Use your main site account — not the staff form above.', 'استخدم حساب الموقع الرئيسي — وليس نموذج الموظفين أعلاه.')) ?></p>
-            <a class="btn primary" href="/login?next=/admin"><?= $h($t('Owner sign-in to admin', 'دخول المالك إلى الإدارة')) ?></a>
+    <div class="login-shell">
+        <div class="login-side">
+            <p class="login-brand">RATEB <span>AI</span></p>
+            <h2><?= $h($t('How RATEB AI works', 'كيف يعمل RATEB AI')) ?></h2>
+            <p class="note"><?= $h($t(
+                'Turn an idea into a full campaign: strategy, copy, images, Saudi voice, and short video.',
+                'حوّل الفكرة إلى حملة كاملة: استراتيجية، نص، صور، صوت سعودي، وفيديو قصير.'
+            )) ?></p>
+            <ol class="login-flow">
+                <?php foreach ($howSteps as $i => $label): ?>
+                    <li><span><?= $i + 1 ?></span><b><?= $h($label) ?></b></li>
+                <?php endforeach; ?>
+            </ol>
+        </div>
+        <div class="login-card">
+            <p class="login-brand">RATEB <span style="color:var(--cyan)">AI</span></p>
+            <h1><?= $h($t('Administration console', 'لوحة إدارة المنصة')) ?></h1>
+            <p class="note"><?= $h($t(
+                'You are on the official admin URL (/admin). After sign-in you get the dashboard, finance, customers, and settings.',
+                'أنت على رابط الإدارة الرسمي (/admin). بعد الدخول تظهر اللوحة والتحليلات والمالية والعملاء والإعدادات.'
+            )) ?></p>
+            <?php if ($siteCustomerNote !== ''): ?>
+            <p class="flash ok" style="margin-top:12px"><?= $h($siteCustomerNote) ?></p>
+            <?php endif; ?>
+            <h2 class="login-sub" style="margin:16px 0 8px;font-size:1rem;color:var(--muted,#93a4bd)"><?= $h($t('Platform staff', 'موظفو المنصة')) ?></h2>
+            <?php if ($message !== ''): ?><p class="flash bad"><?= $h($message) ?></p><?php endif; ?>
+            <form class="stack" method="post" action="/admin">
+                <input type="hidden" name="csrf_token" value="<?= $h(csrf_token()) ?>">
+                <label><?= $h($t('Email or username', 'البريد أو اسم المستخدم')) ?><input type="text" name="email" required autocomplete="username" inputmode="email" placeholder="admin@rateb.sa"></label>
+                <label><?= $h($t('Password', 'كلمة المرور')) ?><input type="password" name="password" required autocomplete="current-password"></label>
+                <button type="submit" class="btn primary" style="width:100%"><?= $h($t('Sign in', 'دخول')) ?></button>
+            </form>
+            <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line,#243049);text-align:center">
+                <p class="note" style="margin-bottom:10px"><?= $h($t('Platform owner?', 'مالك المنصة؟')) ?> <?= $h($t('Use your main site account in the form above (full email).', 'استخدم حساب الموقع الرئيسي في النموذج أعلاه (البريد الكامل).')) ?></p>
+                <?php if (!$maintOn): ?>
+                <a class="btn primary" href="/login?next=/admin"><?= $h($t('Owner sign-in to admin', 'دخول المالك إلى الإدارة')) ?></a>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>

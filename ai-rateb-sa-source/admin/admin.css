@@ -273,11 +273,29 @@ form.card{max-width:100%;margin:0;padding:0;border:0;background:transparent}
 .chart em span{color:var(--ink)}
 .chart .bar:hover em,.chart .bar:focus em,.chart .bar.is-tip em{display:block}
 .login-screen{min-height:100vh;display:grid;place-items:center;padding:24px}
+body.admin-login-brand{
+  background:#070b14;
+  background-image:radial-gradient(900px 420px at 10% -10%,rgba(109,40,217,.42),transparent 58%),radial-gradient(780px 420px at 100% 0%,rgba(20,184,166,.26),transparent 55%),radial-gradient(640px 360px at 50% 110%,rgba(249,115,22,.16),transparent 50%),linear-gradient(160deg,#0b1020 0%,#1e1b4b 46%,#0f766e22 100%);
+}
+body.admin-login-brand .login-screen{position:relative}
+body.admin-login-brand .login-screen::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.05) 0 1px,transparent 1.5px);background-size:48px 48px;opacity:.5;pointer-events:none}
+.login-shell{position:relative;z-index:1;width:min(980px,100%);display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.95fr);gap:18px;align-items:stretch}
+.login-side{border-radius:24px;padding:28px 24px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(145deg,rgba(24,16,48,.82),rgba(15,23,42,.76));color:#e8eef7;box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.login-side .login-brand{margin:0 0 10px;font-size:1.35rem;font-weight:800}
+.login-side .login-brand span{color:#67e8f9}
+.login-side h2{margin:0 0 10px;font-size:1.35rem;font-weight:800;color:#fff}
+.login-side .note{color:#a8b7cd;margin:0 0 18px;line-height:1.6}
+.login-flow{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.login-flow li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.login-flow span{width:28px;height:28px;border-radius:999px;display:grid;place-items:center;font-size:.85rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#6d28d9,#0f766e);flex:0 0 auto}
+.login-flow b{font-size:.95rem;font-weight:700}
+@media (max-width:860px){.login-shell{grid-template-columns:1fr}}
 .login-card{
   width:100%;max-width:420px;padding:28px 26px;border-radius:var(--radius-lg);
   border:1px solid var(--line);background:linear-gradient(165deg,var(--card),#0a101c);
   box-shadow:var(--shadow);
 }
+.login-shell .login-card{max-width:none;height:100%}
 .login-card h1{margin:0 0 6px;font-size:1.35rem;font-weight:800}
 .login-brand{margin-bottom:20px;font-weight:800;letter-spacing:.08em;font-size:1.1rem;color:var(--cyan)}
 .admin-footer{
