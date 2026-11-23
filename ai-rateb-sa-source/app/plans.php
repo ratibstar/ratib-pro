@@ -1899,7 +1899,7 @@ function rateb_image_caption_has_creative_outputs(string $caption): bool
     if ($caption === '') {
         return false;
     }
-    if (preg_match('/\b(brochures?|flyers?|leaflets?|mood board|advertisement|ad mockups?|mockups?|printouts?|storyboards?|posters?|printed ads?|social media ads?|campaign cards?|collage|marketing materials?)\b/u', $caption) === 1) {
+    if (preg_match('/\b(brochures?|flyers?|leaflets?|pamphlets?|handouts?|mood board|advertisement|ad mockups?|mockups?|printouts?|storyboards?|posters?|printed ads?|social media ads?|campaign cards?|printed cards?|collage|marketing materials?)\b/u', $caption) === 1) {
         return true;
     }
     // Magazine stacks alone drift to unrelated covers; require an advertising cue.
@@ -2129,7 +2129,15 @@ function rateb_image_select_models(array $preferred, array $counts, int $max = 3
         }
         $available[] = ['name' => $name, 'count' => $n];
     }
-    usort($available, static fn(array $a, array $b): int => $b['count'] <=> $a['count']);
+    // Prefer prompt-faithful Flux workers first when any are online, then busiest photoreal fallbacks.
+    usort($available, static function (array $a, array $b): int {
+        $aFlux = stripos($a['name'], 'flux') !== false ? 1 : 0;
+        $bFlux = stripos($b['name'], 'flux') !== false ? 1 : 0;
+        if ($aFlux !== $bFlux) {
+            return $bFlux <=> $aFlux;
+        }
+        return $b['count'] <=> $a['count'];
+    });
     $chosen = [];
     foreach ($available as $row) {
         $chosen[] = $row['name'];

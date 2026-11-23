@@ -118,6 +118,9 @@ check(rateb_image_caption_hard_reject($groundedFacts, 'colorful advertising post
 check(rateb_image_caption_hard_accept($groundedFacts, 'colorful advertising posters and printed marketing flyers on a wooden desk'), 'an advertising-poster flat-lay is hard-accepted without waiting on the language gate');
 check(rateb_image_caption_has_creative_outputs('three colorful brochures next to each other on a table'), 'plural brochures are recognized as creative marketing outputs');
 check(rateb_image_caption_has_creative_outputs('two posters sitting on top of a table next to a cup of coffee'), 'plural posters are recognized as creative marketing outputs');
+check(rateb_image_caption_has_creative_outputs('two pamphlets are laying next to each other on a table'), 'pamphlets count as marketing creative outputs');
+check(rateb_image_caption_hard_accept($groundedFacts, 'two pamphlets are laying next to each other on a table'), 'pamphlet flat-lays are hard-accepted for marketing campaigns');
+check(rateb_image_select_models(['Deliberate', 'Flux.1-Schnell fp8 (Compact)'], ['Deliberate' => 7, 'Flux.1-Schnell fp8 (Compact)' => 3], 2)[0] === 'Flux.1-Schnell fp8 (Compact)', 'Flux is preferred over busier SD workers');
 check(!rateb_image_caption_has_creative_outputs('several magazine covers stacked on a wooden table'), 'unrelated magazine stacks alone are not treated as campaign creatives');
 check(rateb_image_caption_hard_reject($groundedFacts, 'several pictures mounted on the wall of a living room') !== null, 'home-decor gallery walls are hard-rejected for marketing campaigns');
 check(!rateb_image_caption_hard_accept($groundedFacts, 'several colors of post-it notes are arranged in a square formation on a pink background'), 'sticky notes alone are not hard-accepted for marketing campaigns');
