@@ -1890,7 +1890,8 @@ function rateb_image_caption_hard_accept(array $facts, string $caption): bool
         return false;
     }
     // Sticky notes alone are not enough; require visible advertising creative outputs.
-    return rateb_image_caption_has_creative_outputs($caption);
+    return rateb_image_caption_has_creative_outputs($caption)
+        || rateb_image_caption_has_printed_desk_materials($caption);
 }
 
 function rateb_image_caption_has_creative_outputs(string $caption): bool
@@ -1909,6 +1910,20 @@ function rateb_image_caption_has_creative_outputs(string $caption): bool
     }
     return preg_match('/\b(photos?|photographs?|pictures?)\b/u', $caption) === 1
         && preg_match('/\b(board|collage|brochures?|flyers?|leaflets?|poster|marketing|storyboard|mockup)\b/u', $caption) === 1;
+}
+
+/** Free Horde captions often say "folders/cards on a wooden table" for poster flat-lays. */
+function rateb_image_caption_has_printed_desk_materials(string $caption): bool
+{
+    $caption = mb_strtolower(trim($caption));
+    if ($caption === '') {
+        return false;
+    }
+    $onDesk = preg_match('/\b(desk|table|wooden|wood surface|wooden surface)\b/u', $caption) === 1;
+    $pluralPrints = preg_match('/\b(folders|cards|papers|sheets|prints|documents|booklets)\b/u', $caption) === 1;
+    $printed = preg_match('/\b(folders?|cards?|papers?|sheets?|prints?|documents?|booklets?)\b/u', $caption) === 1;
+    $manyOrColor = preg_match('/\b(color|colour|colored|coloured|colorful|colourful|several|bunch|stack|stacked|many|printed|paper)\b/u', $caption) === 1;
+    return $onDesk && ($pluralPrints || ($printed && $manyOrColor));
 }
 
 /**
@@ -1934,7 +1949,9 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     $peopleHeavy = preg_match('/\b(women|woman|men|man|girl|boy|portrait|faces?|people)\b/u', $caption) === 1
         && preg_match('/\b(magazine covers?|product (photos?|photographs?)|advertisement|mockup|printout|brochure|flyer)\b/u', $caption) !== 1;
     $homeDecor = preg_match('/\b(living room|home decor|wicker basket|throw blanket|gallery wall)\b/u', $caption) === 1;
-    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || ($isMarketing && !$creativeOutputs) || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor)) {
+    $printedDesk = rateb_image_caption_has_printed_desk_materials($caption);
+    $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
+    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor)) {
         return 'caption shows generic stationery instead of marketing creative outputs';
     }
     $topics = [

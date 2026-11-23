@@ -151,7 +151,7 @@ if ($sourceImage !== null) {
     if ($seed !== null) {
         $payloadData['source_image'] = $seed;
         $payloadData['source_processing'] = 'img2img';
-        $payloadData['params']['denoising_strength'] = 0.62;
+        $payloadData['params']['denoising_strength'] = 0.78;
         $sourceKind = 'img2img_marketing_seed';
     }
 }
@@ -602,7 +602,7 @@ function ai_image_retry_unrelated(array $campaign, array $bound, array $context,
         if ($seed !== null) {
             $payloadData['source_image'] = $seed;
             $payloadData['source_processing'] = 'img2img';
-            $payloadData['params']['denoising_strength'] = 0.55;
+            $payloadData['params']['denoising_strength'] = 0.78;
         }
     }
     $payload = json_encode($payloadData, JSON_UNESCAPED_UNICODE);
