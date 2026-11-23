@@ -30,10 +30,13 @@ $assert(!rateb_public_gate_is_marketing_path('/login'), 'login not marketing');
 $assert(!rateb_public_gate_is_marketing_path('/forgot-password'), 'forgot-password not marketing');
 $assert(!rateb_public_gate_is_exempt_path('/'), 'home not legacy exempt');
 $_SERVER['SCRIPT_NAME'] = '/login.php';
-$_SERVER['SCRIPT_FILENAME'] = '/var/www/login.php';
+$_SERVER['SCRIPT_FILENAME'] = '/home/admin/domains/ai.rateb.sa/login.php';
 $assert(rateb_public_gate_is_exempt_script(), 'login.php script is exempt');
+$_SERVER['SCRIPT_NAME'] = '/admin/index.php';
+$_SERVER['SCRIPT_FILENAME'] = '/home/admin/domains/ai.rateb.sa/admin/index.php';
+$assert(rateb_public_gate_is_exempt_script(), 'admin index script is exempt');
 $_SERVER['SCRIPT_NAME'] = '/index.php';
-$_SERVER['SCRIPT_FILENAME'] = '/var/www/index.php';
-$assert(!rateb_public_gate_is_exempt_script(), 'index.php script is not exempt');
+$_SERVER['SCRIPT_FILENAME'] = '/home/admin/domains/ai.rateb.sa/index.php';
+$assert(!rateb_public_gate_is_exempt_script(), 'index.php under /home/admin is not exempt by filesystem path');
 
 exit($fail > 0 ? 1 : 0);

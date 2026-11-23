@@ -56,12 +56,15 @@ function rateb_public_gate_normalize_path(string $path): string
 /**
  * Extra safety when rewrite/proxy leaves REQUEST_URI looking like marketing
  * while the actual PHP script is login/admin/workspace.
+ * Uses URL SCRIPT_NAME only — never filesystem paths (server home may be /home/admin/).
  */
 function rateb_public_gate_is_exempt_script(): bool
 {
     $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
-    $file = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_FILENAME'] ?? ''));
-    $base = strtolower(basename($script !== '' ? $script : $file));
+    if ($script === '') {
+        return false;
+    }
+    $base = strtolower(basename($script));
     $exemptFiles = [
         'login.php',
         'dashboard.php',
@@ -76,13 +79,18 @@ function rateb_public_gate_is_exempt_script(): bool
     if (in_array($base, $exemptFiles, true)) {
         return true;
     }
-    if ($script !== '' && (str_contains($script, '/admin/') || str_ends_with($script, '/admin') || str_contains($script, '/app/auth/') || str_contains($script, '/app/payment/') || str_contains($script, '/app/account/'))) {
-        return true;
-    }
-    if ($file !== '' && (str_contains($file, '/admin/') || str_contains($file, '/app/auth/') || str_contains($file, '/app/payment/') || str_contains($file, '/app/account/'))) {
-        return true;
-    }
-    return false;
+    return str_starts_with($script, '/admin/')
+        || $script === '/admin'
+        || str_starts_with($script, '/app/auth/')
+        || str_starts_with($script, '/app/payment/')
+        || str_starts_with($script, '/app/account/')
+        || str_starts_with($script, '/app/ai/')
+        || str_starts_with($script, '/app/campaign/')
+        || str_starts_with($script, '/app/content/')
+        || str_starts_with($script, '/app/media/')
+        || str_starts_with($script, '/app/brand/')
+        || str_starts_with($script, '/app/hr/')
+        || str_starts_with($script, '/hr/');
 }
 
 /** Admin, auth, payments, customer app — never blocked by site toggles. */
