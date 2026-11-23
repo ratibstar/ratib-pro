@@ -218,6 +218,31 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     $steps = $ar
         ? ['الفكرة', 'الاستراتيجية', 'النص', 'الصور', 'الصوت', 'الفيديو']
         : ['Idea', 'Strategy', 'Copy', 'Images', 'Voice', 'Video'];
+    $floatLines = $ar
+        ? [
+            ['RATEB AI', 'c1'],
+            ['فكرة → حملة', 'c2'],
+            ['ذكاء يفهمك', 'c3'],
+            ['نص يبيع', 'c4'],
+            ['صور تخطف العين', 'c5'],
+            ['صوت سعودي', 'c1'],
+            ['فيديو جاهز', 'c2'],
+            ['أسرع من التفكير', 'c3'],
+            ['هوية ثابتة', 'c4'],
+            ['انطلق الآن', 'c5'],
+        ]
+        : [
+            ['RATEB AI', 'c1'],
+            ['Idea → Campaign', 'c2'],
+            ['AI that gets you', 'c3'],
+            ['Copy that sells', 'c4'],
+            ['Images that pop', 'c5'],
+            ['Saudi voice', 'c1'],
+            ['Video ready', 'c2'],
+            ['Faster than thought', 'c3'],
+            ['Brand locked in', 'c4'],
+            ['Launch now', 'c5'],
+        ];
     echo '<!doctype html><html lang="' . ($ar ? 'ar' : 'en') . '" dir="' . ($ar ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>RATEB AI — ' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
@@ -232,10 +257,24 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     echo '.bg-wave{position:absolute;inset:-20% -10%;background:repeating-linear-gradient(115deg,transparent 0 46px,rgba(103,232,249,.045) 46px 48px);transform:rotate(-8deg);animation:waveDrift 22s linear infinite;opacity:.7}';
     echo '.bg-grid{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:42px 42px;animation:gridFloat 28s linear infinite;opacity:.45}';
     echo '.bg-glow{position:absolute;inset:10% 18%;border-radius:40%;background:radial-gradient(circle,rgba(167,139,250,.18),transparent 65%);animation:glowPulse 7s ease-in-out infinite alternate;filter:blur(20px)}';
-    echo '.shell{position:relative;z-index:1;width:min(920px,100%);display:grid;gap:18px}';
-    echo '.brand-mark{font-size:clamp(1.35rem,2.4vw,1.7rem);font-weight:800;letter-spacing:.02em}';
+    echo '.float-lines{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}';
+    echo '.float-lines span{position:absolute;font-weight:800;white-space:nowrap;opacity:0;text-shadow:0 8px 24px rgba(0,0,0,.35);will-change:transform,opacity}';
+    echo '.float-lines .c1{color:#67e8f9}.float-lines .c2{color:#c4b5fd}.float-lines .c3{color:#5eead4}.float-lines .c4{color:#fdba74}.float-lines .c5{color:#f9a8d4}';
+    echo '.float-lines .f1{top:8%;inset-inline-start:6%;font-size:clamp(1.1rem,2.4vw,1.8rem);animation:popA 3.2s ease-in-out infinite}';
+    echo '.float-lines .f2{top:18%;inset-inline-end:8%;font-size:clamp(1rem,2vw,1.55rem);animation:popB 2.7s ease-in-out .2s infinite}';
+    echo '.float-lines .f3{top:34%;inset-inline-start:4%;font-size:clamp(.95rem,1.8vw,1.4rem);animation:popC 2.9s ease-in-out .4s infinite}';
+    echo '.float-lines .f4{top:28%;inset-inline-end:5%;font-size:clamp(1.05rem,2.1vw,1.65rem);animation:popA 2.5s ease-in-out .55s infinite}';
+    echo '.float-lines .f5{top:52%;inset-inline-start:8%;font-size:clamp(1rem,2vw,1.5rem);animation:popB 3s ease-in-out .1s infinite}';
+    echo '.float-lines .f6{top:58%;inset-inline-end:7%;font-size:clamp(1.1rem,2.3vw,1.7rem);animation:popC 2.6s ease-in-out .35s infinite}';
+    echo '.float-lines .f7{bottom:22%;inset-inline-start:10%;font-size:clamp(.95rem,1.9vw,1.45rem);animation:popA 2.8s ease-in-out .7s infinite}';
+    echo '.float-lines .f8{bottom:16%;inset-inline-end:10%;font-size:clamp(1rem,2vw,1.55rem);animation:popB 3.1s ease-in-out .15s infinite}';
+    echo '.float-lines .f9{bottom:8%;inset-inline-start:28%;font-size:clamp(1.05rem,2.2vw,1.6rem);animation:popC 2.4s ease-in-out .45s infinite}';
+    echo '.float-lines .f10{top:72%;inset-inline-start:42%;font-size:clamp(1.15rem,2.5vw,1.85rem);animation:popA 2.2s ease-in-out .25s infinite}';
+    echo '.shell{position:relative;z-index:1;width:min(920px,100%);display:grid;gap:14px}';
+    echo '.brand-hero{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2px}';
+    echo '.brand-mark{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:.03em;animation:brandPulse 2.4s ease-in-out infinite;text-shadow:0 10px 40px rgba(103,232,249,.25)}';
     echo '.brand-mark span{color:#67e8f9}';
-    echo '.panel{border-radius:28px;padding:36px 32px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(145deg,rgba(24,16,48,.88),rgba(15,23,42,.82));box-shadow:0 30px 80px rgba(0,0,0,.45);backdrop-filter:blur(12px);animation:panelIn .8s ease both}';
+    echo '.panel{border-radius:28px;padding:36px 32px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(145deg,rgba(24,16,48,.9),rgba(15,23,42,.86));box-shadow:0 30px 80px rgba(0,0,0,.45);backdrop-filter:blur(12px);animation:panelIn .8s ease both}';
     echo 'h1{color:#67e8f9;font-size:clamp(2rem,4vw,2.8rem);line-height:1.15;margin:0 0 14px;font-weight:800}';
     echo '.msg{color:#d7e0ee;line-height:1.7;font-size:clamp(1.08rem,2vw,1.3rem);margin:0 0 10px}';
     echo '.lead{color:#a8b7cd;margin:0 0 22px;font-size:1.02rem;line-height:1.65}';
@@ -257,12 +296,21 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     echo '@keyframes panelIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}';
     echo '@keyframes stepRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}';
     echo '@keyframes numPulse{0%,100%{box-shadow:0 0 0 3px rgba(109,40,217,.2)}50%{box-shadow:0 0 0 6px rgba(20,184,166,.28)}}';
-    echo '@media (max-width:720px){.panel{padding:28px 18px}.steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px}}';
-    echo '@media (prefers-reduced-motion:reduce){.bg,.bg-orb,.bg-wave,.bg-grid,.bg-glow,.panel,.steps li,.steps .num{animation:none!important}}';
+    echo '@keyframes brandPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.06);filter:brightness(1.2)}}';
+    echo '@keyframes popA{0%,100%{opacity:.15;transform:translateY(0) scale(.82) rotate(-2deg)}35%{opacity:.95;transform:translateY(-10px) scale(1.18) rotate(1deg)}70%{opacity:.55;transform:translateY(4px) scale(.94) rotate(-1deg)}}';
+    echo '@keyframes popB{0%,100%{opacity:.12;transform:translateX(0) scale(.78) rotate(2deg)}40%{opacity:1;transform:translateX(8px) scale(1.22) rotate(-2deg)}75%{opacity:.4;transform:translateX(-4px) scale(.9) rotate(1deg)}}';
+    echo '@keyframes popC{0%,100%{opacity:.1;transform:scale(.75) rotate(0)}30%{opacity:.9;transform:scale(1.28) rotate(3deg)}60%{opacity:.5;transform:scale(.88) rotate(-2deg)}}';
+    echo '@media (max-width:720px){.panel{padding:28px 18px}.steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px}.float-lines span{font-size:.95rem!important}}';
+    echo '@media (prefers-reduced-motion:reduce){.bg,.bg-orb,.bg-wave,.bg-grid,.bg-glow,.panel,.steps li,.steps .num,.brand-mark,.float-lines span{animation:none!important}.float-lines span{opacity:.35}}';
     echo '</style></head><body>';
     echo '<div class="bg" aria-hidden="true"><span class="bg-orb a"></span><span class="bg-orb b"></span><span class="bg-orb c"></span><span class="bg-wave"></span><span class="bg-grid"></span><span class="bg-glow"></span></div>';
+    echo '<div class="float-lines" aria-hidden="true">';
+    foreach ($floatLines as $i => $row) {
+        echo '<span class="f' . ($i + 1) . ' ' . $row[1] . '">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</span>';
+    }
+    echo '</div>';
     echo '<div class="shell">';
-    echo '<div class="brand-mark">RATEB <span>AI</span></div>';
+    echo '<div class="brand-hero"><div class="brand-mark">RATEB <span>AI</span></div></div>';
     echo '<div class="panel"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
     echo '<p class="msg">' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p>';
     if ($mode === 'maintenance') {
