@@ -1923,7 +1923,11 @@ function rateb_image_caption_has_printed_desk_materials(string $caption): bool
     $pluralPrints = preg_match('/\b(folders|cards|papers|sheets|prints|documents|booklets)\b/u', $caption) === 1;
     $printed = preg_match('/\b(folders?|cards?|papers?|sheets?|prints?|documents?|booklets?)\b/u', $caption) === 1;
     $manyOrColor = preg_match('/\b(color|colour|colored|coloured|colorful|colourful|several|bunch|stack|stacked|many|printed|paper)\b/u', $caption) === 1;
-    return $onDesk && ($pluralPrints || ($printed && $manyOrColor));
+    if ($onDesk && ($pluralPrints || ($printed && $manyOrColor))) {
+        return true;
+    }
+    // Interrogators sometimes drop the desk and just say "several colorful papers".
+    return $pluralPrints && $manyOrColor;
 }
 
 /**
