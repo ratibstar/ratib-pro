@@ -1250,7 +1250,7 @@
         status.className = 'notice stage-status';
         status.textContent = '';
       }
-      var ttl = Number(imageForm.getAttribute('data-job-ttl') || 900);
+      var ttl = Number(imageForm.getAttribute('data-job-ttl') || 60);
       var deadline = Date.now() + (ttl * 1000);
       var jobId = '';
       try {
@@ -1270,7 +1270,7 @@
             var waitSec = Number(payload.wait || 0);
             var queuePos = Number(payload.queue_position || 0);
             // Mirror server fail-fast so the spinner never runs to the 15-minute timeout.
-            if (waitSec >= 90 || queuePos >= 25) {
+            if (waitSec >= 60 || queuePos >= 20) {
               var crowded = new Error(dict[language].image_queued);
               crowded.code = 'image_queued';
               throw crowded;

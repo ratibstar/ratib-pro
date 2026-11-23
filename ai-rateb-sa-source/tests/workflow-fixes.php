@@ -15,10 +15,11 @@ function check(bool $ok, string $name): void
 }
 
 $now = 1_700_000_000;
-check(rateb_image_job_active($now - 200, $now), 'image job stays active past the old 180 second window');
+check(rateb_image_job_active($now - 45, $now), 'image job stays active inside the one-minute window');
 check(rateb_image_job_active($now - rateb_image_job_ttl(), $now), 'image job stays active through the server lifetime');
 check(!rateb_image_job_active($now - rateb_image_job_ttl() - 1, $now), 'image job expires after the server lifetime');
 check(!rateb_image_job_active(0, $now), 'image job without a start time is not active');
+check(rateb_image_job_ttl() === 60, 'image job lifetime is capped at one minute');
 
 check(rateb_video_stage_complete(true, false), 'approved generated video completes the stage');
 check(rateb_video_stage_complete(false, true), 'uploaded video completes the stage');
@@ -80,7 +81,7 @@ $userId = 15;
 $campaignId = 7;
 $jobId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1';
 $active = rateb_image_job_record($jobId, $userId, $campaignId, 41, $now);
-$sameSession = rateb_image_jobs_decide([$jobId => $active], $userId, $campaignId, $jobId, $now + 200);
+$sameSession = rateb_image_jobs_decide([$jobId => $active], $userId, $campaignId, $jobId, $now + 30);
 check($sameSession['action'] === 'resume' && (int) $sameSession['usage_id'] === 41 && $sameSession['finish'] === [], 'same-session image poll resumes the existing reservation');
 check(rateb_image_job_allows_new_reservation($sameSession) === false, 'same-session resume does not allow a second reservation');
 
@@ -104,7 +105,7 @@ rateb_image_jobs_transaction($userId, static function (array $jobs) use ($active
 $reloaded = rateb_image_jobs_transaction($userId, static function (array $jobs): array {
     return ['jobs' => $jobs, 'result' => $jobs];
 });
-$lostSession = rateb_image_jobs_decide($reloaded, $userId, $campaignId, '', $now + 200);
+$lostSession = rateb_image_jobs_decide($reloaded, $userId, $campaignId, '', $now + 30);
 check($lostSession['action'] === 'resume' && (int) $lostSession['usage_id'] === 41 && $lostSession['finish'] === [], 'lost session reloads the unfinished job and its reservation');
 check(rateb_image_job_allows_new_reservation($lostSession) === false, 'lost-session recovery does not allow a second reservation');
 

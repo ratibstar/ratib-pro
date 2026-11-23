@@ -110,6 +110,13 @@ $prompt = (string) $promptData['prompt'];
 $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image', null, 8);
 $modelList = json_decode($models['body'], true);
 $preferred = rateb_image_model_preferences((string) ($promptData['category'] ?? 'other'));
+// Marketing campaigns: Flux only when online — SD clones gibberish poster grids.
+if (rateb_image_is_marketing_brief($promptContext['facts'] ?? [])) {
+    $fluxOnly = array_values(array_filter($preferred, static fn(string $name): bool => stripos($name, 'flux') !== false));
+    if ($fluxOnly !== []) {
+        $preferred = $fluxOnly;
+    }
+}
 $counts = [];
 if (is_array($modelList)) {
     foreach ($modelList as $row) {
@@ -147,14 +154,8 @@ if ($sourceImage !== null) {
     $payloadData['params']['denoising_strength'] = 0.58;
     $sourceKind = 'img2img_upload';
 } elseif (rateb_image_is_marketing_brief($promptContext['facts'] ?? [])) {
-    $seed = rateb_image_marketing_seed_base64();
-    if ($seed !== null) {
-        // Very low denoise keeps a real studio photo look; free txt2img drifts to food/candy.
-        $payloadData['source_image'] = $seed;
-        $payloadData['source_processing'] = 'img2img';
-        $payloadData['params']['denoising_strength'] = 0.28;
-        $sourceKind = 'img2img_marketing_seed';
-    }
+    // Marketing: Flux txt2img only — marketing seed img2img drifts to gift-card/cactus clones.
+    $sourceKind = 'txt2img';
 }
 $payload = json_encode($payloadData, JSON_UNESCAPED_UNICODE);
 
@@ -598,14 +599,8 @@ function ai_image_retry_unrelated(array $campaign, array $bound, array $context,
         $payloadData['source_image'] = $sourceImage;
         $payloadData['source_processing'] = 'img2img';
         $payloadData['params']['denoising_strength'] = 0.58;
-    } elseif (rateb_image_is_marketing_brief($context['facts'])) {
-        $seed = rateb_image_marketing_seed_base64();
-        if ($seed !== null) {
-            $payloadData['source_image'] = $seed;
-            $payloadData['source_processing'] = 'img2img';
-            $payloadData['params']['denoising_strength'] = 0.28;
-        }
     }
+    // Marketing retries stay txt2img — seed img2img drifts off the campaign storyboard.
     $payload = json_encode($payloadData, JSON_UNESCAPED_UNICODE);
     $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);
     if (in_array($submit['http'], [401, 403], true)) {
@@ -864,8 +859,9 @@ function ai_image_plan(array $facts): array
         . 'Approved copy, headlines, and short ads are style only and MUST NEVER be used as evidence or as a source of product features. sufficient is false when the authoritative facts do not say what is being advertised or what a digital service actually does. '
         . 'subject: at most 22 English words naming a concrete camera-visible scene. Prefer real objects a commercial photographer can shoot. Never use abstract metaphors, neon orbs, glowing spheres, particle networks, holograms, or sci-fi HUD art. '
         . 'For food or physical products, show the actual product. For local services, show the real service setting. '
-        . 'For a marketing or campaign platform, show a top-down commercial photo of colorful advertising posters and printed marketing flyers spread across a wooden desk. Never use sticky notes alone, random magazines, gallery walls, home decor, empty desks, laptops, portraits, a generic dashboard, analytics charts, computer screen, or handwritten notepad as the subject. '
-        . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone. '
+        . 'For a marketing or AI campaign platform, invent a photoreal desk scene that visually matches THIS brief\'s idea, strategy positioning, and headline mood: e.g. blank colorful social post templates beside a tablet and phone for an AI campaign studio. '
+        . 'Never default to pantone swatches, clipboard strategy docs, sunglasses mood boards, sticky notes alone, random magazines, gallery walls, home decor, empty desks, portraits, dashboards, analytics charts, or bathroom/kitchen stock. '
+        . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone or headline. '
         . 'avoid: 3 to 8 short English phrases for objects a generic image might wrongly show that are unrelated to this campaign. '
         . 'Never ask for text, letters, words, numbers, logos, signs, or brand names in the image. Do not write any brand name in any field. No faces unless the service itself is about people.';
     $body = json_encode([
@@ -910,7 +906,8 @@ function ai_image_plan(array $facts): array
 
 function ai_horde_queue_too_long(int $wait, int $queue): bool
 {
-    return $wait >= 90 || $queue >= 25;
+    // User rule: never keep customers waiting more than ~1 minute on free Horde.
+    return $wait >= 60 || $queue >= 20;
 }
 
 function ai_horde_cancel_job(string $jobId): void

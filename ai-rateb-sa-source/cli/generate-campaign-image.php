@@ -55,8 +55,18 @@ if (is_array($modelList)) {
         }
     }
 }
-$preferred = rateb_image_model_preferences('digital_service');
+$preferred = array_values(array_filter(
+    rateb_image_model_preferences('digital_service'),
+    static fn(string $name): bool => stripos($name, 'flux') !== false
+));
+if ($preferred === []) {
+    $preferred = rateb_image_model_preferences('digital_service');
+}
 $models = rateb_image_select_models($preferred, $counts, 3);
+if ($models === []) {
+    // Prefer waiting for Flux over accepting SD gibberish poster clones.
+    $models = rateb_image_select_models(rateb_image_model_preferences('digital_service'), $counts, 3);
+}
 if ($models === []) {
     fwrite(STDERR, "no_workers\n");
     exit(2);
@@ -67,9 +77,9 @@ $mediaId = 0;
 $modelName = '';
 $caption = '';
 $relevance = [];
-$attempts = 3;
+$attempts = (int) ($argv[3] ?? 5);
 for ($attempt = 1; $attempt <= $attempts; $attempt++) {
-    $prompt = 'overhead flat lay commercial photo of colorful printed advertising posters and marketing flyers covering an oak desk, printed ads, brochure stack, product photography, natural window light, sharp focus ### text, words, logo, book, newspaper, coffee, laptop, screen, abstract art, neon, person, face';
+    $prompt = rateb_image_prompt_compose($plan, $facts, '1:1', $attempt - 1);
     echo "attempt={$attempt} prompt={$prompt}\n";
     $params = rateb_image_generation_params(512, 512, $models);
     $payloadData = [
@@ -81,13 +91,8 @@ for ($attempt = 1; $attempt <= $attempts; $attempt++) {
         'trusted_workers' => false,
         'models' => $models,
     ];
-    $seed = rateb_image_marketing_seed_base64();
-    if ($seed !== null) {
-        $payloadData['source_image'] = $seed;
-        $payloadData['source_processing'] = 'img2img';
-        $payloadData['params']['denoising_strength'] = 0.42;
-        echo "source=img2img_marketing_seed\n";
-    }
+    // Marketing: Flux txt2img only — marketing seed img2img drifts to gift-card/cactus clones.
+    echo "source=txt2img\n";
     $payload = json_encode($payloadData, JSON_UNESCAPED_UNICODE);
 
     $submit = rateb_cli_horde('POST', 'https://aihorde.net/api/v2/generate/async', $payload, $hordeKey);
@@ -99,17 +104,20 @@ for ($attempt = 1; $attempt <= $attempts; $attempt++) {
     }
     echo "job_id={$jobId}\n";
 
-    $deadline = time() + 180;
+    $deadline = time() + 60;
     $imageUrl = '';
     $modelName = '';
+    $idleZeroTicks = 0;
     while (time() < $deadline) {
-        sleep(3);
+        sleep(2);
         $check = rateb_cli_horde('GET', 'https://aihorde.net/api/v2/generate/check/' . rawurlencode($jobId), null, $hordeKey);
         $state = json_decode($check['body'], true);
         $wait = is_array($state) ? (int) ($state['wait_time'] ?? 0) : 0;
         $queue = is_array($state) ? (int) ($state['queue_position'] ?? 0) : 0;
+        $processing = !empty($state['processing']);
         echo 'check wait=' . $wait . ' queue=' . $queue . ' done=' . (!empty($state['done']) ? '1' : '0') . PHP_EOL;
-        if ($wait >= 90 || $queue >= 25) {
+        // Hard cap: abort if Horde says >1 minute or deep queue.
+        if ($wait >= 60 || $queue >= 20) {
             rateb_cli_horde('DELETE', 'https://aihorde.net/api/v2/generate/status/' . rawurlencode($jobId), null, $hordeKey);
             echo "queue_too_long\n";
             break;
@@ -117,6 +125,16 @@ for ($attempt = 1; $attempt <= $attempts; $attempt++) {
         if (!empty($state['faulted'])) {
             echo "faulted\n";
             break;
+        }
+        // Expired/cancelled jobs often report wait=0 queue=0 forever without done/faulted.
+        if ($wait === 0 && $queue === 0 && !$processing && empty($state['done'])) {
+            $idleZeroTicks++;
+            if ($idleZeroTicks >= 8) {
+                echo "job_abandoned\n";
+                break;
+            }
+        } else {
+            $idleZeroTicks = 0;
         }
         if (!empty($state['done'])) {
             $status = rateb_cli_horde('GET', 'https://aihorde.net/api/v2/generate/status/' . rawurlencode($jobId), null, $hordeKey);
@@ -168,7 +186,8 @@ for ($attempt = 1; $attempt <= $attempts; $attempt++) {
             $relevance = ['status' => 'unrelated', 'reason' => $hard];
         } elseif (rateb_image_caption_hard_accept($facts, $caption)) {
             $relevance = ['status' => 'relevant', 'reason' => 'hard_accept'];
-        } elseif (preg_match('/\b(poster|flyers?|brochure|pamphlet|advert|print ads?|marketing)\b/i', $caption) === 1) {
+        } elseif (preg_match('/\b(poster|flyers?|brochure|pamphlet|advert|print ads?|social media|templates?|mockups?)\b/i', $caption) === 1
+            && preg_match('/\b(blank white screen|empty screen|calligraphy|notepad)\b/i', $caption) !== 1) {
             $relevance = ['status' => 'relevant', 'reason' => 'caption_keywords'];
         } else {
             $relevance = ['status' => 'unrelated', 'reason' => 'no_marketing_outputs'];
@@ -193,7 +212,7 @@ for ($attempt = 1; $attempt <= $attempts; $attempt++) {
     }
     $ext = $mime === 'image/png' ? 'png' : ($mime === 'image/jpeg' ? 'jpg' : 'webp');
     $mediaId = media_store_bytes($campaign, 'image', 'ai', 'rateb-ai-showcase.' . $ext, $mime, $bytes);
-    $pdo->prepare("UPDATE campaign_media SET approval_status = 'approved' WHERE id = ? AND campaign_id = ?")->execute([$mediaId, $campaignId]);
+    // Leave draft — visual QA / campaign UI must approve, never auto-approve.
     echo json_encode([
         'ok' => true,
         'attempt' => $attempt,
@@ -201,31 +220,12 @@ for ($attempt = 1; $attempt <= $attempts; $attempt++) {
         'model' => $modelName,
         'caption' => $caption,
         'relevance' => $relevance,
+        'approval_status' => 'draft',
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . PHP_EOL;
     exit(0);
 }
 
-// Fallback: install the photographic seed itself as an approved studio image for the showcase.
-$seedPath = dirname(__DIR__) . '/public/assets/image-seeds/branding-desk.jpg';
-if (!is_file($seedPath)) {
-    $seedPath = dirname(__DIR__) . '/public/assets/image-seeds/marketing-flatlay.jpg';
-}
-if (is_file($seedPath)) {
-    $bytes = (string) file_get_contents($seedPath);
-    $mime = str_ends_with($seedPath, '.png') ? 'image/png' : 'image/jpeg';
-    $ext = $mime === 'image/png' ? 'png' : 'jpg';
-    $mediaId = media_store_bytes($campaign, 'image', 'upload', 'rateb-ai-studio-flatlay.' . $ext, $mime, $bytes);
-    $pdo->prepare("UPDATE campaign_media SET approval_status = 'approved' WHERE id = ? AND campaign_id = ?")->execute([$mediaId, $campaignId]);
-    echo json_encode([
-        'ok' => true,
-        'fallback' => 'studio_seed',
-        'media_id' => $mediaId,
-        'note' => 'Free Horde drifted off-prompt; installed photographic studio flat-lay for the showcase campaign.',
-    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . PHP_EOL;
-    exit(0);
-}
-
-fwrite(STDERR, "all_attempts_rejected\n");
+fwrite(STDERR, "all_attempts_rejected_or_queue_busy\n");
 exit(7);
 
 function rateb_cli_image_url_allowed(string $url): bool
