@@ -980,9 +980,9 @@ function ai_image_plan(array $facts): array
         . 'Approved copy, headlines, and short ads are style only and MUST NEVER be used as evidence or as a source of product features. sufficient is false when the authoritative facts do not say what is being advertised or what a digital service actually does. '
         . 'subject: at most 22 English words naming a concrete camera-visible scene. Prefer real objects a commercial photographer can shoot. Never use abstract metaphors, neon orbs, glowing spheres, particle networks, holograms, or sci-fi HUD art. '
         . 'For food or physical products, show the actual product. For local services, show the real service setting. '
-        . 'For a marketing or AI campaign platform, invent a photoreal desk scene that visually matches THIS brief\'s idea, strategy positioning, and headline mood: e.g. blank colorful social post templates beside a tablet and phone for an AI campaign studio. '
+        . 'For a marketing or AI campaign platform, invent a photoreal scene of the FINISHED campaign outputs implied by THIS brief\'s idea, strategy positioning, and headline mood: e.g. a smartphone showing colorful finished social ads beside printed designed posters with photo imagery. Never show blank paper, empty frames, or empty stationery. '
         . 'Never default to pantone swatches, clipboard strategy docs, sunglasses mood boards, sticky notes alone, random magazines, gallery walls, home decor, empty desks, portraits, dashboards, analytics charts, or bathroom/kitchen stock. '
-        . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone or headline. '
+        . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone, creative direction, or headline. '
         . 'avoid: 3 to 8 short English phrases for objects a generic image might wrongly show that are unrelated to this campaign. '
         . 'Never ask for text, letters, words, numbers, logos, signs, or brand names in the image. Do not write any brand name in any field. No faces unless the service itself is about people.';
     $body = json_encode([

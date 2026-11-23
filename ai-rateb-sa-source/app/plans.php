@@ -1801,22 +1801,109 @@ function rateb_image_plan_recover_marketing(array $facts): ?array
     if (mb_strlen($evidence) < 4) {
         return null;
     }
+    $built = rateb_image_marketing_subject_from_facts($facts);
     return rateb_image_plan_ground_marketing_service([
         'sufficient' => true,
         'category' => 'digital_service',
-        'subject' => 'marketing studio desk',
-        'elements' => ['blank planning cards'],
-        'setting' => 'studio desk',
-        'mood' => 'professional',
+        'subject' => $built['subject'],
+        'elements' => $built['elements'],
+        'setting' => $built['setting'],
+        'mood' => $built['mood'],
         'avoid' => [],
         'evidence' => mb_substr($evidence, 0, 120),
     ], $facts);
 }
 
 /**
+ * English visual mood words derived from approved strategy/copy (never drawn as text).
+ *
+ * @param array<string,string> $facts
+ */
+function rateb_image_visual_mood_from_facts(array $facts): string
+{
+    $blob = mb_strtolower(implode(' ', array_filter([
+        (string) ($facts['creative_direction'] ?? ''),
+        (string) ($facts['positioning'] ?? ''),
+        (string) ($facts['tone'] ?? ''),
+        (string) ($facts['core_message'] ?? ''),
+        (string) ($facts['headline'] ?? ''),
+        (string) ($facts['short_ad'] ?? ''),
+        (string) ($facts['objective'] ?? ''),
+    ])));
+    $mood = [];
+    $map = [
+        '/فاخر|راقي|premium|luxury|elegant/u' => 'premium',
+        '/سعود|saudi/u' => 'Saudi contemporary',
+        '/سريع|فوري|instant|fast|quick/u' => 'energetic',
+        '/ذكي|ذكاء|smart|ai|artificial/u' => 'innovative',
+        '/بسيط|واضح|simple|clear|clean/u' => 'clean',
+        '/شباب|عصري|modern|youth/u' => 'modern',
+        '/ثقة|موثوق|trust|reliable/u' => 'trustworthy',
+        '/إبداع|ابداع|creative/u' => 'creative',
+        '/احتراف|professional/u' => 'professional',
+        '/دافئ|warm/u' => 'warm',
+        '/جذاب|attractive|bold/u' => 'bold',
+    ];
+    foreach ($map as $pattern => $word) {
+        if (preg_match($pattern, $blob) === 1 && !in_array($word, $mood, true)) {
+            $mood[] = $word;
+        }
+        if (count($mood) >= 3) {
+            break;
+        }
+    }
+    if ($mood === []) {
+        $mood[] = 'premium commercial';
+    }
+    return implode(' ', $mood);
+}
+
+/**
+ * Concrete photoreal subject for a marketing/AI campaign platform, steered by idea + strategy mood.
+ *
+ * @param array<string,string> $facts
+ */
+function rateb_image_marketing_subject_from_facts(array $facts): array
+{
+    $source = mb_strtolower(rateb_image_subject_facts($facts));
+    $isSaudi = preg_match('/سعود|saudi/u', $source) === 1;
+    $makesVideo = preg_match('/فيديو|videos?/u', $source) === 1;
+    $makesImages = preg_match('/صور|images?|visuals?/u', $source) === 1;
+    $mood = rateb_image_visual_mood_from_facts($facts);
+    $place = $isSaudi ? 'Saudi marketing studio table' : 'marketing studio table';
+
+    // Prefer finished campaign outputs the platform claims to create — never blank stationery.
+    // Avoid desk/table/phone wording — Flux Schnell otherwise invents laptops, toilets, and cacti.
+    $surface = 'seamless beige studio backdrop';
+    if ($makesVideo || $makesImages) {
+        $subject = 'isolated product photograph of colorful designed advertising posters and finished social media print mockups with photographic lifestyle imagery fanned on a '
+            . $surface . ', teal and coral accents, ' . $mood . ' softbox lighting, no plants, no cactus, no phone, no laptop, no text';
+        $elements = [
+            'designed advertising posters with photographic lifestyle imagery',
+            'finished social media print mockups',
+            'colorful campaign flyers',
+        ];
+    } else {
+        $subject = 'isolated product photograph of colorful designed advertising posters and marketing flyers with photo imagery fanned on a '
+            . $surface . ', ' . $mood . ' softbox lighting, no plants, no cactus, no phone, no laptop, no text';
+        $elements = [
+            'designed advertising posters with photo imagery',
+            'colorful marketing flyers',
+        ];
+    }
+
+    return [
+        'subject' => $subject,
+        'elements' => $elements,
+        'setting' => $surface,
+        'mood' => $mood,
+    ];
+}
+
+/**
  * Stable Diffusion invents abstract neon spheres when asked for "AI platforms".
- * When the brief is a marketing/campaign service, force a photoreal commercial
- * desk scene that shows social ad mockups, storyboard cards, and advertising flyers.
+ * When the brief is a marketing/campaign service, keep a photoreal scene of the
+ * platform's creative outputs — steered by idea/strategy mood, never blank paper.
  *
  * @param array<string,mixed> $plan
  * @param array<string,string> $facts
@@ -1835,31 +1922,32 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
     if (!$isMarketing || (!$hasCreativeOutputs && !$isAiPlatform)) {
         return $plan;
     }
-    // Keep subject short — long prompts get clipped and lose the campaign meaning.
-    $isAi = preg_match('/ذكاء|اصطناع|\bai\b|artificial/u', $source) === 1;
-    $isSaudi = preg_match('/سعود|saudi/u', $source) === 1;
-    $place = $isSaudi ? 'Saudi marketing studio' : 'marketing studio';
-    // AI SaaS ads: short subject — long prompts make Flux drift to monitors/offices.
-    if ($isAi) {
-        // Avoid "desk" wording — Flux Schnell otherwise invents laptops/plants.
-        $plan['subject'] = 'isolated product photograph of teal and coral printed A4 advertising flyers and blank square paper mockups fanned on seamless beige backdrop, centered, studio softbox lighting';
-        $plan['elements'] = [
-            'teal and coral printed A4 advertising flyers',
-            'blank square paper mockups',
-        ];
-        $plan['setting'] = 'seamless beige backdrop';
+
+    $visual = strtolower(trim((string) ($plan['subject'] ?? '') . ' ' . implode(' ', (array) ($plan['elements'] ?? []))));
+    $badGeneric = preg_match('/\b(dashboard|analytics|neon|orb|sphere|particle|hologram|sci-?fi|hud|monitor|keyboard|blank (paper|stationery|card|mockup)|empty paper|pantone|clipboard|showcase|marketing studio desk)\b/u', $visual) === 1;
+    // Require concrete creatives — the bare word "campaign" is not a photographable scene.
+    $hasCreativeScene = preg_match('/\b(flyers?|posters?|brochures?|leaflets?|pamphlets?|mockups?|social (media )?ads?|advertising posters?|smartphone|phone showing|printed (ads?|posters?|flyers?))\b/u', $visual) === 1
+        && preg_match('/\bblank\b/u', $visual) !== 1;
+
+    // Keep a usable art-director scene; only rewrite dashboards / blank stationery / abstract tech.
+    if ($badGeneric || !$hasCreativeScene) {
+        $built = rateb_image_marketing_subject_from_facts($facts);
+        $plan['subject'] = $built['subject'];
+        $plan['elements'] = $built['elements'];
+        $plan['setting'] = $built['setting'];
+        $plan['mood'] = $built['mood'];
     } else {
-        $plan['subject'] = 'professional photo of colorful advertising posters and marketing flyers fanned on a '
-            . $place . ' campaign launch desk, blank social post templates, soft daylight, no text';
-        $plan['elements'] = [
-            'colorful advertising posters',
-            'marketing flyers',
-            'blank social post templates',
-        ];
+        $mood = rateb_image_visual_mood_from_facts($facts);
+        if (trim((string) ($plan['mood'] ?? '')) === '') {
+            $plan['mood'] = $mood;
+        }
+        if (trim((string) ($plan['setting'] ?? '')) === '') {
+            $plan['setting'] = preg_match('/سعود|saudi/u', $source) === 1
+                ? 'Saudi marketing studio table'
+                : 'marketing studio table';
+        }
     }
-    // Mood must stay English — Arabic tone from strategy used to leak into Horde prompts.
-    $plan['setting'] = $place;
-    $plan['mood'] = 'premium commercial';
+
     $plan['avoid'] = array_values(array_unique(array_merge([
         'neon orb',
         'glowing sphere',
@@ -1885,6 +1973,9 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
         'written words',
         'letters on paper',
         'clipboard strategy document',
+        'blank paper',
+        'blank stationery',
+        'empty polaroid frames',
         'sunglasses',
         'eyeglasses',
         'gallery wall',
@@ -1989,10 +2080,10 @@ function rateb_image_caption_has_printed_desk_materials(string $caption): bool
     if ($onDesk && $marketingPrints && $manyOrColor) {
         return true;
     }
-    // Interrogators often say "four different colors of paper" for poster flat-lays — must be on a desk.
+    // Colored paper alone is blank stationery — require an advertising creative cue.
     return $onDesk
         && preg_match('/\b(papers|cards|folders|postcards)\b/u', $caption) === 1
-        && preg_match('/\b(color|colour|colored|coloured|colorful|colourful|printed|flyer|brochure|poster|template)\b/u', $caption) === 1;
+        && preg_match('/\b(flyer|brochure|poster|pamphlet|leaflet|mockup|advert|social media|campaign)\b/u', $caption) === 1;
 }
 
 /**
@@ -2034,8 +2125,11 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
         && preg_match('/\b(posters?|flyers?|templates?|social|campaign cards?|brochures?)\b/u', $caption) !== 1;
     $emptyDesk = preg_match('/\b(empty (pieces? of )?paper|blank paper|notepad|notebook|clipboard|pen and|personal items|calligraphy|blank white screen)\b/u', $caption) === 1
         && preg_match('/\b(posters?|flyers?|templates?|social|mockups?|swatches?|brochures?|stickers?)\b/u', $caption) !== 1;
+    // Empty polaroid/photo frames or blank stationery spreads are not campaign creatives.
+    $blankFrames = preg_match('/\b(polaroid|empty frames?|blank frames?|photo frames?|white frames?|scattered (white )?papers?|pieces of paper)\b/u', $caption) === 1
+        && preg_match('/\b(flyer|brochure|poster|pamphlet|leaflet|mockup|social media|advert|campaign|designed)\b/u', $caption) !== 1;
     $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
-    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant)) {
+    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant) || ($isMarketing && $blankFrames)) {
         return 'caption shows generic stationery instead of marketing creative outputs';
     }
     // Short Arabic tokens must not match inside unrelated words (عود inside سعودية, تمر inside …).
@@ -2085,14 +2179,15 @@ function rateb_image_fallback_plan(array $facts): ?array
         }
     }
     if ($digital && $marketing) {
+        $built = rateb_image_marketing_subject_from_facts($facts);
         return [
             'sufficient' => true,
             'category' => 'digital_service',
-            'subject' => 'top-down commercial photo of blank colorful poster cards and pantone swatches spread across a wooden desk',
-            'elements' => ['blank colorful poster cards', 'pantone color swatches', 'stacked campaign printouts without readable text'],
-            'setting' => 'bright marketing studio desk',
-            'mood' => 'professional, clean, commercial',
-            'avoid' => ['gallery wall', 'home decor', 'portrait', 'empty desk', 'laptop', 'random magazines', 'neon orb', 'analytics dashboard'],
+            'subject' => $built['subject'],
+            'elements' => $built['elements'],
+            'setting' => $built['setting'],
+            'mood' => $built['mood'],
+            'avoid' => ['gallery wall', 'home decor', 'portrait', 'empty desk', 'laptop', 'blank paper', 'random magazines', 'neon orb', 'analytics dashboard'],
         ];
     }
     if ($digital) {
@@ -2137,12 +2232,25 @@ function rateb_image_sync_prompt(array $plan, array $facts): string
 {
     $subject = trim((string) ($plan['subject'] ?? ''));
     if ($subject === '') {
-        $subject = 'overhead commercial photo of colorful printed marketing flyers on a wooden desk, soft daylight, no text';
+        $built = rateb_image_marketing_subject_from_facts($facts);
+        $subject = $built['subject'];
+        $plan = array_merge($plan, $built);
     }
     $subject = trim((string) preg_replace('/\s*###.*$/su', '', $subject));
-    $guard = 'no computer monitor, no laptop, no keyboard, no dashboard, no people, no faces, no plants, no cactus, no toilet, no bathroom, no logos, no readable text';
-    $prompt = $subject . ', ' . $guard;
-    return mb_substr($prompt, 0, 420);
+    $bits = [$subject];
+    $mood = trim((string) ($plan['mood'] ?? ''));
+    if ($mood !== '' && stripos($subject, $mood) === false) {
+        $bits[] = $mood . ' mood';
+    }
+    foreach (array_slice((array) ($plan['elements'] ?? []), 0, 2) as $element) {
+        $element = trim((string) $element);
+        if ($element !== '' && stripos($subject, $element) === false) {
+            $bits[] = $element;
+        }
+    }
+    $guard = 'photoreal commercial photograph, no blank paper, no empty frames, no computer monitor, no laptop, no keyboard, no dashboard, no people, no faces, no plants, no cactus, no toilet, no bathroom, no logos, no readable text';
+    $prompt = implode(', ', $bits) . ', ' . $guard;
+    return mb_substr($prompt, 0, 480);
 }
 
 function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, int $variant): string
