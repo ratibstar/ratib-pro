@@ -202,6 +202,7 @@ jobs:
             "public/assets/js/app.js"
             "public/assets/css/app.css"
             "public/assets/image-seeds/marketing-flatlay.png"
+            "public/assets/image-seeds/marketing-flatlay.jpg"
             "app/media/upload.php"
             "app/media/library.php"
             "app/media/approve.php"

@@ -146,6 +146,15 @@ if ($sourceImage !== null) {
     $payloadData['source_processing'] = 'img2img';
     $payloadData['params']['denoising_strength'] = 0.58;
     $sourceKind = 'img2img_upload';
+} elseif (rateb_image_is_marketing_brief($promptContext['facts'] ?? [])) {
+    $seed = rateb_image_marketing_seed_base64();
+    if ($seed !== null) {
+        // Low denoise keeps the photographic poster layout; free txt2img drifts to food/candy.
+        $payloadData['source_image'] = $seed;
+        $payloadData['source_processing'] = 'img2img';
+        $payloadData['params']['denoising_strength'] = 0.42;
+        $sourceKind = 'img2img_marketing_seed';
+    }
 }
 $payload = json_encode($payloadData, JSON_UNESCAPED_UNICODE);
 
@@ -589,6 +598,13 @@ function ai_image_retry_unrelated(array $campaign, array $bound, array $context,
         $payloadData['source_image'] = $sourceImage;
         $payloadData['source_processing'] = 'img2img';
         $payloadData['params']['denoising_strength'] = 0.58;
+    } elseif (rateb_image_is_marketing_brief($context['facts'])) {
+        $seed = rateb_image_marketing_seed_base64();
+        if ($seed !== null) {
+            $payloadData['source_image'] = $seed;
+            $payloadData['source_processing'] = 'img2img';
+            $payloadData['params']['denoising_strength'] = 0.42;
+        }
     }
     $payload = json_encode($payloadData, JSON_UNESCAPED_UNICODE);
     $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);

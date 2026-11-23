@@ -1889,8 +1889,9 @@ function rateb_image_caption_hard_accept(array $facts, string $caption): bool
     if (!$isMarketing) {
         return false;
     }
-    // Sticky notes alone are not enough; require visible advertising creative outputs.
-    return rateb_image_caption_has_creative_outputs($caption);
+    // Sticky notes alone are not enough; require posters/flyers or a colorful printed desk flat-lay.
+    return rateb_image_caption_has_creative_outputs($caption)
+        || rateb_image_caption_has_printed_desk_materials($caption);
 }
 
 function rateb_image_caption_has_creative_outputs(string $caption): bool
@@ -1918,14 +1919,14 @@ function rateb_image_caption_has_printed_desk_materials(string $caption): bool
     if ($caption === '') {
         return false;
     }
-    $onDesk = preg_match('/\b(desk|table|wooden|wood surface|wooden surface)\b/u', $caption) === 1;
-    $pluralPrints = preg_match('/\b(folders|cards|papers|sheets|prints|documents|booklets)\b/u', $caption) === 1;
-    $printed = preg_match('/\b(folders?|cards?|papers?|sheets?|prints?|documents?|booklets?)\b/u', $caption) === 1;
-    $manyOrColor = preg_match('/\b(color|colour|colored|coloured|colorful|colourful|several|bunch|stack|stacked|many|printed|paper)\b/u', $caption) === 1;
+    $onDesk = preg_match('/\b(desk|table|wooden|wood|brown surface|surface)\b/u', $caption) === 1;
+    $pluralPrints = preg_match('/\b(folders|cards|papers|sheets|prints|documents|booklets|squares)\b/u', $caption) === 1;
+    $printed = preg_match('/\b(folders?|cards?|papers?|sheets?|prints?|documents?|booklets?|squares?)\b/u', $caption) === 1;
+    $manyOrColor = preg_match('/\b(color|colour|colored|coloured|colorful|colourful|several|bunch|stack|stacked|many|printed|paper|different)\b/u', $caption) === 1;
     if ($onDesk && ($pluralPrints || ($printed && $manyOrColor))) {
         return true;
     }
-    // Interrogators sometimes drop the desk and just say "several colorful papers".
+    // Interrogators often say "four different colors of paper" for poster flat-lays.
     return $pluralPrints && $manyOrColor;
 }
 
@@ -1952,7 +1953,8 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     $peopleHeavy = preg_match('/\b(women|woman|men|man|girl|boy|portrait|faces?|people)\b/u', $caption) === 1
         && preg_match('/\b(magazine covers?|product (photos?|photographs?)|advertisement|mockup|printout|brochure|flyer)\b/u', $caption) !== 1;
     $homeDecor = preg_match('/\b(living room|home decor|wicker basket|throw blanket|gallery wall)\b/u', $caption) === 1;
-    $missingCreative = $isMarketing && !$creativeOutputs;
+    $printedDesk = rateb_image_caption_has_printed_desk_materials($caption);
+    $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
     if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor)) {
         return 'caption shows generic stationery instead of marketing creative outputs';
     }
@@ -2217,15 +2219,19 @@ function rateb_image_is_marketing_brief(array $facts): bool
  */
 function rateb_image_marketing_seed_base64(): ?string
 {
-    $path = dirname(__DIR__) . '/public/assets/image-seeds/marketing-flatlay.png';
-    if (!is_file($path)) {
-        return null;
+    $root = dirname(__DIR__) . '/public/assets/image-seeds/';
+    foreach (['marketing-flatlay.jpg', 'marketing-flatlay.png'] as $name) {
+        $path = $root . $name;
+        if (!is_file($path)) {
+            continue;
+        }
+        $bytes = (string) file_get_contents($path);
+        if ($bytes === '' || strlen($bytes) < 32 || strlen($bytes) > 900000) {
+            continue;
+        }
+        return base64_encode($bytes);
     }
-    $bytes = (string) file_get_contents($path);
-    if ($bytes === '' || strlen($bytes) < 32 || strlen($bytes) > 900000) {
-        return null;
-    }
-    return base64_encode($bytes);
+    return null;
 }
 
 /** @return array{relevant:bool,reason:string}|null */
