@@ -1872,20 +1872,20 @@ function rateb_image_marketing_subject_from_facts(array $facts): array
     $mood = rateb_image_visual_mood_from_facts($facts);
     $place = $isSaudi ? 'Saudi marketing studio table' : 'marketing studio table';
 
-    // Flux melts letters on screens/posters. Avoid furniture showrooms (tables/chairs) — they
-    // read as interior-design ads. Prefer cinematic tech-city / light-hero for AI platforms.
-    $subject = 'cinematic commercial advertising photograph of a modern glass city skyline at blue hour with soft teal and coral light trails and bokeh, premium tech brand campaign style, '
-        . $mood . ' mood, no people, no furniture, no chairs, no tables, no plants, no cactus, no screens, no phones, no laptops, no posters, no text';
+    // Flux melts letters on screens/posters. Avoid furniture showrooms AND space/earth stock —
+    // those read as the wrong category. Prefer close-up campaign creatives with photo imagery only.
+    $subject = 'professional advertising photograph of colorful social media post mockups and storyboard cards with photographic imagery only and zero letters, teal and coral accents, soft daylight, '
+        . $mood . ' mood, no people, no furniture showroom, no chairs, no earth, no space, no plants, no cactus, no laptop, no monitor, no phone UI, no text';
     $elements = [
-        'modern glass city skyline',
-        'teal and coral light trails',
-        'blue hour bokeh',
+        'colorful social media post mockups',
+        'storyboard cards with photo imagery',
+        'teal and coral accents',
     ];
 
     return [
         'subject' => $subject,
         'elements' => $elements,
-        'setting' => 'modern glass city skyline',
+        'setting' => 'clean creative studio surface',
         'mood' => $mood,
     ];
 }
