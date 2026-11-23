@@ -54,12 +54,10 @@ function rateb_image_cf_generate(string $prompt, int $width, int $height): array
         return ['ok' => false, 'error' => 'not_configured'];
     }
     $c = rateb_image_cf_config();
-    $width = max(256, min(1024, (int) (round($width / 8) * 8)));
-    $height = max(256, min(1024, (int) (round($height / 8) * 8)));
+    // Workers AI Flux Schnell schema: prompt + steps only (width/height rejected).
     $payload = json_encode([
-        'prompt' => $prompt,
-        'width' => $width,
-        'height' => $height,
+        'prompt' => mb_substr($prompt, 0, 2048),
+        'steps' => 4,
     ], JSON_UNESCAPED_UNICODE);
     if ($payload === false) {
         return ['ok' => false, 'error' => 'encode'];
