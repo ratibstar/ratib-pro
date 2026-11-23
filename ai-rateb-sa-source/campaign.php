@@ -262,7 +262,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav87">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav88">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -286,25 +286,25 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   <ol class="build-stages">
     <?php foreach ($stages as $key => $stage): ?>
       <li class="is-<?= e($stage['state']) ?>" data-stage="<?= e($key) ?>" data-state="<?= e($stage['state']) ?>">
-        <button type="button" class="stage-tab<?= $key === 'idea' ? ' is-active' : '' ?>" data-tab="<?= e($key) ?>" aria-selected="<?= $key === 'idea' ? 'true' : 'false' ?>">
+        <button type="button" class="stage-tab<?= $key === 'idea' ? ' is-active' : '' ?><?= ($key === 'images' || $key === 'video') ? ' has-credit' : '' ?>" data-tab="<?= e($key) ?>" aria-selected="<?= $key === 'idea' ? 'true' : 'false' ?>">
           <span><?= e($stage['no']) ?></span>
           <b data-i18n="stage_<?= e($key) ?>"><?= e($stageNames[$key]) ?></b>
           <?php if (!empty($stage['optional'])): ?>
             <em class="optional-tag" data-i18n="optional_label"><?= $arabic ? 'اختياري' : 'Optional' ?></em>
           <?php endif; ?>
           <small data-i18n="<?= e($stateKeys[$stage['state']]) ?>"><?= e($stateNames[$stage['state']]) ?></small>
+          <?php if ($key === 'images'): ?>
+            <em class="stage-credit" data-stage-credit="images" data-count="<?= (int) $spend['images'] ?>" data-cost="<?= (int) $spend['image_cost'] ?>">
+              <strong><?= $arabic ? ((int) $spend['images'] . ' صور متاحة') : ((int) $spend['images'] . ' images left') ?></strong>
+              <span><?= $arabic ? ('كل صورة = ' . (int) $spend['image_cost'] . ' نقطة') : ((int) $spend['image_cost'] . ' pts per image') ?></span>
+            </em>
+          <?php elseif ($key === 'video'): ?>
+            <em class="stage-credit" data-stage-credit="video" data-count="<?= (int) $spend['videos'] ?>" data-cost="<?= (int) $spend['video_cost'] ?>">
+              <strong><?= $arabic ? ((int) $spend['videos'] . ' فيديو متاح') : ((int) $spend['videos'] . ' videos left') ?></strong>
+              <span><?= $arabic ? ('كل فيديو = ' . (int) $spend['video_cost'] . ' نقطة') : ((int) $spend['video_cost'] . ' pts per video') ?></span>
+            </em>
+          <?php endif; ?>
         </button>
-        <?php if ($key === 'images'): ?>
-          <p class="stage-credit" data-stage-credit="images" data-count="<?= (int) $spend['images'] ?>" data-cost="<?= (int) $spend['image_cost'] ?>">
-            <strong><?= $arabic ? ((int) $spend['images'] . ' صور متاحة') : ((int) $spend['images'] . ' images left') ?></strong>
-            <span><?= $arabic ? ('كل صورة = ' . (int) $spend['image_cost'] . ' نقطة') : ((int) $spend['image_cost'] . ' pts per image') ?></span>
-          </p>
-        <?php elseif ($key === 'video'): ?>
-          <p class="stage-credit" data-stage-credit="video" data-count="<?= (int) $spend['videos'] ?>" data-cost="<?= (int) $spend['video_cost'] ?>">
-            <strong><?= $arabic ? ((int) $spend['videos'] . ' فيديو متاح') : ((int) $spend['videos'] . ' videos left') ?></strong>
-            <span><?= $arabic ? ('كل فيديو = ' . (int) $spend['video_cost'] . ' نقطة') : ((int) $spend['video_cost'] . ' pts per video') ?></span>
-          </p>
-        <?php endif; ?>
         <?php if ($featStrategy && $key === 'strategy' && $ideaDone && $strategyDoc === null): ?>
           <form class="stage-action" data-ai="1" data-status="stage-status" data-busy="generating_strategy">
             <input type="hidden" name="csrf" value="<?= $csrf ?>">
@@ -917,6 +917,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav87"></script>
+<script src="/public/assets/js/app.js?v=nav88"></script>
 </body>
 </html>
