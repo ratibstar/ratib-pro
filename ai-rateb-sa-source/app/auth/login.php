@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <button type="button" id="lang" class="icon">عربي</button>
       <button type="button" id="theme" class="icon">☾</button>
     </div>
-    <a class="brand" href="/">RATEB <span>AI</span></a>
+    <a class="brand" href="/dashboard">RATEB <span>AI</span></a>
     <h1 data-i18n="welcome_back">Welcome back</h1>
     <p class="muted" data-i18n="login_lead">Login to your RATEB AI Campaign workspace.</p>
     <?php if (($_GET['reset'] ?? '') === '1' && $message === ''): ?><p class="muted" data-i18n="reset_success">Your password was changed. You can log in now.</p><?php endif; ?>
