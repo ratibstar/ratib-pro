@@ -221,7 +221,7 @@
       attach_images_button: 'Attach image',
       attach_failed: 'The image could not be attached. Use a JPG, PNG, or WEBP file within the size limit.',
       preview_image: 'Image preview',
-      image_queued: 'Image generation is still queued on the free provider. Try again.',
+      image_queued: 'The image provider is busy right now. Credits were returned — try again in a minute, or upload an image from your device.',
       image_timeout: 'Image generation timed out. No new image was saved.',
       image_failed: 'The image could not be generated.',
       video_provider_required: 'AI video generation requires a video provider. No free video API is available, and the current Groq credential has no video model.',
@@ -659,7 +659,7 @@
       attach_images_button: 'أرفق الصورة',
       attach_failed: 'تعذر إرفاق الصورة. استخدم JPG أو PNG أو WEBP بحجم مناسب.',
       preview_image: 'معاينة الصورة',
-      image_queued: 'توليد الصورة ما زال في الانتظار لدى المزود المجاني. حاول مرة أخرى.',
+      image_queued: 'مزود الصور مزدحم حالياً. أُعيدت النقاط — حاول بعد دقيقة أو ارفع صورة من جهازك.',
       image_timeout: 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.',
       image_failed: 'تعذر توليد الصورة.',
       video_provider_required: 'توليد الفيديو بالذكاء الاصطناعي يحتاج مزود فيديو. لا توجد واجهة فيديو مجانية، وبيانات Groq الحالية لا تتضمن نموذج فيديو.',
@@ -1269,6 +1269,12 @@
           if (loader && payload.pending) {
             var waitSec = Number(payload.wait || 0);
             var queuePos = Number(payload.queue_position || 0);
+            // Mirror server fail-fast so the spinner never runs to the 15-minute timeout.
+            if (waitSec >= 90 || queuePos >= 25) {
+              var crowded = new Error(dict[language].image_queued);
+              crowded.code = 'image_queued';
+              throw crowded;
+            }
             var waitLabel = language === 'ar' ? 'جاري تجهيز الصورة' : 'Preparing the image';
             if (waitSec >= 30 || queuePos >= 5) {
               var mins = Math.max(1, Math.ceil(waitSec / 60));
@@ -1297,7 +1303,7 @@
           status.textContent = error.code === 'image_timeout'
             ? (dict[language].image_timeout)
             : (error.code === 'image_queued'
-              ? (dict[language].image_queued || error.message)
+              ? (error.message || dict[language].image_queued)
               : (error.message || dict[language].image_failed));
           linkUpgrade(status);
         }
