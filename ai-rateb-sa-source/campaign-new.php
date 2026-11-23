@@ -485,6 +485,6 @@ $journeyOrder = array_keys($journeySteps);
   </div>
 </div>
 <?php rateb_auth_dialog('/campaign-new.php'); ?>
-<script src="/public/assets/js/app.js?v=nav80"></script>
+<script src="/public/assets/js/app.js?v=nav81"></script>
 </body>
 </html>

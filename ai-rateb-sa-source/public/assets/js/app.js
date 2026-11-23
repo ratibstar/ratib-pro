@@ -396,6 +396,8 @@
       nav_privacy: 'Privacy',
       nav_terms: 'Terms',
       nav_account: 'My account',
+      credit_points_short: 'pts',
+      account_credit_hint: 'Not separate wallets — an estimate of what your points cover. Same balance for every action: image 10 pts, video 20, voice 15.',
       account_menu_profile: 'Personal profile',
       nav_billing: 'Billing',
       account_title: 'My account',
@@ -832,6 +834,8 @@
       nav_privacy: 'الخصوصية',
       nav_terms: 'الشروط',
       nav_account: 'حسابي',
+      credit_points_short: 'نقاط',
+      account_credit_hint: 'ليست أرصدة منفصلة — تقدير مما يكفي نقاطك. كل توليد يخصم من نفس الرصيد: صورة 10 نقطة، فيديو 20، صوت 15.',
       account_menu_profile: 'الملف الشخصي',
       nav_billing: 'الفوترة',
       account_title: 'حسابي',
@@ -957,6 +961,45 @@
       node.textContent = language === 'ar'
         ? 'مين تبي يوصل له ' + (product || 'هذا المنتج') + '؟'
         : 'Who do you want to reach' + (product ? ' with ' + product : '') + '?';
+    });
+    document.querySelectorAll('[data-credit-afford]').forEach(function (node) {
+      var images = node.getAttribute('data-images') || '0';
+      var videos = node.getAttribute('data-videos') || '0';
+      node.textContent = language === 'ar'
+        ? 'يكفي تقريباً ' + images + ' صور أو ' + videos + ' فيديوهات'
+        : 'Enough for about ' + images + ' images or ' + videos + ' videos';
+    });
+    document.querySelectorAll('[data-credit-summary]').forEach(function (node) {
+      var balance = node.getAttribute('data-balance') || '0';
+      var images = node.getAttribute('data-images') || '0';
+      var videos = node.getAttribute('data-videos') || '0';
+      var imageCost = node.getAttribute('data-image-cost') || '10';
+      var videoCost = node.getAttribute('data-video-cost') || '20';
+      var plan = node.getAttribute('data-plan');
+      var hint = language === 'ar'
+        ? '(من نفس الرصيد · صورة ' + imageCost + 'ن · فيديو ' + videoCost + 'ن)'
+        : '(same wallet · image ' + imageCost + ' pts · video ' + videoCost + ' pts)';
+      var afford = language === 'ar'
+        ? 'يكفي تقريباً ' + images + ' صور أو ' + videos + ' فيديوهات'
+        : 'Enough for about ' + images + ' images or ' + videos + ' videos';
+      if (plan !== null) {
+        node.innerHTML = (language === 'ar' ? 'الباقة: ' : 'Plan: ') + plan
+          + ' · ' + (language === 'ar' ? 'النقاط: ' : 'Points: ') + balance
+          + ' · ' + afford
+          + ' <span class="credit-cost-hint">' + hint + '</span>';
+      } else {
+        node.innerHTML = (language === 'ar' ? 'النقاط: ' : 'Points: ') + balance
+          + ' · ' + afford
+          + ' <span class="credit-cost-hint">' + hint + '</span>';
+      }
+    });
+    document.querySelectorAll('.credit-wallet[data-credit-tip-ar]').forEach(function (node) {
+      var tip = language === 'ar' ? node.getAttribute('data-credit-tip-ar') : node.getAttribute('data-credit-tip-en');
+      if (tip) {
+        node.setAttribute('title', tip);
+        var afford = node.querySelector('[data-credit-afford]');
+        if (afford) afford.setAttribute('aria-label', tip);
+      }
     });
     applyVoiceFilters();
     root.lang = language;

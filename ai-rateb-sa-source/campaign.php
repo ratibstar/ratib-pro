@@ -279,10 +279,16 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <div class="progress" role="progressbar" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100" data-progress="<?= $progress ?>"><span style="width:<?= $progress ?>%"></span></div>
     <p class="muted"><span data-i18n="progress"><?= $arabic ? 'التقدم' : 'Progress' ?></span> <span id="progress-value"><?= $progress ?>%</span> · <?= $doneUnits ?> / <?= (int) $totalUnits ?></p>
     <?php $spend = rateb_credits_spend_summary((int) $wallet['credits_balance']); ?>
-    <p class="muted credit-summary-line"><?= $arabic ? 'النقاط' : 'Points' ?>: <?= (int) $spend['balance'] ?>
+    <p class="muted credit-summary-line" data-credit-summary
+       data-balance="<?= (int) $spend['balance'] ?>"
+       data-images="<?= (int) $spend['images'] ?>"
+       data-videos="<?= (int) $spend['videos'] ?>"
+       data-image-cost="<?= (int) $spend['image_cost'] ?>"
+       data-video-cost="<?= (int) $spend['video_cost'] ?>">
+      <?= $arabic ? 'النقاط' : 'Points' ?>: <?= (int) $spend['balance'] ?>
       · <?= $arabic
-        ? ('يكفي ≈' . (int) $spend['images'] . ' صور أو ≈' . (int) $spend['videos'] . ' فيديو')
-        : ('covers ≈' . (int) $spend['images'] . ' images or ≈' . (int) $spend['videos'] . ' videos') ?>
+        ? ('يكفي تقريباً ' . (int) $spend['images'] . ' صور أو ' . (int) $spend['videos'] . ' فيديوهات')
+        : ('Enough for about ' . (int) $spend['images'] . ' images or ' . (int) $spend['videos'] . ' videos') ?>
       <span class="credit-cost-hint">(<?= $arabic
         ? ('من نفس الرصيد · صورة ' . (int) $spend['image_cost'] . 'ن · فيديو ' . (int) $spend['video_cost'] . 'ن')
         : ('same wallet · image ' . (int) $spend['image_cost'] . ' pts · video ' . (int) $spend['video_cost'] . ' pts') ?>)</span>
@@ -905,6 +911,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav80"></script>
+<script src="/public/assets/js/app.js?v=nav81"></script>
 </body>
 </html>
