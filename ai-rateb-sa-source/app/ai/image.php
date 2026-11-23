@@ -111,7 +111,8 @@ $prompt = (string) $promptData['prompt'];
 // Prefer sync free/fast providers (Cloudflare → Pollinations) before free Horde queues.
 $syncPrompt = rateb_image_sync_prompt(
     is_array($promptData['plan'] ?? null) ? $promptData['plan'] : [],
-    is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : []
+    is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : [],
+    (int) ($promptContext['variant'] ?? 0)
 );
 if ($syncPrompt === '') {
     $syncPrompt = trim((string) preg_replace('/\s*###.*$/su', '', $prompt));
@@ -124,7 +125,12 @@ $isMarketingSync = rateb_image_is_marketing_brief($factsForGate);
 while (time() < $syncDeadline) {
     $attempt = rateb_image_generate_sync($syncPromptFinal, $ratioSize[0], $ratioSize[1]);
     if (empty($attempt['ok'])) {
-        break;
+        // Cloudflare 429 / Pollinations busy — retry inside the sync window before Horde.
+        if (time() + 6 >= $syncDeadline) {
+            break;
+        }
+        sleep(5);
+        continue;
     }
     if (!$isMarketingSync) {
         $sync = $attempt;
@@ -136,7 +142,7 @@ while (time() < $syncDeadline) {
         continue;
     }
     if ($caption !== '' && !rateb_image_caption_hard_accept($factsForGate, $caption)
-        && preg_match('/\b(office|workspace|coworking|lobby|studio|reflections?|bokeh|flyer|poster|brochure)\b/i', $caption) !== 1) {
+        && preg_match('/\b(mockup|flyer|poster|brochure|storyboard|social media|campaign|studio|creative)\b/i', $caption) !== 1) {
         continue;
     }
     $sync = $attempt;
@@ -990,6 +996,7 @@ function ai_campaign_image_prompt(array $context, int $userId, int $usageId): ar
         echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    $plan = rateb_image_plan_ground_marketing_service($plan, $facts, $variant);
     $prompt = rateb_image_prompt_compose($plan, $facts, $ratio, $variant);
     return [
         'prompt' => $prompt,
@@ -1023,9 +1030,10 @@ function ai_image_plan(array $facts): array
         . 'Never invent a business, product, place, feature, or offer the brief does not state. '
         . 'Return JSON only: {"sufficient":true,"evidence":"exact English or Arabic quote copied from product, description, objective, audience, location, core_message, creative_direction, channels, or offer only","category":"physical_product|food|digital_service|local_service|place|other","subject":"...","visual_elements":["..."],"setting":"...","mood":"...","avoid":["..."]}. '
         . 'Approved copy, headlines, and short ads are style only and MUST NEVER be used as evidence or as a source of product features. sufficient is false when the authoritative facts do not say what is being advertised or what a digital service actually does. '
-        . 'subject: at most 22 English words naming a concrete camera-visible scene. Prefer real objects a commercial photographer can shoot. Never use abstract metaphors, neon orbs, glowing spheres, particle networks, holograms, or sci-fi HUD art. '
+        . 'subject: at most 28 English words naming a concrete camera-visible scene that MUST reflect THIS campaign\'s product or service — never a generic scene that could fit any brand. Prefer real objects a commercial photographer can shoot. Never use abstract metaphors, neon orbs, glowing spheres, particle networks, holograms, or sci-fi HUD art. '
         . 'For food or physical products, show the actual product. For local services, show the real service setting. '
-        . 'For a marketing or AI campaign platform, invent a premium commercial advertising photograph matching THIS brief\'s idea, strategy positioning, and headline mood: e.g. a modern Saudi glass office with soft teal and coral light reflections, empty elegant workspace, cinematic depth of field. Never show device screens, UI mockups, posters, flyers, books, magazines, blank paper, plants, cactus, people, or any typography. '
+        . 'For a marketing or AI campaign platform that creates ads, show photoreal finished campaign creatives implied by THIS brief (colorful social ad mockups and storyboard cards with photographic imagery only, zero letters), using brand primary/secondary colors as accents when provided. '
+        . 'Never show earth from space, furniture showrooms, conference chairs, dining tables, device screens, UI mockups with text, blank paper, plants, cactus, people, or any typography. '
         . 'Never default to pantone swatches, clipboard strategy docs, sunglasses mood boards, sticky notes alone, random magazines, gallery walls, home decor, empty desks, portraits, dashboards, analytics charts, or bathroom/kitchen stock. '
         . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone, creative direction, or headline. '
         . 'avoid: 3 to 8 short English phrases for objects a generic image might wrongly show that are unrelated to this campaign. '

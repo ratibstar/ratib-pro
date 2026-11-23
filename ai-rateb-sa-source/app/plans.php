@@ -1567,17 +1567,36 @@ function rateb_image_brief(array $campaign, array $brief, array $outputs, array 
         'brand_name' => rateb_image_fact($brand['brand_name'] ?? ''),
         'offer' => rateb_image_fact($brand['offer_line'] ?? ''),
         'forbidden' => rateb_image_fact($brand['forbidden'] ?? ''),
+        'primary_color' => rateb_image_color_fact($brand['primary_color'] ?? ''),
+        'secondary_color' => rateb_image_color_fact($brand['secondary_color'] ?? ''),
     ];
     $seen = [];
     foreach ($facts as $key => $value) {
         $norm = mb_strtolower($value);
-        if ($value === '' || isset($seen[$norm])) {
+        // Brand colors may legitimately repeat hex values — keep both keys.
+        if ($value === '' || (isset($seen[$norm]) && !in_array($key, ['primary_color', 'secondary_color'], true))) {
             unset($facts[$key]);
             continue;
         }
         $seen[$norm] = true;
     }
     return $facts;
+}
+
+/** Keep only safe color tokens for prompts (hex or short English color name). */
+function rateb_image_color_fact(mixed $value): string
+{
+    $text = strtolower(trim((string) $value));
+    if ($text === '') {
+        return '';
+    }
+    if (preg_match('/^#?[0-9a-f]{3}([0-9a-f]{3})?$/', $text) === 1) {
+        return str_starts_with($text, '#') ? $text : '#' . $text;
+    }
+    if (preg_match('/^[a-z]{3,20}$/', $text) === 1) {
+        return $text;
+    }
+    return '';
 }
 
 /** @param array<string,string> $facts */
@@ -1638,6 +1657,8 @@ function rateb_image_brief_text(array $facts): string
         'brand_name' => 'Brand name',
         'offer' => 'Current offer',
         'forbidden' => 'Never show',
+        'primary_color' => 'Brand primary color (visual accent only — never render as text)',
+        'secondary_color' => 'Brand secondary color (visual accent only — never render as text)',
     ];
     $lines = [];
     foreach ($labels as $key => $label) {
@@ -1713,7 +1734,7 @@ function rateb_image_plan_parse(string $content, array $brandWords = [], array $
     if ($facts !== [] && (mb_strlen($evidence) < 4 || !str_contains($factText, $evidence))) {
         return null;
     }
-    $subject = rateb_image_phrase($data['subject'] ?? '', 22, $brandWords);
+    $subject = rateb_image_phrase($data['subject'] ?? '', 28, $brandWords);
     if (mb_strlen($subject) < 8) {
         return null;
     }
@@ -1859,34 +1880,124 @@ function rateb_image_visual_mood_from_facts(array $facts): string
 }
 
 /**
- * Concrete photoreal subject for a marketing/AI campaign platform, steered by idea + strategy mood.
+ * Concrete product/service scene from the campaign brief catalog (never digital_service).
+ *
+ * @param array<string,string> $facts
+ * @return array<string,mixed>|null
+ */
+function rateb_image_concrete_catalog_plan(array $facts): ?array
+{
+    $text = mb_strtolower(implode(' ', array_intersect_key($facts, array_flip([
+        'product', 'title', 'description', 'positioning', 'product_description', 'headline', 'short_ad',
+    ]))));
+    $catalog = [
+        ['/قهو|كوفي|coffee|espresso/u', 'food', 'freshly brewed specialty coffee cup with roasted coffee beans', ['ceramic coffee cup', 'roasted coffee beans', 'rising steam'], 'cafe counter with warm wood'],
+        ['/تمر|تمور|dates/u', 'food', 'premium Saudi dates arranged in an elegant gift box', ['glossy dates', 'elegant open gift box', 'small brass dish'], 'clean marble table'],
+        ['/(?<!\p{L})(?:عطر|عطور|بخور|عود|perfume|oud)(?!\p{L})/u', 'physical_product', 'luxury perfume bottle with oud wood pieces', ['glass perfume bottle', 'oud wood chips', 'soft fabric drape'], 'dark elegant studio surface'],
+        ['/حلويات|حلى|كيك|شوكولات|dessert|cake|chocolate/u', 'food', 'fresh desserts and cakes beautifully plated', ['plated dessert', 'cake slice', 'fresh berries'], 'bright bakery counter'],
+        ['/مطعم|وجب|برجر|بيتزا|شاورما|طعام|أكل|restaurant|burger|pizza|meal/u', 'food', 'appetizing freshly served restaurant meal', ['main dish on a plate', 'fresh side ingredients', 'cold drink'], 'restaurant table'],
+        ['/عباي|ملابس|أزياء|فستان|ثوب|abaya|fashion|clothing|dress/u', 'physical_product', 'elegant clothing collection displayed on a garment rack', ['folded fabric', 'garment rack', 'fabric texture detail'], 'bright boutique interior'],
+        ['/سيار|car rental|\bcars?\b/u', 'physical_product', 'clean modern car parked in bright daylight', ['glossy car body', 'alloy wheel', 'clean road'], 'modern city street'],
+        ['/عقار|شقة|شقق|فيلا|أرض|real estate|apartment|villa/u', 'place', 'modern residential building and bright furnished living space', ['building facade', 'furnished living room', 'large windows'], 'sunny residential neighborhood'],
+        ['/أسنان|اسنان|dental|dentist/u', 'local_service', 'modern dental clinic treatment room', ['dental chair', 'clean instruments tray', 'bright clinic lighting'], 'clean clinic interior'],
+        ['/عياد|تجميل|بشر|صالون|سبا|clinic|beauty|skin|salon|spa/u', 'local_service', 'calm modern beauty clinic with skincare products', ['skincare bottles', 'soft towels', 'treatment bed'], 'clean bright clinic interior'],
+        ['/دور|تدريب|تعليم|كورس|أكاديمي|course|training|academy|education/u', 'digital_service', 'laptop showing an online course lesson with notebook and pen', ['laptop with video lesson', 'open notebook', 'coffee mug'], 'tidy study desk'],
+        ['/نادي|رياض|لياق|جيم|gym|fitness/u', 'local_service', 'modern gym with dumbbells and training equipment', ['dumbbells', 'training bench', 'water bottle'], 'bright modern gym'],
+    ];
+    foreach ($catalog as [$pattern, $category, $subject, $elements, $setting]) {
+        if (preg_match($pattern, $text) === 1) {
+            // Skip digital_service catalog rows here — marketing AI platforms need the creative path.
+            if ($category === 'digital_service') {
+                continue;
+            }
+            return [
+                'sufficient' => true,
+                'category' => $category,
+                'subject' => $subject,
+                'elements' => $elements,
+                'setting' => $setting,
+                'mood' => 'bright, clean, trustworthy',
+                'avoid' => [],
+            ];
+        }
+    }
+    return null;
+}
+
+/**
+ * Brand accent phrase from kit colors (never drawn as hex digits in the photo).
  *
  * @param array<string,string> $facts
  */
-function rateb_image_marketing_subject_from_facts(array $facts): array
+function rateb_image_brand_accent_phrase(array $facts): string
 {
-    $source = mb_strtolower(rateb_image_subject_facts($facts));
-    $isSaudi = preg_match('/سعود|saudi/u', $source) === 1;
-    $makesVideo = preg_match('/فيديو|videos?/u', $source) === 1;
-    $makesImages = preg_match('/صور|images?|visuals?/u', $source) === 1;
-    $mood = rateb_image_visual_mood_from_facts($facts);
-    $place = $isSaudi ? 'Saudi marketing studio table' : 'marketing studio table';
+    $primary = trim((string) ($facts['primary_color'] ?? ''));
+    $secondary = trim((string) ($facts['secondary_color'] ?? ''));
+    $named = [];
+    foreach ([$primary, $secondary] as $c) {
+        if ($c !== '' && preg_match('/^[a-z]+$/', $c) === 1) {
+            $named[] = $c;
+        }
+    }
+    if ($named !== []) {
+        return implode(' and ', array_slice($named, 0, 2)) . ' brand accents';
+    }
+    // Default RATEB-adjacent commercial accents when kit colors are hex-only or missing.
+    return 'teal and coral brand accents';
+}
 
-    // Flux melts letters on screens/posters. Avoid furniture showrooms AND space/earth stock —
-    // those read as the wrong category. Prefer close-up campaign creatives with photo imagery only.
-    $subject = 'professional advertising photograph of colorful social media post mockups and storyboard cards with photographic imagery only and zero letters, teal and coral accents, soft daylight, '
-        . $mood . ' mood, no people, no furniture showroom, no chairs, no earth, no space, no plants, no cactus, no laptop, no monitor, no phone UI, no text';
-    $elements = [
-        'colorful social media post mockups',
-        'storyboard cards with photo imagery',
-        'teal and coral accents',
+/**
+ * Distinct composition role for each successive AI image of the same campaign.
+ */
+function rateb_image_variant_role(int $variant): string
+{
+    $roles = [
+        'hero campaign key visual',
+        'close product or service detail',
+        'customer benefit lifestyle cue without people',
+        'social media square creative composition',
+        'alternate creative angle with different props',
     ];
+    return $roles[abs($variant) % count($roles)];
+}
 
+/**
+ * Campaign-aware photoreal subject for marketing/AI platforms (and recovery path).
+ * Prefer concrete product scenes from the brief when present; otherwise finished creatives.
+ *
+ * @param array<string,string> $facts
+ */
+function rateb_image_marketing_subject_from_facts(array $facts, int $variant = 0): array
+{
+    $mood = rateb_image_visual_mood_from_facts($facts);
+    $accent = rateb_image_brand_accent_phrase($facts);
+    $role = rateb_image_variant_role($variant);
+    $concrete = rateb_image_concrete_catalog_plan($facts);
+    if (is_array($concrete)) {
+        return [
+            'subject' => 'professional advertising photograph of ' . (string) $concrete['subject'] . ', ' . $mood . ' mood, ' . $role . ', ' . $accent . ', no text',
+            'elements' => (array) ($concrete['elements'] ?? []),
+            'setting' => (string) ($concrete['setting'] ?? 'commercial studio'),
+            'mood' => $mood,
+            'category' => (string) $concrete['category'],
+        ];
+    }
+
+    $isSaudi = preg_match('/سعود|saudi/u', mb_strtolower(rateb_image_subject_facts($facts))) === 1;
+    $setting = $isSaudi ? 'Saudi creative studio surface' : 'clean creative studio surface';
+    $subject = 'professional advertising photograph of colorful finished social media ad mockups and storyboard cards with photographic imagery only and zero letters, '
+        . $accent . ', soft daylight, ' . $mood . ' mood, ' . $role
+        . ', no people, no furniture showroom, no chairs, no conference table, no earth, no space, no plants, no cactus, no laptop, no monitor, no phone UI, no text';
     return [
         'subject' => $subject,
-        'elements' => $elements,
-        'setting' => 'clean creative studio surface',
+        'elements' => [
+            'finished social media ad mockups with photo imagery',
+            'storyboard cards',
+            $accent,
+        ],
+        'setting' => $setting,
         'mood' => $mood,
+        'category' => 'digital_service',
     ];
 }
 
@@ -1899,7 +2010,7 @@ function rateb_image_marketing_subject_from_facts(array $facts): array
  * @param array<string,string> $facts
  * @return array<string,mixed>
  */
-function rateb_image_plan_ground_marketing_service(array $plan, array $facts): array
+function rateb_image_plan_ground_marketing_service(array $plan, array $facts, int $variant = 0): array
 {
     if (($plan['category'] ?? '') !== 'digital_service') {
         return $plan;
@@ -1914,27 +2025,35 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
     }
 
     $visual = strtolower(trim((string) ($plan['subject'] ?? '') . ' ' . implode(' ', (array) ($plan['elements'] ?? []))));
-    $badGeneric = preg_match('/\b(dashboard|analytics|neon|orb|sphere|particle|hologram|sci-?fi|hud|monitor|keyboard|blank (paper|stationery|card|mockup)|empty paper|pantone|clipboard|showcase|marketing studio desk)\b/u', $visual) === 1;
-    // Require a concrete no-text creative scene (tablet photo tiles / mockups), not bare "campaign".
-    $hasCreativeScene = preg_match('/\b(tablet|photo tiles?|ui shapes?|mockups?|flyers?|posters?|brochures?|smartphone|social (media )?ads?)\b/u', $visual) === 1
+    // Ignore "no chairs / no conference table" guards — they must not trip the generic detector.
+    $visualPositive = trim((string) preg_replace('#\b(?:no|without|zero|never)\s+[a-z0-9 ,\-]{1,80}#u', ' ', $visual));
+    $badGeneric = preg_match('/\b(dashboard|analytics|neon|orb|sphere|particle|hologram|sci-?fi|hud|monitor|keyboard|blank (paper|stationery|card|mockup)|empty paper|pantone|clipboard|showcase|marketing studio desk|earth from space|outer space|planet earth|furniture|conference (table|room)|dining (table|chairs?)|office chairs?)\b/u', $visualPositive) === 1;
+    // Keep art-director scenes that already show finished campaign creatives for THIS brief.
+    $hasCreativeScene = preg_match('/\b(mockups?|flyers?|posters?|brochures?|leaflets?|storyboard|social (media )?ads?|campaign cards?|photo imagery)\b/u', $visual) === 1
         && preg_match('/\bblank\b/u', $visual) !== 1;
 
-    // Keep a usable art-director scene; only rewrite dashboards / blank stationery / abstract tech.
     if ($badGeneric || !$hasCreativeScene) {
-        $built = rateb_image_marketing_subject_from_facts($facts);
+        $built = rateb_image_marketing_subject_from_facts($facts, $variant);
         $plan['subject'] = $built['subject'];
         $plan['elements'] = $built['elements'];
         $plan['setting'] = $built['setting'];
         $plan['mood'] = $built['mood'];
     } else {
         $mood = rateb_image_visual_mood_from_facts($facts);
+        $accent = rateb_image_brand_accent_phrase($facts);
         if (trim((string) ($plan['mood'] ?? '')) === '') {
             $plan['mood'] = $mood;
         }
         if (trim((string) ($plan['setting'] ?? '')) === '') {
             $plan['setting'] = preg_match('/سعود|saudi/u', $source) === 1
-                ? 'Saudi marketing studio table'
-                : 'marketing studio table';
+                ? 'Saudi creative studio surface'
+                : 'clean creative studio surface';
+        }
+        // Inject brand accents when the LLM omitted them.
+        $elements = (array) ($plan['elements'] ?? []);
+        if ($accent !== '' && !preg_match('/\b(teal|coral|accent|color)\b/i', implode(' ', $elements) . ' ' . (string) $plan['subject'])) {
+            $elements[] = $accent;
+            $plan['elements'] = array_slice($elements, 0, 5);
         }
     }
 
@@ -1995,6 +2114,12 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
         'gift cards',
         'playing cards',
         'trading cards',
+        'earth from space',
+        'outer space',
+        'planet earth',
+        'furniture showroom',
+        'conference chairs',
+        'dining table',
     ], (array) ($plan['avoid'] ?? []))));
     return $plan;
 }
@@ -2137,7 +2262,9 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     $blankFrames = preg_match('/\b(polaroid|empty frames?|blank frames?|photo frames?|white frames?|scattered (white )?papers?|pieces of paper)\b/u', $caption) === 1
         && preg_match('/\b(flyer|brochure|poster|pamphlet|leaflet|mockup|social media|advert|campaign|designed)\b/u', $caption) !== 1;
     $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
-    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant) || ($isMarketing && $blankFrames) || ($isMarketing && $hasTypography) || ($isMarketing && $deviceUi)) {
+    $spaceStock = preg_match('/\b(earth from space|planet earth|outer space|from orbit|galaxy|astronaut|satellite view)\b/u', $caption) === 1;
+    $furnitureShowroom = preg_match('/\b(furniture|conference (table|room|chairs?)|dining (table|chairs?|room)|office chairs?|pink chairs?|sofa set|showroom)\b/u', $caption) === 1;
+    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant) || ($isMarketing && $blankFrames) || ($isMarketing && $hasTypography) || ($isMarketing && $deviceUi) || ($isMarketing && $spaceStock) || ($isMarketing && $furnitureShowroom)) {
         return 'caption shows generic stationery instead of marketing creative outputs';
     }
     // Short Arabic tokens must not match inside unrelated words (عود inside سعودية, تمر inside …).
@@ -2167,35 +2294,33 @@ function rateb_image_fallback_plan(array $facts): ?array
     $text = mb_strtolower(implode(' ', array_intersect_key($facts, array_flip(['product', 'title', 'description', 'positioning', 'product_description', 'headline', 'short_ad']))));
     $digital = preg_match('/منص|تطبيق|برنامج|برمج|موقع|نظام|ذكاء|اصطناع|رقمي|platform|software|\bapp\b|saas|\bai\b/u', $text) === 1;
     $marketing = preg_match('/إعلان|اعلان|تسويق|حمل|محتوى|فيديو|تصميم|advert|\bads?\b|marketing|campaign|video/u', $text) === 1;
-    $catalog = [
-        ['/قهو|كوفي|coffee|espresso/u', 'food', 'freshly brewed specialty coffee cup with roasted coffee beans', ['ceramic coffee cup', 'roasted coffee beans', 'rising steam'], 'cafe counter with warm wood'],
-        ['/تمر|تمور|dates/u', 'food', 'premium Saudi dates arranged in an elegant gift box', ['glossy dates', 'elegant open gift box', 'small brass dish'], 'clean marble table'],
-        ['/عطر|عطور|بخور|عود|perfume|oud/u', 'physical_product', 'luxury perfume bottle with oud wood pieces', ['glass perfume bottle', 'oud wood chips', 'soft fabric drape'], 'dark elegant studio surface'],
-        ['/حلويات|حلى|كيك|شوكولات|dessert|cake|chocolate/u', 'food', 'fresh desserts and cakes beautifully plated', ['plated dessert', 'cake slice', 'fresh berries'], 'bright bakery counter'],
-        ['/مطعم|وجب|برجر|بيتزا|شاورما|طعام|أكل|restaurant|burger|pizza|meal/u', 'food', 'appetizing freshly served restaurant meal', ['main dish on a plate', 'fresh side ingredients', 'cold drink'], 'restaurant table'],
-        ['/عباي|ملابس|أزياء|فستان|ثوب|abaya|fashion|clothing|dress/u', 'physical_product', 'elegant clothing collection displayed on a garment rack', ['folded fabric', 'garment rack', 'fabric texture detail'], 'bright boutique interior'],
-        ['/سيار|car rental|\bcars?\b/u', 'physical_product', 'clean modern car parked in bright daylight', ['glossy car body', 'alloy wheel', 'clean road'], 'modern city street'],
-        ['/عقار|شقة|شقق|فيلا|أرض|real estate|apartment|villa/u', 'place', 'modern residential building and bright furnished living space', ['building facade', 'furnished living room', 'large windows'], 'sunny residential neighborhood'],
-        ['/أسنان|اسنان|dental|dentist/u', 'local_service', 'modern dental clinic treatment room', ['dental chair', 'clean instruments tray', 'bright clinic lighting'], 'clean clinic interior'],
-        ['/عياد|تجميل|بشر|صالون|سبا|clinic|beauty|skin|salon|spa/u', 'local_service', 'calm modern beauty clinic with skincare products', ['skincare bottles', 'soft towels', 'treatment bed'], 'clean bright clinic interior'],
-        ['/دور|تدريب|تعليم|كورس|أكاديمي|course|training|academy|education/u', 'digital_service', 'laptop showing an online course lesson with notebook and pen', ['laptop with video lesson', 'open notebook', 'coffee mug'], 'tidy study desk'],
-        ['/نادي|رياض|لياق|جيم|gym|fitness/u', 'local_service', 'modern gym with dumbbells and training equipment', ['dumbbells', 'training bench', 'water bottle'], 'bright modern gym'],
-    ];
-    foreach ($catalog as [$pattern, $category, $subject, $elements, $setting]) {
-        if (preg_match($pattern, $text) === 1) {
-            return ['sufficient' => true, 'category' => $category, 'subject' => $subject, 'elements' => $elements, 'setting' => $setting, 'mood' => 'bright, clean, trustworthy', 'avoid' => []];
-        }
+    $concrete = rateb_image_concrete_catalog_plan($facts);
+    if (is_array($concrete)) {
+        return $concrete;
     }
-    if ($digital && $marketing) {
-        $built = rateb_image_marketing_subject_from_facts($facts);
+    if (preg_match('/(?<!\p{L})(?:دور|تدريب|تعليم|كورس|أكاديمي|course|training|academy|education)(?!\p{L})/u', $text) === 1) {
         return [
             'sufficient' => true,
             'category' => 'digital_service',
-            'subject' => $built['subject'],
-            'elements' => $built['elements'],
-            'setting' => $built['setting'],
-            'mood' => $built['mood'],
-            'avoid' => ['gallery wall', 'home decor', 'portrait', 'empty desk', 'laptop', 'blank paper', 'random magazines', 'neon orb', 'analytics dashboard'],
+            'subject' => 'laptop showing an online course lesson with notebook and pen',
+            'elements' => ['laptop with video lesson', 'open notebook', 'coffee mug'],
+            'setting' => 'tidy study desk',
+            'mood' => 'bright, clean, trustworthy',
+            'avoid' => [],
+        ];
+    }
+    if ($digital && $marketing) {
+        // Inline — do not call rateb_image_marketing_subject_from_facts (recursion).
+        $mood = rateb_image_visual_mood_from_facts($facts);
+        $accent = rateb_image_brand_accent_phrase($facts);
+        return [
+            'sufficient' => true,
+            'category' => 'digital_service',
+            'subject' => 'professional advertising photograph of colorful finished social media ad mockups and storyboard cards with photographic imagery only and zero letters, ' . $accent . ', ' . $mood . ' mood, soft daylight, no text',
+            'elements' => ['finished social media ad mockups with photo imagery', 'storyboard cards', $accent],
+            'setting' => 'clean creative studio surface',
+            'mood' => $mood,
+            'avoid' => ['gallery wall', 'home decor', 'portrait', 'empty desk', 'laptop', 'blank paper', 'earth from space', 'furniture showroom', 'random magazines', 'neon orb', 'analytics dashboard'],
         ];
     }
     if ($digital) {
@@ -2236,19 +2361,27 @@ function rateb_image_prompt_clip_list(string $text, int $limit): string
  * Short positive-only prompt for sync providers (Cloudflare / Pollinations).
  * Long ### negative lists are ignored there and cause subject drift.
  */
-function rateb_image_sync_prompt(array $plan, array $facts): string
+function rateb_image_sync_prompt(array $plan, array $facts, int $variant = 0): string
 {
     $subject = trim((string) ($plan['subject'] ?? ''));
     if ($subject === '') {
-        $built = rateb_image_marketing_subject_from_facts($facts);
+        $built = rateb_image_marketing_subject_from_facts($facts, $variant);
         $subject = $built['subject'];
         $plan = array_merge($plan, $built);
     }
     $subject = trim((string) preg_replace('/\s*###.*$/su', '', $subject));
     $bits = [$subject];
+    $role = rateb_image_variant_role($variant);
+    if (stripos($subject, $role) === false) {
+        $bits[] = $role;
+    }
     $mood = trim((string) ($plan['mood'] ?? ''));
     if ($mood !== '' && stripos($subject, $mood) === false) {
         $bits[] = $mood . ' mood';
+    }
+    $accent = rateb_image_brand_accent_phrase($facts);
+    if ($accent !== '' && stripos(implode(' ', $bits), 'accent') === false) {
+        $bits[] = $accent;
     }
     foreach (array_slice((array) ($plan['elements'] ?? []), 0, 2) as $element) {
         $element = trim((string) $element);
@@ -2256,9 +2389,14 @@ function rateb_image_sync_prompt(array $plan, array $facts): string
             $bits[] = $element;
         }
     }
-    $guard = 'photoreal commercial photograph, no blank paper, no empty frames, no computer monitor, no laptop, no keyboard, no dashboard, no people, no faces, no plants, no cactus, no succulent, no notebook, no books, no pen, no picture frame, no toilet, no bathroom, no logos, no readable text, no letters, no numbers';
-    $prompt = 'NO PLANTS NO CACTUS NO TEXT, ' . implode(', ', $bits) . ', ' . $guard;
-    return mb_substr($prompt, 0, 500);
+    $productCue = trim((string) ($facts['product'] ?? $facts['title'] ?? ''));
+    if ($productCue !== '' && mb_strlen($productCue) <= 80) {
+        // Mood cue only — never ask the model to paint Arabic/Latin product names.
+        $bits[] = 'visually matches this campaign offer';
+    }
+    $guard = 'photoreal commercial advertising photograph, campaign-specific, no blank paper, no empty frames, no computer monitor, no laptop, no keyboard, no dashboard, no people, no faces, no plants, no cactus, no earth, no space, no furniture showroom, no conference chairs, no toilet, no bathroom, no logos, no readable text, no letters, no numbers';
+    $prompt = 'NO PLANTS NO CACTUS NO TEXT NO SPACE NO FURNITURE, ' . implode(', ', $bits) . ', ' . $guard;
+    return mb_substr($prompt, 0, 520);
 }
 
 function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, int $variant): string
@@ -2266,16 +2404,18 @@ function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, in
     $category = (string) ($plan['category'] ?? 'other');
     $shots = match ($category) {
         'digital_service' => [
-            'overhead desk flat lay commercial photograph',
-            'slightly angled marketing desk photograph',
-            'close creative desk photograph with soft daylight',
-            'top-down campaign planning desk photograph',
+            'hero campaign key visual, wide commercial composition',
+            'close detail of finished campaign creatives, shallow depth of field',
+            'benefit-focused creative still life without people',
+            'social media square creative flat composition',
+            'alternate angled creative composition with different prop arrangement',
         ],
         default => [
             'hero shot with the subject centered at eye level',
             'three-quarter angle close-up with shallow depth of field',
             'in-use scene showing hands interacting with the subject',
             'top-down flat lay composition',
+            'alternate creative angle with different lighting',
         ],
     };
     $layout = match ($ratio) {
@@ -2291,8 +2431,13 @@ function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, in
     }
     $positive[] = (string) ($plan['setting'] ?? '');
     $positive[] = (string) ($plan['mood'] ?? '');
+    $positive[] = rateb_image_variant_role($variant);
     $positive[] = $shots[abs($variant) % count($shots)];
     $positive[] = $layout;
+    $accent = rateb_image_brand_accent_phrase($facts);
+    if ($accent !== '') {
+        $positive[] = $accent;
+    }
     $positive[] = 'photorealistic commercial advertising photograph, natural soft studio lighting, sharp focus, high detail, no abstract art';
     $positive = implode(', ', array_values(array_filter(array_map('trim', $positive), static fn(string $part): bool => $part !== '')));
     $negative = [];
@@ -2304,6 +2449,7 @@ function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, in
         'text', 'words', 'letters', 'typography', 'arabic script', 'caption', 'watermark', 'signature', 'logo', 'brand name',
         'misspelled text', 'gibberish', 'illegible writing', 'fake letters', 'corrupted typography', 'words on paper', 'clipboard text',
         'bathroom', 'toilet', 'kitchen sink', 'bathtub',
+        'earth from space', 'outer space', 'planet earth', 'furniture showroom', 'conference chairs', 'dining table',
         'blurry', 'lowres', 'jpeg artifacts', 'deformed', 'distorted', 'extra fingers', 'bad hands', 'cropped', 'out of frame',
         'collage', 'split screen', 'cartoon', 'illustration', 'generic stock photo', 'unrelated objects', 'empty room', 'wall art', 'picture frame',
     ]);
