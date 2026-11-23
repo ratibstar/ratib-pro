@@ -218,31 +218,28 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     $steps = $ar
         ? ['الفكرة', 'الاستراتيجية', 'النص', 'الصور', 'الصوت', 'الفيديو']
         : ['Idea', 'Strategy', 'Copy', 'Images', 'Voice', 'Video'];
-    $floatLines = $ar
-        ? [
-            ['RATEB AI', 'c1'],
-            ['فكرة → حملة', 'c2'],
-            ['ذكاء يفهمك', 'c3'],
-            ['نص يبيع', 'c4'],
-            ['صور تخطف العين', 'c5'],
-            ['صوت سعودي', 'c1'],
-            ['فيديو جاهز', 'c2'],
-            ['أسرع من التفكير', 'c3'],
-            ['هوية ثابتة', 'c4'],
-            ['انطلق الآن', 'c5'],
-        ]
-        : [
-            ['RATEB AI', 'c1'],
-            ['Idea → Campaign', 'c2'],
-            ['AI that gets you', 'c3'],
-            ['Copy that sells', 'c4'],
-            ['Images that pop', 'c5'],
-            ['Saudi voice', 'c1'],
-            ['Video ready', 'c2'],
-            ['Faster than thought', 'c3'],
-            ['Brand locked in', 'c4'],
-            ['Launch now', 'c5'],
-        ];
+    $floatLines = [
+        ['RATEB AI', 'c1'],
+        ['فكرة → حملة', 'c2'],
+        ['Idea → Campaign', 'c3'],
+        ['ذكاء يفهمك', 'c4'],
+        ['AI that gets you', 'c5'],
+        ['نص يبيع', 'c1'],
+        ['Copy that sells', 'c2'],
+        ['صور تخطف العين', 'c3'],
+        ['Images that pop', 'c4'],
+        ['صوت سعودي', 'c5'],
+        ['Saudi voice', 'c1'],
+        ['فيديو جاهز', 'c2'],
+        ['Video ready', 'c3'],
+        ['أسرع من التفكير', 'c4'],
+        ['Faster than thought', 'c5'],
+        ['هوية ثابتة', 'c1'],
+        ['Brand locked in', 'c2'],
+        ['انطلق الآن', 'c3'],
+        ['Launch now', 'c4'],
+        ['RATEB AI', 'c5'],
+    ];
     echo '<!doctype html><html lang="' . ($ar ? 'ar' : 'en') . '" dir="' . ($ar ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>RATEB AI — ' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
@@ -260,16 +257,26 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     echo '.float-lines{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}';
     echo '.float-lines span{position:absolute;font-weight:800;white-space:nowrap;opacity:0;text-shadow:0 8px 24px rgba(0,0,0,.35);will-change:transform,opacity}';
     echo '.float-lines .c1{color:#67e8f9}.float-lines .c2{color:#c4b5fd}.float-lines .c3{color:#5eead4}.float-lines .c4{color:#fdba74}.float-lines .c5{color:#f9a8d4}';
-    echo '.float-lines .f1{top:8%;inset-inline-start:6%;font-size:clamp(1.1rem,2.4vw,1.8rem);animation:popA 3.2s ease-in-out infinite}';
-    echo '.float-lines .f2{top:18%;inset-inline-end:8%;font-size:clamp(1rem,2vw,1.55rem);animation:popB 2.7s ease-in-out .2s infinite}';
-    echo '.float-lines .f3{top:34%;inset-inline-start:4%;font-size:clamp(.95rem,1.8vw,1.4rem);animation:popC 2.9s ease-in-out .4s infinite}';
-    echo '.float-lines .f4{top:28%;inset-inline-end:5%;font-size:clamp(1.05rem,2.1vw,1.65rem);animation:popA 2.5s ease-in-out .55s infinite}';
-    echo '.float-lines .f5{top:52%;inset-inline-start:8%;font-size:clamp(1rem,2vw,1.5rem);animation:popB 3s ease-in-out .1s infinite}';
-    echo '.float-lines .f6{top:58%;inset-inline-end:7%;font-size:clamp(1.1rem,2.3vw,1.7rem);animation:popC 2.6s ease-in-out .35s infinite}';
-    echo '.float-lines .f7{bottom:22%;inset-inline-start:10%;font-size:clamp(.95rem,1.9vw,1.45rem);animation:popA 2.8s ease-in-out .7s infinite}';
-    echo '.float-lines .f8{bottom:16%;inset-inline-end:10%;font-size:clamp(1rem,2vw,1.55rem);animation:popB 3.1s ease-in-out .15s infinite}';
-    echo '.float-lines .f9{bottom:8%;inset-inline-start:28%;font-size:clamp(1.05rem,2.2vw,1.6rem);animation:popC 2.4s ease-in-out .45s infinite}';
-    echo '.float-lines .f10{top:72%;inset-inline-start:42%;font-size:clamp(1.15rem,2.5vw,1.85rem);animation:popA 2.2s ease-in-out .25s infinite}';
+    echo '.float-lines .f1{top:6%;inset-inline-start:5%;font-size:clamp(1.05rem,2.3vw,1.75rem);animation:popA 3.1s ease-in-out infinite}';
+    echo '.float-lines .f2{top:12%;inset-inline-end:7%;font-size:clamp(1rem,2vw,1.5rem);animation:popB 2.6s ease-in-out .15s infinite}';
+    echo '.float-lines .f3{top:20%;inset-inline-start:3%;font-size:clamp(.95rem,1.8vw,1.35rem);animation:popC 2.8s ease-in-out .3s infinite}';
+    echo '.float-lines .f4{top:26%;inset-inline-end:4%;font-size:clamp(1.05rem,2.1vw,1.6rem);animation:popA 2.4s ease-in-out .45s infinite}';
+    echo '.float-lines .f5{top:34%;inset-inline-start:8%;font-size:clamp(1rem,2vw,1.45rem);animation:popB 2.9s ease-in-out .1s infinite}';
+    echo '.float-lines .f6{top:40%;inset-inline-end:6%;font-size:clamp(1.05rem,2.2vw,1.65rem);animation:popC 2.5s ease-in-out .35s infinite}';
+    echo '.float-lines .f7{top:48%;inset-inline-start:4%;font-size:clamp(.95rem,1.9vw,1.4rem);animation:popA 2.7s ease-in-out .55s infinite}';
+    echo '.float-lines .f8{top:54%;inset-inline-end:8%;font-size:clamp(1rem,2vw,1.5rem);animation:popB 3s ease-in-out .2s infinite}';
+    echo '.float-lines .f9{top:62%;inset-inline-start:10%;font-size:clamp(1.05rem,2.1vw,1.55rem);animation:popC 2.3s ease-in-out .4s infinite}';
+    echo '.float-lines .f10{top:68%;inset-inline-end:5%;font-size:clamp(1.1rem,2.3vw,1.7rem);animation:popA 2.2s ease-in-out .25s infinite}';
+    echo '.float-lines .f11{bottom:28%;inset-inline-start:14%;font-size:clamp(.95rem,1.9vw,1.4rem);animation:popB 2.8s ease-in-out .5s infinite}';
+    echo '.float-lines .f12{bottom:22%;inset-inline-end:12%;font-size:clamp(1rem,2vw,1.5rem);animation:popC 2.6s ease-in-out .12s infinite}';
+    echo '.float-lines .f13{bottom:16%;inset-inline-start:22%;font-size:clamp(1.05rem,2.2vw,1.6rem);animation:popA 2.9s ease-in-out .38s infinite}';
+    echo '.float-lines .f14{bottom:12%;inset-inline-end:18%;font-size:clamp(.95rem,1.85vw,1.35rem);animation:popB 2.4s ease-in-out .62s infinite}';
+    echo '.float-lines .f15{bottom:7%;inset-inline-start:36%;font-size:clamp(1.1rem,2.4vw,1.75rem);animation:popC 2.5s ease-in-out .18s infinite}';
+    echo '.float-lines .f16{top:16%;inset-inline-start:38%;font-size:clamp(1rem,2vw,1.45rem);animation:popA 2.7s ease-in-out .28s infinite}';
+    echo '.float-lines .f17{top:44%;inset-inline-start:40%;font-size:clamp(.95rem,1.9vw,1.4rem);animation:popB 3.1s ease-in-out .48s infinite}';
+    echo '.float-lines .f18{top:76%;inset-inline-end:28%;font-size:clamp(1.05rem,2.1vw,1.55rem);animation:popC 2.3s ease-in-out .33s infinite}';
+    echo '.float-lines .f19{top:8%;inset-inline-start:55%;font-size:clamp(1rem,2vw,1.5rem);animation:popA 2.6s ease-in-out .58s infinite}';
+    echo '.float-lines .f20{bottom:32%;inset-inline-end:36%;font-size:clamp(1.15rem,2.5vw,1.8rem);animation:popB 2.2s ease-in-out .08s infinite}';
     echo '.shell{position:relative;z-index:1;width:min(920px,100%);display:grid;gap:14px}';
     echo '.brand-hero{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2px}';
     echo '.brand-mark{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:.03em;animation:brandPulse 2.4s ease-in-out infinite;text-shadow:0 10px 40px rgba(103,232,249,.25)}';
