@@ -984,21 +984,25 @@
       var count = node.getAttribute('data-count') || '0';
       var cost = node.getAttribute('data-cost') || '0';
       if (kind === 'images') {
-        node.textContent = node.classList.contains('stage-credit-line')
-          ? (language === 'ar'
+        if (node.classList.contains('stage-credit-line')) {
+          node.textContent = language === 'ar'
             ? 'رصيد الصور من نقاطك: يكفي تقريباً ' + count + ' صور (' + cost + ' نقطة لكل صورة).'
-            : 'Image budget from your points: about ' + count + ' images (' + cost + ' pts each).')
-          : (language === 'ar'
-            ? 'يكفي ≈' + count + ' صور · ' + cost + 'ن'
-            : '≈' + count + ' images · ' + cost + 'pts');
+            : 'Image budget from your points: about ' + count + ' images (' + cost + ' pts each).';
+        } else {
+          node.innerHTML = language === 'ar'
+            ? '<strong>' + count + ' صور متاحة</strong><span>كل صورة = ' + cost + ' نقطة</span>'
+            : '<strong>' + count + ' images left</strong><span>' + cost + ' pts per image</span>';
+        }
       } else if (kind === 'video') {
-        node.textContent = node.classList.contains('stage-credit-line')
-          ? (language === 'ar'
+        if (node.classList.contains('stage-credit-line')) {
+          node.textContent = language === 'ar'
             ? 'رصيد الفيديو من نقاطك: يكفي تقريباً ' + count + ' فيديوهات (' + cost + ' نقطة لكل فيديو).'
-            : 'Video budget from your points: about ' + count + ' videos (' + cost + ' pts each).')
-          : (language === 'ar'
-            ? 'يكفي ≈' + count + ' فيديو · ' + cost + 'ن'
-            : '≈' + count + ' videos · ' + cost + 'pts');
+            : 'Video budget from your points: about ' + count + ' videos (' + cost + ' pts each).';
+        } else {
+          node.innerHTML = language === 'ar'
+            ? '<strong>' + count + ' فيديو متاح</strong><span>كل فيديو = ' + cost + ' نقطة</span>'
+            : '<strong>' + count + ' videos left</strong><span>' + cost + ' pts per video</span>';
+        }
       }
     });
     document.querySelectorAll('.credit-wallet[data-credit-tip-ar]').forEach(function (node) {
