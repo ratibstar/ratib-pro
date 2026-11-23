@@ -166,12 +166,12 @@ if ($featStrategy) {
 if ($featCopy) {
     $priorDone += $copyApproved ? 1 : 0;
 }
-$priorDone += $campaignImages !== [] ? 1 : 0;
+// Images are optional: never block progress, voice, or ready.
 if ($featVoice) {
     $priorDone += $campaignVoices !== [] ? 1 : 0;
 }
 $priorDone += $videoDone ? 1 : 0;
-$requiredPrior = 1 + ($featStrategy ? 1 : 0) + ($featCopy ? 1 : 0) + 1 + ($featVoice ? 1 : 0) + 1;
+$requiredPrior = 1 + ($featStrategy ? 1 : 0) + ($featCopy ? 1 : 0) + ($featVoice ? 1 : 0) + 1;
 if ($readyDone && !$videoDone) {
     db()->prepare("UPDATE campaigns SET status = 'in_progress', updated_at = NOW() WHERE id = ? AND user_id = ? AND status IN ('ready', 'completed')")->execute([$id, $userId]);
     $readyDone = false;
@@ -190,11 +190,11 @@ if ($featStrategy) {
 if ($featCopy) {
     $stages['copy'] = ['no' => sprintf('%02d', count($stages) + 1), 'state' => $copyApproved ? 'done' : ($copyStarted ? 'progress' : ($strategyGate ? 'open' : 'next'))];
 }
-$stages['images'] = ['no' => sprintf('%02d', count($stages) + 1), 'state' => $campaignImages !== [] ? 'done' : ($copyGate ? 'open' : 'next')];
+$stages['images'] = ['no' => sprintf('%02d', count($stages) + 1), 'state' => $campaignImages !== [] ? 'done' : ($copyGate ? 'open' : 'next'), 'optional' => true];
 if ($featVoice) {
-    $stages['voice'] = ['no' => sprintf('%02d', count($stages) + 1), 'state' => $campaignVoices !== [] ? 'done' : ($campaignImages !== [] ? 'open' : 'next')];
+    $stages['voice'] = ['no' => sprintf('%02d', count($stages) + 1), 'state' => $campaignVoices !== [] ? 'done' : ($copyGate ? 'open' : 'next')];
 }
-$stages['video'] = ['no' => sprintf('%02d', count($stages) + 1), 'state' => $videoDone ? 'done' : (($featVideo && $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true)) || ($featVideo && $videoJob && (string) $videoJob['status'] === 'completed') ? 'progress' : ($campaignImages !== [] ? 'open' : 'next'))];
+$stages['video'] = ['no' => sprintf('%02d', count($stages) + 1), 'state' => $videoDone ? 'done' : (($featVideo && $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true)) || ($featVideo && $videoJob && (string) $videoJob['status'] === 'completed') ? 'progress' : ($copyGate ? 'open' : 'next'))];
 $stages['ready'] = ['no' => sprintf('%02d', count($stages) + 1), 'state' => ($readyDone && $priorDone >= $requiredPrior) ? 'done' : ($priorDone >= $requiredPrior ? 'open' : 'next')];
 $stageNames = $arabic
     ? ['idea' => 'الفكرة', 'strategy' => 'الاستراتيجية', 'copy' => 'النص', 'images' => 'الصور', 'voice' => 'الصوت', 'video' => 'الفيديو', 'ready' => 'الحملة الجاهزة']
@@ -262,7 +262,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav51">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav78">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -285,6 +285,9 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <button type="button" class="stage-tab<?= $key === 'idea' ? ' is-active' : '' ?>" data-tab="<?= e($key) ?>" aria-selected="<?= $key === 'idea' ? 'true' : 'false' ?>">
           <span><?= e($stage['no']) ?></span>
           <b data-i18n="stage_<?= e($key) ?>"><?= e($stageNames[$key]) ?></b>
+          <?php if (!empty($stage['optional'])): ?>
+            <em class="optional-tag" data-i18n="optional_label"><?= $arabic ? 'اختياري' : 'Optional' ?></em>
+          <?php endif; ?>
           <small data-i18n="<?= e($stateKeys[$stage['state']]) ?>"><?= e($stateNames[$stage['state']]) ?></small>
         </button>
         <?php if ($featStrategy && $key === 'strategy' && $ideaDone && $strategyDoc === null): ?>
@@ -336,11 +339,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
               <option value="4:5"><?= $arabic ? '4:5 عمودي لإنستغرام' : '4:5 Instagram portrait' ?></option>
               <option value="9:16"><?= $arabic ? '9:16 ستوري وسناب' : '9:16 story' ?></option>
             </select>
-            <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'ابدأ الصور' : 'Start Images') ?></button>
+            <button class="<?= $campaignImages !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" data-i18n="<?= $campaignImages !== [] ? 'another_image' : 'start_images' ?>"><?= $campaignImages !== [] ? ($arabic ? 'صورة أخرى' : 'Another image') : ($arabic ? 'توليد صورة (اختياري)' : 'Generate image (optional)') ?></button>
           </form>
-        <?php elseif ($featVoice && $key === 'voice' && $campaignImages !== []): ?>
+        <?php elseif ($featVoice && $key === 'voice' && $copyGate): ?>
           <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm"<?= $voiceEnglishBlocked ? ' disabled' : '' ?>><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
-        <?php elseif ($featVideo && $key === 'video' && $campaignImages !== [] && !$approvedVideo): ?>
+        <?php elseif ($featVideo && $key === 'video' && $copyGate && !$approvedVideo): ?>
           <button class="primary stage-go" type="submit" form="videoGenerate"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ($arabic ? 'جاري إنشاء الفيديو...' : 'Creating the video...') : ($arabic ? 'إنشاء فيديو RATEB' : 'Create the RATEB video') ?></button>
         <?php endif; ?>
       </li>
@@ -577,7 +580,13 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   <?php endif; ?>
 
   <section class="panel" id="images" data-panel="images">
-    <h2 data-i18n="stage_images"><?= $arabic ? 'الصور' : 'Images' ?></h2>
+    <h2>
+      <span data-i18n="stage_images"><?= $arabic ? 'الصور' : 'Images' ?></span>
+      <em class="optional-tag" data-i18n="optional_label"><?= $arabic ? 'اختياري' : 'Optional' ?></em>
+    </h2>
+    <p class="muted" data-i18n="images_optional_lead"><?= $arabic
+      ? 'مرحلة اختيارية: ولّد صورة بالذكاء أو ارفع من جهازك، أو تخطَّ إلى الصوت.'
+      : 'Optional stage: generate an AI image, upload from your device, or skip to voice.' ?></p>
     <?php if ($featAiImage): ?>
     <p id="image-loader" class="notice stage-status" hidden><span class="loader" aria-hidden="true"></span><?= $arabic ? 'جاري تجهيز الصورة' : 'Preparing the image' ?></p>
     <?php endif; ?>
@@ -588,7 +597,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <input type="hidden" name="kind" value="image">
         <input type="hidden" name="panel" value="images">
         <label>
-          <span data-i18n="attach_images"><?= $arabic ? 'أرفق صورًا من جهازك' : 'Attach images from your device' ?></span>
+          <span data-i18n="attach_images"><?= $arabic ? 'أرفق صورًا من جهازك (اختياري)' : 'Attach images from your device (optional)' ?></span>
           <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" required>
         </label>
         <button class="primary" type="submit" data-i18n="attach_images_button"><?= $arabic ? 'أرفق الصورة' : 'Attach image' ?></button>
@@ -632,8 +641,8 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
       <p class="empty" data-i18n="images_need_copy"><?= $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.' ?></p>
     <?php else: ?>
       <p class="empty" data-i18n="images_empty"><?= $featAiImage
-        ? ($arabic ? 'لم تُولَّد صورة بعد. ابدأ من بطاقة الصور أو أرفق صورة.' : 'No image yet. Start from the Images card or attach one.')
-        : ($arabic ? 'أرفق صورة من جهازك لإكمال هذه المرحلة.' : 'Attach an image from your device to complete this stage.') ?></p>
+        ? ($arabic ? 'اختياري — لم تُولَّد صورة بعد. ابدأ التوليد أو أرفق صورة، أو تخطَّ للصوت.' : 'Optional — no image yet. Generate or attach one, or skip to voice.')
+        : ($arabic ? 'اختياري — أرفق صورة من جهازك، أو تخطَّ للصوت.' : 'Optional — attach an image from your device, or skip to voice.') ?></p>
     <?php endif; ?>
   </section>
   <?php if ($featVoice): ?>
@@ -685,8 +694,8 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
           </form>
         </article>
       <?php endforeach; ?>
-    <?php elseif ($campaignImages === []): ?>
-      <p class="empty" data-i18n="voice_need_images"><?= $arabic ? 'أكمل الصور أولًا، ثم ابدأ الصوت.' : 'Finish the images first, then start the voice.' ?></p>
+    <?php elseif (!$copyGate): ?>
+      <p class="empty" data-i18n="voice_need_copy"><?= $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصوت.' : 'Approve the copy first, then start the voice.' ?></p>
     <?php else: ?>
       <p class="empty" data-i18n="voice_empty"><?= $arabic ? 'الصوت يُقرأ من النص المعتمد. ابدأ من بطاقة الصوت.' : 'The voice reads the approved copy. Start from the Voice card.' ?></p>
     <?php endif; ?>
@@ -887,6 +896,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav50"></script>
+<script src="/public/assets/js/app.js?v=nav78"></script>
 </body>
 </html>

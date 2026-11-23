@@ -27,6 +27,9 @@ $assert(str_contains($campaign, 'rateb_features(db())'), 'campaign loads feature
 $assert(str_contains($campaign, 'if ($featStrategy):'), 'campaign hides strategy panel');
 $assert(str_contains($campaign, 'if ($featVoice):'), 'campaign hides voice panel');
 $assert(str_contains($campaign, 'if ($featAiImage && $key === \'images\''), 'campaign gates AI image stage action');
+$assert(str_contains($campaign, 'optional_label') && str_contains($campaign, 'اختياري'), 'campaign marks images as optional');
+$assert(str_contains($campaign, '$stages[\'images\']') && str_contains($campaign, "'optional' => true"), 'images stage flagged optional');
+$assert(!preg_match('/\$requiredPrior = 1 \+ \(\$featStrategy \? 1 : 0\) \+ \(\$featCopy \? 1 : 0\) \+ 1 \+/', $campaign), 'images not required in progress');
 
 $settings = file_get_contents($root . '/admin/settings.php') ?: '';
 $assert(str_contains($settings, 'feature_settings'), 'admin can save feature settings');

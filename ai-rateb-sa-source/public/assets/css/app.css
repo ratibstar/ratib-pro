@@ -57,6 +57,10 @@ table{width:100%;border-collapse:collapse}
 th,td{text-align:start;padding:15px 10px;border-bottom:1px solid var(--border)}
 th{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
 .badge{display:inline-block;padding:5px 9px;border-radius:20px;background:var(--surface2);color:var(--text);font-size:12px}
+.optional-tag{display:inline-flex;align-items:center;margin-inline-start:8px;padding:3px 10px;border-radius:999px;border:1px solid rgba(14,116,144,.45);background:rgba(14,116,144,.12);color:#0e7490;font-size:12px;font-weight:800;font-style:normal;letter-spacing:.02em;line-height:1.2;vertical-align:middle}
+[data-theme=dark] .optional-tag{border-color:rgba(103,232,249,.45);background:rgba(8,145,178,.22);color:#67e8f9}
+.build-stages .stage-tab .optional-tag{margin:4px 0 0;align-self:flex-start}
+.panel h2 .optional-tag{margin-inline-start:10px;font-size:13px}
 [dir=rtl] .home .actions{flex-direction:row-reverse}
 @media(max-width:768px){
   .home-hero h1{font-size:38px}
