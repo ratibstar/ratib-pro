@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/app/bootstrap.php';
 require_once __DIR__ . '/app/plans.php';
 require_once __DIR__ . '/app/video/engine.php';
