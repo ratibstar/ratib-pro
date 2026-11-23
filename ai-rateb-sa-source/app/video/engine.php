@@ -523,7 +523,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
         // A single silent clip shortcut used to skip audio entirely for one-scene jobs.
         $final = rateb_video_compose($pdo, $job, $campaign, $scenes);
         $mediaId = media_store_bytes($campaign, 'video', 'ai', 'campaign.mp4', 'video/mp4', $final);
-        rateb_check_and_deduct_credits((int) $campaign['user_id'], 'video_storyboard', (int) $campaign['id']);
+        // Credits for video_storyboard are taken when the reservation opens (usage_begin).
         $pdo->prepare("UPDATE video_jobs SET status = 'completed', output_media_id = ?, error_code = '' WHERE id = ?")->execute([
             $mediaId,
             (int) $job['id'],

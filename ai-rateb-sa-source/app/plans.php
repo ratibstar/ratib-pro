@@ -17,6 +17,7 @@ function rateb_ui_error(string $code): string
     $messages = [
         'plan_inactive' => $arabic ? 'هذه الباقة غير متاحة.' : 'This plan is not available.',
         'plan_limit' => $arabic ? 'وصلت إلى حد باقتك لهذا الشهر.' : 'You have reached your plan limit for this month.',
+        'credits' => $arabic ? 'رصيد النقاط غير كافٍ. رقِّ الباقة أو اشترِ نقاطًا ثم أعد المحاولة.' : 'Not enough credits. Upgrade or buy credits, then try again.',
         'video_too_long' => $arabic ? 'مدة الفيديو أطول من المسموح في باقتك.' : 'This video is longer than your plan allows.',
         'watermark' => $arabic ? 'تعذر إضافة علامة RATEB AI على الملف.' : 'The RATEB AI mark could not be applied to the file.',
         'ai_failed' => $arabic ? 'تعذر على RATEB إكمال الطلب. لم يُحفظ شيء.' : 'RATEB could not complete the request. Nothing was saved.',
@@ -32,7 +33,7 @@ function rateb_ui_error(string $code): string
         'image_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.',
         'image_provider' => $arabic ? 'تعذر توليد الصورة. حاول مرة أخرى.' : 'The image could not be generated. Try again.',
         'image_workers' => $arabic ? 'مزود الصور غير متاح الآن. حاول بعد قليل.' : 'The image provider is not available right now. Try again shortly.',
-        'image_irrelevant' => $arabic ? 'استبعدنا الصورة لأنها لا تمثل موضوع حملتك. لم تُحفظ ولم تُحتسب من حد الصور.' : 'We rejected the image because it did not represent your campaign. It was not saved or counted.',
+        'image_irrelevant' => $arabic ? 'استبعدنا الصورة لأنها لا تمثل موضوع حملتك. لم تُحفظ وأُعيدت النقاط.' : 'We rejected the image because it did not represent your campaign. It was not saved and the credits were returned.',
         'voice_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصوت.' : 'Approve the copy first, then start the voice.',
         'voice_provider' => $arabic ? 'تعذر توليد الصوت. حاول مرة أخرى.' : 'The voice could not be generated. Try again.',
         'voice_english' => $arabic ? 'توليد الكلام الإنجليزي غير متاح حاليًا. نموذج الكلام الحالي عربي فقط.' : 'English speech is currently unavailable. The current speech model is Arabic only.',
@@ -253,6 +254,28 @@ function rateb_account_credits(PDO $pdo, int $userId): array
         'package_type' => (string) ($row['package_type'] ?? 'free'),
         'credits_balance' => (int) ($row['credits_balance'] ?? 0),
         'subscription_expires_at' => $row['subscription_expires_at'] ?? null,
+    ];
+}
+
+/**
+ * How many image/video/voice runs the current point balance can still buy.
+ *
+ * @return array{balance:int,image_cost:int,video_cost:int,voice_cost:int,images:int,videos:int,voices:int}
+ */
+function rateb_credits_spend_summary(int $balance): array
+{
+    $imageCost = rateb_get_feature_cost('ai_image');
+    $videoCost = rateb_get_feature_cost('video_storyboard');
+    $voiceCost = rateb_get_feature_cost('saudi_voice');
+    $balance = max(0, $balance);
+    return [
+        'balance' => $balance,
+        'image_cost' => $imageCost,
+        'video_cost' => $videoCost,
+        'voice_cost' => $voiceCost,
+        'images' => $imageCost > 0 ? intdiv($balance, $imageCost) : 0,
+        'videos' => $videoCost > 0 ? intdiv($balance, $videoCost) : 0,
+        'voices' => $voiceCost > 0 ? intdiv($balance, $voiceCost) : 0,
     ];
 }
 
@@ -727,12 +750,31 @@ function rateb_usage_count(PDO $pdo, int $userId, string $operation): int
     return (int) $stmt->fetchColumn();
 }
 
+/** Map a usage reservation operation to the credit feature that pays for it. */
+function rateb_usage_credit_feature(string $operation): string
+{
+    return match ($operation) {
+        'image' => 'ai_image',
+        'voice' => 'saudi_voice',
+        'video' => 'video_storyboard',
+        default => '',
+    };
+}
+
+/**
+ * Open a usage reservation. Image/voice/video are gated by credits (not a separate
+ * monthly unit cap), so the wallet balance the customer sees matches what they can spend.
+ */
 function rateb_usage_begin(PDO $pdo, int $userId, ?int $campaignId, string $operation, ?int $seconds = null): array
 {
     $allowed = ['image', 'video', 'campaign_text', 'voice', 'variation'];
     if (!in_array($operation, $allowed, true)) {
         return ['ok' => false, 'code' => 'plan_inactive', 'id' => 0];
     }
+    $feature = rateb_usage_credit_feature($operation);
+    $cost = $feature !== '' ? rateb_get_feature_cost($feature) : 0;
+    $watermark = false;
+    $id = 0;
     $pdo->beginTransaction();
     try {
         $plan = rateb_lock_plan($pdo, $userId);
@@ -751,27 +793,33 @@ function rateb_usage_begin(PDO $pdo, int $userId, ?int $campaignId, string $oper
                 return ['ok' => false, 'code' => $durationCode, 'id' => 0];
             }
         }
-        $limit = null;
-        if ($operation === 'image') {
-            $limit = (int) $plan['image_limit'];
-        } elseif ($operation === 'video') {
-            $limit = rateb_video_is_free($plan) ? 2 : (int) $plan['video_limit'];
-        }
-        if ($limit !== null && rateb_usage_count($pdo, $userId, $operation) >= $limit) {
-            $pdo->rollBack();
-            return ['ok' => false, 'code' => ($operation === 'video' && rateb_video_is_free($plan)) ? 'video_free_used' : 'plan_limit', 'id' => 0];
+        if ($cost > 0) {
+            $balance = $pdo->prepare('SELECT credits_balance FROM users WHERE id = ? FOR UPDATE');
+            $balance->execute([$userId]);
+            if ((int) $balance->fetchColumn() < $cost) {
+                $pdo->rollBack();
+                return ['ok' => false, 'code' => 'credits', 'id' => 0];
+            }
         }
         $insert = $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, seconds, status) VALUES (?, ?, ?, 1, ?, \'reserved\')');
         $insert->execute([$userId, $campaignId, $operation, $seconds]);
         $id = (int) $pdo->lastInsertId();
+        $watermark = (int) $plan['watermark'] === 1;
         $pdo->commit();
-        return ['ok' => true, 'code' => '', 'id' => $id, 'watermark' => (int) $plan['watermark'] === 1];
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
         throw $error;
     }
+    if ($feature !== '' && $cost > 0 && $id > 0) {
+        $charged = rateb_reservation_charge($pdo, $id, $userId, $feature, $campaignId);
+        if ($charged !== 'ok') {
+            rateb_usage_finish($pdo, $id, 'failed');
+            return ['ok' => false, 'code' => $charged === 'credits' ? 'credits' : 'plan_inactive', 'id' => 0];
+        }
+    }
+    return ['ok' => true, 'code' => '', 'id' => $id, 'watermark' => $watermark];
 }
 
 function rateb_usage_finish(PDO $pdo, int $eventId, string $status): void

@@ -25,11 +25,16 @@ if ((string) ($media['approval_status'] ?? '') === 'approved') {
     header('Location: ' . $back);
     exit;
 }
-$paid = db()->prepare("SELECT COUNT(*) FROM usage_events WHERE user_id = ? AND campaign_id = ? AND operation = 'ai_image' AND status = 'completed' AND credits_deducted > 0");
-$paid->execute([$userId, $campaignId]);
+$ledger = db()->prepare("SELECT
+    SUM(operation = 'ai_image' AND status = 'completed' AND credits_deducted > 0) AS charged,
+    SUM(operation = 'ai_image_refund' AND status = 'completed') AS refunded
+    FROM usage_events WHERE user_id = ? AND campaign_id = ?");
+$ledger->execute([$userId, $campaignId]);
+$paidRow = $ledger->fetch() ?: [];
+$netPaid = max(0, (int) ($paidRow['charged'] ?? 0) - (int) ($paidRow['refunded'] ?? 0));
 $approved = db()->prepare("SELECT COUNT(*) FROM campaign_media WHERE user_id = ? AND campaign_id = ? AND kind = 'image' AND source = 'ai' AND approval_status = 'approved'");
 $approved->execute([$userId, $campaignId]);
-$needsCharge = (int) $approved->fetchColumn() >= (int) $paid->fetchColumn();
+$needsCharge = (int) $approved->fetchColumn() >= $netPaid;
 if ($needsCharge && rateb_credit_charge(db(), $userId, 'ai_image', $campaignId) < 1) {
     header('Location: /campaign.php?id=' . $campaignId . '&credits=1#images');
     exit;

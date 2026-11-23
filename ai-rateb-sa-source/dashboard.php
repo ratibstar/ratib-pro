@@ -46,19 +46,25 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav79">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav80">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard', !empty($_SESSION['user_id'])); ?>
 <?php
 $wallet = !empty($_SESSION['user_id']) ? rateb_account_credits($pdo, (int) $_SESSION['user_id']) : ['package_type' => 'free', 'credits_balance' => 0];
+$spend = rateb_credits_spend_summary((int) $wallet['credits_balance']);
 $pricingPlans = rateb_public_pricing_plans($pdo);
 $planNames = [];
 foreach ($pricingPlans as $planRow) {
     $planNames[$planRow['code']] = $planRow['name_ar'];
 }
 ?>
-<p class="muted" style="width:min(1800px,calc(100% - 36px));margin:12px auto 0">الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?> · الرصيد: <?= (int) $wallet['credits_balance'] ?></p>
+<p class="muted credit-summary-line" style="width:min(1800px,calc(100% - 36px));margin:12px auto 0">
+  الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?>
+  · النقاط: <?= (int) $wallet['credits_balance'] ?>
+  · صور: <?= (int) $spend['images'] ?> <span class="credit-cost-hint">(<?= (int) $spend['image_cost'] ?>ن لكل صورة)</span>
+  · فيديو: <?= (int) $spend['videos'] ?> <span class="credit-cost-hint">(<?= (int) $spend['video_cost'] ?>ن لكل فيديو)</span>
+</p>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>
     <p class="muted" data-i18n="campaign_deleted">Campaign deleted.</p>
@@ -284,6 +290,6 @@ document.querySelectorAll('[data-pricing-close]').forEach(function (node) {
   });
 });
 </script>
-<script src="/public/assets/js/app.js?v=nav79"></script>
+<script src="/public/assets/js/app.js?v=nav80"></script>
 </body>
 </html>

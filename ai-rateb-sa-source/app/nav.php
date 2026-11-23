@@ -20,10 +20,15 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
         ],
     ];
     $credits = null;
+    $spend = null;
+    $arabicUi = function_exists('ui_language') && ui_language() === 'ar';
     if ($loggedIn && function_exists('rateb_account_credits') && !empty($_SESSION['user_id'])) {
         $pdo = function_exists('db') ? db() : ($GLOBALS['pdo'] ?? null);
         if ($pdo instanceof PDO) {
             $credits = (int) rateb_account_credits($pdo, (int) $_SESSION['user_id'])['credits_balance'];
+            if (function_exists('rateb_credits_spend_summary')) {
+                $spend = rateb_credits_spend_summary($credits);
+            }
         }
     }
     echo '<header class="site-bar"><div class="site-shell">';
@@ -55,7 +60,18 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '<div class="edge-auth">';
     if ($credits !== null) {
         $chipTag = ($here === '/dashboard' || $here === '/dashboard.php') ? 'button type="button" data-pricing-open' : 'a href="/?pricing=1#pricing"';
-        echo '<' . $chipTag . ' class="credit-chip" title="Credits"><span aria-hidden="true">⚡</span>' . $credits . '</' . strtok($chipTag, ' ') . '>';
+        $tip = $arabicUi
+            ? 'النقاط تُخصم لكل عملية: صورة ' . (int) ($spend['image_cost'] ?? 10) . ' · فيديو ' . (int) ($spend['video_cost'] ?? 20) . ' · صوت ' . (int) ($spend['voice_cost'] ?? 15)
+            : 'Points are spent per action: image ' . (int) ($spend['image_cost'] ?? 10) . ' · video ' . (int) ($spend['video_cost'] ?? 20) . ' · voice ' . (int) ($spend['voice_cost'] ?? 15);
+        echo '<div class="credit-wallet" title="' . e($tip) . '">';
+        echo '<' . $chipTag . ' class="credit-chip"><span aria-hidden="true">⚡</span><span data-i18n="credit_points_short">' . ($arabicUi ? 'نقاط' : 'pts') . '</span> ' . $credits . '</' . strtok($chipTag, ' ') . '>';
+        if (is_array($spend)) {
+            echo '<span class="credit-split" aria-label="' . e($tip) . '">';
+            echo '<span class="credit-part"><b data-i18n="credit_images_short">' . ($arabicUi ? 'صور' : 'Images') . '</b> ' . (int) $spend['images'] . '</span>';
+            echo '<span class="credit-part"><b data-i18n="credit_videos_short">' . ($arabicUi ? 'فيديو' : 'Video') . '</b> ' . (int) $spend['videos'] . '</span>';
+            echo '</span>';
+        }
+        echo '</div>';
     }
     echo '<button type="button" id="lang" class="icon">AR</button>';
     echo '<button type="button" id="theme" class="icon">☾</button>';
@@ -298,8 +314,23 @@ function rateb_account_dialog(string $here = ''): void
     echo '<button type="button" class="auth-x" data-account-close aria-label="Close">×</button>';
     echo '<div class="account-modal-card">';
     echo '<h2 data-i18n="nav_account">' . ($arabic ? 'حسابي' : 'My account') . '</h2>';
+    $spend = function_exists('rateb_credits_spend_summary')
+        ? rateb_credits_spend_summary((int) $wallet['credits_balance'])
+        : null;
     echo '<p class="muted account-modal-meta">' . ($arabic ? 'الباقة:' : 'Plan:') . ' ' . e((string) $wallet['package_type'])
-        . ' · ' . ($arabic ? 'الرصيد:' : 'Credits:') . ' ' . (int) $wallet['credits_balance'] . '</p>';
+        . ' · ' . ($arabic ? 'النقاط:' : 'Points:') . ' ' . (int) $wallet['credits_balance'];
+    if (is_array($spend)) {
+        echo ' · ' . ($arabic ? 'صور:' : 'Images:') . ' ' . (int) $spend['images']
+            . ' (' . (int) $spend['image_cost'] . ($arabic ? 'ن' : 'pts') . ')'
+            . ' · ' . ($arabic ? 'فيديو:' : 'Video:') . ' ' . (int) $spend['videos']
+            . ' (' . (int) $spend['video_cost'] . ($arabic ? 'ن' : 'pts') . ')';
+    }
+    echo '</p>';
+    if (is_array($spend)) {
+        echo '<p class="muted account-credit-hint">' . ($arabic
+            ? 'التوضيح: كل توليد يخصم من نفس الرصيد — صورة ' . (int) $spend['image_cost'] . ' نقطة، فيديو ' . (int) $spend['video_cost'] . '، صوت ' . (int) $spend['voice_cost'] . '.'
+            : 'Same wallet for every action — image ' . (int) $spend['image_cost'] . ' pts, video ' . (int) $spend['video_cost'] . ', voice ' . (int) $spend['voice_cost'] . '.') . '</p>';
+    }
 
     if ($flash === 'profile') {
         echo '<p class="notice" data-i18n="account_saved">' . ($arabic ? 'تم حفظ الاسم.' : 'Name saved.') . '</p>';

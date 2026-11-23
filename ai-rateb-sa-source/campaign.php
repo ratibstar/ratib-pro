@@ -262,7 +262,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav79">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav80">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -278,6 +278,11 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     </div>
     <div class="progress" role="progressbar" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100" data-progress="<?= $progress ?>"><span style="width:<?= $progress ?>%"></span></div>
     <p class="muted"><span data-i18n="progress"><?= $arabic ? 'التقدم' : 'Progress' ?></span> <span id="progress-value"><?= $progress ?>%</span> · <?= $doneUnits ?> / <?= (int) $totalUnits ?></p>
+    <?php $spend = rateb_credits_spend_summary((int) $wallet['credits_balance']); ?>
+    <p class="muted credit-summary-line"><?= $arabic ? 'النقاط' : 'Points' ?>: <?= (int) $spend['balance'] ?>
+      · <?= $arabic ? 'صور' : 'Images' ?>: <?= (int) $spend['images'] ?> <span class="credit-cost-hint">(<?= (int) $spend['image_cost'] ?><?= $arabic ? 'ن/صورة' : ' pts/image' ?>)</span>
+      · <?= $arabic ? 'فيديو' : 'Video' ?>: <?= (int) $spend['videos'] ?> <span class="credit-cost-hint">(<?= (int) $spend['video_cost'] ?><?= $arabic ? 'ن/فيديو' : ' pts/video' ?>)</span>
+    </p>
   </section>
   <ol class="build-stages">
     <?php foreach ($stages as $key => $stage): ?>
@@ -896,6 +901,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav79"></script>
+<script src="/public/assets/js/app.js?v=nav80"></script>
 </body>
 </html>
