@@ -110,7 +110,9 @@ $prompt = (string) $promptData['prompt'];
 
 // Prefer sync free/fast providers (Cloudflare → Pollinations) before free Horde queues.
 $sync = rateb_image_generate_sync($prompt, $ratioSize[0], $ratioSize[1]);
-if (!empty($sync['ok']) && ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now)) {
+if (!empty($sync['ok'])) {
+    // Sync already produced bytes — never fall through to Horde "crowded" after that.
+    ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now);
     exit;
 }
 
@@ -336,7 +338,7 @@ function ai_image_dispatch(array $campaign, array $decision, string $postedJobId
 
 /**
  * Complete a sync provider image in the same request (no Horde poll).
- * Returns false when caption/relevance fails so Horde can still be tried.
+ * Always responds to the browser — never returns control to the Horde queue.
  *
  * @param array<string,mixed> $promptContext
  * @param array<string,mixed> $promptData
@@ -350,13 +352,16 @@ function ai_image_try_finish_sync(
     array $promptData,
     array $sync,
     int $now
-): bool {
+): void {
     $bytes = (string) ($sync['bytes'] ?? '');
     $mime = (string) ($sync['mime'] ?? '');
     $provider = (string) ($sync['provider'] ?? 'sync');
     $modelName = (string) ($sync['model'] ?? $provider);
     if ($bytes === '' || $mime === '' || strlen($bytes) < 32 || strlen($bytes) > media_max_bytes('image')) {
-        return false;
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(502);
+        echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed', 'provider' => $provider], JSON_UNESCAPED_UNICODE);
+        return;
     }
     $jobId = sprintf(
         '%08x-%04x-4%03x-%04x-%012x',
@@ -375,10 +380,20 @@ function ai_image_try_finish_sync(
         'prompt_sha256' => hash('sha256', (string) ($promptData['prompt'] ?? '')),
     ]);
 
-    $caption = rateb_image_provider_caption_bytes($bytes, $mime, 12);
+    // Caption is advisory for sync providers — do not discard a successful CF/Pollinations image
+    // and bounce the customer into a crowded Horde queue.
+    $caption = rateb_image_provider_caption_bytes($bytes, $mime, 8);
     $relevance = ['status' => 'relevant', 'reason' => 'sync_provider_draft_preview'];
     if ($caption !== '') {
-        $relevance = ai_image_relevance_check($promptContext['facts'] ?? [], $caption);
+        $checked = ai_image_relevance_check($promptContext['facts'] ?? [], $caption);
+        if (($checked['status'] ?? '') === 'relevant') {
+            $relevance = $checked;
+        } else {
+            $relevance = [
+                'status' => 'relevant',
+                'reason' => 'sync_draft_despite_caption:' . (string) ($checked['reason'] ?? 'unrelated'),
+            ];
+        }
     }
     rateb_image_prompt_log([
         'campaign_id' => (int) $campaign['id'],
@@ -391,11 +406,6 @@ function ai_image_try_finish_sync(
         'validation_status' => (string) ($relevance['status'] ?? 'unavailable'),
         'validation_reason' => (string) ($relevance['reason'] ?? ''),
     ]);
-    // Sync free providers: if caption gate rejects, fall through to Horde.
-    // If caption is unavailable, still save a draft so the customer can preview within 1 minute.
-    if ($caption !== '' && ($relevance['status'] ?? '') !== 'relevant') {
-        return false;
-    }
 
     if (rateb_watermark_required(db(), $userId)) {
         try {
@@ -416,7 +426,7 @@ function ai_image_try_finish_sync(
         ai_image_release($userId, '', $usageId, 'failed');
         http_response_code(500);
         echo json_encode(['error' => rateb_ui_error('image_storage'), 'code' => 'image_storage', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
-        return true;
+        return;
     }
     ai_image_release($userId, '', $usageId, 'completed');
     echo json_encode([
@@ -428,7 +438,6 @@ function ai_image_try_finish_sync(
         'media_id' => $mediaId,
         'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
     ], JSON_UNESCAPED_UNICODE);
-    return true;
 }
 
 function ai_horde_finish_job(array $campaign, string $jobId): void
