@@ -255,28 +255,8 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     echo '.bg-grid{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:42px 42px;animation:gridFloat 28s linear infinite;opacity:.45}';
     echo '.bg-glow{position:absolute;inset:10% 18%;border-radius:40%;background:radial-gradient(circle,rgba(167,139,250,.18),transparent 65%);animation:glowPulse 7s ease-in-out infinite alternate;filter:blur(20px)}';
     echo '.float-lines{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}';
-    echo '.float-lines span{position:absolute;font-weight:800;white-space:nowrap;opacity:0;text-shadow:0 8px 24px rgba(0,0,0,.35);will-change:transform,opacity}';
+    echo '.float-lines span{position:absolute;left:0;top:0;font-weight:800;white-space:nowrap;opacity:.85;text-shadow:0 10px 28px rgba(0,0,0,.4);will-change:transform,opacity;font-size:clamp(1.35rem,3.2vw,2.45rem);transition:none}';
     echo '.float-lines .c1{color:#67e8f9}.float-lines .c2{color:#c4b5fd}.float-lines .c3{color:#5eead4}.float-lines .c4{color:#fdba74}.float-lines .c5{color:#f9a8d4}';
-    echo '.float-lines .f1{top:6%;inset-inline-start:5%;font-size:clamp(1.05rem,2.3vw,1.75rem);animation:popA 3.1s ease-in-out infinite}';
-    echo '.float-lines .f2{top:12%;inset-inline-end:7%;font-size:clamp(1rem,2vw,1.5rem);animation:popB 2.6s ease-in-out .15s infinite}';
-    echo '.float-lines .f3{top:20%;inset-inline-start:3%;font-size:clamp(.95rem,1.8vw,1.35rem);animation:popC 2.8s ease-in-out .3s infinite}';
-    echo '.float-lines .f4{top:26%;inset-inline-end:4%;font-size:clamp(1.05rem,2.1vw,1.6rem);animation:popA 2.4s ease-in-out .45s infinite}';
-    echo '.float-lines .f5{top:34%;inset-inline-start:8%;font-size:clamp(1rem,2vw,1.45rem);animation:popB 2.9s ease-in-out .1s infinite}';
-    echo '.float-lines .f6{top:40%;inset-inline-end:6%;font-size:clamp(1.05rem,2.2vw,1.65rem);animation:popC 2.5s ease-in-out .35s infinite}';
-    echo '.float-lines .f7{top:48%;inset-inline-start:4%;font-size:clamp(.95rem,1.9vw,1.4rem);animation:popA 2.7s ease-in-out .55s infinite}';
-    echo '.float-lines .f8{top:54%;inset-inline-end:8%;font-size:clamp(1rem,2vw,1.5rem);animation:popB 3s ease-in-out .2s infinite}';
-    echo '.float-lines .f9{top:62%;inset-inline-start:10%;font-size:clamp(1.05rem,2.1vw,1.55rem);animation:popC 2.3s ease-in-out .4s infinite}';
-    echo '.float-lines .f10{top:68%;inset-inline-end:5%;font-size:clamp(1.1rem,2.3vw,1.7rem);animation:popA 2.2s ease-in-out .25s infinite}';
-    echo '.float-lines .f11{bottom:28%;inset-inline-start:14%;font-size:clamp(.95rem,1.9vw,1.4rem);animation:popB 2.8s ease-in-out .5s infinite}';
-    echo '.float-lines .f12{bottom:22%;inset-inline-end:12%;font-size:clamp(1rem,2vw,1.5rem);animation:popC 2.6s ease-in-out .12s infinite}';
-    echo '.float-lines .f13{bottom:16%;inset-inline-start:22%;font-size:clamp(1.05rem,2.2vw,1.6rem);animation:popA 2.9s ease-in-out .38s infinite}';
-    echo '.float-lines .f14{bottom:12%;inset-inline-end:18%;font-size:clamp(.95rem,1.85vw,1.35rem);animation:popB 2.4s ease-in-out .62s infinite}';
-    echo '.float-lines .f15{bottom:7%;inset-inline-start:36%;font-size:clamp(1.1rem,2.4vw,1.75rem);animation:popC 2.5s ease-in-out .18s infinite}';
-    echo '.float-lines .f16{top:16%;inset-inline-start:38%;font-size:clamp(1rem,2vw,1.45rem);animation:popA 2.7s ease-in-out .28s infinite}';
-    echo '.float-lines .f17{top:44%;inset-inline-start:40%;font-size:clamp(.95rem,1.9vw,1.4rem);animation:popB 3.1s ease-in-out .48s infinite}';
-    echo '.float-lines .f18{top:76%;inset-inline-end:28%;font-size:clamp(1.05rem,2.1vw,1.55rem);animation:popC 2.3s ease-in-out .33s infinite}';
-    echo '.float-lines .f19{top:8%;inset-inline-start:55%;font-size:clamp(1rem,2vw,1.5rem);animation:popA 2.6s ease-in-out .58s infinite}';
-    echo '.float-lines .f20{bottom:32%;inset-inline-end:36%;font-size:clamp(1.15rem,2.5vw,1.8rem);animation:popB 2.2s ease-in-out .08s infinite}';
     echo '.shell{position:relative;z-index:1;width:min(920px,100%);display:grid;gap:14px}';
     echo '.brand-hero{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:2px}';
     echo '.brand-mark{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:.03em;animation:brandPulse 2.4s ease-in-out infinite;text-shadow:0 10px 40px rgba(103,232,249,.25)}';
@@ -304,16 +284,13 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     echo '@keyframes stepRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}';
     echo '@keyframes numPulse{0%,100%{box-shadow:0 0 0 3px rgba(109,40,217,.2)}50%{box-shadow:0 0 0 6px rgba(20,184,166,.28)}}';
     echo '@keyframes brandPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.06);filter:brightness(1.2)}}';
-    echo '@keyframes popA{0%,100%{opacity:.15;transform:translateY(0) scale(.82) rotate(-2deg)}35%{opacity:.95;transform:translateY(-10px) scale(1.18) rotate(1deg)}70%{opacity:.55;transform:translateY(4px) scale(.94) rotate(-1deg)}}';
-    echo '@keyframes popB{0%,100%{opacity:.12;transform:translateX(0) scale(.78) rotate(2deg)}40%{opacity:1;transform:translateX(8px) scale(1.22) rotate(-2deg)}75%{opacity:.4;transform:translateX(-4px) scale(.9) rotate(1deg)}}';
-    echo '@keyframes popC{0%,100%{opacity:.1;transform:scale(.75) rotate(0)}30%{opacity:.9;transform:scale(1.28) rotate(3deg)}60%{opacity:.5;transform:scale(.88) rotate(-2deg)}}';
-    echo '@media (max-width:720px){.panel{padding:28px 18px}.steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px}.float-lines span{font-size:.95rem!important}}';
-    echo '@media (prefers-reduced-motion:reduce){.bg,.bg-orb,.bg-wave,.bg-grid,.bg-glow,.panel,.steps li,.steps .num,.brand-mark,.float-lines span{animation:none!important}.float-lines span{opacity:.35}}';
+    echo '@media (max-width:720px){.panel{padding:28px 18px}.steps{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 8px}.float-lines span{font-size:clamp(1.15rem,4.2vw,1.7rem)!important}}';
+    echo '@media (prefers-reduced-motion:reduce){.bg,.bg-orb,.bg-wave,.bg-grid,.bg-glow,.panel,.steps li,.steps .num,.brand-mark{animation:none!important}.float-lines span{opacity:.45!important;transition:none!important}}';
     echo '</style></head><body>';
     echo '<div class="bg" aria-hidden="true"><span class="bg-orb a"></span><span class="bg-orb b"></span><span class="bg-orb c"></span><span class="bg-wave"></span><span class="bg-grid"></span><span class="bg-glow"></span></div>';
-    echo '<div class="float-lines" aria-hidden="true">';
+    echo '<div class="float-lines" id="float-lines" aria-hidden="true">';
     foreach ($floatLines as $i => $row) {
-        echo '<span class="f' . ($i + 1) . ' ' . $row[1] . '">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</span>';
+        echo '<span class="' . $row[1] . '" data-float="' . ($i + 1) . '">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</span>';
     }
     echo '</div>';
     echo '<div class="shell">';
@@ -328,6 +305,28 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
         }
         echo '</ol></section>';
     }
-    echo '</div></div></body></html>';
+    echo '</div></div>';
+    echo '<script>(function(){';
+    echo 'var root=document.getElementById("float-lines");if(!root)return;';
+    echo 'var nodes=[].slice.call(root.querySelectorAll("[data-float]"));';
+    echo 'var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;';
+    echo 'function rnd(a,b){return a+Math.random()*(b-a)}';
+    echo 'function place(el,first){';
+    echo 'var w=window.innerWidth,h=window.innerHeight,ew=el.offsetWidth||160,eh=el.offsetHeight||40;';
+    echo 'var x=rnd(2,Math.max(4,w-ew-8)),y=rnd(2,Math.max(4,h-eh-8));';
+    echo 'var s=rnd(.85,1.55),r=rnd(-18,18),o=rnd(.45,.98);';
+    echo 'var ms=first?0:rnd(1400,3200);';
+    echo 'el.style.transition=first?"none":("transform "+ms+"ms cubic-bezier(.22,.7,.3,1), opacity "+ms+"ms ease");';
+    echo 'el.style.transform="translate("+x+"px,"+y+"px) scale("+s+") rotate("+r+"deg)";';
+    echo 'el.style.opacity=String(o);';
+    echo 'return ms;}';
+    echo 'nodes.forEach(function(el,i){place(el,true);';
+    echo 'if(reduce)return;';
+    echo 'function loop(){var wait=place(el,false);setTimeout(loop,wait+rnd(80,420));}';
+    echo 'setTimeout(loop,rnd(200,900)+i*70);';
+    echo '});';
+    echo 'window.addEventListener("resize",function(){nodes.forEach(function(el){place(el,true);});});';
+    echo '})();</script>';
+    echo '</body></html>';
     exit;
 }
