@@ -109,7 +109,14 @@ $promptData = ai_campaign_image_prompt($promptContext, $userId, $usageId);
 $prompt = (string) $promptData['prompt'];
 
 // Prefer sync free/fast providers (Cloudflare → Pollinations) before free Horde queues.
-$sync = rateb_image_generate_sync($prompt, $ratioSize[0], $ratioSize[1]);
+$syncPrompt = rateb_image_sync_prompt(
+    is_array($promptData['plan'] ?? null) ? $promptData['plan'] : [],
+    is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : []
+);
+if ($syncPrompt === '') {
+    $syncPrompt = trim((string) preg_replace('/\s*###.*$/su', '', $prompt));
+}
+$sync = rateb_image_generate_sync($syncPrompt !== '' ? $syncPrompt : $prompt, $ratioSize[0], $ratioSize[1]);
 if (!empty($sync['ok'])) {
     // Sync already produced bytes — never fall through to Horde "crowded" after that.
     ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now);
@@ -941,6 +948,7 @@ function ai_campaign_image_prompt(array $context, int $userId, int $usageId): ar
     $prompt = rateb_image_prompt_compose($plan, $facts, $ratio, $variant);
     return [
         'prompt' => $prompt,
+        'plan' => $plan,
         'category' => (string) ($plan['category'] ?? 'other'),
         'audit' => [
             'campaign_id' => (int) $campaign['id'],

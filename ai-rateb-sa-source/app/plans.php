@@ -1839,17 +1839,15 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
     $isAi = preg_match('/ذكاء|اصطناع|\bai\b|artificial/u', $source) === 1;
     $isSaudi = preg_match('/سعود|saudi/u', $source) === 1;
     $place = $isSaudi ? 'Saudi marketing studio' : 'marketing studio';
-    // AI SaaS ads: show campaign journey as blank printed stages (idea→strategy→creatives), not gift cards.
+    // AI SaaS ads: short subject — long prompts make Flux drift to monitors/offices.
     if ($isAi) {
-        $plan['subject'] = 'professional photo of a modern ' . $place
-            . ' desk with large A4 advertising flyers, square blank social-media print mockups,'
-            . ' and a three-panel color storyboard strip for idea strategy copy stages,'
-            . ' teal and coral accents, soft daylight, no text, no logos, no plants';
+        // Avoid "desk" wording — Flux Schnell otherwise invents laptops/plants.
+        $plan['subject'] = 'isolated product photograph of teal and coral printed A4 advertising flyers and blank square paper mockups fanned on seamless beige backdrop, centered, studio softbox lighting';
         $plan['elements'] = [
-            'large A4 advertising flyers',
-            'square blank social-media print mockups',
-            'three-panel color storyboard strip',
+            'teal and coral printed A4 advertising flyers',
+            'blank square paper mockups',
         ];
+        $plan['setting'] = 'seamless beige backdrop';
     } else {
         $plan['subject'] = 'professional photo of colorful advertising posters and marketing flyers fanned on a '
             . $place . ' campaign launch desk, blank social post templates, soft daylight, no text';
@@ -2129,6 +2127,22 @@ function rateb_image_prompt_clip_list(string $text, int $limit): string
         $kept[] = $part;
     }
     return implode(', ', $kept);
+}
+
+/**
+ * Short positive-only prompt for sync providers (Cloudflare / Pollinations).
+ * Long ### negative lists are ignored there and cause subject drift.
+ */
+function rateb_image_sync_prompt(array $plan, array $facts): string
+{
+    $subject = trim((string) ($plan['subject'] ?? ''));
+    if ($subject === '') {
+        $subject = 'overhead commercial photo of colorful printed marketing flyers on a wooden desk, soft daylight, no text';
+    }
+    $subject = trim((string) preg_replace('/\s*###.*$/su', '', $subject));
+    $guard = 'no computer monitor, no laptop, no keyboard, no dashboard, no people, no faces, no plants, no cactus, no toilet, no bathroom, no logos, no readable text';
+    $prompt = $subject . ', ' . $guard;
+    return mb_substr($prompt, 0, 420);
 }
 
 function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, int $variant): string
