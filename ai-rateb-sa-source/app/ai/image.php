@@ -996,8 +996,50 @@ function ai_campaign_image_prompt(array $context, int $userId, int $usageId): ar
         echo json_encode(['error' => rateb_ui_error('brief_missing'), 'code' => 'brief_missing'], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    // Prompt-layer grounding only — never writes campaign_briefs / campaign_outputs / campaigns.
     $plan = rateb_image_plan_ground_marketing_service($plan, $facts, $variant);
+    if (($plan['sufficient'] ?? false) !== true || ($plan['grounding'] ?? '') === 'failed') {
+        rateb_image_prompt_log([
+            'campaign_id' => (int) $campaign['id'],
+            'user_id' => (int) ($campaign['user_id'] ?? 0),
+            'usage_id' => $usageId,
+            'status' => 'grounding_failed',
+            'grounding_error' => (string) ($plan['grounding_error'] ?? 'grounding_failed'),
+            'authoritative_brief' => rateb_image_brief_text($facts),
+            'llm_response' => (string) ($understanding['raw'] ?? ''),
+            'subject' => (string) ($plan['subject'] ?? ''),
+            'original_art_subject' => (string) ($plan['original_art_subject'] ?? ''),
+        ]);
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(422);
+        echo json_encode([
+            'error' => rateb_ui_error('brief_missing'),
+            'code' => 'grounding_failed',
+            'detail' => (string) ($plan['grounding_error'] ?? 'grounding_failed'),
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     $prompt = rateb_image_prompt_compose($plan, $facts, $ratio, $variant);
+    $integrity = rateb_image_prompt_integrity($facts, $prompt, $plan);
+    if ($integrity !== null) {
+        rateb_image_prompt_log([
+            'campaign_id' => (int) $campaign['id'],
+            'user_id' => (int) ($campaign['user_id'] ?? 0),
+            'usage_id' => $usageId,
+            'status' => 'prompt_integrity_failed',
+            'integrity_error' => $integrity,
+            'authoritative_brief' => rateb_image_brief_text($facts),
+            'prompt' => $prompt,
+        ]);
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(422);
+        echo json_encode([
+            'error' => rateb_ui_error('brief_missing'),
+            'code' => 'prompt_integrity_failed',
+            'detail' => $integrity,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     return [
         'prompt' => $prompt,
         'plan' => $plan,
@@ -1008,9 +1050,11 @@ function ai_campaign_image_prompt(array $context, int $userId, int $usageId): ar
             'ratio' => $ratio,
             'variant' => $variant,
             'source' => 'llm',
+            'grounding' => (string) ($plan['grounding'] ?? 'enriched'),
             'authoritative_brief' => rateb_image_brief_text($facts),
             'llm_response' => (string) ($understanding['raw'] ?? ''),
             'subject' => (string) $plan['subject'],
+            'original_art_subject' => (string) ($plan['original_art_subject'] ?? ''),
             'category' => (string) ($plan['category'] ?? 'other'),
             'evidence' => (string) ($plan['evidence'] ?? ''),
             'prompt' => $prompt,
