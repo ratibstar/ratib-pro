@@ -1872,24 +1872,18 @@ function rateb_image_marketing_subject_from_facts(array $facts): array
     $mood = rateb_image_visual_mood_from_facts($facts);
     $place = $isSaudi ? 'Saudi marketing studio table' : 'marketing studio table';
 
-    // Prefer finished campaign outputs the platform claims to create — never blank stationery.
-    // Avoid desk/table/phone wording — Flux Schnell otherwise invents laptops, toilets, and cacti.
-    $surface = 'seamless beige studio backdrop';
-    if ($makesVideo || $makesImages) {
-        $subject = 'isolated product photograph of colorful designed advertising posters and finished social media print mockups with photographic lifestyle imagery fanned on a '
-            . $surface . ', teal and coral accents, ' . $mood . ' softbox lighting, no plants, no cactus, no phone, no laptop, no text';
-        $elements = [
-            'designed advertising posters with photographic lifestyle imagery',
-            'finished social media print mockups',
-            'colorful campaign flyers',
-        ];
-    } else {
-        $subject = 'isolated product photograph of colorful designed advertising posters and marketing flyers with photo imagery fanned on a '
-            . $surface . ', ' . $mood . ' softbox lighting, no plants, no cactus, no phone, no laptop, no text';
-        $elements = [
-            'designed advertising posters with photo imagery',
-            'colorful marketing flyers',
-        ];
+    // Flux melts letters on posters/flyers. Show a clean tablet UI of photo tiles + abstract
+    // color shapes that imply campaign creatives — never typography, plants, or blank paper.
+    $surface = 'clean white studio surface';
+    $subject = 'isolated product photograph of a modern tablet displaying a grid of colorful photo tiles and abstract teal coral UI shapes with zero letters on a '
+        . $surface . ', ' . $mood . ' softbox lighting, no plants, no cactus, no posters, no books, no laptop, no text';
+    $elements = [
+        'tablet with colorful photo tile grid',
+        'abstract teal and coral UI shapes',
+        'soft studio reflections',
+    ];
+    if ($makesVideo) {
+        $elements[] = 'one vertical colorful video frame tile';
     }
 
     return [
@@ -1925,8 +1919,8 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
 
     $visual = strtolower(trim((string) ($plan['subject'] ?? '') . ' ' . implode(' ', (array) ($plan['elements'] ?? []))));
     $badGeneric = preg_match('/\b(dashboard|analytics|neon|orb|sphere|particle|hologram|sci-?fi|hud|monitor|keyboard|blank (paper|stationery|card|mockup)|empty paper|pantone|clipboard|showcase|marketing studio desk)\b/u', $visual) === 1;
-    // Require concrete creatives — the bare word "campaign" is not a photographable scene.
-    $hasCreativeScene = preg_match('/\b(flyers?|posters?|brochures?|leaflets?|pamphlets?|mockups?|social (media )?ads?|advertising posters?|smartphone|phone showing|printed (ads?|posters?|flyers?))\b/u', $visual) === 1
+    // Require a concrete no-text creative scene (tablet photo tiles / mockups), not bare "campaign".
+    $hasCreativeScene = preg_match('/\b(tablet|photo tiles?|ui shapes?|mockups?|flyers?|posters?|brochures?|smartphone|social (media )?ads?)\b/u', $visual) === 1
         && preg_match('/\bblank\b/u', $visual) !== 1;
 
     // Keep a usable art-director scene; only rewrite dashboards / blank stationery / abstract tech.
@@ -1976,6 +1970,11 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
         'blank paper',
         'blank stationery',
         'empty polaroid frames',
+        'arabic script',
+        'latin letters',
+        'typography',
+        'magazines',
+        'books',
         'sunglasses',
         'eyeglasses',
         'gallery wall',
@@ -2031,6 +2030,10 @@ function rateb_image_caption_has_creative_outputs(string $caption): bool
     $caption = mb_strtolower(trim($caption));
     if ($caption === '') {
         return false;
+    }
+    if (preg_match('/\b(tablet|ipad).{0,40}\b(photo|photos|pictures?|images?|tiles?|grid|mockup|ui|interface|screen)\b/u', $caption) === 1
+        || preg_match('/\b(photo tiles?|colorful (photo )?grid|ui shapes?)\b/u', $caption) === 1) {
+        return true;
     }
     if (preg_match('/\b(brochures?|flyers?|leaflets?|pamphlets?|handouts?|mood board|advertisement|ad mockups?|mockups?|printouts?|storyboards?|posters?|printed ads?|social media ads?|social media|campaign cards?|printed cards?|templates?|marketing materials?|prints?|stickers?|swatches?|pantone)\b/u', $caption) === 1) {
         return true;
@@ -2113,14 +2116,17 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
         || (preg_match('/\bpeople\b/u', $caption) === 1 && preg_match('/\b(notes? from people|from people)\b/u', $caption) !== 1);
     $peopleHeavy = $peopleHeavy
         && preg_match('/\b(magazine covers?|product (photos?|photographs?)|advertisement|mockup|printout|brochure|flyer|postcard|painting|sticker|paper|desk|table)\b/u', $caption) !== 1;
-    $homeDecor = preg_match('/\b(living room|home decor|wicker basket|throw blanket|gallery wall|hanging on the (side of a )?wall|on the wall|wall collage|pictures of paintings|food items|collage of|grid of)\b/u', $caption) === 1;
+    // Do not treat "grid of photo tiles" on a tablet as home-decor wall collage.
+    $homeDecor = preg_match('/\b(living room|home decor|wicker basket|throw blanket|gallery wall|hanging on the (side of a )?wall|on the wall|wall collage|pictures of paintings|food items|collage of)\b/u', $caption) === 1
+        || (preg_match('/\bgrid of\b/u', $caption) === 1 && preg_match('/\b(wall|living room|home decor|framed)\b/u', $caption) === 1);
     $bathroom = preg_match('/\b(bathroom|toilet|bathtub|sink|kitchen)\b/u', $caption) === 1;
     $metalWall = preg_match('/\b(metal (panel|wall|paneled)|elevator|industrial wall|steel wall)\b/u', $caption) === 1;
     // Decorative stationery / plant flat-lays are not RATEB AI campaign ads.
     $giftCardFlat = preg_match('/\b(gift cards?|playing cards?|trading cards?|colorful cards?|several cards?|cards with)\b/u', $caption) === 1
-        && preg_match('/\b(flyer|brochure|poster|pamphlet|leaflet|storyboard|mockup|social media|advert|A4)\b/u', $caption) !== 1;
-    $plantDominant = preg_match('/\b(cactus|succulent|potted plant|plant with)\b/u', $caption) === 1
-        && preg_match('/\b(flyer|brochure|poster|pamphlet|storyboard|mockup|social media)\b/u', $caption) !== 1;
+        && preg_match('/\b(flyer|brochure|poster|pamphlet|leaflet|storyboard|mockup|social media|advert|A4|tablet|photo tiles?)\b/u', $caption) !== 1;
+    // Any cactus/plant ruins the commercial look for this product — reject even beside creatives.
+    $plantDominant = preg_match('/\b(cactus|cacti|succulent|potted plant|plant with|potted|bonsai)\b/u', $caption) === 1;
+    $hasTypography = preg_match('/\b(arabic|letters?|words?|text|writing|written|typography|font|inscription|signage|readable|gibberish|misspelled|illegible)\b/u', $caption) === 1;
     $blankScreens = preg_match('/\b(blank (white )?screen|empty screen|white screen|monitor|tv screen)\b/u', $caption) === 1
         && preg_match('/\b(posters?|flyers?|templates?|social|campaign cards?|brochures?)\b/u', $caption) !== 1;
     $emptyDesk = preg_match('/\b(empty (pieces? of )?paper|blank paper|notepad|notebook|clipboard|pen and|personal items|calligraphy|blank white screen)\b/u', $caption) === 1
@@ -2129,7 +2135,7 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     $blankFrames = preg_match('/\b(polaroid|empty frames?|blank frames?|photo frames?|white frames?|scattered (white )?papers?|pieces of paper)\b/u', $caption) === 1
         && preg_match('/\b(flyer|brochure|poster|pamphlet|leaflet|mockup|social media|advert|campaign|designed)\b/u', $caption) !== 1;
     $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
-    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant) || ($isMarketing && $blankFrames)) {
+    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant) || ($isMarketing && $blankFrames) || ($isMarketing && $hasTypography)) {
         return 'caption shows generic stationery instead of marketing creative outputs';
     }
     // Short Arabic tokens must not match inside unrelated words (عود inside سعودية, تمر inside …).
@@ -2248,9 +2254,9 @@ function rateb_image_sync_prompt(array $plan, array $facts): string
             $bits[] = $element;
         }
     }
-    $guard = 'photoreal commercial photograph, no blank paper, no empty frames, no computer monitor, no laptop, no keyboard, no dashboard, no people, no faces, no plants, no cactus, no toilet, no bathroom, no logos, no readable text';
-    $prompt = implode(', ', $bits) . ', ' . $guard;
-    return mb_substr($prompt, 0, 480);
+    $guard = 'photoreal commercial photograph, no blank paper, no empty frames, no computer monitor, no laptop, no keyboard, no dashboard, no people, no faces, no plants, no cactus, no succulent, no notebook, no books, no pen, no picture frame, no toilet, no bathroom, no logos, no readable text, no letters, no numbers';
+    $prompt = 'NO PLANTS NO CACTUS NO TEXT, ' . implode(', ', $bits) . ', ' . $guard;
+    return mb_substr($prompt, 0, 500);
 }
 
 function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, int $variant): string

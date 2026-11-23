@@ -116,7 +116,32 @@ $syncPrompt = rateb_image_sync_prompt(
 if ($syncPrompt === '') {
     $syncPrompt = trim((string) preg_replace('/\s*###.*$/su', '', $prompt));
 }
-$sync = rateb_image_generate_sync($syncPrompt !== '' ? $syncPrompt : $prompt, $ratioSize[0], $ratioSize[1]);
+$syncPromptFinal = $syncPrompt !== '' ? $syncPrompt : $prompt;
+$syncDeadline = $now + 48;
+$sync = ['ok' => false];
+$factsForGate = is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : [];
+$isMarketingSync = rateb_image_is_marketing_brief($factsForGate);
+while (time() < $syncDeadline) {
+    $attempt = rateb_image_generate_sync($syncPromptFinal, $ratioSize[0], $ratioSize[1]);
+    if (empty($attempt['ok'])) {
+        break;
+    }
+    if (!$isMarketingSync) {
+        $sync = $attempt;
+        break;
+    }
+    // Marketing: refuse typography/plants before the customer sees them.
+    $caption = rateb_image_provider_caption_bytes((string) ($attempt['bytes'] ?? ''), (string) ($attempt['mime'] ?? ''), 8);
+    if ($caption !== '' && rateb_image_caption_hard_reject($factsForGate, $caption) !== null) {
+        continue;
+    }
+    if ($caption !== '' && !rateb_image_caption_hard_accept($factsForGate, $caption)
+        && preg_match('/\b(tablet|photo tiles?|ui shapes?|mockup|flyer|poster|brochure)\b/i', $caption) !== 1) {
+        continue;
+    }
+    $sync = $attempt;
+    break;
+}
 if (!empty($sync['ok'])) {
     // Sync already produced bytes — never fall through to Horde "crowded" after that.
     ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now);
@@ -387,19 +412,39 @@ function ai_image_try_finish_sync(
         'prompt_sha256' => hash('sha256', (string) ($promptData['prompt'] ?? '')),
     ]);
 
-    // Caption is advisory for sync providers — do not discard a successful CF/Pollinations image
-    // and bounce the customer into a crowded Horde queue.
+    // Caption gates marketing drafts (no typography/plants). Non-marketing stays draft-preview.
     $caption = rateb_image_provider_caption_bytes($bytes, $mime, 8);
+    $facts = is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : [];
     $relevance = ['status' => 'relevant', 'reason' => 'sync_provider_draft_preview'];
-    if ($caption !== '') {
-        $checked = ai_image_relevance_check($promptContext['facts'] ?? [], $caption);
+    if ($caption !== '' && rateb_image_is_marketing_brief($facts)) {
+        $hard = rateb_image_caption_hard_reject($facts, $caption);
+        if ($hard !== null) {
+            ai_image_release($userId, '', $usageId, 'failed');
+            http_response_code(422);
+            echo json_encode([
+                'error' => rateb_ui_error('image_irrelevant'),
+                'code' => 'image_irrelevant',
+                'state' => 'failed',
+                'provider' => $provider,
+                'reason' => $hard,
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        $checked = ai_image_relevance_check($facts, $caption);
         if (($checked['status'] ?? '') === 'relevant') {
             $relevance = $checked;
+        } elseif (rateb_image_caption_hard_accept($facts, $caption)) {
+            $relevance = ['status' => 'relevant', 'reason' => 'sync_hard_accept'];
         } else {
             $relevance = [
                 'status' => 'relevant',
-                'reason' => 'sync_draft_despite_caption:' . (string) ($checked['reason'] ?? 'unrelated'),
+                'reason' => 'sync_draft_preview:' . (string) ($checked['reason'] ?? 'soft'),
             ];
+        }
+    } elseif ($caption !== '') {
+        $checked = ai_image_relevance_check($facts, $caption);
+        if (($checked['status'] ?? '') === 'relevant') {
+            $relevance = $checked;
         }
     }
     rateb_image_prompt_log([
@@ -980,7 +1025,7 @@ function ai_image_plan(array $facts): array
         . 'Approved copy, headlines, and short ads are style only and MUST NEVER be used as evidence or as a source of product features. sufficient is false when the authoritative facts do not say what is being advertised or what a digital service actually does. '
         . 'subject: at most 22 English words naming a concrete camera-visible scene. Prefer real objects a commercial photographer can shoot. Never use abstract metaphors, neon orbs, glowing spheres, particle networks, holograms, or sci-fi HUD art. '
         . 'For food or physical products, show the actual product. For local services, show the real service setting. '
-        . 'For a marketing or AI campaign platform, invent a photoreal scene of the FINISHED campaign outputs implied by THIS brief\'s idea, strategy positioning, and headline mood: e.g. a smartphone showing colorful finished social ads beside printed designed posters with photo imagery. Never show blank paper, empty frames, or empty stationery. '
+        . 'For a marketing or AI campaign platform, invent a photoreal product shot matching THIS brief\'s idea, strategy positioning, and headline mood: e.g. a modern tablet showing a grid of colorful photo tiles and abstract teal/coral UI shapes with ZERO letters. Never show posters, flyers, books, magazines, blank paper, empty frames, plants, cactus, or any typography. '
         . 'Never default to pantone swatches, clipboard strategy docs, sunglasses mood boards, sticky notes alone, random magazines, gallery walls, home decor, empty desks, portraits, dashboards, analytics charts, or bathroom/kitchen stock. '
         . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone, creative direction, or headline. '
         . 'avoid: 3 to 8 short English phrases for objects a generic image might wrongly show that are unrelated to this campaign. '
