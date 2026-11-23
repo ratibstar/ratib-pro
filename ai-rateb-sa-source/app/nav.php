@@ -60,16 +60,11 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     echo '<div class="edge-auth">';
     if ($credits !== null) {
         $chipTag = ($here === '/dashboard' || $here === '/dashboard.php') ? 'button type="button" data-pricing-open' : 'a href="/?pricing=1#pricing"';
-        $tip = $arabicUi
-            ? 'تقدير مما يكفي رصيدك (ليست أرصدة منفصلة). كل عملية تخصم من نفس النقاط: صورة ' . (int) ($spend['image_cost'] ?? 10) . ' · فيديو ' . (int) ($spend['video_cost'] ?? 20) . ' · صوت ' . (int) ($spend['voice_cost'] ?? 15)
-            : 'Estimate of what your points cover (not separate wallets). Same balance for every action: image ' . (int) ($spend['image_cost'] ?? 10) . ' · video ' . (int) ($spend['video_cost'] ?? 20) . ' · voice ' . (int) ($spend['voice_cost'] ?? 15);
-        echo '<div class="credit-wallet" title="' . e($tip) . '" data-credit-tip-ar="' . e('تقدير مما يكفي رصيدك (ليست أرصدة منفصلة). كل عملية تخصم من نفس النقاط: صورة ' . (int) ($spend['image_cost'] ?? 10) . ' · فيديو ' . (int) ($spend['video_cost'] ?? 20) . ' · صوت ' . (int) ($spend['voice_cost'] ?? 15)) . '" data-credit-tip-en="' . e('Estimate of what your points cover (not separate wallets). Same balance for every action: image ' . (int) ($spend['image_cost'] ?? 10) . ' · video ' . (int) ($spend['video_cost'] ?? 20) . ' · voice ' . (int) ($spend['voice_cost'] ?? 15)) . '">';
-        echo '<' . $chipTag . ' class="credit-chip"><span aria-hidden="true">⚡</span><span data-i18n="credit_points_short">' . ($arabicUi ? 'نقاط' : 'pts') . '</span> ' . $credits . '</' . strtok($chipTag, ' ') . '>';
-        if (is_array($spend)) {
-            $affordAr = 'يكفي تقريباً ' . (int) $spend['images'] . ' صور أو ' . (int) $spend['videos'] . ' فيديوهات';
-            $affordEn = 'Enough for about ' . (int) $spend['images'] . ' images or ' . (int) $spend['videos'] . ' videos';
-            echo '<span class="credit-part credit-afford" data-credit-afford data-images="' . (int) $spend['images'] . '" data-videos="' . (int) $spend['videos'] . '" aria-label="' . e($tip) . '">' . e($arabicUi ? $affordAr : $affordEn) . '</span>';
-        }
+        $tipAr = 'يكفي تقريباً ' . (int) ($spend['images'] ?? 0) . ' صور أو ' . (int) ($spend['videos'] ?? 0) . ' فيديوهات — من نفس الرصيد (صورة ' . (int) ($spend['image_cost'] ?? 10) . ' · فيديو ' . (int) ($spend['video_cost'] ?? 20) . ' · صوت ' . (int) ($spend['voice_cost'] ?? 15) . ')';
+        $tipEn = 'Enough for about ' . (int) ($spend['images'] ?? 0) . ' images or ' . (int) ($spend['videos'] ?? 0) . ' videos — same wallet (image ' . (int) ($spend['image_cost'] ?? 10) . ' · video ' . (int) ($spend['video_cost'] ?? 20) . ' · voice ' . (int) ($spend['voice_cost'] ?? 15) . ')';
+        $tip = $arabicUi ? $tipAr : $tipEn;
+        echo '<div class="credit-wallet" title="' . e($tip) . '" data-credit-tip-ar="' . e($tipAr) . '" data-credit-tip-en="' . e($tipEn) . '">';
+        echo '<' . $chipTag . ' class="credit-chip" title="' . e($tip) . '"><span aria-hidden="true">⚡</span><span data-i18n="credit_points_short">' . ($arabicUi ? 'نقاط' : 'pts') . '</span> ' . $credits . '</' . strtok($chipTag, ' ') . '>';
         echo '</div>';
     }
     echo '<button type="button" id="lang" class="icon">AR</button>';

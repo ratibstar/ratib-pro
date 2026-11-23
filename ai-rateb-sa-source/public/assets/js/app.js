@@ -997,8 +997,8 @@
       var tip = language === 'ar' ? node.getAttribute('data-credit-tip-ar') : node.getAttribute('data-credit-tip-en');
       if (tip) {
         node.setAttribute('title', tip);
-        var afford = node.querySelector('[data-credit-afford]');
-        if (afford) afford.setAttribute('aria-label', tip);
+        var chip = node.querySelector('.credit-chip');
+        if (chip) chip.setAttribute('title', tip);
       }
     });
     applyVoiceFilters();

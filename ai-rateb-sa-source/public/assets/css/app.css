@@ -728,18 +728,15 @@ body.studio .site-bar .site-nav a.is-here{color:#fff;background:linear-gradient(
 [data-theme=light] body.studio .site-bar .site-nav a.is-here{color:#fff}
 .site-bar .nav-sep{width:1px;height:20px;margin:0 6px;background:rgba(255,255,255,.18);flex:0 0 auto}
 [data-theme=light] .site-bar .nav-sep{background:rgba(76,29,149,.16)}
-body.studio .site-bar .edge-auth{grid-column:3;justify-self:end;display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
-body.studio .site-bar .edge-auth .icon{width:38px;min-width:38px;height:38px;padding:0;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:12.5px;font-weight:800;transition:background .15s ease}
+body.studio .site-bar .edge-auth{grid-column:3;justify-self:end;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0;max-width:100%;z-index:2}
+body.studio .site-bar .site-nav{z-index:2;overflow:hidden}
+body.studio .site-bar .edge-auth .icon{width:38px;min-width:38px;height:38px;padding:0;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:12.5px;font-weight:800;transition:background .15s ease;flex:0 0 auto}
 body.studio .site-bar .edge-auth .icon:hover{background:rgba(255,255,255,.14)}
 [data-theme=light] body.studio .site-bar .edge-auth .icon{color:#3b2a66;border-color:rgba(76,29,149,.16);background:rgba(255,255,255,.7)}
-.site-bar .credit-wallet{display:inline-flex;align-items:center;gap:8px;max-width:min(420px,70vw)}
-.site-bar .credit-chip{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:12px;border:1px solid rgba(94,234,212,.35);background:rgba(13,148,136,.18);color:#ccfbf1;font:inherit;font-weight:800;font-size:14px;text-decoration:none;cursor:pointer;white-space:nowrap}
+.site-bar .credit-wallet{display:inline-flex;align-items:center;flex:0 0 auto}
+.site-bar .credit-chip{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:12px;border:1px solid rgba(94,234,212,.35);background:rgba(13,148,136,.18);color:#ccfbf1;font:inherit;font-weight:800;font-size:14px;text-decoration:none;cursor:pointer;white-space:nowrap;flex:0 0 auto}
 .site-bar .credit-chip:hover{background:rgba(13,148,136,.3)}
 [data-theme=light] .site-bar .credit-chip{color:#0f766e;background:rgba(13,148,136,.1)}
-.site-bar .credit-part{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(148,163,184,.35);background:rgba(15,23,42,.45);color:#e2e8f0;font-size:12px;font-weight:700;white-space:nowrap}
-.site-bar .credit-part.credit-afford{color:#a5f3fc;font-weight:750;max-width:min(340px,48vw);overflow:hidden;text-overflow:ellipsis}
-[data-theme=light] .site-bar .credit-part{background:rgba(241,245,249,.95);color:#0f172a;border-color:rgba(148,163,184,.55)}
-[data-theme=light] .site-bar .credit-part.credit-afford{color:#0f766e}
 .credit-summary-line .credit-cost-hint{opacity:.8;font-size:.92em}
 .account-credit-hint{margin-top:6px!important;font-size:.92rem;line-height:1.5}
 body.studio .site-bar .bar-logout{height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px}
