@@ -152,8 +152,8 @@ function rateb_image_pollinations_generate(string $prompt, int $width, int $heig
         if ($mime === null) {
             continue;
         }
-        // Reject Pollinations "Free limit reached" notice cards (often tiny JPEGs).
-        if (strlen($body) < 50000 || rateb_image_pollinations_is_limit_card($body)) {
+        // Reject Pollinations notice cards and low-quality watermarked thumbs.
+        if (strlen($body) < 90000 || rateb_image_pollinations_is_limit_card($body)) {
             continue;
         }
         if ($http !== 200) {

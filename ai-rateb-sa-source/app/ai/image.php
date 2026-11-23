@@ -136,7 +136,7 @@ while (time() < $syncDeadline) {
         continue;
     }
     if ($caption !== '' && !rateb_image_caption_hard_accept($factsForGate, $caption)
-        && preg_match('/\b(tablet|photo tiles?|ui shapes?|mockup|flyer|poster|brochure)\b/i', $caption) !== 1) {
+        && preg_match('/\b(office|workspace|coworking|lobby|studio|reflections?|bokeh|flyer|poster|brochure)\b/i', $caption) !== 1) {
         continue;
     }
     $sync = $attempt;
@@ -1025,7 +1025,7 @@ function ai_image_plan(array $facts): array
         . 'Approved copy, headlines, and short ads are style only and MUST NEVER be used as evidence or as a source of product features. sufficient is false when the authoritative facts do not say what is being advertised or what a digital service actually does. '
         . 'subject: at most 22 English words naming a concrete camera-visible scene. Prefer real objects a commercial photographer can shoot. Never use abstract metaphors, neon orbs, glowing spheres, particle networks, holograms, or sci-fi HUD art. '
         . 'For food or physical products, show the actual product. For local services, show the real service setting. '
-        . 'For a marketing or AI campaign platform, invent a photoreal product shot matching THIS brief\'s idea, strategy positioning, and headline mood: e.g. a modern tablet showing a grid of colorful photo tiles and abstract teal/coral UI shapes with ZERO letters. Never show posters, flyers, books, magazines, blank paper, empty frames, plants, cactus, or any typography. '
+        . 'For a marketing or AI campaign platform, invent a premium commercial advertising photograph matching THIS brief\'s idea, strategy positioning, and headline mood: e.g. a modern Saudi glass office with soft teal and coral light reflections, empty elegant workspace, cinematic depth of field. Never show device screens, UI mockups, posters, flyers, books, magazines, blank paper, plants, cactus, people, or any typography. '
         . 'Never default to pantone swatches, clipboard strategy docs, sunglasses mood boards, sticky notes alone, random magazines, gallery walls, home decor, empty desks, portraits, dashboards, analytics charts, or bathroom/kitchen stock. '
         . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone, creative direction, or headline. '
         . 'avoid: 3 to 8 short English phrases for objects a generic image might wrongly show that are unrelated to this campaign. '

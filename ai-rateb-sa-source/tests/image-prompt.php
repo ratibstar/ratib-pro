@@ -98,29 +98,29 @@ $genericMarketingPlan = [
 $groundedMarketingPlan = rateb_image_plan_ground_marketing_service($genericMarketingPlan, $groundedFacts);
 check(!str_contains(strtolower($groundedMarketingPlan['subject']), 'dashboard'), 'a marketing platform cannot keep a generic dashboard as its visible subject');
 check(!str_contains(strtolower($groundedMarketingPlan['subject']), 'blank'), 'a marketing platform never asks for blank stationery');
-check(!preg_match('/\b(posters?|flyers?)\b/', strtolower($groundedMarketingPlan['subject'])) || str_contains(strtolower($groundedMarketingPlan['subject']), 'no posters'), 'a marketing platform avoids typography-prone posters');
-check(str_contains(strtolower($groundedMarketingPlan['subject']), 'tablet'), 'a marketing platform shows a tablet creative UI');
-check(str_contains(strtolower($groundedMarketingPlan['subject']), 'professional photo') || str_contains(strtolower($groundedMarketingPlan['subject']), 'product photograph'), 'a marketing platform uses a professional photograph');
-check(str_contains(strtolower($groundedMarketingPlan['mood']), 'innovative') || str_contains(strtolower($groundedMarketingPlan['mood']), 'creative') || str_contains(strtolower($groundedMarketingPlan['mood']), 'premium'), 'marketing mood is steered by the brief');
-check(str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'tablet') || str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'photo'), 'marketing elements include tablet photo creatives');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'no screens') || str_contains(strtolower($groundedMarketingPlan['subject']), 'no text'), 'a marketing platform forbids on-image screens and text');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'saudi') || str_contains(strtolower($groundedMarketingPlan['subject']), 'commercial'), 'a marketing platform uses a premium commercial scene');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'professional photo') || str_contains(strtolower($groundedMarketingPlan['subject']), 'commercial advertising photograph') || str_contains(strtolower($groundedMarketingPlan['subject']), 'product photograph'), 'a marketing platform uses a professional photograph');
+check(str_contains(strtolower($groundedMarketingPlan['mood']), 'innovative') || str_contains(strtolower($groundedMarketingPlan['mood']), 'creative') || str_contains(strtolower($groundedMarketingPlan['mood']), 'premium') || str_contains(strtolower($groundedMarketingPlan['mood']), 'saudi'), 'marketing mood is steered by the brief');
+check(str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'teal') || str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'office'), 'marketing elements include brand-mood commercial cues');
 $keptCreativePlan = rateb_image_plan_ground_marketing_service([
     'sufficient' => true,
     'category' => 'digital_service',
-    'subject' => 'professional photo of a tablet showing colorful photo tiles and abstract UI shapes',
-    'elements' => ['tablet with colorful photo tile grid', 'abstract teal and coral UI shapes'],
-    'setting' => 'clean white studio surface',
+    'subject' => 'premium commercial advertising photograph of a modern Saudi glass office with teal and coral light reflections',
+    'elements' => ['modern Saudi glass office', 'teal and coral light reflections'],
+    'setting' => 'modern Saudi glass office',
     'mood' => 'innovative',
     'avoid' => [],
     'evidence' => 'منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية',
 ], $groundedFacts);
-check(str_contains(strtolower($keptCreativePlan['subject']), 'tablet'), 'a usable creative art-director scene is kept');
+check(str_contains(strtolower($keptCreativePlan['subject']), 'office') || str_contains(strtolower($keptCreativePlan['subject']), 'commercial'), 'a usable creative art-director scene is kept');
 $groundedMarketingPrompt = rateb_image_prompt_compose($groundedMarketingPlan, $groundedFacts, '1:1', 0);
 check(str_contains($groundedMarketingPrompt, 'analytics dashboard') && str_contains($groundedMarketingPrompt, 'neon orb') && str_contains($groundedMarketingPrompt, 'bathroom'), 'the grounded marketing prompt excludes dashboards, neon orbs, and bathroom stock');
 $syncPrompt = rateb_image_sync_prompt($groundedMarketingPlan, $groundedFacts);
 check(!str_contains(strtolower($syncPrompt), 'blank paper') || str_contains(strtolower($syncPrompt), 'no blank paper'), 'sync prompt blocks blank paper');
-check(str_contains(strtolower($syncPrompt), 'tablet') || str_contains(strtolower($syncPrompt), 'photo tile'), 'sync prompt asks for tablet photo creatives');
+check(str_contains(strtolower($syncPrompt), 'office') || str_contains(strtolower($syncPrompt), 'commercial') || str_contains(strtolower($syncPrompt), 'teal'), 'sync prompt asks for a premium commercial scene');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a desk with posters covered in arabic writing and a cactus') !== null, 'typography and cactus captions are hard-rejected');
-check(rateb_image_caption_hard_accept($groundedFacts, 'a tablet showing a colorful grid of photo tiles on a white studio surface'), 'tablet photo-tile creatives are hard-accepted');
+check(rateb_image_caption_hard_accept($groundedFacts, 'a modern glass office lobby with teal and coral light reflections on the floor'), 'premium office hero scenes can be hard-accepted when creative cues exist');
 $accountingPlan = rateb_image_plan_ground_marketing_service(
     ['category' => 'digital_service', 'subject' => 'accounting software dashboard', 'elements' => []],
     ['product' => 'برنامج محاسبة يدير الفواتير والمخزون']

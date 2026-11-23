@@ -1872,24 +1872,20 @@ function rateb_image_marketing_subject_from_facts(array $facts): array
     $mood = rateb_image_visual_mood_from_facts($facts);
     $place = $isSaudi ? 'Saudi marketing studio table' : 'marketing studio table';
 
-    // Flux melts letters on posters/flyers. Show a clean tablet UI of photo tiles + abstract
-    // color shapes that imply campaign creatives — never typography, plants, or blank paper.
-    $surface = 'clean white studio surface';
-    $subject = 'isolated product photograph of a modern tablet displaying a grid of colorful photo tiles and abstract teal coral UI shapes with zero letters on a '
-        . $surface . ', ' . $mood . ' softbox lighting, no plants, no cactus, no posters, no books, no laptop, no text';
+    // Flux melts letters on any screen/poster/UI. For AI marketing platforms use a premium
+    // commercial lifestyle/hero photo with brand mood colors — never devices showing UI.
+    $subject = 'premium commercial advertising photograph of a modern Saudi glass office at golden hour with soft teal and coral light reflections on a polished floor, empty elegant workspace, cinematic shallow depth of field, '
+        . $mood . ' mood, no people, no plants, no cactus, no screens, no phones, no laptops, no posters, no text';
     $elements = [
-        'tablet with colorful photo tile grid',
-        'abstract teal and coral UI shapes',
-        'soft studio reflections',
+        'modern Saudi glass office',
+        'teal and coral light reflections',
+        'polished floor bokeh',
     ];
-    if ($makesVideo) {
-        $elements[] = 'one vertical colorful video frame tile';
-    }
 
     return [
         'subject' => $subject,
         'elements' => $elements,
-        'setting' => $surface,
+        'setting' => 'modern Saudi glass office',
         'mood' => $mood,
     ];
 }
@@ -2031,6 +2027,10 @@ function rateb_image_caption_has_creative_outputs(string $caption): bool
     if ($caption === '') {
         return false;
     }
+    if (preg_match('/\b(glass office|office lobby|coworking|workspace|polished floor|light reflections?|bokeh|golden hour|studio table)\b/u', $caption) === 1
+        && preg_match('/\b(teal|coral|modern|premium|cinematic|saudi|riyadh|advertising|commercial)\b/u', $caption) === 1) {
+        return true;
+    }
     if (preg_match('/\b(tablet|ipad).{0,40}\b(photo|photos|pictures?|images?|tiles?|grid|mockup|ui|interface|screen)\b/u', $caption) === 1
         || preg_match('/\b(photo tiles?|colorful (photo )?grid|ui shapes?)\b/u', $caption) === 1) {
         return true;
@@ -2127,6 +2127,8 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     // Any cactus/plant ruins the commercial look for this product — reject even beside creatives.
     $plantDominant = preg_match('/\b(cactus|cacti|succulent|potted plant|plant with|potted|bonsai)\b/u', $caption) === 1;
     $hasTypography = preg_match('/\b(arabic|letters?|words?|text|writing|written|typography|font|inscription|signage|readable|gibberish|misspelled|illegible)\b/u', $caption) === 1;
+    // Device UI mockups look like broken product demos — never acceptable for AI-platform ads.
+    $deviceUi = preg_match('/\b(tablet|ipad|iphone|smartphone|phone screen|laptop|computer screen|monitor|ui grid|app interface|dashboard)\b/u', $caption) === 1;
     $blankScreens = preg_match('/\b(blank (white )?screen|empty screen|white screen|monitor|tv screen)\b/u', $caption) === 1
         && preg_match('/\b(posters?|flyers?|templates?|social|campaign cards?|brochures?)\b/u', $caption) !== 1;
     $emptyDesk = preg_match('/\b(empty (pieces? of )?paper|blank paper|notepad|notebook|clipboard|pen and|personal items|calligraphy|blank white screen)\b/u', $caption) === 1
@@ -2135,7 +2137,7 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     $blankFrames = preg_match('/\b(polaroid|empty frames?|blank frames?|photo frames?|white frames?|scattered (white )?papers?|pieces of paper)\b/u', $caption) === 1
         && preg_match('/\b(flyer|brochure|poster|pamphlet|leaflet|mockup|social media|advert|campaign|designed)\b/u', $caption) !== 1;
     $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
-    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant) || ($isMarketing && $blankFrames) || ($isMarketing && $hasTypography)) {
+    if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant) || ($isMarketing && $blankFrames) || ($isMarketing && $hasTypography) || ($isMarketing && $deviceUi)) {
         return 'caption shows generic stationery instead of marketing creative outputs';
     }
     // Short Arabic tokens must not match inside unrelated words (عود inside سعودية, تمر inside …).
