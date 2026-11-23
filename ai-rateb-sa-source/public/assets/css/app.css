@@ -738,6 +738,10 @@ body.studio .site-bar .edge-auth .icon:hover{background:rgba(255,255,255,.14)}
 [data-theme=light] .site-bar .credit-chip{color:#0f766e;background:rgba(13,148,136,.1)}
 .credit-summary-line .credit-cost-hint{opacity:.8;font-size:.92em}
 .account-credit-hint{margin-top:6px!important;font-size:.92rem;line-height:1.5}
+.build-stages .stage-tab .stage-credit{display:inline-flex;margin-top:6px;padding:3px 8px;border-radius:999px;border:1px solid rgba(94,234,212,.4);background:rgba(13,148,136,.16);color:#99f6e4;font-size:11px;font-weight:800;font-style:normal;line-height:1.2;white-space:nowrap}
+[data-theme=light] .build-stages .stage-tab .stage-credit{border-color:rgba(13,148,136,.35);background:rgba(13,148,136,.08);color:#0f766e}
+body.page-campaign .build-stages .stage-tab .stage-credit{font-size:10px;padding:2px 6px;margin-top:4px}
+.stage-credit-line{margin-top:8px!important}
 body.studio .site-bar .bar-logout{height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px}
 body.studio .site-bar .bar-logout:hover{background:rgba(239,68,68,.22);border-color:rgba(248,113,113,.4)}
 [data-theme=light] body.studio .site-bar .bar-logout{color:#3b2a66;border-color:rgba(76,29,149,.16);background:rgba(255,255,255,.7)}

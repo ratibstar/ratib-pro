@@ -46,7 +46,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav85">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav86">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard', !empty($_SESSION['user_id'])); ?>
@@ -62,15 +62,9 @@ foreach ($pricingPlans as $planRow) {
 <p class="muted credit-summary-line" style="width:min(1800px,calc(100% - 36px));margin:12px auto 0"
    data-credit-summary
    data-plan="<?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?>"
-   data-balance="<?= (int) $wallet['credits_balance'] ?>"
-   data-images="<?= (int) $spend['images'] ?>"
-   data-videos="<?= (int) $spend['videos'] ?>"
-   data-image-cost="<?= (int) $spend['image_cost'] ?>"
-   data-video-cost="<?= (int) $spend['video_cost'] ?>">
+   data-balance="<?= (int) $wallet['credits_balance'] ?>">
   الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?>
-  · النقاط: <?= (int) $wallet['credits_balance'] ?>
-  · يكفي تقريباً <?= (int) $spend['images'] ?> صور أو <?= (int) $spend['videos'] ?> فيديوهات
-  <span class="credit-cost-hint">(من نفس الرصيد · صورة <?= (int) $spend['image_cost'] ?>ن · فيديو <?= (int) $spend['video_cost'] ?>ن)</span>
+  · رصيد النقاط: <?= (int) $wallet['credits_balance'] ?>
 </p>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>
@@ -297,6 +291,6 @@ document.querySelectorAll('[data-pricing-close]').forEach(function (node) {
   });
 });
 </script>
-<script src="/public/assets/js/app.js?v=nav82"></script>
+<script src="/public/assets/js/app.js?v=nav86"></script>
 </body>
 </html>

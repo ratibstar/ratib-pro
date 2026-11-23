@@ -971,26 +971,34 @@
     });
     document.querySelectorAll('[data-credit-summary]').forEach(function (node) {
       var balance = node.getAttribute('data-balance') || '0';
-      var images = node.getAttribute('data-images') || '0';
-      var videos = node.getAttribute('data-videos') || '0';
-      var imageCost = node.getAttribute('data-image-cost') || '10';
-      var videoCost = node.getAttribute('data-video-cost') || '20';
       var plan = node.getAttribute('data-plan');
-      var hint = language === 'ar'
-        ? '(من نفس الرصيد · صورة ' + imageCost + 'ن · فيديو ' + videoCost + 'ن)'
-        : '(same wallet · image ' + imageCost + ' pts · video ' + videoCost + ' pts)';
-      var afford = language === 'ar'
-        ? 'يكفي تقريباً ' + images + ' صور أو ' + videos + ' فيديوهات'
-        : 'Enough for about ' + images + ' images or ' + videos + ' videos';
       if (plan !== null) {
-        node.innerHTML = (language === 'ar' ? 'الباقة: ' : 'Plan: ') + plan
-          + ' · ' + (language === 'ar' ? 'النقاط: ' : 'Points: ') + balance
-          + ' · ' + afford
-          + ' <span class="credit-cost-hint">' + hint + '</span>';
+        node.textContent = (language === 'ar' ? 'الباقة: ' : 'Plan: ') + plan
+          + ' · ' + (language === 'ar' ? 'رصيد النقاط: ' : 'Points balance: ') + balance;
       } else {
-        node.innerHTML = (language === 'ar' ? 'النقاط: ' : 'Points: ') + balance
-          + ' · ' + afford
-          + ' <span class="credit-cost-hint">' + hint + '</span>';
+        node.textContent = (language === 'ar' ? 'رصيد النقاط: ' : 'Points balance: ') + balance;
+      }
+    });
+    document.querySelectorAll('[data-stage-credit]').forEach(function (node) {
+      var kind = node.getAttribute('data-stage-credit') || '';
+      var count = node.getAttribute('data-count') || '0';
+      var cost = node.getAttribute('data-cost') || '0';
+      if (kind === 'images') {
+        node.textContent = node.classList.contains('stage-credit-line')
+          ? (language === 'ar'
+            ? 'رصيد الصور من نقاطك: يكفي تقريباً ' + count + ' صور (' + cost + ' نقطة لكل صورة).'
+            : 'Image budget from your points: about ' + count + ' images (' + cost + ' pts each).')
+          : (language === 'ar'
+            ? 'يكفي ≈' + count + ' صور · ' + cost + 'ن'
+            : '≈' + count + ' images · ' + cost + 'pts');
+      } else if (kind === 'video') {
+        node.textContent = node.classList.contains('stage-credit-line')
+          ? (language === 'ar'
+            ? 'رصيد الفيديو من نقاطك: يكفي تقريباً ' + count + ' فيديوهات (' + cost + ' نقطة لكل فيديو).'
+            : 'Video budget from your points: about ' + count + ' videos (' + cost + ' pts each).')
+          : (language === 'ar'
+            ? 'يكفي ≈' + count + ' فيديو · ' + cost + 'ن'
+            : '≈' + count + ' videos · ' + cost + 'pts');
       }
     });
     document.querySelectorAll('.credit-wallet[data-credit-tip-ar]').forEach(function (node) {

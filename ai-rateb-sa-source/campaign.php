@@ -262,7 +262,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav85">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav86">
 <style>.social-tabs{display:grid;gap:12px}.social-card{padding:12px;border:1px solid var(--border);border-radius:16px}.goal-pick{display:grid;gap:6px;margin:12px 0}.goal-pick select{border-radius:12px;padding:10px}</style>
 </head>
 <body class="studio page-campaign">
@@ -279,19 +279,8 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <div class="progress" role="progressbar" aria-valuenow="<?= $progress ?>" aria-valuemin="0" aria-valuemax="100" data-progress="<?= $progress ?>"><span style="width:<?= $progress ?>%"></span></div>
     <p class="muted"><span data-i18n="progress"><?= $arabic ? 'التقدم' : 'Progress' ?></span> <span id="progress-value"><?= $progress ?>%</span> · <?= $doneUnits ?> / <?= (int) $totalUnits ?></p>
     <?php $spend = rateb_credits_spend_summary((int) $wallet['credits_balance']); ?>
-    <p class="muted credit-summary-line" data-credit-summary
-       data-balance="<?= (int) $spend['balance'] ?>"
-       data-images="<?= (int) $spend['images'] ?>"
-       data-videos="<?= (int) $spend['videos'] ?>"
-       data-image-cost="<?= (int) $spend['image_cost'] ?>"
-       data-video-cost="<?= (int) $spend['video_cost'] ?>">
-      <?= $arabic ? 'النقاط' : 'Points' ?>: <?= (int) $spend['balance'] ?>
-      · <?= $arabic
-        ? ('يكفي تقريباً ' . (int) $spend['images'] . ' صور أو ' . (int) $spend['videos'] . ' فيديوهات')
-        : ('Enough for about ' . (int) $spend['images'] . ' images or ' . (int) $spend['videos'] . ' videos') ?>
-      <span class="credit-cost-hint">(<?= $arabic
-        ? ('من نفس الرصيد · صورة ' . (int) $spend['image_cost'] . 'ن · فيديو ' . (int) $spend['video_cost'] . 'ن')
-        : ('same wallet · image ' . (int) $spend['image_cost'] . ' pts · video ' . (int) $spend['video_cost'] . ' pts') ?>)</span>
+    <p class="muted credit-summary-line" data-credit-summary data-balance="<?= (int) $spend['balance'] ?>">
+      <?= $arabic ? 'رصيد النقاط' : 'Points balance' ?>: <?= (int) $spend['balance'] ?>
     </p>
   </section>
   <ol class="build-stages">
@@ -304,6 +293,15 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <em class="optional-tag" data-i18n="optional_label"><?= $arabic ? 'اختياري' : 'Optional' ?></em>
           <?php endif; ?>
           <small data-i18n="<?= e($stateKeys[$stage['state']]) ?>"><?= e($stateNames[$stage['state']]) ?></small>
+          <?php if ($key === 'images'): ?>
+            <em class="stage-credit" data-stage-credit="images" data-count="<?= (int) $spend['images'] ?>" data-cost="<?= (int) $spend['image_cost'] ?>"><?= $arabic
+              ? ('يكفي ≈' . (int) $spend['images'] . ' صور · ' . (int) $spend['image_cost'] . 'ن')
+              : ('≈' . (int) $spend['images'] . ' images · ' . (int) $spend['image_cost'] . 'pts') ?></em>
+          <?php elseif ($key === 'video'): ?>
+            <em class="stage-credit" data-stage-credit="video" data-count="<?= (int) $spend['videos'] ?>" data-cost="<?= (int) $spend['video_cost'] ?>"><?= $arabic
+              ? ('يكفي ≈' . (int) $spend['videos'] . ' فيديو · ' . (int) $spend['video_cost'] . 'ن')
+              : ('≈' . (int) $spend['videos'] . ' videos · ' . (int) $spend['video_cost'] . 'pts') ?></em>
+          <?php endif; ?>
         </button>
         <?php if ($featStrategy && $key === 'strategy' && $ideaDone && $strategyDoc === null): ?>
           <form class="stage-action" data-ai="1" data-status="stage-status" data-busy="generating_strategy">
@@ -602,6 +600,9 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
     <p class="muted" data-i18n="images_optional_lead"><?= $arabic
       ? 'مرحلة اختيارية: ولّد صورة بالذكاء أو ارفع من جهازك، أو تخطَّ إلى الصوت.'
       : 'Optional stage: generate an AI image, upload from your device, or skip to voice.' ?></p>
+    <p class="muted stage-credit-line" data-stage-credit="images" data-count="<?= (int) $spend['images'] ?>" data-cost="<?= (int) $spend['image_cost'] ?>"><?= $arabic
+      ? ('رصيد الصور من نقاطك: يكفي تقريباً ' . (int) $spend['images'] . ' صور (' . (int) $spend['image_cost'] . ' نقطة لكل صورة).')
+      : ('Image budget from your points: about ' . (int) $spend['images'] . ' images (' . (int) $spend['image_cost'] . ' pts each).') ?></p>
     <?php if ($featAiImage): ?>
     <p id="image-loader" class="notice stage-status" hidden><span class="loader" aria-hidden="true"></span><?= $arabic ? 'جاري تجهيز الصورة' : 'Preparing the image' ?></p>
     <?php endif; ?>
@@ -718,6 +719,9 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   <?php endif; ?>
   <section class="panel" id="video" data-panel="video">
     <h2 data-i18n="stage_video"><?= $arabic ? 'الفيديو' : 'Video' ?></h2>
+    <p class="muted stage-credit-line" data-stage-credit="video" data-count="<?= (int) $spend['videos'] ?>" data-cost="<?= (int) $spend['video_cost'] ?>"><?= $arabic
+      ? ('رصيد الفيديو من نقاطك: يكفي تقريباً ' . (int) $spend['videos'] . ' فيديوهات (' . (int) $spend['video_cost'] . ' نقطة لكل فيديو).')
+      : ('Video budget from your points: about ' . (int) $spend['videos'] . ' videos (' . (int) $spend['video_cost'] . ' pts each).') ?></p>
     <?php if ($featVideo): ?>
     <?php if ($approvedVideo): ?>
       <p class="badge"><?= $arabic ? 'الفيديو معتمد' : 'Video approved' ?></p>
@@ -911,6 +915,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav82"></script>
+<script src="/public/assets/js/app.js?v=nav86"></script>
 </body>
 </html>
