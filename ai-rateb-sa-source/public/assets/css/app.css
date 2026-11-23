@@ -771,10 +771,10 @@ body.studio .site-bar .edge-auth .register:hover{transform:translateY(-1px);box-
   body.studio .site-bar .edge-auth{grid-column:3;grid-row:1}
 }
 @media (min-width:1361px){
-  .site-bar .site-shell{grid-template-columns:auto minmax(0,1fr) auto;gap:10px}
-  body.studio .site-bar .logo{grid-column:1;grid-row:1;justify-self:start;padding-inline:8px;max-width:100%}
-  body.studio .site-bar .site-nav{grid-column:2;grid-row:1;justify-self:center;flex-wrap:nowrap}
-  body.studio .site-bar .edge-auth{grid-column:3;grid-row:1}
+  .site-bar .site-shell{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px}
+  body.studio .site-bar .logo{grid-column:2;grid-row:1;justify-self:center;padding-inline:10px}
+  body.studio .site-bar .site-nav{grid-column:1;grid-row:1;justify-self:start;flex-wrap:nowrap}
+  body.studio .site-bar .edge-auth{grid-column:3;grid-row:1;justify-self:end}
   body.studio .site-bar .site-nav a,body.studio .site-bar .site-nav button{padding:8px 9px;font-size:13.5px}
   .site-bar .nav-sep{margin:0 4px}
 }

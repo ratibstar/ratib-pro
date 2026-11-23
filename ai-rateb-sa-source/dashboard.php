@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require __DIR__ . '/config/bootstrap.php';
 require_once __DIR__ . '/app/plans.php';
 require __DIR__ . '/app/nav.php';
@@ -46,7 +46,7 @@ foreach ($campaigns as $row) {
 <title>RATEB AI — Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
-<link rel="stylesheet" href="/public/assets/css/app.css?v=nav83">
+<link rel="stylesheet" href="/public/assets/css/app.css?v=nav84">
 </head>
 <body class="studio page-dash">
 <?php rateb_site_header('/dashboard', !empty($_SESSION['user_id'])); ?>
