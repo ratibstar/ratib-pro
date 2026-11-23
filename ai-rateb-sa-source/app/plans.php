@@ -1821,15 +1821,15 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
     if (!$isMarketing || !$hasCreativeOutputs) {
         return $plan;
     }
-    // Keep the positive prompt short: free SD1.5 workers ignore long marketing briefs.
-    $plan['subject'] = 'flat lay of colorful advertising posters and printed marketing flyers covering a wooden desk';
+    // Short photographic prompt Flux/SD can follow — never abstract UI mock art.
+    $plan['subject'] = 'professional commercial photograph of colorful printed advertising posters and marketing flyers neatly arranged on an oak desk';
     $plan['elements'] = [
-        'many printed posters',
-        'stacked marketing flyers',
-        'campaign printouts',
+        'printed advertising posters',
+        'marketing flyers',
+        'soft natural window light',
     ];
-    $plan['setting'] = 'wooden desk top-down photo';
-    $plan['mood'] = 'bright commercial product photo';
+    $plan['setting'] = 'clean creative studio desk';
+    $plan['mood'] = 'premium commercial photography';
     $plan['avoid'] = array_values(array_unique(array_merge([
         'gallery wall',
         'home decor',
@@ -1890,8 +1890,7 @@ function rateb_image_caption_hard_accept(array $facts, string $caption): bool
         return false;
     }
     // Sticky notes alone are not enough; require visible advertising creative outputs.
-    return rateb_image_caption_has_creative_outputs($caption)
-        || rateb_image_caption_has_printed_desk_materials($caption);
+    return rateb_image_caption_has_creative_outputs($caption);
 }
 
 function rateb_image_caption_has_creative_outputs(string $caption): bool
@@ -1943,7 +1942,7 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
         return 'empty caption';
     }
     $source = mb_strtolower(rateb_image_subject_facts($facts));
-    $abstract = preg_match('/\b(neon|orb|glowing sphere|particle|fractal|holograph|sci-?fi|cyberpunk|wireframe|abstract (circles?|lights?|network|geometry)|luminous (sphere|network)|energy field)\b/u', $caption) === 1;
+    $abstract = preg_match('/\b(neon|orb|glowing sphere|particle|fractal|holograph|sci-?fi|cyberpunk|wireframe|abstract (circles?|lights?|network|geometry|shapes?|art|blocks?)|luminous (sphere|network)|energy field|3d illustration|calligraphy|icon|geometric blocks?|color blocks?)\b/u', $caption) === 1;
     $trading = preg_match('/\b(stock (market|chart)|candlestick|trading (desk|screen|chart)|forex|crypto chart)\b/u', $caption) === 1;
     $dashboardOnly = preg_match('/\b(analytics dashboard|kpi dashboard|generic dashboard|data dashboard)\b/u', $caption) === 1
         && preg_match('/\b(ad|advert|campaign|mockup|print|storyboard|calendar|planning card)\b/u', $caption) !== 1;
@@ -1953,8 +1952,7 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     $peopleHeavy = preg_match('/\b(women|woman|men|man|girl|boy|portrait|faces?|people)\b/u', $caption) === 1
         && preg_match('/\b(magazine covers?|product (photos?|photographs?)|advertisement|mockup|printout|brochure|flyer)\b/u', $caption) !== 1;
     $homeDecor = preg_match('/\b(living room|home decor|wicker basket|throw blanket|gallery wall)\b/u', $caption) === 1;
-    $printedDesk = rateb_image_caption_has_printed_desk_materials($caption);
-    $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
+    $missingCreative = $isMarketing && !$creativeOutputs;
     if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor)) {
         return 'caption shows generic stationery instead of marketing creative outputs';
     }

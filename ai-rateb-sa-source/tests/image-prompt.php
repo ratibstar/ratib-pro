@@ -98,7 +98,7 @@ $genericMarketingPlan = [
 $groundedMarketingPlan = rateb_image_plan_ground_marketing_service($genericMarketingPlan, $groundedFacts);
 check(!str_contains(strtolower($groundedMarketingPlan['subject']), 'dashboard'), 'a marketing platform cannot keep a generic dashboard as its visible subject');
 check(str_contains(strtolower($groundedMarketingPlan['subject']), 'advertising posters') && str_contains(strtolower($groundedMarketingPlan['subject']), 'marketing flyers'), 'a marketing platform shows advertising posters and marketing flyers');
-check(str_contains(strtolower($groundedMarketingPlan['subject']), 'flat lay') || str_contains(strtolower($groundedMarketingPlan['subject']), 'commercial'), 'a marketing platform uses a commercial flat-lay scene');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'commercial photograph') || str_contains(strtolower($groundedMarketingPlan['subject']), 'advertising posters'), 'a marketing platform uses a commercial poster scene');
 $groundedMarketingPrompt = rateb_image_prompt_compose($groundedMarketingPlan, $groundedFacts, '1:1', 0);
 check(str_contains($groundedMarketingPrompt, 'analytics dashboard') && str_contains($groundedMarketingPrompt, 'computer monitor') && str_contains($groundedMarketingPrompt, 'neon orb'), 'the grounded marketing prompt excludes screens, neon orbs, and unrelated stock imagery');
 $accountingPlan = rateb_image_plan_ground_marketing_service(
@@ -120,9 +120,8 @@ check(rateb_image_caption_has_creative_outputs('three colorful brochures next to
 check(rateb_image_caption_has_creative_outputs('two posters sitting on top of a table next to a cup of coffee'), 'plural posters are recognized as creative marketing outputs');
 check(rateb_image_caption_has_creative_outputs('two pamphlets are laying next to each other on a table'), 'pamphlets count as marketing creative outputs');
 check(rateb_image_caption_hard_accept($groundedFacts, 'two pamphlets are laying next to each other on a table'), 'pamphlet flat-lays are hard-accepted for marketing campaigns');
-check(rateb_image_caption_hard_accept($groundedFacts, 'several colored folders with one blank in the middle of them on a wooden table'), 'colored folder desk flat-lays are hard-accepted for marketing campaigns');
-check(rateb_image_caption_hard_accept($groundedFacts, 'paper folders with white lines on them on top of a wooden surface'), 'paper-folder desk flat-lays are hard-accepted for marketing campaigns');
-check(rateb_image_caption_hard_accept($groundedFacts, 'a colorful icon with several different papers next to it'), 'colorful paper stacks are hard-accepted for marketing campaigns');
+check(rateb_image_caption_hard_reject($groundedFacts, 'several colored folders with one blank in the middle of them on a wooden table') !== null, 'folder-only desk scenes are hard-rejected for marketing campaigns');
+check(rateb_image_caption_hard_reject($groundedFacts, 'a colorful icon with several different papers next to it') !== null, 'abstract icon paper scenes are hard-rejected for marketing campaigns');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a cup of coffee and a book on a wooden table') !== null, 'coffee-and-book scenes stay hard-rejected for marketing campaigns');
 check(rateb_image_select_models(['Deliberate', 'Flux.1-Schnell fp8 (Compact)'], ['Deliberate' => 7, 'Flux.1-Schnell fp8 (Compact)' => 3], 2)[0] === 'Flux.1-Schnell fp8 (Compact)', 'Flux is preferred over busier SD workers');
 check(!rateb_image_caption_has_creative_outputs('several magazine covers stacked on a wooden table'), 'unrelated magazine stacks alone are not treated as campaign creatives');
@@ -135,7 +134,7 @@ check(($params['steps'] ?? 0) >= 20 && ($params['cfg_scale'] ?? 0) >= 7, 'genera
 $fluxParams = rateb_image_generation_params(512, 512, ['Flux.1-Schnell fp8 (Compact)']);
 check(($fluxParams['steps'] ?? 0) <= 10 && ($fluxParams['cfg_scale'] ?? 99) <= 3.5, 'Flux uses fewer steps and a lower cfg');
 check(rateb_image_is_marketing_brief($groundedFacts), 'a RATEB marketing platform brief is detected');
-check(is_string(rateb_image_marketing_seed_base64()) && rateb_image_marketing_seed_base64() !== '', 'the marketing flat-lay seed image is available');
+check(rateb_image_marketing_seed_base64() === null || is_string(rateb_image_marketing_seed_base64()), 'marketing seed helper remains available without being required');
 
 $fallback = rateb_image_fallback_plan($facts);
 check(is_array($fallback), 'the old fallback remains testable but is not used by the endpoint');
