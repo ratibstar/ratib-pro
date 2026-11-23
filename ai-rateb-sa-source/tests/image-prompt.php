@@ -121,6 +121,14 @@ check(rateb_image_caption_has_creative_outputs('two posters sitting on top of a 
 check(rateb_image_caption_has_creative_outputs('two pamphlets are laying next to each other on a table'), 'pamphlets count as marketing creative outputs');
 check(rateb_image_caption_hard_accept($groundedFacts, 'two pamphlets are laying next to each other on a table'), 'pamphlet flat-lays are hard-accepted for marketing campaigns');
 check(rateb_image_caption_hard_accept($groundedFacts, 'a table with four different colors of paper on it and squares of colored papers'), 'colorful paper flat-lays are hard-accepted for marketing campaigns');
+check(rateb_image_caption_hard_accept($groundedFacts, 'an assortment of paintings on a table with paper and phone sitting next to them with notes from people'), 'branding desk flat-lays captioned as paintings/notes are hard-accepted');
+check(rateb_image_caption_hard_accept($groundedFacts, 'a piece of paper on top of a table near various postcards and some stickers'), 'postcard and sticker desk flat-lays are hard-accepted');
+$saudiFacts = rateb_image_brief(
+    ['product_name' => 'RATEB AI', 'title' => 'اعلان ل RATEB AI'],
+    ['product' => 'RATEB AI', 'description' => 'منصة سعودية لإنشاء الحملات التسويقية بالذكاء الاصطناعي'],
+    []
+);
+check(rateb_image_caption_hard_reject($saudiFacts, 'a piece of paper on top of a table near various postcards and some stickers') === null, 'Saudi marketing briefs are not false-matched as perfume because of عود inside سعودية');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a colorful icon with several different papers next to it') !== null, 'abstract icon paper scenes are hard-rejected for marketing campaigns');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a cup of coffee and a book on a wooden table') !== null, 'coffee-and-book scenes stay hard-rejected for marketing campaigns');
 check(rateb_image_select_models(['Deliberate', 'Flux.1-Schnell fp8 (Compact)'], ['Deliberate' => 7, 'Flux.1-Schnell fp8 (Compact)' => 3], 2)[0] === 'Flux.1-Schnell fp8 (Compact)', 'Flux is preferred over busier SD workers');

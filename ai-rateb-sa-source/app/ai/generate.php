@@ -4,6 +4,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/../idea.php';
+
+if (defined('RATEB_GENERATE_LIB_ONLY') && RATEB_GENERATE_LIB_ONLY) {
+    return;
+}
+
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 header('X-Rateb-Generate: 3');
@@ -257,22 +262,42 @@ $shape = $resolved === 'bilingual' ? 'Each value must be an object with keys ar 
 $socialShape = $platformOnly !== '' ? $platformOnly : 'snapchat, instagram, x, google_ads';
 $prompt = 'Write short campaign copy from the approved strategy and the facts. Each plain value is at most two short sentences. Return JSON with English keys: ' . implode(', ', $keys === [] ? ['social_posts'] : $keys) . '. ' . $shape . $decision['instruction'];
 if ($wantSocial) {
-    $prompt .= ' The social_posts value must be an object, not a string, using Saudi marketing tone. Include only these keys: ' . $socialShape . '. snapchat is one punchy line under 80 characters and has no hashtags. instagram is a caption, a line break, then 5 to 8 relevant Saudi hashtags. x is under 240 characters with at most 2 hashtags. google_ads is an object with headlines (exactly 3 strings, each at most 30 characters) and descriptions (exactly 2 strings, each at most 90 characters) and no hashtags.';
+    if ($resolved === 'bilingual') {
+        $prompt .= ' The social_posts value must be an object, not a string, using Saudi marketing tone. Include only these keys: ' . $socialShape . '. For snapchat, instagram, and x each value must be an object with keys ar and en (short strings). snapchat ar/en lines are under 80 characters with no hashtags. instagram ar/en are captions with a line break then 5 to 8 relevant Saudi hashtags. x ar/en are under 240 characters with at most 2 hashtags. google_ads is one shared object with headlines (exactly 3 strings, each at most 30 characters) and descriptions (exactly 2 strings, each at most 90 characters) and no hashtags.';
+    } else {
+        $prompt .= ' The social_posts value must be an object, not a string, using Saudi marketing tone. Include only these keys: ' . $socialShape . '. snapchat is one punchy line under 80 characters and has no hashtags. instagram is a caption, a line break, then 5 to 8 relevant Saudi hashtags. x is under 240 characters with at most 2 hashtags. google_ads is an object with headlines (exactly 3 strings, each at most 30 characters) and descriptions (exactly 2 strings, each at most 90 characters) and no hashtags.';
+    }
 }
 $prompt .= "\nFacts:\n" . $facts . "\nApproved strategy:\n" . json_encode($strategy, JSON_UNESCAPED_UNICODE);
-if ($wantSocial) {
-    $raw = rateb_model_json($cfg, $system, $prompt);
-    $result = is_array($raw) ? $raw : null;
-    if (is_array($result) && $stringKeys !== []) {
-        $prepared = rateb_prepare_output($raw, $resolved, $stringKeys);
-        if (is_array($prepared)) {
-            foreach ($stringKeys as $key) {
-                $result[$key] = $prepared[$key] ?? ($result[$key] ?? null);
+$result = null;
+$fresh = [];
+for ($attempt = 1; $attempt <= 2; $attempt++) {
+    if ($wantSocial) {
+        $raw = rateb_model_json($cfg, $system, $prompt);
+        $result = is_array($raw) ? $raw : null;
+        if (is_array($result) && $stringKeys !== []) {
+            $prepared = rateb_prepare_output($raw, $resolved, $stringKeys);
+            if (is_array($prepared)) {
+                foreach ($stringKeys as $key) {
+                    $result[$key] = $prepared[$key] ?? ($result[$key] ?? null);
+                }
             }
         }
+    } else {
+        $result = rateb_generate_output($cfg, $system, $prompt, $resolved, $stringKeys);
     }
-} else {
-    $result = rateb_generate_output($cfg, $system, $prompt, $resolved, $stringKeys);
+    $stringsOk = $stringKeys === [] || (is_array($result) && rateb_output_ready($result, $resolved, $stringKeys));
+    $fresh = [];
+    if ($wantSocial && is_array($result)) {
+        $fresh = rateb_social_pack(is_array($result['social_posts'] ?? null) ? $result['social_posts'] : $result, $platformOnly);
+    }
+    $socialOk = !$wantSocial || $fresh !== [];
+    if ($stringsOk && $socialOk && is_array($result)) {
+        break;
+    }
+    if ($attempt === 2) {
+        break;
+    }
 }
 if ($stringKeys !== [] && (!is_array($result) || !rateb_output_ready($result, $resolved, $stringKeys))) {
     rateb_usage_finish(db(), (int) $gate['id'], 'failed');
@@ -302,7 +327,9 @@ foreach ($stringKeys as $key) {
     $rows[$key] = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value;
 }
 if ($wantSocial) {
-    $fresh = rateb_social_pack(is_array($result['social_posts'] ?? null) ? $result['social_posts'] : $result, $platformOnly);
+    if ($fresh === []) {
+        $fresh = rateb_social_pack(is_array($result['social_posts'] ?? null) ? $result['social_posts'] : $result, $platformOnly);
+    }
     if ($fresh === []) {
         rateb_usage_finish(db(), (int) $gate['id'], 'failed');
         if ($charged) {
@@ -365,6 +392,85 @@ function rateb_social_clip(string $text, int $limit): string
     return rtrim(mb_substr($text, 0, $limit));
 }
 
+function rateb_social_line(mixed $value, int $max = 0, bool $stripHash = false): string|array|null
+{
+    if (is_string($value)) {
+        $text = trim($value);
+        if ($stripHash) {
+            $text = str_replace('#', '', $text);
+        }
+        if ($max > 0) {
+            $text = rateb_social_clip($text, $max);
+        }
+        return $text !== '' ? $text : null;
+    }
+    if (!is_array($value)) {
+        return null;
+    }
+    // Bilingual campaign posts arrive as {ar, en} objects — do not drop them.
+    if (array_key_exists('ar', $value) || array_key_exists('en', $value)) {
+        $ar = is_string($value['ar'] ?? null) ? trim((string) $value['ar']) : '';
+        $en = is_string($value['en'] ?? null) ? trim((string) $value['en']) : '';
+        if ($stripHash) {
+            $ar = str_replace('#', '', $ar);
+            $en = str_replace('#', '', $en);
+        }
+        if ($max > 0) {
+            $ar = $ar !== '' ? rateb_social_clip($ar, $max) : '';
+            $en = $en !== '' ? rateb_social_clip($en, $max) : '';
+        }
+        if ($ar === '' && $en === '') {
+            return null;
+        }
+        return ['ar' => $ar, 'en' => $en];
+    }
+    return null;
+}
+
+function rateb_social_google_ads(mixed $value): ?array
+{
+    if (!is_array($value)) {
+        return null;
+    }
+    // Flat google_ads object.
+    if (isset($value['headlines']) || isset($value['descriptions'])) {
+        $candidates = [$value];
+    } else {
+        // Bilingual nested: {ar:{headlines,descriptions}, en:{...}} — prefer ar then en.
+        $candidates = [];
+        foreach (['ar', 'en'] as $lang) {
+            if (isset($value[$lang]) && is_array($value[$lang])) {
+                $candidates[] = $value[$lang];
+            }
+        }
+        if ($candidates === []) {
+            $candidates = [$value];
+        }
+    }
+    foreach ($candidates as $candidate) {
+        $headlines = [];
+        $descriptions = [];
+        foreach ((array) ($candidate['headlines'] ?? []) as $line) {
+            $line = rateb_social_clip((string) $line, 30);
+            if ($line !== '') {
+                $headlines[] = $line;
+            }
+        }
+        foreach ((array) ($candidate['descriptions'] ?? []) as $line) {
+            $line = rateb_social_clip((string) $line, 90);
+            if ($line !== '' && !str_contains($line, '#')) {
+                $descriptions[] = $line;
+            }
+        }
+        $headlines = array_slice($headlines, 0, 3);
+        $descriptions = array_slice($descriptions, 0, 2);
+        if (count($headlines) === 3 && count($descriptions) === 2) {
+            return ['headlines' => $headlines, 'descriptions' => $descriptions];
+        }
+    }
+    return null;
+}
+
 function rateb_social_pack(array $input, string $only): array
 {
     $source = $input;
@@ -375,41 +481,21 @@ function rateb_social_pack(array $input, string $only): array
     $pack = [];
     foreach ($keys as $key) {
         $value = $source[$key] ?? null;
-        if ($key === 'google_ads' && is_array($value)) {
-            $headlines = [];
-            $descriptions = [];
-            foreach ((array) ($value['headlines'] ?? []) as $line) {
-                $line = rateb_social_clip((string) $line, 30);
-                if ($line !== '') {
-                    $headlines[] = $line;
-                }
-            }
-            foreach ((array) ($value['descriptions'] ?? []) as $line) {
-                $line = rateb_social_clip((string) $line, 90);
-                if ($line !== '' && !str_contains($line, '#')) {
-                    $descriptions[] = $line;
-                }
-            }
-            $headlines = array_slice($headlines, 0, 3);
-            $descriptions = array_slice($descriptions, 0, 2);
-            if (count($headlines) === 3 && count($descriptions) === 2) {
-                $pack[$key] = ['headlines' => $headlines, 'descriptions' => $descriptions];
+        if ($key === 'google_ads') {
+            $ads = rateb_social_google_ads($value);
+            if ($ads !== null) {
+                $pack[$key] = $ads;
             }
             continue;
         }
-        $text = is_string($value) ? trim($value) : '';
-        if ($text === '') {
-            continue;
-        }
-        if ($key === 'snapchat') {
-            $text = rateb_social_clip(str_replace('#', '', $text), 80);
-        } elseif ($key === 'x') {
-            $text = rateb_social_clip($text, 240);
-        } elseif ($key === 'instagram') {
-            $text = trim($text);
-        }
-        if ($text !== '') {
-            $pack[$key] = $text;
+        $max = match ($key) {
+            'snapchat' => 80,
+            'x' => 240,
+            default => 0,
+        };
+        $line = rateb_social_line($value, $max, $key === 'snapchat');
+        if ($line !== null) {
+            $pack[$key] = $line;
         }
     }
     return $pack;

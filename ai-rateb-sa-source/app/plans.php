@@ -1900,7 +1900,7 @@ function rateb_image_caption_has_creative_outputs(string $caption): bool
     if ($caption === '') {
         return false;
     }
-    if (preg_match('/\b(brochures?|flyers?|leaflets?|pamphlets?|handouts?|mood board|advertisement|ad mockups?|mockups?|printouts?|storyboards?|posters?|printed ads?|social media ads?|campaign cards?|printed cards?|collage|marketing materials?)\b/u', $caption) === 1) {
+    if (preg_match('/\b(brochures?|flyers?|leaflets?|pamphlets?|handouts?|mood board|advertisement|ad mockups?|mockups?|printouts?|storyboards?|posters?|printed ads?|social media ads?|campaign cards?|printed cards?|collage|marketing materials?|postcards?|paintings?|prints?|stickers?|swatches?|pantone)\b/u', $caption) === 1) {
         return true;
     }
     // Magazine stacks alone drift to unrelated covers; require an advertising cue.
@@ -1909,7 +1909,7 @@ function rateb_image_caption_has_creative_outputs(string $caption): bool
         return true;
     }
     return preg_match('/\b(photos?|photographs?|pictures?)\b/u', $caption) === 1
-        && preg_match('/\b(board|collage|brochures?|flyers?|leaflets?|poster|marketing|storyboard|mockup)\b/u', $caption) === 1;
+        && preg_match('/\b(board|collage|brochures?|flyers?|leaflets?|poster|marketing|storyboard|mockup|desk|table)\b/u', $caption) === 1;
 }
 
 /** Free Horde captions often say "folders/cards on a wooden table" for poster flat-lays. */
@@ -1919,10 +1919,14 @@ function rateb_image_caption_has_printed_desk_materials(string $caption): bool
     if ($caption === '') {
         return false;
     }
-    $onDesk = preg_match('/\b(desk|table|wooden|wood|brown surface|surface)\b/u', $caption) === 1;
-    $pluralPrints = preg_match('/\b(folders|cards|papers|sheets|prints|documents|booklets|squares)\b/u', $caption) === 1;
-    $printed = preg_match('/\b(folders?|cards?|papers?|sheets?|prints?|documents?|booklets?|squares?)\b/u', $caption) === 1;
-    $manyOrColor = preg_match('/\b(color|colour|colored|coloured|colorful|colourful|several|bunch|stack|stacked|many|printed|paper|different)\b/u', $caption) === 1;
+    // Real branding flat-lay photos are often captioned as mood boards / strategy desks.
+    if (preg_match('/\b(brand strategy|mood board|moodboard|pantone|clipboard|swatch|branding|notebook|stationery flat.?lay|flat.?lay|postcards?|paintings?|stickers?)\b/u', $caption) === 1) {
+        return true;
+    }
+    $onDesk = preg_match('/\b(desk|table|wooden|wood|brown surface|surface|concrete)\b/u', $caption) === 1;
+    $pluralPrints = preg_match('/\b(folders|cards|papers|sheets|prints|documents|booklets|squares|photos|photographs|pictures|postcards|paintings|stickers|swatches)\b/u', $caption) === 1;
+    $printed = preg_match('/\b(folders?|cards?|papers?|sheets?|prints?|documents?|booklets?|squares?|postcards?|paintings?|stickers?)\b/u', $caption) === 1;
+    $manyOrColor = preg_match('/\b(color|colour|colored|coloured|colorful|colourful|several|bunch|stack|stacked|many|printed|paper|different|assortment|various|notes)\b/u', $caption) === 1;
     if ($onDesk && ($pluralPrints || ($printed && $manyOrColor))) {
         return true;
     }
@@ -1950,19 +1954,23 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1;
     $writtenPaper = preg_match('/\b(handwrit|writing on|written (on|text)|letters on|words on|notebook with text|notepad with text)\b/u', $caption) === 1;
     $creativeOutputs = rateb_image_caption_has_creative_outputs($caption);
-    $peopleHeavy = preg_match('/\b(women|woman|men|man|girl|boy|portrait|faces?|people)\b/u', $caption) === 1
-        && preg_match('/\b(magazine covers?|product (photos?|photographs?)|advertisement|mockup|printout|brochure|flyer)\b/u', $caption) !== 1;
-    $homeDecor = preg_match('/\b(living room|home decor|wicker basket|throw blanket|gallery wall)\b/u', $caption) === 1;
     $printedDesk = rateb_image_caption_has_printed_desk_materials($caption);
+    // "notes from people" is a common interrogator phrase for sticky notes on a desk — not a portrait.
+    $peopleHeavy = preg_match('/\b(women|woman|men|man|girl|boy|portrait|faces?)\b/u', $caption) === 1
+        || (preg_match('/\bpeople\b/u', $caption) === 1 && preg_match('/\b(notes? from people|from people)\b/u', $caption) !== 1);
+    $peopleHeavy = $peopleHeavy
+        && preg_match('/\b(magazine covers?|product (photos?|photographs?)|advertisement|mockup|printout|brochure|flyer|postcard|painting|sticker|paper|desk|table)\b/u', $caption) !== 1;
+    $homeDecor = preg_match('/\b(living room|home decor|wicker basket|throw blanket|gallery wall)\b/u', $caption) === 1;
     $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
     if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor)) {
         return 'caption shows generic stationery instead of marketing creative outputs';
     }
+    // Short Arabic tokens must not match inside unrelated words (عود inside سعودية, تمر inside …).
     $topics = [
-        ['/قهو|كوفي|coffee|espresso/u', '/coffee|espresso|cup|beans|cafe/'],
-        ['/تمر|تمور|dates/u', '/date|dates|fruit|gift box/'],
-        ['/عطر|عطور|بخور|عود|perfume|oud/u', '/perfume|fragrance|oud|bottle/'],
-        ['/مطعم|وجب|برجر|بيتزا|شاورما|طعام|restaurant|burger|pizza|meal/u', '/food|meal|dish|restaurant|burger|pizza|shawarma|plate/'],
+        ['/(?<!\p{L})(?:قهوة|قهوه|كوفي|coffee|espresso)(?!\p{L})/u', '/coffee|espresso|cup|beans|cafe/'],
+        ['/(?<!\p{L})(?:تمور|تمر|dates?)(?!\p{L})/u', '/date|dates|fruit|gift box/'],
+        ['/(?<!\p{L})(?:عطور|عطر|بخور|عود|perfume|oud)(?!\p{L})/u', '/perfume|fragrance|oud|bottle/'],
+        ['/(?<!\p{L})(?:مطعم|وجبات|وجبة|برجر|بيتزا|شاورما|طعام|restaurant|burger|pizza|meal)(?!\p{L})/u', '/food|meal|dish|restaurant|burger|pizza|shawarma|plate/'],
     ];
     foreach ($topics as [$sourcePattern, $captionPattern]) {
         if (preg_match($sourcePattern, $source) === 1 && preg_match($captionPattern, $caption) !== 1) {
@@ -2102,11 +2110,14 @@ function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, in
 /** Prefer photorealistic SD1.5 models that follow commercial product prompts at 512–576px. */
 function rateb_image_model_preferences(string $category): array
 {
+    // Flux first whenever online (prompt-faithful). ICBINP next for photographic marketing.
     $photo = [
-        'Deliberate',
-        'stable_diffusion',
+        'Flux.1-Schnell fp8 (Compact)',
+        'Flux.1-Schnell',
         'ICBINP - I Can\'t Believe It\'s Not Photography',
         'ICBINP',
+        'Deliberate',
+        'stable_diffusion',
         'AbsoluteReality',
         'Realistic Vision',
         'Edge Of Realism',
@@ -2118,6 +2129,8 @@ function rateb_image_model_preferences(string $category): array
     $digital = [
         'Flux.1-Schnell fp8 (Compact)',
         'Flux.1-Schnell',
+        'ICBINP - I Can\'t Believe It\'s Not Photography',
+        'ICBINP',
         'Deliberate',
         'stable_diffusion',
         'AbsoluteReality',
