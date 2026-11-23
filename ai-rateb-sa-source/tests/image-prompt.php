@@ -98,7 +98,7 @@ $genericMarketingPlan = [
 $groundedMarketingPlan = rateb_image_plan_ground_marketing_service($genericMarketingPlan, $groundedFacts);
 check(!str_contains(strtolower($groundedMarketingPlan['subject']), 'dashboard'), 'a marketing platform cannot keep a generic dashboard as its visible subject');
 check(str_contains(strtolower($groundedMarketingPlan['subject']), 'advertising posters') && str_contains(strtolower($groundedMarketingPlan['subject']), 'marketing flyers'), 'a marketing platform shows advertising posters and marketing flyers');
-check(str_contains(strtolower($groundedMarketingPlan['subject']), 'commercial photo') || str_contains(strtolower($groundedMarketingPlan['subject']), 'photorealistic'), 'a marketing platform uses a photorealistic commercial scene');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'flat lay') || str_contains(strtolower($groundedMarketingPlan['subject']), 'commercial'), 'a marketing platform uses a commercial flat-lay scene');
 $groundedMarketingPrompt = rateb_image_prompt_compose($groundedMarketingPlan, $groundedFacts, '1:1', 0);
 check(str_contains($groundedMarketingPrompt, 'analytics dashboard') && str_contains($groundedMarketingPrompt, 'computer monitor') && str_contains($groundedMarketingPrompt, 'neon orb'), 'the grounded marketing prompt excludes screens, neon orbs, and unrelated stock imagery');
 $accountingPlan = rateb_image_plan_ground_marketing_service(
@@ -122,9 +122,13 @@ check(!rateb_image_caption_has_creative_outputs('several magazine covers stacked
 check(rateb_image_caption_hard_reject($groundedFacts, 'several pictures mounted on the wall of a living room') !== null, 'home-decor gallery walls are hard-rejected for marketing campaigns');
 check(!rateb_image_caption_hard_accept($groundedFacts, 'several colors of post-it notes are arranged in a square formation on a pink background'), 'sticky notes alone are not hard-accepted for marketing campaigns');
 check(rateb_image_select_models(['Missing', 'Realistic Vision', 'Deliberate'], ['Realistic Vision' => 2, 'Deliberate' => 4], 2) === ['Deliberate', 'Realistic Vision'], 'online preferred models prefer the busiest available workers');
-check(in_array(rateb_image_model_preferences('digital_service')[0], ['Deliberate', 'stable_diffusion', 'AbsoluteReality'], true), 'digital campaigns prefer a currently available photoreal model');
+check(str_starts_with(strtolower(rateb_image_model_preferences('digital_service')[0]), 'flux') || in_array(rateb_image_model_preferences('digital_service')[0], ['Deliberate', 'stable_diffusion', 'AbsoluteReality'], true), 'digital campaigns prefer Flux or a photoreal fallback');
 $params = rateb_image_generation_params(512, 512);
 check(($params['steps'] ?? 0) >= 20 && ($params['cfg_scale'] ?? 0) >= 7, 'generation params ask for prompt adherence without overloading the free queue');
+$fluxParams = rateb_image_generation_params(512, 512, ['Flux.1-Schnell fp8 (Compact)']);
+check(($fluxParams['steps'] ?? 0) <= 10 && ($fluxParams['cfg_scale'] ?? 99) <= 3.5, 'Flux uses fewer steps and a lower cfg');
+check(rateb_image_is_marketing_brief($groundedFacts), 'a RATEB marketing platform brief is detected');
+check(is_string(rateb_image_marketing_seed_base64()) && rateb_image_marketing_seed_base64() !== '', 'the marketing flat-lay seed image is available');
 
 $fallback = rateb_image_fallback_plan($facts);
 check(is_array($fallback), 'the old fallback remains testable but is not used by the endpoint');

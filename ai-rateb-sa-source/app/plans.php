@@ -33,7 +33,7 @@ function rateb_ui_error(string $code): string
         'image_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصور.' : 'Approve the copy first, then start the images.',
         'image_provider' => $arabic ? 'تعذر توليد الصورة. حاول مرة أخرى.' : 'The image could not be generated. Try again.',
         'image_workers' => $arabic ? 'مزود الصور غير متاح الآن. حاول بعد قليل.' : 'The image provider is not available right now. Try again shortly.',
-        'image_irrelevant' => $arabic ? 'استبعدنا الصورة لأنها لا تمثل موضوع حملتك. لم تُحفظ وأُعيدت النقاط.' : 'We rejected the image because it did not represent your campaign. It was not saved and the credits were returned.',
+        'image_irrelevant' => $arabic ? 'الصورة المولّدة لم تطابق موضوع حملتك. أُعيدت النقاط — حاول مرة أخرى أو ارفع صورة من جهازك.' : 'The generated image did not match your campaign. Credits were returned — try again, or upload an image from your device.',
         'voice_locked' => $arabic ? 'اعتمد النص أولًا، ثم ابدأ الصوت.' : 'Approve the copy first, then start the voice.',
         'voice_provider' => $arabic ? 'تعذر توليد الصوت. حاول مرة أخرى.' : 'The voice could not be generated. Try again.',
         'voice_english' => $arabic ? 'توليد الكلام الإنجليزي غير متاح حاليًا. نموذج الكلام الحالي عربي فقط.' : 'English speech is currently unavailable. The current speech model is Arabic only.',
@@ -1821,15 +1821,15 @@ function rateb_image_plan_ground_marketing_service(array $plan, array $facts): a
     if (!$isMarketing || !$hasCreativeOutputs) {
         return $plan;
     }
-    $plan['subject'] = 'top-down commercial photo of colorful advertising posters and printed marketing flyers spread across a wooden desk';
+    // Keep the positive prompt short: free SD1.5 workers ignore long marketing briefs.
+    $plan['subject'] = 'flat lay of colorful advertising posters and printed marketing flyers covering a wooden desk';
     $plan['elements'] = [
-        'colorful advertising posters',
-        'printed marketing flyers',
-        'stacked campaign printouts',
-        'soft studio shadows',
+        'many printed posters',
+        'stacked marketing flyers',
+        'campaign printouts',
     ];
-    $plan['setting'] = 'bright marketing studio desk';
-    $plan['mood'] = 'professional clean commercial';
+    $plan['setting'] = 'wooden desk top-down photo';
+    $plan['mood'] = 'bright commercial product photo';
     $plan['avoid'] = array_values(array_unique(array_merge([
         'gallery wall',
         'home decor',
@@ -2095,6 +2095,8 @@ function rateb_image_model_preferences(string $category): array
         'Deliberate 3.0',
     ];
     $digital = [
+        'Flux.1-Schnell fp8 (Compact)',
+        'Flux.1-Schnell',
         'Deliberate',
         'stable_diffusion',
         'AbsoluteReality',
@@ -2138,19 +2140,65 @@ function rateb_image_select_models(array $preferred, array $counts, int $max = 3
     return $chosen;
 }
 
-/** @return array<string,mixed> */
-function rateb_image_generation_params(int $width, int $height): array
+/**
+ * @param list<string> $models
+ * @return array<string,mixed>
+ */
+function rateb_image_generation_params(int $width, int $height, array $models = []): array
 {
+    $flux = false;
+    foreach ($models as $name) {
+        if (stripos((string) $name, 'flux') !== false) {
+            $flux = true;
+            break;
+        }
+    }
+    if ($flux) {
+        return [
+            'width' => $width,
+            'height' => $height,
+            'steps' => 8,
+            'cfg_scale' => 2.5,
+            'sampler_name' => 'k_euler',
+            'karras' => false,
+            'clip_skip' => 1,
+            'n' => 1,
+        ];
+    }
     return [
         'width' => $width,
         'height' => $height,
-        'steps' => 20,
-        'cfg_scale' => 7.5,
+        'steps' => 25,
+        'cfg_scale' => 8.5,
         'sampler_name' => 'k_euler_a',
         'karras' => true,
         'clip_skip' => 1,
         'n' => 1,
     ];
+}
+
+/** True when the campaign brief is a marketing/ads platform that needs creative flat-lays. */
+function rateb_image_is_marketing_brief(array $facts): bool
+{
+    $source = mb_strtolower(rateb_image_subject_facts($facts));
+    return preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1
+        && preg_match('/محتوى|صور|تصميم|content|images?|visuals?|design|منص|platform|ذكاء|ai/u', $source) === 1;
+}
+
+/**
+ * Base64 seed used for marketing img2img so free workers stay near posters/flyers.
+ */
+function rateb_image_marketing_seed_base64(): ?string
+{
+    $path = dirname(__DIR__) . '/public/assets/image-seeds/marketing-flatlay.png';
+    if (!is_file($path)) {
+        return null;
+    }
+    $bytes = (string) file_get_contents($path);
+    if ($bytes === '' || strlen($bytes) < 32 || strlen($bytes) > 900000) {
+        return null;
+    }
+    return base64_encode($bytes);
 }
 
 /** @return array{relevant:bool,reason:string}|null */

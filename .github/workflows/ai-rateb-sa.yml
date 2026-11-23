@@ -201,6 +201,7 @@ jobs:
             "app/video/provider.php"
             "public/assets/js/app.js"
             "public/assets/css/app.css"
+            "public/assets/image-seeds/marketing-flatlay.png"
             "app/media/upload.php"
             "app/media/library.php"
             "app/media/approve.php"

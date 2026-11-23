@@ -129,7 +129,7 @@ if ($imageModels === []) {
     $imageModels = [array_values($preferred)[0]];
 }
 $imageModel = $imageModels[0];
-$genParams = rateb_image_generation_params($ratioSize[0], $ratioSize[1]);
+$genParams = rateb_image_generation_params($ratioSize[0], $ratioSize[1], $imageModels);
 $payloadData = [
     'prompt' => $prompt,
     'params' => $genParams,
@@ -140,10 +140,20 @@ $payloadData = [
     'models' => $imageModels,
 ];
 $sourceImage = ai_campaign_upload_source_image((int) $campaign['id'], $userId);
+$sourceKind = 'txt2img';
 if ($sourceImage !== null) {
     $payloadData['source_image'] = $sourceImage;
     $payloadData['source_processing'] = 'img2img';
     $payloadData['params']['denoising_strength'] = 0.58;
+    $sourceKind = 'img2img_upload';
+} elseif (rateb_image_is_marketing_brief($promptContext['facts'] ?? [])) {
+    $seed = rateb_image_marketing_seed_base64();
+    if ($seed !== null) {
+        $payloadData['source_image'] = $seed;
+        $payloadData['source_processing'] = 'img2img';
+        $payloadData['params']['denoising_strength'] = 0.62;
+        $sourceKind = 'img2img_marketing_seed';
+    }
 }
 $payload = json_encode($payloadData, JSON_UNESCAPED_UNICODE);
 
@@ -169,7 +179,7 @@ rateb_image_prompt_log($promptData['audit'] + [
     'usage_id' => $usageId,
     'model' => $imageModel,
     'models' => $imageModels,
-    'source_processing' => $sourceImage !== null ? 'img2img' : 'txt2img',
+    'source_processing' => $sourceKind,
     'prompt_sha256' => hash('sha256', $prompt),
 ]);
 $record = rateb_image_job_record($jobId, $userId, $campaignId, $usageId, $now, 'pending');
@@ -561,13 +571,21 @@ function ai_image_retry_unrelated(array $campaign, array $bound, array $context,
             }
         }
     }
-    $imageModels = rateb_image_select_models(rateb_image_model_preferences((string) ($plan['category'] ?? 'other')), $counts, 3);
+    $preferred = rateb_image_model_preferences((string) ($plan['category'] ?? 'other'));
+    // On retry, put Flux first when online so the second attempt follows the poster prompt.
+    if (rateb_image_is_marketing_brief($context['facts'])) {
+        $preferred = array_values(array_unique(array_merge([
+            'Flux.1-Schnell fp8 (Compact)',
+            'Flux.1-Schnell',
+        ], $preferred)));
+    }
+    $imageModels = rateb_image_select_models($preferred, $counts, 3);
     if ($imageModels === []) {
         return '';
     }
     $payloadData = [
         'prompt' => $prompt,
-        'params' => rateb_image_generation_params($ratioSize[0], $ratioSize[1]),
+        'params' => rateb_image_generation_params($ratioSize[0], $ratioSize[1], $imageModels),
         'nsfw' => false,
         'censor_nsfw' => true,
         'r2' => true,
@@ -579,6 +597,13 @@ function ai_image_retry_unrelated(array $campaign, array $bound, array $context,
         $payloadData['source_image'] = $sourceImage;
         $payloadData['source_processing'] = 'img2img';
         $payloadData['params']['denoising_strength'] = 0.58;
+    } elseif (rateb_image_is_marketing_brief($context['facts'])) {
+        $seed = rateb_image_marketing_seed_base64();
+        if ($seed !== null) {
+            $payloadData['source_image'] = $seed;
+            $payloadData['source_processing'] = 'img2img';
+            $payloadData['params']['denoising_strength'] = 0.55;
+        }
     }
     $payload = json_encode($payloadData, JSON_UNESCAPED_UNICODE);
     $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload);
