@@ -319,7 +319,21 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
     }
     if (!is_array($state) || empty($state['done'])) {
         $wait = is_array($state) ? (int) ($state['wait_time'] ?? 0) : 0;
-        ai_image_pending($jobId, $wait);
+        $queue = is_array($state) ? (int) ($state['queue_position'] ?? 0) : 0;
+        // Free Horde queues can stall for a long time — fail fast with a clear retry message.
+        if ($wait >= 180 || $queue >= 80) {
+            ai_image_release($userId, $jobId, $usageId, 'failed');
+            http_response_code(503);
+            echo json_encode([
+                'error' => rateb_ui_error('image_queued'),
+                'code' => 'image_queued',
+                'state' => 'queued',
+                'wait' => $wait,
+                'queue_position' => $queue,
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        ai_image_pending($jobId, $wait, $queue);
     }
 
     $status = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/status/' . rawurlencode($jobId));
@@ -849,7 +863,7 @@ function ai_image_plan(array $facts): array
     return ['status' => ($plan['sufficient'] ?? false) === true ? 'ok' : 'insufficient', 'plan' => $plan, 'raw' => $content];
 }
 
-function ai_image_pending(string $jobId, int $wait = 0): void
+function ai_image_pending(string $jobId, int $wait = 0, int $queuePosition = 0): void
 {
     $created = (int) ($_SESSION['ai_image_jobs'][$jobId]['created'] ?? time());
     echo json_encode([
@@ -857,6 +871,7 @@ function ai_image_pending(string $jobId, int $wait = 0): void
         'state' => 'pending',
         'job_id' => $jobId,
         'wait' => $wait,
+        'queue_position' => $queuePosition,
         'expires_at' => $created + rateb_image_job_ttl(),
     ], JSON_UNESCAPED_UNICODE);
     exit;

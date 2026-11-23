@@ -1242,7 +1242,10 @@
         button.disabled = true;
         button.classList.add('is-busy');
       }
-      if (loader) loader.hidden = false;
+      if (loader) {
+        loader.hidden = false;
+        loader.innerHTML = '<span class="loader" aria-hidden="true"></span>' + (language === 'ar' ? 'جاري تجهيز الصورة' : 'Preparing the image');
+      }
       if (status) {
         status.className = 'notice stage-status';
         status.textContent = '';
@@ -1263,6 +1266,18 @@
           payload = await requestImage(imageForm, jobId);
           if (payload.job_id) jobId = payload.job_id;
           if (payload.expires_at) deadline = Number(payload.expires_at) * 1000;
+          if (loader && payload.pending) {
+            var waitSec = Number(payload.wait || 0);
+            var queuePos = Number(payload.queue_position || 0);
+            var waitLabel = language === 'ar' ? 'جاري تجهيز الصورة' : 'Preparing the image';
+            if (waitSec >= 30 || queuePos >= 5) {
+              var mins = Math.max(1, Math.ceil(waitSec / 60));
+              waitLabel = language === 'ar'
+                ? ('في قائمة الانتظار… تقريباً ' + mins + ' دقائق' + (queuePos > 0 ? (' (ترتيب ' + queuePos + ')') : ''))
+                : ('Queued… about ' + mins + ' min' + (queuePos > 0 ? (' (#' + queuePos + ')') : ''));
+            }
+            loader.innerHTML = '<span class="loader" aria-hidden="true"></span>' + waitLabel;
+          }
           if (!payload.pending) break;
           await new Promise(function (resolve) { setTimeout(resolve, 3000); });
         }
@@ -1279,7 +1294,11 @@
         if (loader) loader.hidden = true;
         if (status) {
           status.className = 'notice is-error stage-status';
-          status.textContent = error.code === 'image_timeout' ? (dict[language].image_timeout) : (error.message || dict[language].image_failed);
+          status.textContent = error.code === 'image_timeout'
+            ? (dict[language].image_timeout)
+            : (error.code === 'image_queued'
+              ? (dict[language].image_queued || error.message)
+              : (error.message || dict[language].image_failed));
           linkUpgrade(status);
         }
         if (button) {
