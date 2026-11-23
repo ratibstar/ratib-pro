@@ -206,9 +206,9 @@ for ($attempt = 1; $attempt <= $attempts; $attempt++) {
 }
 
 // Fallback: install the photographic seed itself as an approved studio image for the showcase.
-$seedPath = dirname(__DIR__) . '/public/assets/image-seeds/marketing-flatlay.jpg';
+$seedPath = dirname(__DIR__) . '/public/assets/image-seeds/branding-desk.jpg';
 if (!is_file($seedPath)) {
-    $seedPath = dirname(__DIR__) . '/public/assets/image-seeds/marketing-flatlay.png';
+    $seedPath = dirname(__DIR__) . '/public/assets/image-seeds/marketing-flatlay.jpg';
 }
 if (is_file($seedPath)) {
     $bytes = (string) file_get_contents($seedPath);
