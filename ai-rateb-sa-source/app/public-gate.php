@@ -4,9 +4,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/../migrations/platform_settings_schema.php';
 
 /**
- * Public website gate: landing, registration, and marketing entry points.
- * Customer workspace (/dashboard, /hr, campaigns) stays available when logged in.
- * Admin console and sign-in are always available.
+ * Site access gate.
+ * - Maintenance: locks the whole customer site. Only /admin (+ static assets) stay up.
+ * - Public site off: locks marketing pages only. Logged-in customer workspace stays up.
  */
 function rateb_enforce_public_access(PDO $pdo): void
 {
@@ -17,22 +17,25 @@ function rateb_enforce_public_access(PDO $pdo): void
     $enforced = true;
 
     $path = rateb_public_gate_request_path();
-    if (rateb_public_gate_is_always_exempt($path) || rateb_public_gate_is_exempt_script()) {
-        return;
-    }
 
     ensure_platform_settings_schema($pdo);
     $publicOn = platform_setting_bool($pdo, 'public_site_enabled', true);
     $maintOn = platform_setting_bool($pdo, 'maintenance_mode', false);
 
-    $marketing = rateb_public_gate_is_marketing_path($path);
-
-    if ($maintOn && $marketing) {
+    if ($maintOn) {
+        if (rateb_public_gate_is_maintenance_exempt($path) || rateb_public_gate_is_admin_script()) {
+            return;
+        }
         rateb_public_gate_render('maintenance', $pdo);
     }
 
-    if (!$publicOn && $marketing) {
-        rateb_public_gate_render('off', $pdo);
+    if (!$publicOn) {
+        if (rateb_public_gate_is_always_exempt($path) || rateb_public_gate_is_exempt_script()) {
+            return;
+        }
+        if (rateb_public_gate_is_marketing_path($path)) {
+            rateb_public_gate_render('off', $pdo);
+        }
     }
 }
 
@@ -53,13 +56,44 @@ function rateb_public_gate_normalize_path(string $path): string
     return $path === '' ? '/' : $path;
 }
 
+function rateb_public_gate_path_matches(string $path, string $prefix): bool
+{
+    $path = rateb_public_gate_normalize_path($path);
+    return $path === $prefix
+        || str_starts_with($path, $prefix . '/')
+        || str_starts_with($path, $prefix . '.php');
+}
+
+/** During maintenance: only admin console and static assets. */
+function rateb_public_gate_is_maintenance_exempt(string $path): bool
+{
+    $path = rateb_public_gate_normalize_path($path);
+    foreach (['/admin', '/public', '/favicon.ico'] as $prefix) {
+        if (rateb_public_gate_path_matches($path, $prefix) || ($prefix !== '/favicon.ico' && str_starts_with($path, $prefix))) {
+            return true;
+        }
+    }
+    return $path === '/favicon.ico';
+}
+
+/** URL SCRIPT_NAME under /admin only (never filesystem paths — server home may be /home/admin/). */
+function rateb_public_gate_is_admin_script(): bool
+{
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    return $script === '/admin'
+        || $script === '/admin/index.php'
+        || str_starts_with($script, '/admin/');
+}
+
 /**
- * Extra safety when rewrite/proxy leaves REQUEST_URI looking like marketing
- * while the actual PHP script is login/admin/workspace.
- * Uses URL SCRIPT_NAME only — never filesystem paths (server home may be /home/admin/).
+ * Soft public-off: customer workspace scripts stay available.
+ * Uses URL SCRIPT_NAME only.
  */
 function rateb_public_gate_is_exempt_script(): bool
 {
+    if (rateb_public_gate_is_admin_script()) {
+        return true;
+    }
     $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
     if ($script === '') {
         return false;
@@ -79,9 +113,7 @@ function rateb_public_gate_is_exempt_script(): bool
     if (in_array($base, $exemptFiles, true)) {
         return true;
     }
-    return str_starts_with($script, '/admin/')
-        || $script === '/admin'
-        || str_starts_with($script, '/app/auth/')
+    return str_starts_with($script, '/app/auth/')
         || str_starts_with($script, '/app/payment/')
         || str_starts_with($script, '/app/account/')
         || str_starts_with($script, '/app/ai/')
@@ -93,7 +125,7 @@ function rateb_public_gate_is_exempt_script(): bool
         || str_starts_with($script, '/hr/');
 }
 
-/** Admin, auth, payments, customer app — never blocked by site toggles. */
+/** Soft public-off: customer app paths stay available. */
 function rateb_public_gate_is_always_exempt(string $path): bool
 {
     $path = rateb_public_gate_normalize_path($path);
@@ -126,14 +158,14 @@ function rateb_public_gate_is_always_exempt(string $path): bool
         '/favicon.ico',
     ];
     foreach ($prefixes as $prefix) {
-        if ($path === $prefix || str_starts_with($path, $prefix . '/') || str_starts_with($path, $prefix . '.php') || str_starts_with($path, $prefix)) {
+        if (rateb_public_gate_path_matches($path, $prefix) || str_starts_with($path, $prefix)) {
             return true;
         }
     }
     return false;
 }
 
-/** Paths treated as the public marketing website (affected by maintenance / public off). */
+/** Paths treated as the public marketing website (affected by public site off). */
 function rateb_public_gate_is_marketing_path(string $path): bool
 {
     $path = rateb_public_gate_normalize_path($path);
@@ -154,7 +186,7 @@ function rateb_public_gate_is_marketing_path(string $path): bool
     return in_array($path, $marketing, true);
 }
 
-/** @deprecated use rateb_public_gate_is_always_exempt */
+/** @deprecated */
 function rateb_public_gate_is_exempt_path(string $path): bool
 {
     $path = rateb_public_gate_normalize_path($path);
@@ -179,11 +211,14 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     }
     $msg = $ar ? $msgAr : $msgEn;
     $title = $mode === 'maintenance' ? ($ar ? 'صيانة' : 'Maintenance') : ($ar ? 'غير متاح' : 'Unavailable');
-    $loginLabel = $ar ? 'تسجيل الدخول' : 'Sign in';
     $adminLabel = $ar ? 'لوحة الإدارة' : 'Admin console';
-    $hint = $ar
-        ? 'الموقع العام تحت الصيانة. الدخول ولوحة الإدارة متاحان.'
-        : 'The public site is under maintenance. Sign-in and admin stay available.';
+    $hint = $mode === 'maintenance'
+        ? ($ar
+            ? 'الموقع متوقف بالكامل أثناء الصيانة. لوحة الإدارة فقط تبقى متاحة.'
+            : 'The whole site is locked during maintenance. Only the admin console stays available.')
+        : ($ar
+            ? 'الموقع العام غير متاح حاليًا.'
+            : 'The public site is currently unavailable.');
     echo '<!doctype html><html lang="' . ($ar ? 'ar' : 'en') . '" dir="' . ($ar ? 'rtl' : 'ltr') . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<title>RATEB AI — ' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</title>';
     echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Tajawal:wght@400;500;700;800&display=swap">';
@@ -196,16 +231,14 @@ function rateb_public_gate_render(string $mode, ?PDO $pdo = null): void
     echo '.actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}';
     echo 'a.btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 24px;border-radius:999px;font-size:1.15rem;font-weight:800;text-decoration:none}';
     echo 'a.btn-primary{background:linear-gradient(90deg,#6d28d9,#0f766e);color:#fff}';
-    echo 'a.btn-secondary{background:#18233a;border:1px solid #334663;color:#e8eef7}';
     echo '@media (max-width:560px){.box{padding:28px 20px}a.btn{width:100%}}';
     echo '</style></head><body>';
     echo '<div class="box"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
     echo '<p>' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</p>';
     echo '<p class="hint">' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '</p>';
     echo '<div class="actions">';
-    echo '<a class="btn btn-primary" href="/login">' . htmlspecialchars($loginLabel, ENT_QUOTES, 'UTF-8') . '</a>';
     if ($mode === 'maintenance') {
-        echo '<a class="btn btn-secondary" href="/admin">' . htmlspecialchars($adminLabel, ENT_QUOTES, 'UTF-8') . '</a>';
+        echo '<a class="btn btn-primary" href="/admin">' . htmlspecialchars($adminLabel, ENT_QUOTES, 'UTF-8') . '</a>';
     }
     echo '</div></div></body></html>';
     exit;

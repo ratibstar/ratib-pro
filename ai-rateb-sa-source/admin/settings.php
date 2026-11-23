@@ -58,8 +58,8 @@ if ($notice === 'saved') {
 }
 if (admin_actor_is_owner($adminActor)) {
     admin_panel_open(admin_t('Public website', 'الموقع العام'), admin_t(
-        'Applies to the marketing homepage (/) and registration pages. Customer dashboard, HR, and /admin stay available.',
-        'يُطبَّق على الصفحة الرئيسية (/) وصفحات التسجيل. لوحة العملاء وHR و/admin تبقى متاحة.'
+        'Public site off: marketing pages only. Maintenance: locks the whole customer site; only /admin stays available.',
+        'إيقاف الموقع العام: صفحات التسويق فقط. الصيانة: تقفل موقع العملاء بالكامل؛ /admin فقط يبقى متاحًا.'
     ));
     echo '<section class="stats"><article class="stat"><b><span class="pill ' . ($publicOn ? 'ok' : 'bad') . '">' . admin_h($publicOn ? admin_t('On', 'مفعّل') : admin_t('Off', 'معطّل')) . '</span></b><span>' . admin_h(admin_t('Public site', 'الموقع العام')) . '</span></article>';
     echo '<article class="stat"><b><span class="pill ' . ($maintOn ? 'warn' : 'ok') . '">' . admin_h($maintOn ? admin_t('On', 'مفعّل') : admin_t('Off', 'معطّل')) . '</span></b><span>' . admin_h(admin_t('Maintenance', 'الصيانة')) . '</span></article></section>';
@@ -70,8 +70,8 @@ if (admin_actor_is_owner($adminActor)) {
     echo '<label class="full">' . admin_h(admin_t('Maintenance message (Arabic)', 'رسالة الصيانة (عربي)')) . '<textarea name="maintenance_message_ar" rows="2">' . admin_h($msgAr) . '</textarea></label>';
     echo '<p class="full"><button type="submit" class="btn primary">' . admin_h(admin_t('Save site settings', 'حفظ إعدادات الموقع')) . '</button></p></form>';
     echo '<p class="note">' . admin_h(admin_t(
-        'Preview: open https://ai.rateb.sa/ in a private window after saving. Logged-in users reach /dashboard directly.',
-        'معاينة: افتح https://ai.rateb.sa/ في نافذة خاصة بعد الحفظ. المستخدمون المسجّلون يدخلون /dashboard مباشرة.'
+        'Preview: open https://ai.rateb.sa/ and /dashboard in a private window after saving. During maintenance both show the lock screen; only /admin works.',
+        'معاينة: افتح https://ai.rateb.sa/ و/dashboard في نافذة خاصة بعد الحفظ. أثناء الصيانة الاثنان يعرضان شاشة القفل؛ /admin فقط يعمل.'
     )) . '</p>';
     admin_panel_close();
 
