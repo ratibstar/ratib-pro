@@ -61,15 +61,15 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
     if ($credits !== null) {
         $chipTag = ($here === '/dashboard' || $here === '/dashboard.php') ? 'button type="button" data-pricing-open' : 'a href="/?pricing=1#pricing"';
         $tip = $arabicUi
-            ? 'النقاط تُخصم لكل عملية: صورة ' . (int) ($spend['image_cost'] ?? 10) . ' · فيديو ' . (int) ($spend['video_cost'] ?? 20) . ' · صوت ' . (int) ($spend['voice_cost'] ?? 15)
-            : 'Points are spent per action: image ' . (int) ($spend['image_cost'] ?? 10) . ' · video ' . (int) ($spend['video_cost'] ?? 20) . ' · voice ' . (int) ($spend['voice_cost'] ?? 15);
+            ? 'تقدير مما يكفي رصيدك (ليست أرصدة منفصلة). كل عملية تخصم من نفس النقاط: صورة ' . (int) ($spend['image_cost'] ?? 10) . ' · فيديو ' . (int) ($spend['video_cost'] ?? 20) . ' · صوت ' . (int) ($spend['voice_cost'] ?? 15)
+            : 'Estimate of what your points cover (not separate wallets). Same balance for every action: image ' . (int) ($spend['image_cost'] ?? 10) . ' · video ' . (int) ($spend['video_cost'] ?? 20) . ' · voice ' . (int) ($spend['voice_cost'] ?? 15);
         echo '<div class="credit-wallet" title="' . e($tip) . '">';
         echo '<' . $chipTag . ' class="credit-chip"><span aria-hidden="true">⚡</span><span data-i18n="credit_points_short">' . ($arabicUi ? 'نقاط' : 'pts') . '</span> ' . $credits . '</' . strtok($chipTag, ' ') . '>';
         if (is_array($spend)) {
-            echo '<span class="credit-split" aria-label="' . e($tip) . '">';
-            echo '<span class="credit-part"><b data-i18n="credit_images_short">' . ($arabicUi ? 'صور' : 'Images') . '</b> ' . (int) $spend['images'] . '</span>';
-            echo '<span class="credit-part"><b data-i18n="credit_videos_short">' . ($arabicUi ? 'فيديو' : 'Video') . '</b> ' . (int) $spend['videos'] . '</span>';
-            echo '</span>';
+            $affordLabel = $arabicUi
+                ? 'يكفي ≈' . (int) $spend['images'] . ' صور أو ≈' . (int) $spend['videos'] . ' فيديو'
+                : 'covers ≈' . (int) $spend['images'] . ' images or ≈' . (int) $spend['videos'] . ' videos';
+            echo '<span class="credit-part credit-afford" aria-label="' . e($tip) . '">' . e($affordLabel) . '</span>';
         }
         echo '</div>';
     }
@@ -320,16 +320,15 @@ function rateb_account_dialog(string $here = ''): void
     echo '<p class="muted account-modal-meta">' . ($arabic ? 'الباقة:' : 'Plan:') . ' ' . e((string) $wallet['package_type'])
         . ' · ' . ($arabic ? 'النقاط:' : 'Points:') . ' ' . (int) $wallet['credits_balance'];
     if (is_array($spend)) {
-        echo ' · ' . ($arabic ? 'صور:' : 'Images:') . ' ' . (int) $spend['images']
-            . ' (' . (int) $spend['image_cost'] . ($arabic ? 'ن' : 'pts') . ')'
-            . ' · ' . ($arabic ? 'فيديو:' : 'Video:') . ' ' . (int) $spend['videos']
-            . ' (' . (int) $spend['video_cost'] . ($arabic ? 'ن' : 'pts') . ')';
+        echo ' · ' . ($arabic
+            ? ('يكفي ≈' . (int) $spend['images'] . ' صور أو ≈' . (int) $spend['videos'] . ' فيديو')
+            : ('covers ≈' . (int) $spend['images'] . ' images or ≈' . (int) $spend['videos'] . ' videos'));
     }
     echo '</p>';
     if (is_array($spend)) {
         echo '<p class="muted account-credit-hint">' . ($arabic
-            ? 'التوضيح: كل توليد يخصم من نفس الرصيد — صورة ' . (int) $spend['image_cost'] . ' نقطة، فيديو ' . (int) $spend['video_cost'] . '، صوت ' . (int) $spend['voice_cost'] . '.'
-            : 'Same wallet for every action — image ' . (int) $spend['image_cost'] . ' pts, video ' . (int) $spend['video_cost'] . ', voice ' . (int) $spend['voice_cost'] . '.') . '</p>';
+            ? 'ليست أرصدة منفصلة — تقدير مما يكفي نقاطك. كل توليد يخصم من نفس الرصيد: صورة ' . (int) $spend['image_cost'] . ' نقطة، فيديو ' . (int) $spend['video_cost'] . '، صوت ' . (int) $spend['voice_cost'] . '.'
+            : 'Not separate wallets — an estimate of what your points cover. Same balance for every action: image ' . (int) $spend['image_cost'] . ' pts, video ' . (int) $spend['video_cost'] . ', voice ' . (int) $spend['voice_cost'] . '.') . '</p>';
     }
 
     if ($flash === 'profile') {

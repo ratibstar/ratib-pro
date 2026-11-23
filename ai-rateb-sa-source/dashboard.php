@@ -62,8 +62,8 @@ foreach ($pricingPlans as $planRow) {
 <p class="muted credit-summary-line" style="width:min(1800px,calc(100% - 36px));margin:12px auto 0">
   الباقة: <?= e($planNames[$wallet['package_type']] ?? $wallet['package_type']) ?>
   · النقاط: <?= (int) $wallet['credits_balance'] ?>
-  · صور: <?= (int) $spend['images'] ?> <span class="credit-cost-hint">(<?= (int) $spend['image_cost'] ?>ن لكل صورة)</span>
-  · فيديو: <?= (int) $spend['videos'] ?> <span class="credit-cost-hint">(<?= (int) $spend['video_cost'] ?>ن لكل فيديو)</span>
+  · يكفي ≈<?= (int) $spend['images'] ?> صور أو ≈<?= (int) $spend['videos'] ?> فيديو
+  <span class="credit-cost-hint">(من نفس الرصيد · صورة <?= (int) $spend['image_cost'] ?>ن · فيديو <?= (int) $spend['video_cost'] ?>ن)</span>
 </p>
 <main class="container studio-page">
   <?php if (($_GET['deleted'] ?? '') === '1'): ?>
