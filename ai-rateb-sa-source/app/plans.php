@@ -1872,20 +1872,20 @@ function rateb_image_marketing_subject_from_facts(array $facts): array
     $mood = rateb_image_visual_mood_from_facts($facts);
     $place = $isSaudi ? 'Saudi marketing studio table' : 'marketing studio table';
 
-    // Flux melts letters on any screen/poster/UI. For AI marketing platforms use a premium
-    // commercial lifestyle/hero photo with brand mood colors — never devices showing UI.
-    $subject = 'premium commercial advertising photograph of a modern Saudi glass office at golden hour with soft teal and coral light reflections on a polished floor, empty elegant workspace, cinematic shallow depth of field, '
-        . $mood . ' mood, no people, no plants, no cactus, no screens, no phones, no laptops, no posters, no text';
+    // Flux melts letters on screens/posters. Avoid furniture showrooms (tables/chairs) — they
+    // read as interior-design ads. Prefer cinematic tech-city / light-hero for AI platforms.
+    $subject = 'cinematic commercial advertising photograph of a modern glass city skyline at blue hour with soft teal and coral light trails and bokeh, premium tech brand campaign style, '
+        . $mood . ' mood, no people, no furniture, no chairs, no tables, no plants, no cactus, no screens, no phones, no laptops, no posters, no text';
     $elements = [
-        'modern Saudi glass office',
-        'teal and coral light reflections',
-        'polished floor bokeh',
+        'modern glass city skyline',
+        'teal and coral light trails',
+        'blue hour bokeh',
     ];
 
     return [
         'subject' => $subject,
         'elements' => $elements,
-        'setting' => 'modern Saudi glass office',
+        'setting' => 'modern glass city skyline',
         'mood' => $mood,
     ];
 }
