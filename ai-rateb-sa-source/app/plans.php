@@ -39,7 +39,7 @@ function rateb_ui_error(string $code): string
         'voice_english' => $arabic ? 'توليد الكلام الإنجليزي غير متاح حاليًا. نموذج الكلام الحالي عربي فقط.' : 'English speech is currently unavailable. The current speech model is Arabic only.',
         'voice_terms' => $arabic ? 'نموذج الصوت موجود، لكن شروط استخدامه غير مقبولة لهذا الحساب.' : 'The speech model exists, but its terms are not accepted for this account.',
         'image_timeout' => $arabic ? 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.' : 'Image generation timed out. No new image was saved.',
-        'image_queued' => $arabic ? 'مزود الصور المجاني مزدحم الآن. أُعيدت النقاط — حاول مرة أخرى بعد قليل.' : 'The free image provider is busy right now. Credits were returned — try again shortly.',
+        'image_queued' => $arabic ? 'مزود الصور مزدحم حالياً. أُعيدت النقاط — حاول بعد دقيقة أو ارفع صورة من جهازك.' : 'The image provider is busy right now. Credits were returned — try again in a minute, or upload an image from your device.',
         'image_storage' => $arabic ? 'تعذر حفظ الصورة، وأُعيدت النقاط. حاول مرة أخرى.' : 'The image could not be saved and the credits were returned. Try again.',
         'write_busy' => $arabic ? 'RATEB يكتب الآن.' : 'RATEB is already writing.',
         'feature_disabled' => $arabic ? 'هذه الميزة معطّلة من الإدارة.' : 'This feature is disabled by the administrator.',
@@ -2082,27 +2082,27 @@ function rateb_image_prompt_compose(array $plan, array $facts, string $ratio, in
 function rateb_image_model_preferences(string $category): array
 {
     $photo = [
-        'AbsoluteReality',
-        'Edge Of Realism',
-        'Realistic Vision',
-        'majicMIX realistic',
+        'Deliberate',
+        'stable_diffusion',
         'ICBINP - I Can\'t Believe It\'s Not Photography',
         'ICBINP',
+        'AbsoluteReality',
+        'Realistic Vision',
+        'Edge Of Realism',
+        'majicMIX realistic',
         'Analog Madness',
         'Dreamshaper',
         'Deliberate 3.0',
-        'Deliberate',
-        'stable_diffusion',
     ];
     $digital = [
+        'Deliberate',
+        'stable_diffusion',
         'AbsoluteReality',
-        'Edge Of Realism',
         'Realistic Vision',
+        'Edge Of Realism',
         'majicMIX realistic',
         'Dreamshaper',
         'Deliberate 3.0',
-        'Deliberate',
-        'stable_diffusion',
     ];
     return match ($category) {
         'digital_service' => $digital,
@@ -2119,12 +2119,18 @@ function rateb_image_model_preferences(string $category): array
  */
 function rateb_image_select_models(array $preferred, array $counts, int $max = 3): array
 {
-    $chosen = [];
+    $available = [];
     foreach ($preferred as $name) {
-        if (($counts[$name] ?? 0) < 1) {
+        $n = (int) ($counts[$name] ?? 0);
+        if ($n < 1) {
             continue;
         }
-        $chosen[] = $name;
+        $available[] = ['name' => $name, 'count' => $n];
+    }
+    usort($available, static fn(array $a, array $b): int => $b['count'] <=> $a['count']);
+    $chosen = [];
+    foreach ($available as $row) {
+        $chosen[] = $row['name'];
         if (count($chosen) >= $max) {
             break;
         }
@@ -2138,8 +2144,8 @@ function rateb_image_generation_params(int $width, int $height): array
     return [
         'width' => $width,
         'height' => $height,
-        'steps' => 30,
-        'cfg_scale' => 8.5,
+        'steps' => 20,
+        'cfg_scale' => 7.5,
         'sampler_name' => 'k_euler_a',
         'karras' => true,
         'clip_skip' => 1,

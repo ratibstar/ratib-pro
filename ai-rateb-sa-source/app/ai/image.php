@@ -181,15 +181,32 @@ try {
     if ($error->getMessage() !== 'image_job_store') {
         throw $error;
     }
-    ai_image_bind($record);
-    ai_image_pending($jobId);
 }
 ai_image_bind($record);
 if (!isset($_SESSION['ai_image_jobs']) || !is_array($_SESSION['ai_image_jobs'])) {
     $_SESSION['ai_image_jobs'] = [];
 }
 $_SESSION['ai_image_jobs'] = rateb_image_session_trim($_SESSION['ai_image_jobs'], 3);
-ai_image_pending($jobId);
+
+// If the free queue is already deep, cancel immediately instead of spinning for minutes.
+$early = ai_horde_request('GET', 'https://aihorde.net/api/v2/generate/check/' . rawurlencode($jobId));
+$earlyState = json_decode($early['body'], true);
+$earlyWait = is_array($earlyState) ? (int) ($earlyState['wait_time'] ?? 0) : 0;
+$earlyQueue = is_array($earlyState) ? (int) ($earlyState['queue_position'] ?? 0) : 0;
+if (ai_horde_queue_too_long($earlyWait, $earlyQueue)) {
+    ai_horde_cancel_job($jobId);
+    ai_image_release($userId, $jobId, $usageId, 'failed');
+    http_response_code(503);
+    echo json_encode([
+        'error' => rateb_ui_error('image_queued'),
+        'code' => 'image_queued',
+        'state' => 'queued',
+        'wait' => $earlyWait,
+        'queue_position' => $earlyQueue,
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+ai_image_pending($jobId, $earlyWait, $earlyQueue);
 
 function ai_image_jobs_include_session(array $jobs, int $userId): array
 {
@@ -321,7 +338,8 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         $wait = is_array($state) ? (int) ($state['wait_time'] ?? 0) : 0;
         $queue = is_array($state) ? (int) ($state['queue_position'] ?? 0) : 0;
         // Free Horde queues can stall for a long time — fail fast with a clear retry message.
-        if ($wait >= 180 || $queue >= 80) {
+        if (ai_horde_queue_too_long($wait, $queue)) {
+            ai_horde_cancel_job($jobId);
             ai_image_release($userId, $jobId, $usageId, 'failed');
             http_response_code(503);
             echo json_encode([
@@ -861,6 +879,19 @@ function ai_image_plan(array $facts): array
         $plan = rateb_image_plan_ground_marketing_service($plan, $facts);
     }
     return ['status' => ($plan['sufficient'] ?? false) === true ? 'ok' : 'insufficient', 'plan' => $plan, 'raw' => $content];
+}
+
+function ai_horde_queue_too_long(int $wait, int $queue): bool
+{
+    return $wait >= 90 || $queue >= 25;
+}
+
+function ai_horde_cancel_job(string $jobId): void
+{
+    if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
+        return;
+    }
+    ai_horde_request('DELETE', 'https://aihorde.net/api/v2/generate/status/' . rawurlencode($jobId), null, 10);
 }
 
 function ai_image_pending(string $jobId, int $wait = 0, int $queuePosition = 0): void

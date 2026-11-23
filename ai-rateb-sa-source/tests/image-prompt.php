@@ -121,10 +121,10 @@ check(rateb_image_caption_has_creative_outputs('two posters sitting on top of a 
 check(!rateb_image_caption_has_creative_outputs('several magazine covers stacked on a wooden table'), 'unrelated magazine stacks alone are not treated as campaign creatives');
 check(rateb_image_caption_hard_reject($groundedFacts, 'several pictures mounted on the wall of a living room') !== null, 'home-decor gallery walls are hard-rejected for marketing campaigns');
 check(!rateb_image_caption_hard_accept($groundedFacts, 'several colors of post-it notes are arranged in a square formation on a pink background'), 'sticky notes alone are not hard-accepted for marketing campaigns');
-check(rateb_image_select_models(['Missing', 'Realistic Vision', 'Deliberate'], ['Realistic Vision' => 2, 'Deliberate' => 4], 2) === ['Realistic Vision', 'Deliberate'], 'online preferred models are selected in order');
-check(rateb_image_model_preferences('digital_service')[0] === 'AbsoluteReality', 'digital campaigns prefer AbsoluteReality over Dreamshaper for photoreal marketing scenes');
+check(rateb_image_select_models(['Missing', 'Realistic Vision', 'Deliberate'], ['Realistic Vision' => 2, 'Deliberate' => 4], 2) === ['Deliberate', 'Realistic Vision'], 'online preferred models prefer the busiest available workers');
+check(in_array(rateb_image_model_preferences('digital_service')[0], ['Deliberate', 'stable_diffusion', 'AbsoluteReality'], true), 'digital campaigns prefer a currently available photoreal model');
 $params = rateb_image_generation_params(512, 512);
-check(($params['steps'] ?? 0) >= 30 && ($params['cfg_scale'] ?? 0) >= 8, 'generation params ask for stronger prompt adherence');
+check(($params['steps'] ?? 0) >= 20 && ($params['cfg_scale'] ?? 0) >= 7, 'generation params ask for prompt adherence without overloading the free queue');
 
 $fallback = rateb_image_fallback_plan($facts);
 check(is_array($fallback), 'the old fallback remains testable but is not used by the endpoint');
@@ -143,7 +143,7 @@ check(rateb_image_prompt_clip_list('alpha, beta gamma, delta', 15) === 'alpha', 
 $repeat = ['subject' => 'computer screen displaying AI analytics dashboard', 'elements' => ['AI analytics dashboard', 'performance graphs'], 'category' => 'digital_service'];
 check(substr_count(rateb_image_prompt_compose($repeat, $facts, '1:1', 0), 'AI analytics dashboard') === 1, 'an element that repeats the subject is dropped');
 check(rateb_image_prompt_compose($plan, $facts, '1:1', 0) !== rateb_image_prompt_compose($plan, $facts, '1:1', 2), 'each new image gets its own shot');
-check(in_array(rateb_image_model_preferences('food')[0], ['AbsoluteReality', 'Realistic Vision'], true), 'physical campaigns prefer a photorealistic model');
+check(in_array(rateb_image_model_preferences('food')[0], ['Deliberate', 'stable_diffusion', 'AbsoluteReality', 'Realistic Vision'], true), 'physical campaigns prefer a photorealistic model');
 $relevant = rateb_image_relevance_parse('```json {"relevant":true,"reason":"The gift box and dates are visible."} ```');
 check(is_array($relevant) && $relevant['relevant'] === true, 'a valid relevance verdict is parsed');
 check(rateb_image_relevance_parse('{"relevant":"yes"}') === null, 'a non-boolean relevance verdict fails closed');
