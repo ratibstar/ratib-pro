@@ -47,7 +47,8 @@ check(!str_contains($source, 'rateb_image_fallback_plan($facts)'), 'the endpoint
 check(str_contains($source, 'rateb_image_plan_recover_marketing'), 'a marketing brief can recover with the grounded desk scene when the art director reply is unusable');
 check(str_contains($source, 'rateb_image_select_models') && str_contains($source, 'rateb_image_generation_params'), 'the endpoint selects online photoreal models with stronger generation params');
 check(str_contains($source, 'ai_campaign_upload_source_image') && str_contains($source, "source_processing'] = 'img2img'"), 'uploaded product photos can drive img2img');
-check(str_contains($source, 'img2img_marketing_seed') && str_contains($source, '0.62'), 'marketing uses photo-seed img2img so campaign prompt can reshape the desk scene');
+check(str_contains($source, 'rateb_image_generate_sync') && str_contains($source, 'ai_image_try_finish_sync'), 'sync providers are tried before the Horde queue');
+check(str_contains($source, 'txt2img') && !str_contains($source, "denoising_strength'] = 0.62"), 'marketing no longer forces seed img2img denoise 0.62');
 check(str_contains($source, 'rateb_image_caption_hard_reject'), 'generic tech-art captions are hard-rejected before storage');
 check(str_contains($source, 'ai_image_retry_unrelated'), 'an unrelated image gets one silent retry before failing the customer');
 

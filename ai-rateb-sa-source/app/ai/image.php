@@ -5,6 +5,7 @@ require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../media/library.php';
 require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/../watermark.php';
+require_once __DIR__ . '/image-providers.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 rateb_feature_require('feature_ai_image');
@@ -106,6 +107,12 @@ if ($usageId < 1 || !rateb_image_job_allows_new_reservation($decision)) {
 }
 $promptData = ai_campaign_image_prompt($promptContext, $userId, $usageId);
 $prompt = (string) $promptData['prompt'];
+
+// Prefer sync free/fast providers (Cloudflare → Pollinations) before free Horde queues.
+$sync = rateb_image_generate_sync($prompt, $ratioSize[0], $ratioSize[1]);
+if (!empty($sync['ok']) && ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now)) {
+    exit;
+}
 
 $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image', null, 8);
 $modelList = json_decode($models['body'], true);
@@ -325,6 +332,103 @@ function ai_image_dispatch(array $campaign, array $decision, string $postedJobId
     http_response_code(preg_match('/^[a-f0-9-]{36}$/', $postedJobId) === 1 ? 404 : 422);
     echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+/**
+ * Complete a sync provider image in the same request (no Horde poll).
+ * Returns false when caption/relevance fails so Horde can still be tried.
+ *
+ * @param array<string,mixed> $promptContext
+ * @param array<string,mixed> $promptData
+ * @param array{ok?:bool,bytes?:string,mime?:string,model?:string,provider?:string} $sync
+ */
+function ai_image_try_finish_sync(
+    array $campaign,
+    int $userId,
+    int $usageId,
+    array $promptContext,
+    array $promptData,
+    array $sync,
+    int $now
+): bool {
+    $bytes = (string) ($sync['bytes'] ?? '');
+    $mime = (string) ($sync['mime'] ?? '');
+    $provider = (string) ($sync['provider'] ?? 'sync');
+    $modelName = (string) ($sync['model'] ?? $provider);
+    if ($bytes === '' || $mime === '' || strlen($bytes) < 32 || strlen($bytes) > media_max_bytes('image')) {
+        return false;
+    }
+    $jobId = sprintf(
+        '%08x-%04x-4%03x-%04x-%012x',
+        random_int(0, 0xffffffff),
+        random_int(0, 0xffff),
+        random_int(0, 0x0fff),
+        random_int(0, 0x3fff) | 0x8000,
+        random_int(0, 0xffffffffffff)
+    );
+    rateb_image_prompt_log(($promptData['audit'] ?? []) + [
+        'job_id' => $jobId,
+        'usage_id' => $usageId,
+        'model' => $modelName,
+        'provider' => $provider,
+        'source_processing' => 'txt2img_sync',
+        'prompt_sha256' => hash('sha256', (string) ($promptData['prompt'] ?? '')),
+    ]);
+
+    $caption = rateb_image_provider_caption_bytes($bytes, $mime, 12);
+    $relevance = ['status' => 'relevant', 'reason' => 'sync_provider_draft_preview'];
+    if ($caption !== '') {
+        $relevance = ai_image_relevance_check($promptContext['facts'] ?? [], $caption);
+    }
+    rateb_image_prompt_log([
+        'campaign_id' => (int) $campaign['id'],
+        'user_id' => $userId,
+        'usage_id' => $usageId,
+        'job_id' => $jobId,
+        'model' => $modelName,
+        'provider' => $provider,
+        'image_caption' => $caption,
+        'validation_status' => (string) ($relevance['status'] ?? 'unavailable'),
+        'validation_reason' => (string) ($relevance['reason'] ?? ''),
+    ]);
+    // Sync free providers: if caption gate rejects, fall through to Horde.
+    // If caption is unavailable, still save a draft so the customer can preview within 1 minute.
+    if ($caption !== '' && ($relevance['status'] ?? '') !== 'relevant') {
+        return false;
+    }
+
+    if (rateb_watermark_required(db(), $userId)) {
+        try {
+            $marked = rateb_apply_watermark($bytes, $mime);
+            $bytes = $marked['bytes'];
+            $mime = $marked['mime'];
+        } catch (Throwable $error) {
+            ai_image_release($userId, '', $usageId, 'failed');
+            rateb_deny('watermark');
+        }
+    }
+
+    try {
+        $ratioName = str_replace(':', 'x', in_array((string) ($_POST['ratio'] ?? '1:1'), ['1:1', '4:5', '9:16'], true) ? (string) $_POST['ratio'] : '1:1');
+        $ext = media_kind_mimes()['image'][$mime] ?? 'jpg';
+        $mediaId = media_store_bytes($campaign, 'image', 'ai', 'ratio-' . $ratioName . '-ai-image.' . $ext, $mime, $bytes);
+    } catch (Throwable $error) {
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(500);
+        echo json_encode(['error' => rateb_ui_error('image_storage'), 'code' => 'image_storage', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        return true;
+    }
+    ai_image_release($userId, '', $usageId, 'completed');
+    echo json_encode([
+        'ok' => true,
+        'state' => 'ready',
+        'model' => $modelName,
+        'provider' => $provider,
+        'mime' => $mime,
+        'media_id' => $mediaId,
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
+    ], JSON_UNESCAPED_UNICODE);
+    return true;
 }
 
 function ai_horde_finish_job(array $campaign, string $jobId): void

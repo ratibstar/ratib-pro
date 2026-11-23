@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/app/bootstrap.php';
 require_once dirname(__DIR__) . '/app/plans.php';
 require_once dirname(__DIR__) . '/app/media/library.php';
+require_once dirname(__DIR__) . '/app/ai/image-providers.php';
 
 $campaignId = (int) ($argv[1] ?? 80);
 $userId = (int) ($argv[2] ?? 66);
@@ -78,6 +79,46 @@ $modelName = '';
 $caption = '';
 $relevance = [];
 $attempts = (int) ($argv[3] ?? 5);
+
+// Try sync providers once before entering the Horde queue.
+$syncPrompt = rateb_image_prompt_compose($plan, $facts, '1:1', 0);
+$sync = rateb_image_generate_sync($syncPrompt, 512, 512);
+if (!empty($sync['ok'])) {
+    echo 'sync_provider=' . ($sync['provider'] ?? '') . ' model=' . ($sync['model'] ?? '') . PHP_EOL;
+    $caption = rateb_image_provider_caption_bytes((string) $sync['bytes'], (string) $sync['mime'], 12);
+    echo 'caption=' . $caption . PHP_EOL;
+    $relevance = ['status' => 'relevant', 'reason' => 'sync_provider_draft_preview'];
+    if ($caption !== '') {
+        $hard = rateb_image_caption_hard_reject($facts, $caption);
+        if ($hard !== null) {
+            $relevance = ['status' => 'unrelated', 'reason' => $hard];
+        } elseif (rateb_image_caption_hard_accept($facts, $caption)) {
+            $relevance = ['status' => 'relevant', 'reason' => 'hard_accept'];
+        } else {
+            $relevance = ['status' => 'unrelated', 'reason' => 'no_marketing_outputs'];
+        }
+    }
+    echo 'relevance=' . json_encode($relevance, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    if ($caption === '' || ($relevance['status'] ?? '') === 'relevant') {
+        $bytes = (string) $sync['bytes'];
+        $mime = (string) $sync['mime'];
+        $ext = $mime === 'image/png' ? 'png' : ($mime === 'image/webp' ? 'webp' : 'jpg');
+        $mediaId = media_store_bytes($campaign, 'image', 'ai', 'rateb-ai-showcase.' . $ext, $mime, $bytes);
+        echo json_encode([
+            'ok' => true,
+            'attempt' => 0,
+            'media_id' => $mediaId,
+            'model' => (string) ($sync['model'] ?? ''),
+            'provider' => (string) ($sync['provider'] ?? ''),
+            'caption' => $caption,
+            'relevance' => $relevance,
+            'approval_status' => 'draft',
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . PHP_EOL;
+        exit(0);
+    }
+    echo "sync_rejected\n";
+}
+
 for ($attempt = 1; $attempt <= $attempts; $attempt++) {
     $prompt = rateb_image_prompt_compose($plan, $facts, '1:1', $attempt - 1);
     echo "attempt={$attempt} prompt={$prompt}\n";
