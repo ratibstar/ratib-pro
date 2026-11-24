@@ -81,11 +81,13 @@ function rateb_image_cf_generate(string $prompt, int $width, int $height): array
     $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     if (!is_string($body) || $http !== 200) {
-        return ['ok' => false, 'error' => 'http_' . $http];
+        $snippet = is_string($body) ? mb_substr(preg_replace('/\s+/', ' ', $body) ?? '', 0, 240) : '';
+        return ['ok' => false, 'error' => 'http_' . $http, 'detail' => $snippet];
     }
     $decoded = json_decode($body, true);
     if (!is_array($decoded) || (($decoded['success'] ?? null) === false)) {
-        return ['ok' => false, 'error' => 'api'];
+        $snippet = is_string($body) ? mb_substr(preg_replace('/\s+/', ' ', $body) ?? '', 0, 240) : '';
+        return ['ok' => false, 'error' => 'api', 'detail' => $snippet];
     }
     $imageB64 = '';
     $result = $decoded['result'] ?? null;

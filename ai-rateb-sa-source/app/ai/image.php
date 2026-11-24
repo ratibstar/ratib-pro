@@ -418,40 +418,50 @@ function ai_image_try_finish_sync(
         'prompt_sha256' => hash('sha256', (string) ($promptData['prompt'] ?? '')),
     ]);
 
-    // Caption gates marketing drafts (no typography/plants). Non-marketing stays draft-preview.
+    // Caption gates: never soft-promote an unproven image to "relevant".
     $caption = rateb_image_provider_caption_bytes($bytes, $mime, 8);
     $facts = is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : [];
-    $relevance = ['status' => 'relevant', 'reason' => 'sync_provider_draft_preview'];
-    if ($caption !== '' && rateb_image_is_marketing_brief($facts)) {
-        $hard = rateb_image_caption_hard_reject($facts, $caption);
-        if ($hard !== null) {
-            ai_image_release($userId, '', $usageId, 'failed');
-            http_response_code(422);
-            echo json_encode([
-                'error' => rateb_ui_error('image_irrelevant'),
-                'code' => 'image_irrelevant',
-                'state' => 'failed',
-                'provider' => $provider,
-                'reason' => $hard,
-            ], JSON_UNESCAPED_UNICODE);
-            return;
-        }
-        $checked = ai_image_relevance_check($facts, $caption);
-        if (($checked['status'] ?? '') === 'relevant') {
-            $relevance = $checked;
-        } elseif (rateb_image_caption_hard_accept($facts, $caption)) {
-            $relevance = ['status' => 'relevant', 'reason' => 'sync_hard_accept'];
-        } else {
-            $relevance = [
-                'status' => 'relevant',
-                'reason' => 'sync_draft_preview:' . (string) ($checked['reason'] ?? 'soft'),
-            ];
-        }
-    } elseif ($caption !== '') {
-        $checked = ai_image_relevance_check($facts, $caption);
-        if (($checked['status'] ?? '') === 'relevant') {
-            $relevance = $checked;
-        }
+    if ($caption === '') {
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(422);
+        echo json_encode([
+            'error' => rateb_ui_error('image_irrelevant'),
+            'code' => 'image_irrelevant',
+            'state' => 'failed',
+            'provider' => $provider,
+            'reason' => 'caption_unavailable',
+        ], JSON_UNESCAPED_UNICODE);
+        return;
+    }
+    $hard = rateb_image_caption_hard_reject($facts, $caption);
+    if ($hard !== null) {
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(422);
+        echo json_encode([
+            'error' => rateb_ui_error('image_irrelevant'),
+            'code' => 'image_irrelevant',
+            'state' => 'failed',
+            'provider' => $provider,
+            'reason' => $hard,
+        ], JSON_UNESCAPED_UNICODE);
+        return;
+    }
+    $checked = ai_image_relevance_check($facts, $caption);
+    if (($checked['status'] ?? '') === 'relevant') {
+        $relevance = $checked;
+    } elseif (rateb_image_caption_hard_accept($facts, $caption)) {
+        $relevance = ['status' => 'relevant', 'reason' => 'sync_hard_accept'];
+    } else {
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(422);
+        echo json_encode([
+            'error' => rateb_ui_error('image_irrelevant'),
+            'code' => 'image_irrelevant',
+            'state' => 'failed',
+            'provider' => $provider,
+            'reason' => (string) ($checked['reason'] ?? 'relevance_not_established'),
+        ], JSON_UNESCAPED_UNICODE);
+        return;
     }
     rateb_image_prompt_log([
         'campaign_id' => (int) $campaign['id'],
@@ -1076,7 +1086,9 @@ function ai_image_plan(array $facts): array
         . 'Approved copy, headlines, and short ads are style only and MUST NEVER be used as evidence or as a source of product features. sufficient is false when the authoritative facts do not say what is being advertised or what a digital service actually does. '
         . 'subject: at most 28 English words naming a concrete camera-visible scene that MUST reflect THIS campaign\'s product or service — never a generic scene that could fit any brand. Prefer real objects a commercial photographer can shoot. Never use abstract metaphors, neon orbs, glowing spheres, particle networks, holograms, or sci-fi HUD art. '
         . 'For food or physical products, show the actual product. For local services, show the real service setting. '
-        . 'For a marketing or AI campaign platform that creates ads, show photoreal finished campaign creatives implied by THIS brief (colorful social ad mockups and storyboard cards with photographic imagery only, zero letters), using brand primary/secondary colors as accents when provided. '
+        . 'subject MUST name the real advertised thing from the brief: food for restaurants, property for real estate, vehicle for automotive, clinic setting for healthcare, hiring scene for recruitment, retail product for shops, software-in-use for SaaS. '
+        . 'For a marketing or AI campaign platform that creates ads, show photoreal finished campaign creatives that communicate THIS platform\'s stated capability (strategy, copy, images, video), with photographic imagery only and zero letters, using brand colors as accents when provided. '
+        . 'Never use one generic desk/mood-board template for unrelated industries. '
         . 'Never show earth from space, furniture showrooms, conference chairs, dining tables, device screens, UI mockups with text, blank paper, plants, cactus, people, or any typography. '
         . 'Never default to pantone swatches, clipboard strategy docs, sunglasses mood boards, sticky notes alone, random magazines, gallery walls, home decor, empty desks, portraits, dashboards, analytics charts, or bathroom/kitchen stock. '
         . 'visual_elements: 3 to 5 short English noun phrases directly implied by the brief. setting: where it is used, at most 10 words. mood: at most 6 words from the tone, creative direction, or headline. '
@@ -1110,15 +1122,34 @@ function ai_image_plan(array $facts): array
     $content = is_array($data) ? (string) ($data['choices'][0]['message']['content'] ?? '') : '';
     $plan = rateb_image_plan_parse($content, rateb_image_brand_words($facts), $facts);
     if ($plan === null) {
+        // Prefer a campaign-specific creative direction over a generic desk scene.
+        $direction = rateb_image_creative_direction($facts, 0);
+        if (is_array($direction) && ($direction['sufficient'] ?? false) === true) {
+            return [
+                'status' => 'ok',
+                'plan' => [
+                    'sufficient' => true,
+                    'category' => (string) $direction['category'],
+                    'subject' => (string) $direction['subject'],
+                    'elements' => (array) $direction['elements'],
+                    'setting' => (string) $direction['setting'],
+                    'mood' => (string) $direction['mood'],
+                    'avoid' => [],
+                    'evidence' => mb_substr((string) ($facts['description'] ?? $facts['product'] ?? ''), 0, 120),
+                    'story' => (string) ($direction['story'] ?? ''),
+                    'recovery' => 'creative_direction',
+                ],
+                'raw' => $content,
+            ];
+        }
         $recovered = rateb_image_plan_recover_marketing($facts);
         if ($recovered !== null) {
+            $recovered['recovery'] = 'marketing_recover';
             return ['status' => 'ok', 'plan' => $recovered, 'raw' => $content];
         }
         return ['status' => 'invalid', 'raw' => $content];
     }
-    if (($plan['sufficient'] ?? false) === true) {
-        $plan = rateb_image_plan_ground_marketing_service($plan, $facts);
-    }
+    // Do not ground here — ai_campaign_image_prompt grounds once with the real variant.
     return ['status' => ($plan['sufficient'] ?? false) === true ? 'ok' : 'insufficient', 'plan' => $plan, 'raw' => $content];
 }
 
