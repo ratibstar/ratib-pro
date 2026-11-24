@@ -18,13 +18,11 @@ function check(bool $ok, string $label): void
  * @param array<string,string> $brief
  * @return array<string,string>
  */
-function fixture_facts(array $campaign, array $brief, array $outputs = []): array
+function fixture_facts(array $campaign, array $brief, array $outputs = [], array $brand = []): array
 {
-    return rateb_image_brief($campaign, $brief, $outputs, [
+    return rateb_image_brief($campaign, $brief, $outputs, $brand !== [] ? $brand : [
         'brand_name' => 'DemoBrand',
         'tone' => 'professional',
-        'primary_color' => 'teal',
-        'secondary_color' => 'coral',
     ]);
 }
 
@@ -32,14 +30,14 @@ $fixtures = [
     'restaurant' => [
         'campaign' => ['product_name' => 'مطعم المشوى', 'title' => 'عرض الغداء', 'description' => 'مطعم وجبات مشوية وبرجر'],
         'brief' => ['product' => 'مطعم المشوى', 'description' => 'وجبات مشوية وبرجر طازج للعائلات', 'audience' => 'عائلات', 'objective' => 'عملاء'],
-        'must' => ['meal', 'restaurant', 'burger', 'dish', 'plate', 'food'],
-        'forbid' => ['perfume', 'apartment', 'dental'],
+        'must' => ['grill', 'burger', 'restaurant', 'family'],
+        'forbid' => ['perfume', 'apartment', 'dental', 'appetizing freshly served restaurant meal', 'image campaign creatives'],
     ],
     'real_estate' => [
         'campaign' => ['product_name' => 'شقق النخيل', 'title' => 'بيع شقق', 'description' => 'شقق سكنية وفلل للبيع'],
         'brief' => ['product' => 'شقق النخيل', 'description' => 'عقارات وشقق وفلل في حي راق', 'audience' => 'عائلات', 'objective' => 'مبيعات'],
         'must' => ['building', 'apartment', 'villa', 'living', 'property', 'residential'],
-        'forbid' => ['burger', 'perfume', 'gym'],
+        'forbid' => ['burger', 'perfume', 'gym', 'family dining table', 'restaurant meal'],
     ],
     'saas' => [
         'campaign' => ['product_name' => 'LedgerPro', 'title' => 'برنامج محاسبة', 'description' => 'برنامج محاسبة يدير الفواتير والمخزون'],
@@ -63,7 +61,7 @@ $fixtures = [
         'campaign' => ['product_name' => 'عيادة الأسنان', 'title' => 'أسنان', 'description' => 'عيادة أسنان حديثة'],
         'brief' => ['product' => 'عيادة الأسنان', 'description' => 'خدمات طب الأسنان والعلاج', 'audience' => 'عائلات', 'objective' => 'مواعيد'],
         'must' => ['dental', 'clinic', 'chair', 'treatment', 'medical'],
-        'forbid' => ['burger', 'car', 'villa'],
+        'forbid' => ['burger', 'car', 'villa', 'family dining table'],
     ],
     'retail' => [
         'campaign' => ['product_name' => 'متجر الأناقة', 'title' => 'ملابس', 'description' => 'متجر ملابس وأزياء'],
@@ -157,6 +155,48 @@ check(rateb_image_plan_recover_marketing($mktFacts) !== null, 'marketing recover
 
 // Missing essential info: insufficient brief returns null direction.
 check(rateb_image_creative_direction(['product' => 'خدمة', 'description' => ''], 0) === null, 'insufficient brief does not invent a concept');
+
+// Campaign-84 style: facts must drive the subject (not the old generic meal template).
+$c84 = fixture_facts(
+    [
+        'product_name' => 'مطعم المشوى التجريبي',
+        'title' => '[TMP-LIVE8] مطعم',
+        'description' => 'مطعم وجبات مشوية وبرجر طازج للعائلات في الرياض',
+    ],
+    [
+        'product' => 'مطعم المشوى التجريبي',
+        'description' => 'مطعم وجبات مشوية وبرجر طازج للعائلات في الرياض',
+        'audience' => 'عائلات',
+        'objective' => 'زيادة الحجوزات',
+        'core_message' => 'وجبة مشوية طازجة كل يوم',
+        'creative_direction' => 'صورة إعلانية واقعية للمنتج أو الخدمة دون نصوص داخل الصورة',
+    ]
+);
+$c84dir = rateb_image_creative_direction($c84, 0);
+$c84plan = is_array($c84dir) ? rateb_image_plan_ground_marketing_service([
+    'sufficient' => true,
+    'category' => (string) $c84dir['category'],
+    'subject' => (string) $c84dir['subject'],
+    'elements' => (array) ($c84dir['elements'] ?? []),
+    'setting' => (string) ($c84dir['setting'] ?? ''),
+    'mood' => (string) ($c84dir['mood'] ?? ''),
+    'avoid' => [],
+    'evidence' => mb_substr((string) $c84['description'], 0, 80),
+    'story' => (string) ($c84dir['story'] ?? ''),
+], $c84, 0) : null;
+$c84prompt = is_array($c84plan) ? rateb_image_sync_prompt($c84plan, $c84, 0) : '';
+$diag = rateb_image_creative_direction_diagnostic($c84, $c84dir, $c84prompt);
+check(is_array($c84dir), 'campaign84: creative direction exists');
+check(str_contains(strtolower((string) ($c84dir['subject'] ?? '')), 'grill'), 'campaign84: subject includes grilled identity');
+check(str_contains(strtolower((string) ($c84dir['subject'] ?? '')), 'burger'), 'campaign84: subject includes burger from brief');
+check(str_contains(strtolower((string) ($c84dir['subject'] ?? '')), 'family'), 'campaign84: subject includes family audience');
+check(str_contains(strtolower((string) ($c84dir['subject'] ?? '')), 'riyadh'), 'campaign84: subject includes Riyadh from description');
+check(!str_contains(strtolower($c84prompt), 'appetizing freshly served restaurant meal'), 'campaign84: prompt is not the old generic meal template');
+check(!str_contains(strtolower($c84prompt), 'image campaign creatives'), 'campaign84: creative_direction صورة does not inject marketing creatives');
+check(!str_contains(strtolower($c84prompt), 'teal and coral'), 'campaign84: no invented brand colors');
+check(($diag['prompt_includes_generic_meal_only'] ?? true) === false, 'campaign84: diagnostic marks prompt as campaign-specific');
+check(in_array('audience', $diag['used_fields'] ?? [], true), 'campaign84: diagnostic lists audience as used');
+check(in_array('approved_copy', $diag['missing_fields'] ?? [], true), 'campaign84: diagnostic reports missing approved copy');
 
 echo $failures === 0 ? "RESULT=PASS\n" : "RESULT=FAIL ({$failures})\n";
 exit($failures === 0 ? 0 : 1);

@@ -1882,53 +1882,240 @@ function rateb_image_visual_mood_from_facts(array $facts): string
 }
 
 /**
- * Concrete product/service scene from the campaign brief catalog (never digital_service).
+ * Detect industry category from campaign facts. Returns category only — never a finished subject template.
  *
  * @param array<string,string> $facts
- * @return array<string,mixed>|null
+ * @return array{category:string,matched:string}|null
  */
-function rateb_image_concrete_catalog_plan(array $facts): ?array
+function rateb_image_detect_industry(array $facts): ?array
 {
     $text = mb_strtolower(implode(' ', array_intersect_key($facts, array_flip([
-        'product', 'title', 'description', 'positioning', 'product_description', 'headline', 'short_ad',
+        'product', 'title', 'description', 'positioning', 'product_description', 'headline', 'short_ad', 'core_message',
     ]))));
     $catalog = [
-        ['/(?<!\p{L})(?:قهو|كوفي|coffee|espresso)(?!\p{L})/u', 'food', 'freshly brewed specialty coffee cup with roasted coffee beans', ['ceramic coffee cup', 'roasted coffee beans', 'rising steam'], 'cafe counter with warm wood'],
-        ['/(?<!\p{L})(?:تمر|تمور|dates?)(?!\p{L})/u', 'food', 'premium Saudi dates arranged in an elegant gift box', ['glossy dates', 'elegant open gift box', 'small brass dish'], 'clean marble table'],
-        ['/(?<!\p{L})(?:عطر|عطور|بخور|عود|perfume|oud)(?!\p{L})/u', 'physical_product', 'luxury perfume bottle with oud wood pieces', ['glass perfume bottle', 'oud wood chips', 'soft fabric drape'], 'dark elegant studio surface'],
-        ['/(?<!\p{L})(?:حلويات|حلى|كيك|شوكولات|dessert|cake|chocolate)(?!\p{L})/u', 'food', 'fresh desserts and cakes beautifully plated', ['plated dessert', 'cake slice', 'fresh berries'], 'bright bakery counter'],
-        ['/(?<!\p{L})(?:مطعم|وجب|برجر|بيتزا|شاورما|طعام|أكل|restaurant|burger|pizza|meal)(?!\p{L})/u', 'food', 'appetizing freshly served restaurant meal', ['main dish on a plate', 'fresh side ingredients', 'cold drink'], 'restaurant table'],
-        ['/(?<!\p{L})(?:عباي|ملابس|أزياء|فستان|ثوب|abaya|fashion|clothing|dress)(?!\p{L})/u', 'physical_product', 'elegant clothing collection displayed on a garment rack', ['folded fabric', 'garment rack', 'fabric texture detail'], 'bright boutique interior'],
-        ['/(?<!\p{L})(?:سيارات|سيارة|سيار|car rental|cars?)(?!\p{L})/u', 'physical_product', 'clean modern car parked in bright daylight', ['glossy car body', 'alloy wheel', 'clean road'], 'modern city street'],
-        ['/(?<!\p{L})(?:عقار|شقة|شقق|فيلا|أرض|real estate|apartment|villa)(?!\p{L})/u', 'place', 'modern residential building and bright furnished living space', ['building facade', 'furnished living room', 'large windows'], 'sunny residential neighborhood'],
-        ['/(?<!\p{L})(?:أسنان|اسنان|dental|dentist)(?!\p{L})/u', 'local_service', 'modern dental clinic treatment room', ['dental chair', 'clean instruments tray', 'bright clinic lighting'], 'clean clinic interior'],
-        ['/(?<!\p{L})(?:مستشفى|عياد|طبيب|تجميل|بشر|صالون|سبا|hospital|clinic|doctor|beauty|skin|salon|spa)(?!\p{L})/u', 'local_service', 'calm modern healthcare clinic reception and treatment area', ['clinic reception desk', 'clean medical equipment tray', 'soft daylight through windows'], 'clean bright clinic interior'],
-        ['/(?<!\p{L})(?:توظيف|وظائف|وظيف|توظيف|hiring|recruit|jobs?)(?!\p{L})/u', 'local_service', 'professional recruitment interview setting with resume folders on a clean table', ['resume folders', 'interview table', 'company welcome desk'], 'bright modern office lobby'],
-        ['/(?<!\p{L})(?:متجر|تجزئة|retail|shop|store)(?!\p{L})/u', 'physical_product', 'attractive retail product display on a clean store shelf', ['featured product on shelf', 'price tag area without readable text', 'soft store lighting'], 'modern retail aisle'],
-        ['/(?<!\p{L})(?:محاماة|محامي|محام|استشارات|استشارة|استشار|legal|lawyer|consult(?:ing|ant)?)(?!\p{L})/u', 'local_service', 'professional consulting office desk with organized documents and a laptop', ['organized document folders', 'laptop closed', 'desk lamp'], 'quiet professional office'],
-        ['/(?<!\p{L})(?:فندق|hotel|resort)(?!\p{L})/u', 'place', 'luxurious hotel lobby and guest room with warm hospitality lighting', ['hotel lobby seating', 'guest room bed made', 'welcome amenity tray'], 'upscale hotel interior'],
-        ['/(?<!\p{L})(?:نادي|رياض|لياق|جيم|gym|fitness)(?!\p{L})/u', 'local_service', 'modern gym with dumbbells and training equipment', ['dumbbells', 'training bench', 'water bottle'], 'bright modern gym'],
-        ['/(?<!\p{L})(?:محاسب|مخزون|فواتير|رواتب|accounting|inventory|invoice|payroll)(?!\p{L})/u', 'digital_service', 'business desk with laptop showing clean accounting dashboards without readable text', ['laptop with charts', 'invoice folders', 'calculator'], 'tidy finance office desk'],
+        ['/(?<!\p{L})(?:قهو|كوفي|coffee|espresso)(?!\p{L})/u', 'food', 'coffee'],
+        ['/(?<!\p{L})(?:تمر|تمور|dates?)(?!\p{L})/u', 'food', 'dates'],
+        ['/(?<!\p{L})(?:عطر|عطور|بخور|عود|perfume|oud)(?!\p{L})/u', 'physical_product', 'perfume'],
+        ['/(?<!\p{L})(?:حلويات|حلى|كيك|شوكولات|dessert|cake|chocolate)(?!\p{L})/u', 'food', 'dessert'],
+        ['/(?<!\p{L})(?:مطعم|وجب|برجر|بيتزا|شاورما|طعام|أكل|restaurant|burger|pizza|meal)(?!\p{L})/u', 'food', 'restaurant'],
+        ['/(?<!\p{L})(?:عباي|ملابس|أزياء|فستان|ثوب|abaya|fashion|clothing|dress)(?!\p{L})/u', 'physical_product', 'fashion'],
+        ['/(?<!\p{L})(?:سيارات|سيارة|سيار|car rental|cars?)(?!\p{L})/u', 'physical_product', 'automotive'],
+        ['/(?<!\p{L})(?:عقار|شقة|شقق|فيلا|أرض|real estate|apartment|villa)(?!\p{L})/u', 'place', 'real_estate'],
+        ['/(?<!\p{L})(?:أسنان|اسنان|dental|dentist)(?!\p{L})/u', 'local_service', 'dental'],
+        ['/(?<!\p{L})(?:مستشفى|عياد|طبيب|تجميل|بشر|صالون|سبا|hospital|clinic|doctor|beauty|skin|salon|spa)(?!\p{L})/u', 'local_service', 'healthcare'],
+        ['/(?<!\p{L})(?:توظيف|وظائف|وظيف|hiring|recruit|jobs?)(?!\p{L})/u', 'local_service', 'recruitment'],
+        ['/(?<!\p{L})(?:متجر|تجزئة|retail|shop|store)(?!\p{L})/u', 'physical_product', 'retail'],
+        ['/(?<!\p{L})(?:محاماة|محامي|محام|استشارات|استشارة|استشار|legal|lawyer|consult(?:ing|ant)?)(?!\p{L})/u', 'local_service', 'professional'],
+        ['/(?<!\p{L})(?:فندق|hotel|resort)(?!\p{L})/u', 'place', 'hotel'],
+        ['/(?<!\p{L})(?:نادي|رياض|لياق|جيم|gym|fitness)(?!\p{L})/u', 'local_service', 'fitness'],
+        ['/(?<!\p{L})(?:محاسبة|محاسب|مخزون|فواتير|رواتب|accounting|inventory|invoice|payroll)(?!\p{L})/u', 'digital_service', 'saas_accounting'],
     ];
-    foreach ($catalog as [$pattern, $category, $subject, $elements, $setting]) {
+    foreach ($catalog as [$pattern, $category, $matched]) {
         if (preg_match($pattern, $text) === 1) {
-            return [
-                'sufficient' => true,
-                'category' => $category,
-                'subject' => $subject,
-                'elements' => $elements,
-                'setting' => $setting,
-                'mood' => 'bright, clean, trustworthy',
-                'avoid' => [],
-            ];
+            return ['category' => $category, 'matched' => $matched];
         }
     }
     return null;
 }
 
 /**
+ * Map only phrases that actually appear in campaign facts into English visual tokens.
+ * Never invent dishes, offers, or audience details that are absent from the source.
+ *
+ * @param array<string,string> $facts
+ * @param string|null $industryMatched optional industry key from rateb_image_detect_industry()
+ * @return array{tokens:list<string>,elements:list<string>,setting_bits:list<string>,story_bits:list<string>,used_fields:list<string>,missing_fields:list<string>,source_snippets:array<string,string>}
+ */
+function rateb_image_visual_evidence(array $facts, ?string $industryMatched = null): array
+{
+    $fields = [
+        'product' => trim((string) ($facts['product'] ?? '')),
+        'title' => trim((string) ($facts['title'] ?? '')),
+        'description' => trim((string) ($facts['description'] ?? '')),
+        'audience' => trim((string) ($facts['audience'] ?? '')),
+        'objective' => trim((string) ($facts['objective'] ?? '')),
+        'location' => trim((string) ($facts['location'] ?? '')),
+        'core_message' => trim((string) ($facts['core_message'] ?? '')),
+        'offer' => trim((string) ($facts['offer'] ?? '')),
+        'headline' => trim((string) ($facts['headline'] ?? '')),
+        'short_ad' => trim((string) ($facts['short_ad'] ?? '')),
+        'positioning' => trim((string) ($facts['positioning'] ?? '')),
+        'channels' => trim((string) ($facts['channels'] ?? '')),
+        'creative_direction' => trim((string) ($facts['creative_direction'] ?? '')),
+        'primary_color' => trim((string) ($facts['primary_color'] ?? '')),
+        'secondary_color' => trim((string) ($facts['secondary_color'] ?? '')),
+        'brand_name' => trim((string) ($facts['brand_name'] ?? '')),
+        'tone' => trim((string) ($facts['tone'] ?? '')),
+    ];
+    $used = [];
+    $snippets = [];
+    foreach ($fields as $key => $value) {
+        if ($value !== '') {
+            $used[] = $key;
+            $snippets[$key] = mb_substr($value, 0, 160);
+        }
+    }
+    $expected = ['product', 'description', 'audience', 'objective', 'core_message'];
+    $missing = [];
+    foreach ($expected as $key) {
+        if (($fields[$key] ?? '') === '') {
+            $missing[] = $key;
+        }
+    }
+    if (($fields['location'] ?? '') === '') {
+        $missing[] = 'location';
+    }
+    if (($fields['primary_color'] ?? '') === '' && ($fields['secondary_color'] ?? '') === '') {
+        $missing[] = 'brand_colors';
+    }
+    if (($fields['headline'] ?? '') === '' && ($fields['short_ad'] ?? '') === '') {
+        $missing[] = 'approved_copy';
+    }
+
+    $blob = mb_strtolower(implode(' ', array_filter([
+        $fields['product'], $fields['title'], $fields['description'], $fields['audience'],
+        $fields['objective'], $fields['location'], $fields['core_message'], $fields['offer'],
+        $fields['headline'], $fields['short_ad'], $fields['positioning'],
+    ])));
+
+    $tokens = [];
+    $elements = [];
+    $settingBits = [];
+    $storyBits = [];
+
+    // Prefer contains-match for multi-char Arabic terms: conjunction و attaches without spaces (وبرجر).
+    // Keep letter-boundary only for short stems that collide inside longer words (عود⊂سعودية).
+    // Optional 4th value scopes a cue to one industry match key (or 'food' group).
+    $lexicon = [
+        // Food / restaurant
+        ['/مشاوي|مشوية|مشوي|مشوى|grill(?:ed)?/u', 'token', 'freshly grilled meats', 'food'],
+        ['/برجر|burger/u', 'element', 'char-grilled burger on a plate', 'food'],
+        ['/بيتزا|pizza/u', 'element', 'fresh pizza', 'food'],
+        ['/شاورما|shawarma/u', 'element', 'shawarma platter', 'food'],
+        ['/قهوة|قهوه|كوفي|coffee|espresso/u', 'element', 'fresh coffee cup', 'coffee'],
+        ['/(?<!\p{L})(?:تمور|تمر|dates?)(?!\p{L})/u', 'element', 'premium dates', 'dates'],
+        ['/عطور|عطر|perfume/u', 'element', 'perfume bottle', 'perfume'],
+        ['/(?<!\p{L})(?:بخور|عود|oud)(?!\p{L})/u', 'element', 'oud wood pieces', 'perfume'],
+        ['/مطعم|restaurant/u', 'token', 'restaurant dining presentation', 'restaurant'],
+        ['/طازج|fresh/u', 'token', 'freshly prepared', 'food'],
+        ['/عائلات|عائلة|families|family/u', 'setting', 'family dining table with shared portions', 'food'],
+        ['/الرياض|riyadh/u', 'setting', 'Riyadh restaurant interior', 'food'],
+        // Real estate
+        ['/شقق|شقة|apartments?/u', 'element', 'bright apartment living space', 'real_estate'],
+        ['/فلل|فيلا|villas?/u', 'element', 'modern villa exterior', 'real_estate'],
+        ['/عقار|real estate/u', 'token', 'residential property', 'real_estate'],
+        ['/حي راق|upscale|راقي/u', 'setting', 'upscale residential neighborhood', 'real_estate'],
+        ['/عائلات|عائلة|families|family/u', 'setting', 'family-oriented residential living space', 'real_estate'],
+        ['/الرياض|riyadh/u', 'setting', 'Riyadh residential neighborhood', 'real_estate'],
+        // Automotive
+        ['/تأجير|rental/u', 'token', 'ready-to-rent passenger car', 'automotive'],
+        ['/سيارات|سيارة|\bcars?\b/u', 'element', 'clean modern car', 'automotive'],
+        ['/مسافر|traveler|traveller/u', 'setting', 'airport or city pickup curb', 'automotive'],
+        // Healthcare / dental
+        ['/أسنان|اسنان|dental/u', 'element', 'dental treatment chair', 'dental'],
+        ['/عيادة|عياد|clinic/u', 'setting', 'clean clinic interior', 'healthcare'],
+        ['/عائلات|عائلة|families|family/u', 'setting', 'welcoming family clinic reception', 'healthcare'],
+        ['/عائلات|عائلة|families|family/u', 'setting', 'welcoming family clinic reception', 'dental'],
+        // Recruitment
+        ['/توظيف|وظائف|hiring|recruit/u', 'token', 'professional hiring interview desk', 'recruitment'],
+        ['/مهندس|engineer/u', 'element', 'engineering resume folders', 'recruitment'],
+        // Retail / fashion
+        ['/ملابس|أزياء|clothing|fashion/u', 'element', 'clothing garments on a rack', 'fashion'],
+        ['/متجر|retail|shop|store/u', 'setting', 'boutique retail interior', 'retail'],
+        ['/متجر|retail|shop|store/u', 'setting', 'boutique retail interior', 'fashion'],
+        // Professional
+        ['/محاماة|محامي|محام|legal|lawyer/u', 'element', 'organized legal document folders', 'professional'],
+        ['/استشارات|استشارة|استشار|consult/u', 'token', 'professional consulting desk', 'professional'],
+        ['/شركات|companies|business/u', 'setting', 'corporate client office meeting table', 'professional'],
+        // SaaS
+        ['/محاسبة|محاسب|accounting/u', 'token', 'accounting software in use', 'saas_accounting'],
+        ['/فواتير|invoices?/u', 'element', 'invoice folders beside a laptop', 'saas_accounting'],
+        ['/مخزون|inventory/u', 'element', 'inventory checklist sheets', 'saas_accounting'],
+        ['/رواتب|payroll/u', 'element', 'payroll binders', 'saas_accounting'],
+        // Objectives → composition intent (visual, not text) — scoped lightly
+        ['/حجوزات|حجز|booking|reserv/u', 'story', 'scene that invites booking a visit', null],
+        ['/مبيعات|sales/u', 'story', 'scene that motivates a purchase decision', null],
+        ['/اشتراك|subscription/u', 'story', 'scene that motivates a software subscription', null],
+        ['/مواعيد|appointment/u', 'story', 'scene that invites booking an appointment', null],
+        ['/توظيف|hiring/u', 'story', 'scene that invites qualified candidates to apply', 'recruitment'],
+    ];
+    $foodIndustries = ['food', 'restaurant', 'coffee', 'dates', 'dessert'];
+    foreach ($lexicon as $row) {
+        [$pattern, $kind, $phrase] = $row;
+        $scope = $row[3] ?? null;
+        if ($scope !== null && $industryMatched !== null) {
+            $ok = $scope === $industryMatched
+                || ($scope === 'food' && in_array($industryMatched, $foodIndustries, true))
+                || ($scope === 'healthcare' && in_array($industryMatched, ['healthcare', 'dental'], true));
+            if (!$ok) {
+                continue;
+            }
+        }
+        if (preg_match($pattern, $blob) !== 1) {
+            continue;
+        }
+        if ($kind === 'token' && !in_array($phrase, $tokens, true)) {
+            $tokens[] = $phrase;
+        } elseif ($kind === 'element' && !in_array($phrase, $elements, true)) {
+            $elements[] = $phrase;
+        } elseif ($kind === 'setting' && !in_array($phrase, $settingBits, true)) {
+            $settingBits[] = $phrase;
+        } elseif ($kind === 'story' && !in_array($phrase, $storyBits, true)) {
+            $storyBits[] = $phrase;
+        }
+    }
+
+    // Core message → story (visual paraphrase of stated message words only).
+    $message = $fields['core_message'];
+    if ($message !== '') {
+        if (preg_match('/مشوي|مشوى|grill/u', $message) === 1 && preg_match('/طازج|fresh|كل يوم|every day|daily/u', $message) === 1) {
+            $storyBits[] = 'communicate a freshly grilled meal ready every day';
+        } elseif (preg_match('/طازج|fresh/u', $message) === 1) {
+            $storyBits[] = 'communicate freshness of the advertised offer';
+        }
+    }
+
+    return [
+        'tokens' => $tokens,
+        'elements' => $elements,
+        'setting_bits' => $settingBits,
+        'story_bits' => $storyBits,
+        'used_fields' => $used,
+        'missing_fields' => $missing,
+        'source_snippets' => $snippets,
+    ];
+}
+
+/**
+ * Concrete plan built from campaign evidence (backward-compatible helper for recover/fallback).
+ *
+ * @param array<string,string> $facts
+ * @return array<string,mixed>|null
+ */
+function rateb_image_concrete_catalog_plan(array $facts): ?array
+{
+    $industry = rateb_image_detect_industry($facts);
+    if ($industry === null || ($industry['category'] ?? '') === 'digital_service') {
+        return null;
+    }
+    $direction = rateb_image_creative_direction($facts, 0);
+    if (!is_array($direction) || (string) ($direction['category'] ?? '') === 'digital_service') {
+        return null;
+    }
+    return [
+        'sufficient' => true,
+        'category' => (string) $direction['category'],
+        'subject' => (string) preg_replace('/^professional advertising photograph of\s+/i', '', (string) $direction['subject']),
+        'elements' => (array) ($direction['must_show'] ?? $direction['elements'] ?? []),
+        'setting' => (string) ($direction['setting'] ?? ''),
+        'mood' => (string) ($direction['mood'] ?? ''),
+        'avoid' => [],
+    ];
+}
+
+/**
  * Campaign-aware creative direction for image generation.
- * Derives a concrete visual concept from THIS campaign only — never a universal template.
+ * Subject/scene/story are composed from THIS campaign's evidenced facts — not a fixed industry template.
  *
  * @param array<string,string> $facts
  * @return array<string,mixed>|null null when the brief cannot support a specific concept
@@ -1941,82 +2128,186 @@ function rateb_image_creative_direction(array $facts, int $variant = 0): ?array
     $mood = rateb_image_visual_mood_from_facts($facts);
     $accent = rateb_image_brand_accent_phrase($facts);
     $role = rateb_image_variant_role($variant);
-    $cues = rateb_image_campaign_identity_cues($facts);
-    $audience = trim((string) ($facts['audience'] ?? ''));
-    $audienceCue = $audience !== '' ? 'visually suited to the stated target audience' : '';
-
-    $concrete = rateb_image_concrete_catalog_plan($facts);
-    if (is_array($concrete)) {
-        $story = 'Show the advertised ' . (string) $concrete['category'] . ' clearly so a viewer understands the offer without reading text.';
-        return [
-            'sufficient' => true,
-            'category' => (string) $concrete['category'],
-            'subject' => 'professional advertising photograph of ' . (string) $concrete['subject'] . ', ' . $mood . ' mood, ' . $role
-                . ($accent !== '' ? ', ' . $accent : '') . ', no text',
-            'elements' => array_values(array_filter(array_merge((array) $concrete['elements'], [$accent, $audienceCue]))),
-            'setting' => (string) $concrete['setting'],
-            'mood' => $mood,
-            'story' => $story,
-            'must_show' => (array) $concrete['elements'],
-            'audience_cue' => $audienceCue,
-        ];
-    }
+    $industry = rateb_image_detect_industry($facts);
+    $evidence = rateb_image_visual_evidence($facts, is_array($industry) ? (string) $industry['matched'] : null);
 
     $source = mb_strtolower(rateb_image_subject_facts($facts));
-    $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $source) === 1;
-    $digital = preg_match('/منص|تطبيق|برنامج|برمج|موقع|نظام|ذكاء|اصطناع|رقمي|platform|software|\bapp\b|saas|\bai\b/u', $source) === 1;
+    // Marketing-platform markers must come from product/description capability text — not from
+    // a generic "صورة إعلانية..." creative_direction line (that polluted restaurant prompts).
+    $capabilitySource = mb_strtolower(implode(' ', array_filter([
+        (string) ($facts['product'] ?? ''),
+        (string) ($facts['description'] ?? ''),
+        (string) ($facts['positioning'] ?? ''),
+        (string) ($facts['offer'] ?? ''),
+    ])));
+    $isMarketing = preg_match('/تسويق|حملات|إعلان|اعلان|marketing|campaign|advert/u', $capabilitySource) === 1;
+    $digital = preg_match('/منص|تطبيق|برنامج|برمج|موقع|نظام|ذكاء|اصطناع|رقمي|platform|software|\bapp\b|saas|\bai\b/u', $capabilitySource) === 1;
 
     if ($digital && $isMarketing) {
         $capabilityBits = [];
-        if (preg_match('/استراتيج|strateg/u', $source) === 1) {
+        if (preg_match('/استراتيج|strateg/u', $capabilitySource) === 1) {
             $capabilityBits[] = 'campaign strategy boards';
         }
-        if (preg_match('/نصوص|نص|copy|كتابة|يكتب/u', $source) === 1) {
+        if (preg_match('/نصوص|نص|copy|كتابة|يكتب/u', $capabilitySource) === 1) {
             $capabilityBits[] = 'ad copy drafts as photo cards without letters';
         }
-        if (preg_match('/صور|images?|visuals?|تصميم/u', $source) === 1) {
+        if (preg_match('/صور|images?|visuals?|تصميم/u', $capabilitySource) === 1) {
             $capabilityBits[] = 'photographic social ad mockups';
         }
-        if (preg_match('/فيديو|videos?/u', $source) === 1) {
+        if (preg_match('/فيديو|videos?/u', $capabilitySource) === 1) {
             $capabilityBits[] = 'video storyboard cards';
         }
         if ($capabilityBits === []) {
             $capabilityBits = ['photographic social ad mockups', 'storyboard cards'];
         }
-        $setting = preg_match('/سعود|saudi/u', $source) === 1 ? 'Saudi creative studio surface' : 'clean creative studio surface';
+        $setting = preg_match('/سعود|saudi/u', $capabilitySource) === 1 ? 'Saudi creative studio surface' : 'clean creative studio surface';
+        $cues = [];
+        if ($mood !== '') {
+            $cues[] = $mood . ' mood';
+        }
+        if ($accent !== '') {
+            $cues[] = $accent;
+        }
         $subject = 'professional advertising photograph of finished campaign creatives that demonstrate this AI marketing platform\'s stated outputs: '
             . implode(', ', $capabilityBits)
-            . ', photographic imagery only and zero letters, ' . implode(', ', array_slice($cues, 0, 4))
+            . ', photographic imagery only and zero letters'
+            . ($cues !== [] ? ', ' . implode(', ', $cues) : '')
             . ', soft daylight, ' . $role . ', no people, no furniture showroom, no earth, no space, no plants, no laptop UI, no text';
         return [
             'sufficient' => true,
             'category' => 'digital_service',
             'subject' => $subject,
-            'elements' => array_values(array_filter(array_merge($capabilityBits, [$accent, $audienceCue]))),
+            'elements' => array_values(array_filter(array_merge($capabilityBits, [$accent]))),
             'setting' => $setting,
             'mood' => $mood,
             'story' => 'Communicate that this platform produces real marketing campaign assets, not a generic tech orb or empty desk.',
             'must_show' => $capabilityBits,
-            'audience_cue' => $audienceCue,
+            'evidence' => $evidence,
+            'industry' => 'marketing_saas',
         ];
     }
 
-    if ($digital) {
+    if ($digital && is_array($industry) && ($industry['matched'] ?? '') === 'saas_accounting') {
+        $subjectCore = implode(' and ', array_slice(array_values(array_unique(array_merge(
+            $evidence['tokens'],
+            array_slice($evidence['elements'], 0, 3)
+        ))), 0, 4));
+        if ($subjectCore === '') {
+            $subjectCore = 'accounting software on a laptop in a finance workspace';
+        }
+        $setting = $evidence['setting_bits'][0] ?? 'tidy finance office desk';
+        $story = $evidence['story_bits'][0] ?? 'Show the accounting product solving real bookkeeping work for the stated audience.';
+        return [
+            'sufficient' => true,
+            'category' => 'digital_service',
+            'subject' => 'professional advertising photograph of ' . $subjectCore . ', ' . $mood . ' mood, ' . $role
+                . ($accent !== '' ? ', ' . $accent : '') . ', no readable UI text, no text',
+            'elements' => array_values(array_filter(array_merge($evidence['elements'], [$accent]))),
+            'setting' => $setting,
+            'mood' => $mood,
+            'story' => $story,
+            'must_show' => $evidence['elements'] !== [] ? $evidence['elements'] : ['laptop with accounting charts'],
+            'evidence' => $evidence,
+            'industry' => (string) $industry['matched'],
+        ];
+    }
+
+    if ($digital && !is_array($industry)) {
+        $audience = trim((string) ($facts['audience'] ?? ''));
+        $audienceBit = $audience !== '' ? 'for the stated audience' : '';
         return [
             'sufficient' => true,
             'category' => 'digital_service',
             'subject' => 'professional advertising photograph of a laptop on a clean desk showing the software product in realistic use without readable UI text, '
                 . $mood . ' mood, ' . $role . ($accent !== '' ? ', ' . $accent : '') . ', no text',
-            'elements' => array_values(array_filter(['laptop in use', 'clean desk', $accent, $audienceCue])),
+            'elements' => array_values(array_filter(['laptop in use', 'clean desk', $accent])),
             'setting' => 'modern workspace desk',
             'mood' => $mood,
-            'story' => 'Show the software as a useful tool in a real work setting for the stated audience.',
+            'story' => 'Show the software as a useful tool in a real work setting' . ($audienceBit !== '' ? ' ' . $audienceBit : '') . '.',
             'must_show' => ['laptop in use'],
-            'audience_cue' => $audienceCue,
+            'evidence' => $evidence,
+            'industry' => 'digital_generic',
         ];
     }
 
-    return null;
+    if (!is_array($industry)) {
+        return null;
+    }
+
+    $subjectParts = array_values(array_unique(array_filter(array_merge(
+        $evidence['tokens'],
+        array_slice($evidence['elements'], 0, 3)
+    ))));
+    if ($subjectParts === []) {
+        // Category detected but no distinctive tokens — still refuse a fake dish/offer; keep category-minimal.
+        $fallbacks = [
+            'food' => 'plated meal matching the restaurant brief',
+            'physical_product' => 'the advertised physical product as described in the brief',
+            'place' => 'the advertised place as described in the brief',
+            'local_service' => 'the advertised service setting as described in the brief',
+            'digital_service' => 'the advertised software in realistic use',
+        ];
+        $subjectParts[] = $fallbacks[$industry['category']] ?? 'the advertised offer from the campaign brief';
+    }
+    $setting = $evidence['setting_bits'] !== []
+        ? implode('; ', array_slice($evidence['setting_bits'], 0, 2))
+        : match ($industry['category']) {
+            'food' => 'restaurant dining table',
+            'place' => 'on-location property setting',
+            'local_service' => 'professional service interior',
+            'physical_product' => 'clean commercial product surface',
+            default => 'commercial setting from the brief',
+        };
+    $story = $evidence['story_bits'][0] ?? ('Show the advertised ' . $industry['matched'] . ' offer clearly using only details stated in the campaign brief.');
+    $subject = 'professional advertising photograph of ' . implode(', ', $subjectParts)
+        . ', set in ' . $setting
+        . ', ' . $mood . ' mood, ' . $role
+        . ($accent !== '' ? ', ' . $accent : '')
+        . ', no text';
+
+    return [
+        'sufficient' => true,
+        'category' => (string) $industry['category'],
+        'subject' => $subject,
+        'elements' => array_values(array_filter(array_merge($evidence['elements'], array_slice($evidence['setting_bits'], 0, 1), [$accent]))),
+        'setting' => $setting,
+        'mood' => $mood,
+        'story' => $story,
+        'must_show' => $evidence['elements'] !== [] ? $evidence['elements'] : $subjectParts,
+        'evidence' => $evidence,
+        'industry' => (string) $industry['matched'],
+    ];
+}
+
+/**
+ * Side-by-side diagnostic: source campaign facts vs creative direction vs final prompt.
+ *
+ * @param array<string,string> $facts
+ * @param array<string,mixed>|null $direction
+ * @return array<string,mixed>
+ */
+function rateb_image_creative_direction_diagnostic(array $facts, ?array $direction, string $finalPrompt = ''): array
+{
+    $evidence = is_array($direction['evidence'] ?? null)
+        ? $direction['evidence']
+        : rateb_image_visual_evidence($facts);
+    return [
+        'source_facts' => $evidence['source_snippets'] ?? [],
+        'used_fields' => $evidence['used_fields'] ?? [],
+        'missing_fields' => $evidence['missing_fields'] ?? [],
+        'visual_tokens' => $evidence['tokens'] ?? [],
+        'visual_elements' => $evidence['elements'] ?? [],
+        'setting_bits' => $evidence['setting_bits'] ?? [],
+        'story_bits' => $evidence['story_bits'] ?? [],
+        'industry' => (string) ($direction['industry'] ?? ''),
+        'creative_subject' => (string) ($direction['subject'] ?? ''),
+        'creative_story' => (string) ($direction['story'] ?? ''),
+        'creative_setting' => (string) ($direction['setting'] ?? ''),
+        'final_prompt' => $finalPrompt,
+        'prompt_includes_generic_meal_only' => $finalPrompt !== ''
+            && preg_match('/appetizing freshly served restaurant meal/i', $finalPrompt) === 1
+            && preg_match('/grill|burger|family|riyadh|مشوي|برجر/i', $finalPrompt) !== 1,
+    ];
 }
 
 /**
@@ -2037,8 +2328,8 @@ function rateb_image_brand_accent_phrase(array $facts): string
     if ($named !== []) {
         return implode(' and ', array_slice($named, 0, 2)) . ' brand accents';
     }
-    // Default RATEB-adjacent commercial accents when kit colors are hex-only or missing.
-    return 'teal and coral brand accents';
+    // Do not invent brand colors when the campaign brand kit has none.
+    return '';
 }
 
 /**
@@ -2064,7 +2355,17 @@ function rateb_image_variant_role(int $variant): string
  */
 function rateb_image_campaign_identity_cues(array $facts): array
 {
-    $source = mb_strtolower(rateb_image_subject_facts($facts));
+    // Only product/description/offer capability text — never creative_direction fluff ("صورة إعلانية...").
+    $capability = mb_strtolower(implode(' ', array_filter([
+        (string) ($facts['product'] ?? ''),
+        (string) ($facts['description'] ?? ''),
+        (string) ($facts['positioning'] ?? ''),
+        (string) ($facts['offer'] ?? ''),
+        (string) ($facts['audience'] ?? ''),
+        (string) ($facts['location'] ?? ''),
+        (string) ($facts['objective'] ?? ''),
+        (string) ($facts['core_message'] ?? ''),
+    ])));
     $cues = [];
     $mood = rateb_image_visual_mood_from_facts($facts);
     if ($mood !== '') {
@@ -2074,20 +2375,24 @@ function rateb_image_campaign_identity_cues(array $facts): array
     if ($accent !== '') {
         $cues[] = $accent;
     }
-    if (preg_match('/سعود|saudi/u', $source) === 1) {
+    if (preg_match('/سعود|saudi|الرياض|riyadh/u', $capability) === 1) {
         $cues[] = 'Saudi market context';
     }
-    if (preg_match('/فيديو|videos?/u', $source) === 1) {
-        $cues[] = 'video campaign creatives';
-    }
-    if (preg_match('/صور|images?|visuals?/u', $source) === 1) {
-        $cues[] = 'image campaign creatives';
-    }
-    if (preg_match('/نصوص|نص|strateg|copy|محتوى|content/u', $source) === 1) {
-        $cues[] = 'strategy and copy workflow cues';
-    }
-    if (preg_match('/أصحاب المشاريع|فرق التسويق|business owners?|marketing teams?/u', $source) === 1) {
-        $cues[] = 'aimed at business marketers';
+    $isMarketingPlatform = preg_match('/منص|platform|saas|\bai\b/u', $capability) === 1
+        && preg_match('/تسويق|إعلان|اعلان|marketing|campaign|advert/u', $capability) === 1;
+    if ($isMarketingPlatform) {
+        if (preg_match('/فيديو|videos?/u', $capability) === 1) {
+            $cues[] = 'video campaign creatives';
+        }
+        if (preg_match('/صور|images?|visuals?/u', $capability) === 1) {
+            $cues[] = 'image campaign creatives';
+        }
+        if (preg_match('/نصوص|نص|strateg|copy|محتوى|content/u', $capability) === 1) {
+            $cues[] = 'strategy and copy workflow cues';
+        }
+        if (preg_match('/أصحاب المشاريع|فرق التسويق|business owners?|marketing teams?/u', $capability) === 1) {
+            $cues[] = 'aimed at business marketers';
+        }
     }
     $platforms = strtolower(trim((string) preg_replace('/[^a-z0-9_, ]+/i', '', (string) ($facts['platforms'] ?? ''))));
     if ($platforms !== '') {
