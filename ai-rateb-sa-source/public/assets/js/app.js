@@ -222,6 +222,7 @@
       attach_failed: 'The image could not be attached. Use a JPG, PNG, or WEBP file within the size limit.',
       preview_image: 'Image preview',
       image_queued: 'The image provider is busy right now. Credits were returned — try again in a minute, or upload an image from your device.',
+      image_providers_unavailable: 'All image providers are unavailable right now. Credits were returned — try later, or upload an image from your device.',
       image_timeout: 'Image generation timed out. No new image was saved.',
       image_failed: 'The image could not be generated.',
       video_provider_required: 'AI video generation requires a video provider. No free video API is available, and the current Groq credential has no video model.',
@@ -660,6 +661,7 @@
       attach_failed: 'تعذر إرفاق الصورة. استخدم JPG أو PNG أو WEBP بحجم مناسب.',
       preview_image: 'معاينة الصورة',
       image_queued: 'مزود الصور مزدحم حالياً. أُعيدت النقاط — حاول بعد دقيقة أو ارفع صورة من جهازك.',
+      image_providers_unavailable: 'تعذر الوصول إلى جميع مزودي الصور حالياً. أُعيدت النقاط — حاول لاحقاً أو ارفع صورة من جهازك.',
       image_timeout: 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.',
       image_failed: 'تعذر توليد الصورة.',
       video_provider_required: 'توليد الفيديو بالذكاء الاصطناعي يحتاج مزود فيديو. لا توجد واجهة فيديو مجانية، وبيانات Groq الحالية لا تتضمن نموذج فيديو.',
@@ -1302,9 +1304,11 @@
           status.className = 'notice is-error stage-status';
           status.textContent = error.code === 'image_timeout'
             ? (dict[language].image_timeout)
-            : (error.code === 'image_queued'
-              ? (error.message || dict[language].image_queued)
-              : (error.message || dict[language].image_failed));
+            : (error.code === 'image_providers_unavailable'
+              ? (error.message || dict[language].image_providers_unavailable)
+              : (error.code === 'image_queued'
+                ? (error.message || dict[language].image_queued)
+                : (error.message || dict[language].image_failed)));
           linkUpgrade(status);
         }
         if (button) {

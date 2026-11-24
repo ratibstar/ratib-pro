@@ -40,6 +40,9 @@ function rateb_ui_error(string $code): string
         'voice_terms' => $arabic ? 'نموذج الصوت موجود، لكن شروط استخدامه غير مقبولة لهذا الحساب.' : 'The speech model exists, but its terms are not accepted for this account.',
         'image_timeout' => $arabic ? 'انتهت مهلة توليد الصورة. لم تُحفظ صورة جديدة.' : 'Image generation timed out. No new image was saved.',
         'image_queued' => $arabic ? 'مزود الصور مزدحم حالياً. أُعيدت النقاط — حاول بعد دقيقة أو ارفع صورة من جهازك.' : 'The image provider is busy right now. Credits were returned — try again in a minute, or upload an image from your device.',
+        'image_providers_unavailable' => $arabic
+            ? 'تعذر الوصول إلى جميع مزودي الصور حالياً. أُعيدت النقاط — حاول لاحقاً أو ارفع صورة من جهازك.'
+            : 'All image providers are unavailable right now. Credits were returned — try later, or upload an image from your device.',
         'image_storage' => $arabic ? 'تعذر حفظ الصورة، وأُعيدت النقاط. حاول مرة أخرى.' : 'The image could not be saved and the credits were returned. Try again.',
         'write_busy' => $arabic ? 'RATEB يكتب الآن.' : 'RATEB is already writing.',
         'feature_disabled' => $arabic ? 'هذه الميزة معطّلة من الإدارة.' : 'This feature is disabled by the administrator.',

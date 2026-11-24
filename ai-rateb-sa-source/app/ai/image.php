@@ -108,7 +108,7 @@ if ($usageId < 1 || !rateb_image_job_allows_new_reservation($decision)) {
 $promptData = ai_campaign_image_prompt($promptContext, $userId, $usageId);
 $prompt = (string) $promptData['prompt'];
 
-// Prefer sync free/fast providers (Cloudflare → Pollinations) before free Horde queues.
+// Prefer sync providers (Cloudflare → Pollinations) once each, then Horde — no quota-retry loops.
 $syncPrompt = rateb_image_sync_prompt(
     is_array($promptData['plan'] ?? null) ? $promptData['plan'] : [],
     is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : [],
@@ -118,39 +118,49 @@ if ($syncPrompt === '') {
     $syncPrompt = trim((string) preg_replace('/\s*###.*$/su', '', $prompt));
 }
 $syncPromptFinal = $syncPrompt !== '' ? $syncPrompt : $prompt;
-$syncDeadline = $now + 48;
-$sync = ['ok' => false];
 $factsForGate = is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : [];
 $isMarketingSync = rateb_image_is_marketing_brief($factsForGate);
-while (time() < $syncDeadline) {
-    $attempt = rateb_image_generate_sync($syncPromptFinal, $ratioSize[0], $ratioSize[1]);
-    if (empty($attempt['ok'])) {
-        // Cloudflare 429 / Pollinations busy — retry inside the sync window before Horde.
-        if (time() + 6 >= $syncDeadline) {
-            break;
-        }
-        sleep(5);
-        continue;
-    }
-    if (!$isMarketingSync) {
-        $sync = $attempt;
-        break;
-    }
-    // Marketing: refuse typography/plants before the customer sees them.
-    $caption = rateb_image_provider_caption_bytes((string) ($attempt['bytes'] ?? ''), (string) ($attempt['mime'] ?? ''), 8);
-    if ($caption !== '' && rateb_image_caption_hard_reject($factsForGate, $caption) !== null) {
-        continue;
-    }
-    if ($caption !== '' && !rateb_image_caption_hard_accept($factsForGate, $caption)
-        && preg_match('/\b(mockup|flyer|poster|brochure|storyboard|social media|campaign|studio|creative)\b/i', $caption) !== 1) {
-        continue;
-    }
-    $sync = $attempt;
-    break;
-}
+$sync = rateb_image_generate_sync($syncPromptFinal, $ratioSize[0], $ratioSize[1]);
+rateb_image_prompt_log([
+    'campaign_id' => $campaignId,
+    'user_id' => $userId,
+    'usage_id' => $usageId,
+    'event' => 'image_provider_failover',
+    'prompt_sha256' => hash('sha256', $syncPromptFinal),
+    'sync_ok' => !empty($sync['ok']),
+    'sync_provider' => (string) ($sync['provider'] ?? ''),
+    'sync_error' => (string) ($sync['error'] ?? ''),
+    'sync_error_class' => (string) ($sync['error_class'] ?? ''),
+    'attempts' => (array) ($sync['attempts'] ?? []),
+]);
 if (!empty($sync['ok'])) {
-    // Sync already produced bytes — never fall through to Horde "crowded" after that.
-    ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now);
+    $acceptSync = true;
+    if ($isMarketingSync) {
+        // Marketing gate once — do not re-run the whole provider chain on caption miss.
+        $caption = rateb_image_provider_caption_bytes((string) ($sync['bytes'] ?? ''), (string) ($sync['mime'] ?? ''), 8);
+        if ($caption !== '' && rateb_image_caption_hard_reject($factsForGate, $caption) !== null) {
+            $acceptSync = false;
+        } elseif ($caption !== '' && !rateb_image_caption_hard_accept($factsForGate, $caption)
+            && preg_match('/\b(mockup|flyer|poster|brochure|storyboard|social media|campaign|studio|creative)\b/i', $caption) !== 1) {
+            $acceptSync = false;
+        }
+    }
+    if ($acceptSync) {
+        // Sync already produced bytes — never fall through to Horde after acceptance.
+        ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now);
+        exit;
+    }
+}
+if (($sync['error_class'] ?? '') === 'fatal') {
+    ai_image_release($userId, '', $usageId, 'failed');
+    http_response_code(422);
+    echo json_encode([
+        'error' => rateb_ui_error('image_provider'),
+        'code' => 'image_provider',
+        'state' => 'failed',
+        'reason' => 'fatal_provider_request',
+        'attempts' => (array) ($sync['attempts'] ?? []),
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -176,7 +186,12 @@ $imageModels = rateb_image_select_models($preferred, $counts, 3);
 if ($models['http'] === 200 && $imageModels === []) {
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(503);
-    echo json_encode(['error' => rateb_ui_error('image_workers'), 'code' => 'image_workers'], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'error' => rateb_ui_error('image_providers_unavailable'),
+        'code' => 'image_providers_unavailable',
+        'attempts' => (array) ($sync['attempts'] ?? []),
+        'horde' => 'no_workers',
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 if ($imageModels === []) {
@@ -213,14 +228,26 @@ if (in_array($submit['http'], [401, 403], true)) {
 }
 if ($submit['http'] !== 202) {
     ai_image_release($userId, '', $usageId, 'failed');
-    ai_horde_fail($submit['http'], $submit['body']);
+    http_response_code($submit['http'] >= 400 && $submit['http'] < 600 ? $submit['http'] : 502);
+    echo json_encode([
+        'error' => rateb_ui_error('image_providers_unavailable'),
+        'code' => 'image_providers_unavailable',
+        'attempts' => (array) ($sync['attempts'] ?? []),
+        'horde' => 'submit_http_' . (int) $submit['http'],
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 $job = json_decode($submit['body'], true);
 $jobId = is_array($job) ? strtolower((string) ($job['id'] ?? '')) : '';
 if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(502);
-    echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'error' => rateb_ui_error('image_providers_unavailable'),
+        'code' => 'image_providers_unavailable',
+        'attempts' => (array) ($sync['attempts'] ?? []),
+        'horde' => 'invalid_job_id',
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 rateb_image_prompt_log($promptData['audit'] + [
@@ -255,13 +282,17 @@ $earlyQueue = is_array($earlyState) ? (int) ($earlyState['queue_position'] ?? 0)
 if (ai_horde_queue_too_long($earlyWait, $earlyQueue)) {
     ai_horde_cancel_job($jobId);
     ai_image_release($userId, $jobId, $usageId, 'failed');
+    // Sync providers already failed once each; Horde is also unavailable → total outage.
+    $code = 'image_providers_unavailable';
     http_response_code(503);
     echo json_encode([
-        'error' => rateb_ui_error('image_queued'),
-        'code' => 'image_queued',
-        'state' => 'queued',
+        'error' => rateb_ui_error($code),
+        'code' => $code,
+        'state' => 'unavailable',
         'wait' => $earlyWait,
         'queue_position' => $earlyQueue,
+        'attempts' => (array) ($sync['attempts'] ?? []),
+        'horde' => 'queue_too_long',
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
