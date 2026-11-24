@@ -179,6 +179,9 @@ if (is_array($modelList)) {
 }
 $imageModels = rateb_image_select_models($preferred, $counts, 3);
 if ($models['http'] === 200 && $imageModels === []) {
+    if (ai_image_try_openai_provider4($campaign, $userId, $usageId, $promptContext, $promptData, $prompt, $ratioSize, (array) ($sync['attempts'] ?? []), $now, 'no_workers')) {
+        exit;
+    }
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(503);
     echo json_encode([
@@ -222,6 +225,9 @@ if (in_array($submit['http'], [401, 403], true)) {
     $submit = ai_horde_request('POST', 'https://aihorde.net/api/v2/generate/async', $payload, 20, true);
 }
 if ($submit['http'] !== 202) {
+    if (ai_image_try_openai_provider4($campaign, $userId, $usageId, $promptContext, $promptData, $prompt, $ratioSize, (array) ($sync['attempts'] ?? []), $now, 'submit_http_' . (int) $submit['http'])) {
+        exit;
+    }
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code($submit['http'] >= 400 && $submit['http'] < 600 ? $submit['http'] : 502);
     echo json_encode([
@@ -235,6 +241,9 @@ if ($submit['http'] !== 202) {
 $job = json_decode($submit['body'], true);
 $jobId = is_array($job) ? strtolower((string) ($job['id'] ?? '')) : '';
 if (preg_match('/^[a-f0-9-]{36}$/', $jobId) !== 1) {
+    if (ai_image_try_openai_provider4($campaign, $userId, $usageId, $promptContext, $promptData, $prompt, $ratioSize, (array) ($sync['attempts'] ?? []), $now, 'invalid_job_id')) {
+        exit;
+    }
     ai_image_release($userId, '', $usageId, 'failed');
     http_response_code(502);
     echo json_encode([
@@ -276,8 +285,11 @@ $earlyWait = is_array($earlyState) ? (int) ($earlyState['wait_time'] ?? 0) : 0;
 $earlyQueue = is_array($earlyState) ? (int) ($earlyState['queue_position'] ?? 0) : 0;
 if (ai_horde_queue_too_long($earlyWait, $earlyQueue)) {
     ai_horde_cancel_job($jobId);
+    // Sync + Horde unavailable — optional provider 4 (OpenAI) for FREE-plan test only.
+    if (ai_image_try_openai_provider4($campaign, $userId, $usageId, $promptContext, $promptData, $prompt, $ratioSize, (array) ($sync['attempts'] ?? []), $now, 'queue_too_long')) {
+        exit;
+    }
     ai_image_release($userId, $jobId, $usageId, 'failed');
-    // Sync providers already failed once each; Horde is also unavailable → total outage.
     $code = 'image_providers_unavailable';
     http_response_code(503);
     echo json_encode([
@@ -358,6 +370,71 @@ function ai_image_release(int $userId, string $jobId, int $usageId, string $stat
     foreach (array_unique($usageIds) as $id) {
         rateb_reservation_settle(db(), (int) $id, $userId, $status, 'ai_image');
     }
+}
+
+/**
+ * Provider 4 (OpenAI Images) — only after Horde failed to start, FREE-plan test gate, one API call max.
+ * On success runs the normal sync finish/relevance/storage path and returns true (caller must exit).
+ *
+ * @param array<string,mixed> $campaign
+ * @param array<string,mixed> $promptContext
+ * @param array<string,mixed> $promptData
+ * @param array{0:int,1:int} $ratioSize
+ * @param list<array<string,mixed>> $priorAttempts
+ */
+function ai_image_try_openai_provider4(
+    array $campaign,
+    int $userId,
+    int $usageId,
+    array $promptContext,
+    array $promptData,
+    string $prompt,
+    array $ratioSize,
+    array $priorAttempts,
+    int $now,
+    string $hordeReason
+): bool {
+    $pkg = (string) (rateb_account_credits(db(), $userId)['package_type'] ?? '');
+    if (!rateb_image_openai_eligible($userId, $pkg)) {
+        return false;
+    }
+    $openai = rateb_image_openai_try($prompt, (int) $ratioSize[0], (int) $ratioSize[1], $userId, $pkg);
+    rateb_image_prompt_log([
+        'campaign_id' => (int) ($campaign['id'] ?? 0),
+        'user_id' => $userId,
+        'usage_id' => $usageId,
+        'event' => 'image_provider_openai4',
+        'horde_reason' => $hordeReason,
+        'ok' => !empty($openai['ok']),
+        'http' => $openai['http'] ?? null,
+        'model' => (string) ($openai['model'] ?? ''),
+        'error' => (string) ($openai['error'] ?? ''),
+        'skipped' => (string) ($openai['skipped'] ?? ''),
+        'duration_ms' => (int) ($openai['duration_ms'] ?? 0),
+        'usage' => (array) ($openai['usage'] ?? []),
+        'prompt_sha256' => hash('sha256', $prompt),
+    ]);
+    if (empty($openai['ok'])) {
+        return false;
+    }
+    $sync = [
+        'ok' => true,
+        'bytes' => (string) ($openai['bytes'] ?? ''),
+        'mime' => (string) ($openai['mime'] ?? 'image/png'),
+        'model' => (string) ($openai['model'] ?? 'gpt-image-2.6-flare'),
+        'provider' => 'openai',
+        'http' => (int) ($openai['http'] ?? 200),
+        'attempts' => array_merge($priorAttempts, [[
+            'provider' => 'openai',
+            'model' => (string) ($openai['model'] ?? ''),
+            'ok' => true,
+            'http' => (int) ($openai['http'] ?? 200),
+            'duration_ms' => (int) ($openai['duration_ms'] ?? 0),
+            'usage' => (array) ($openai['usage'] ?? []),
+        ]]),
+    ];
+    ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now);
+    return true;
 }
 
 /** @param array{finish?:array<int,int>} $decision */

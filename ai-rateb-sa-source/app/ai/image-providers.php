@@ -4,6 +4,7 @@ declare(strict_types=1);
 /**
  * Multi-provider image generation with controlled failover.
  * Default order: Cloudflare Workers AI → Pollinations → AI Horde (async, caller-owned).
+ * OpenAI Images is provider 4 (after Horde), gated and disabled by default.
  * Sync helpers try each sync provider at most once per request.
  */
 
@@ -13,7 +14,7 @@ function rateb_image_provider_order(): array
     $ai = require dirname(__DIR__, 2) . '/config/ai.php';
     $raw = trim((string) ($ai['image_providers'] ?? 'cloudflare,pollinations,horde'));
     $parts = preg_split('/\s*,\s*/', strtolower($raw)) ?: [];
-    $allowed = ['cloudflare', 'pollinations', 'horde'];
+    $allowed = ['cloudflare', 'pollinations', 'horde', 'openai'];
     $out = [];
     foreach ($parts as $p) {
         if (in_array($p, $allowed, true) && !in_array($p, $out, true)) {
@@ -24,7 +25,7 @@ function rateb_image_provider_order(): array
 }
 
 /**
- * Sync providers only (Horde is async and handled by the image endpoint).
+ * Sync providers only (Horde + OpenAI are handled after sync by the image endpoint).
  *
  * @return list<string>
  */
@@ -32,7 +33,7 @@ function rateb_image_sync_provider_order(): array
 {
     return array_values(array_filter(
         rateb_image_provider_order(),
-        static fn(string $p): bool => $p !== 'horde'
+        static fn(string $p): bool => !in_array($p, ['horde', 'openai'], true)
     ));
 }
 
@@ -97,9 +98,202 @@ function rateb_image_provider_classify_failure(string $error, string $detail = '
 function rateb_image_provider_sanitize_detail(string $detail): string
 {
     $detail = preg_replace('/Bearer\s+[A-Za-z0-9._\-]+/i', 'Bearer [redacted]', $detail) ?? $detail;
+    $detail = preg_replace('/sk-[A-Za-z0-9_\-]+/i', 'sk-[redacted]', $detail) ?? $detail;
     $detail = preg_replace('/apikey["\']?\s*[:=]\s*["\']?[^"\'\s]+/i', 'apikey=[redacted]', $detail) ?? $detail;
     $detail = preg_replace('/[A-Za-z0-9_\-]{32,}/', '[redacted]', $detail) ?? $detail;
     return mb_substr(trim((string) preg_replace('/\s+/', ' ', $detail)), 0, 240);
+}
+
+/** @return array{api_key:string,model:string,test:bool,test_user_id:int} */
+function rateb_image_openai_config(): array
+{
+    $ai = require dirname(__DIR__, 2) . '/config/ai.php';
+    $model = trim((string) ($ai['openai_image_model'] ?? 'gpt-image-2.6-flare'));
+    if ($model === '' || preg_match('/^[A-Za-z0-9._\-]+$/', $model) !== 1) {
+        $model = 'gpt-image-2.6-flare';
+    }
+    return [
+        'api_key' => trim((string) ($ai['openai_api_key'] ?? '')),
+        'model' => $model,
+        'test' => !empty($ai['openai_image_test']),
+        'test_user_id' => max(0, (int) ($ai['openai_image_test_user_id'] ?? 0)),
+    ];
+}
+
+function rateb_image_openai_configured(): bool
+{
+    return rateb_image_openai_config()['api_key'] !== '';
+}
+
+/**
+ * Temporary FREE-plan experimental gate. Never true for paid plans or other users.
+ */
+function rateb_image_openai_eligible(int $userId, string $packageType = ''): bool
+{
+    if ($userId < 1 || !rateb_image_openai_configured()) {
+        return false;
+    }
+    $cfg = rateb_image_openai_config();
+    if (!$cfg['test'] || $cfg['test_user_id'] < 1 || $userId !== $cfg['test_user_id']) {
+        return false;
+    }
+    $pkg = strtolower(trim($packageType));
+    if ($pkg === '' && function_exists('db') && function_exists('rateb_account_credits')) {
+        $pkg = strtolower((string) (rateb_account_credits(db(), $userId)['package_type'] ?? ''));
+    }
+    return $pkg === 'free';
+}
+
+/** Absolute path for the one-real-request latch (experimental OpenAI test only). */
+function rateb_image_openai_test_latch_path(): string
+{
+    $root = dirname(__DIR__, 2) . '/storage';
+    if (!is_dir($root)) {
+        @mkdir($root, 0755, true);
+    }
+    return $root . '/openai-image-test-once.latch';
+}
+
+/**
+ * Atomically consume the single allowed OpenAI Images API call for this experiment.
+ * Returns false when already used or not creatable — callers must not hit the API.
+ */
+function rateb_image_openai_consume_test_slot(): bool
+{
+    $path = rateb_image_openai_test_latch_path();
+    if (is_file($path)) {
+        return false;
+    }
+    $fh = @fopen($path, 'x');
+    if ($fh === false) {
+        return false;
+    }
+    fwrite($fh, json_encode([
+        'at' => date('c'),
+        'pid' => getmypid(),
+        'note' => 'one OpenAI Images request reserved',
+    ], JSON_UNESCAPED_UNICODE) . "\n");
+    fclose($fh);
+    return true;
+}
+
+function rateb_image_openai_size(int $width, int $height): string
+{
+    $ratio = $height > 0 ? ($width / $height) : 1.0;
+    if ($ratio >= 1.2) {
+        return '1536x1024';
+    }
+    if ($ratio <= 0.85) {
+        return '1024x1536';
+    }
+    return '1024x1024';
+}
+
+/**
+ * Official OpenAI Images API — one HTTP attempt. Call only after eligibility + latch checks.
+ *
+ * @return array{ok:bool,bytes?:string,mime?:string,model?:string,error?:string,detail?:string,http?:int,usage?:array<string,mixed>,duration_ms?:int}
+ */
+function rateb_image_openai_generate(string $prompt, int $width, int $height): array
+{
+    $started = microtime(true);
+    if (!rateb_image_openai_configured()) {
+        return ['ok' => false, 'error' => 'not_configured', 'duration_ms' => 0];
+    }
+    $cfg = rateb_image_openai_config();
+    $payload = json_encode([
+        'model' => $cfg['model'],
+        'prompt' => mb_substr($prompt, 0, 32000),
+        'size' => rateb_image_openai_size($width, $height),
+        'quality' => 'medium',
+        'n' => 1,
+    ], JSON_UNESCAPED_UNICODE);
+    if ($payload === false) {
+        return ['ok' => false, 'error' => 'encode', 'duration_ms' => 0];
+    }
+    $ch = curl_init('https://api.openai.com/v1/images/generations');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $cfg['api_key'],
+        ],
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_TIMEOUT => 120,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+    ]);
+    $body = curl_exec($ch);
+    $errno = curl_errno($ch);
+    $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $durationMs = (int) max(0, round((microtime(true) - $started) * 1000));
+    if ($errno === 28) {
+        return ['ok' => false, 'error' => 'timeout', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    if ($errno !== 0) {
+        return ['ok' => false, 'error' => 'http_0', 'detail' => 'curl_' . $errno, 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    if (!is_string($body) || $http < 200 || $http >= 300) {
+        $snippet = is_string($body) ? rateb_image_provider_sanitize_detail($body) : '';
+        return ['ok' => false, 'error' => 'http_' . $http, 'detail' => $snippet, 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $decoded = json_decode($body, true);
+    if (!is_array($decoded)) {
+        return ['ok' => false, 'error' => 'api', 'detail' => 'invalid_json', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $b64 = '';
+    if (is_array($decoded['data'][0] ?? null)) {
+        $b64 = (string) ($decoded['data'][0]['b64_json'] ?? '');
+    }
+    if ($b64 === '') {
+        return ['ok' => false, 'error' => 'empty', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $bytes = base64_decode($b64, true);
+    if ($bytes === false || strlen($bytes) < 32) {
+        return ['ok' => false, 'error' => 'empty', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $mime = rateb_image_provider_mime($bytes);
+    if ($mime === null) {
+        // OpenAI often returns PNG; if magic missed, default png when decode succeeded.
+        $mime = 'image/png';
+    }
+    $usage = is_array($decoded['usage'] ?? null) ? $decoded['usage'] : [];
+    // Never persist raw prompt/key material — keep numeric usage only.
+    $usageSafe = [];
+    foreach (['total_tokens', 'input_tokens', 'output_tokens', 'input_tokens_details', 'output_tokens_details'] as $k) {
+        if (array_key_exists($k, $usage)) {
+            $usageSafe[$k] = $usage[$k];
+        }
+    }
+    return [
+        'ok' => true,
+        'bytes' => $bytes,
+        'mime' => $mime,
+        'model' => $cfg['model'],
+        'http' => $http,
+        'usage' => $usageSafe,
+        'duration_ms' => $durationMs,
+    ];
+}
+
+/**
+ * Provider 4 entry: eligible FREE test user only, one real API call max (latch).
+ *
+ * @return array{ok:bool,bytes?:string,mime?:string,model?:string,provider?:string,error?:string,detail?:string,http?:int,usage?:array<string,mixed>,duration_ms?:int,skipped?:string}
+ */
+function rateb_image_openai_try(string $prompt, int $width, int $height, int $userId, string $packageType = ''): array
+{
+    if (!rateb_image_openai_eligible($userId, $packageType)) {
+        return ['ok' => false, 'error' => 'not_configured', 'skipped' => 'ineligible'];
+    }
+    if (!rateb_image_openai_consume_test_slot()) {
+        return ['ok' => false, 'error' => 'not_configured', 'skipped' => 'test_slot_exhausted'];
+    }
+    $r = rateb_image_openai_generate($prompt, $width, $height);
+    $r['provider'] = 'openai';
+    return $r;
 }
 
 /**

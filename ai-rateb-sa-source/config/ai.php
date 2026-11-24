@@ -36,4 +36,10 @@ return [
         ?: ($local['cloudflare_image_model'] ?? '@cf/black-forest-labs/flux-1-schnell'))),
     'image_providers' => trim((string) (getenv('RATEB_IMAGE_PROVIDERS')
         ?: ($local['image_providers'] ?? 'cloudflare,pollinations,horde'))),
+    // OpenAI Images (provider 4, after Horde). Key ONLY from OPENAI_API_KEY — never from ai.local.php / Git.
+    'openai_api_key' => trim((string) (getenv('OPENAI_API_KEY') ?: '')),
+    'openai_image_model' => trim((string) (getenv('RATEB_OPENAI_IMAGE_MODEL') ?: 'gpt-image-2.6-flare')),
+    // Temporary FREE-plan test gate. Off unless explicitly enabled for the authorized user.
+    'openai_image_test' => trim((string) (getenv('RATEB_IMAGE_OPENAI_TEST') ?: '')) === '1',
+    'openai_image_test_user_id' => (int) trim((string) (getenv('RATEB_IMAGE_OPENAI_TEST_USER_ID') ?: '66')),
 ];
