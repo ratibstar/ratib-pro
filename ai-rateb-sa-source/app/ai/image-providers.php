@@ -5,6 +5,8 @@ declare(strict_types=1);
  * Multi-provider image generation with controlled failover.
  * Default order: Cloudflare Workers AI → Pollinations → AI Horde (async, caller-owned).
  * OpenAI Images is provider 4 (after Horde), gated and disabled by default.
+ * Stability AI + Runware are isolated FREE-plan comparison tests only — never in the
+ * automatic failover chain (CLI oneshots + explicit latches only).
  * Sync helpers try each sync provider at most once per request.
  */
 
@@ -293,6 +295,519 @@ function rateb_image_openai_try(string $prompt, int $width, int $height, int $us
     }
     $r = rateb_image_openai_generate($prompt, $width, $height);
     $r['provider'] = 'openai';
+    return $r;
+}
+
+// ---------------------------------------------------------------------------
+// Stability AI — isolated comparison provider (NOT in automatic failover)
+// ---------------------------------------------------------------------------
+
+/** @return array{api_key:string,model:string,test:bool,test_user_id:int} */
+function rateb_image_stability_config(): array
+{
+    $ai = require dirname(__DIR__, 2) . '/config/ai.php';
+    $model = strtolower(trim((string) ($ai['stability_image_model'] ?? 'ultra')));
+    $allowed = ['ultra', 'sd3.5-flash', 'sd3.5-large', 'sd3.5-large-turbo', 'sd3.5-medium'];
+    if (!in_array($model, $allowed, true)) {
+        $model = 'ultra';
+    }
+    return [
+        'api_key' => trim((string) ($ai['stability_api_key'] ?? '')),
+        'model' => $model,
+        'test' => !empty($ai['stability_image_test']),
+        'test_user_id' => max(0, (int) ($ai['stability_image_test_user_id'] ?? 0)),
+    ];
+}
+
+function rateb_image_stability_configured(): bool
+{
+    return rateb_image_stability_config()['api_key'] !== '';
+}
+
+function rateb_image_stability_eligible(int $userId, string $packageType = ''): bool
+{
+    if ($userId < 1 || !rateb_image_stability_configured()) {
+        return false;
+    }
+    $cfg = rateb_image_stability_config();
+    if (!$cfg['test'] || $cfg['test_user_id'] < 1 || $userId !== $cfg['test_user_id']) {
+        return false;
+    }
+    $pkg = strtolower(trim($packageType));
+    if ($pkg === '' && function_exists('db') && function_exists('rateb_account_credits')) {
+        $pkg = strtolower((string) (rateb_account_credits(db(), $userId)['package_type'] ?? ''));
+    }
+    return $pkg === 'free';
+}
+
+function rateb_image_stability_test_latch_path(): string
+{
+    $root = dirname(__DIR__, 2) . '/storage';
+    if (!is_dir($root)) {
+        @mkdir($root, 0755, true);
+    }
+    return $root . '/stability-image-test-once.latch';
+}
+
+function rateb_image_stability_consume_test_slot(): bool
+{
+    $path = rateb_image_stability_test_latch_path();
+    if (is_file($path)) {
+        return false;
+    }
+    $fh = @fopen($path, 'x');
+    if ($fh === false) {
+        return false;
+    }
+    fwrite($fh, json_encode([
+        'at' => date('c'),
+        'pid' => getmypid(),
+        'note' => 'one Stability AI image request reserved',
+    ], JSON_UNESCAPED_UNICODE) . "\n");
+    fclose($fh);
+    return true;
+}
+
+/**
+ * Read Stability credit balance (does not generate images; does not consume the oneshot latch).
+ *
+ * @return array{ok:bool,credits?:float,http?:int,error?:string,detail?:string}
+ */
+function rateb_image_stability_balance(): array
+{
+    if (!rateb_image_stability_configured()) {
+        return ['ok' => false, 'error' => 'not_configured'];
+    }
+    $key = rateb_image_stability_config()['api_key'];
+    $ch = curl_init('https://api.stability.ai/v1/user/balance');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Authorization: Bearer ' . $key,
+        ],
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_CONNECTTIMEOUT => 8,
+        CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+    ]);
+    $body = curl_exec($ch);
+    $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if (!is_string($body) || $http !== 200) {
+        return [
+            'ok' => false,
+            'error' => 'http_' . $http,
+            'http' => $http,
+            'detail' => is_string($body) ? rateb_image_provider_sanitize_detail($body) : '',
+        ];
+    }
+    $decoded = json_decode($body, true);
+    if (!is_array($decoded) || !isset($decoded['credits'])) {
+        return ['ok' => false, 'error' => 'api', 'http' => $http, 'detail' => 'missing_credits_field'];
+    }
+    return ['ok' => true, 'credits' => (float) $decoded['credits'], 'http' => $http];
+}
+
+function rateb_image_stability_aspect_ratio(int $width, int $height): string
+{
+    $ratio = $height > 0 ? ($width / $height) : 1.0;
+    if ($ratio >= 1.3) {
+        return '16:9';
+    }
+    if ($ratio <= 0.8) {
+        return '9:16';
+    }
+    if ($ratio >= 1.1) {
+        return '3:2';
+    }
+    if ($ratio <= 0.9) {
+        return '2:3';
+    }
+    return '1:1';
+}
+
+/**
+ * Official Stability v2beta generate — one HTTP attempt.
+ *
+ * @return array{ok:bool,bytes?:string,mime?:string,model?:string,error?:string,detail?:string,http?:int,cost?:array<string,mixed>,duration_ms?:int}
+ */
+function rateb_image_stability_generate(string $prompt, int $width, int $height): array
+{
+    $started = microtime(true);
+    if (!rateb_image_stability_configured()) {
+        return ['ok' => false, 'error' => 'not_configured', 'duration_ms' => 0];
+    }
+    $cfg = rateb_image_stability_config();
+    $model = $cfg['model'];
+    if ($model === 'ultra') {
+        $url = 'https://api.stability.ai/v2beta/stable-image/generate/ultra';
+        $fields = [
+            'prompt' => mb_substr($prompt, 0, 10000),
+            'output_format' => 'png',
+            'aspect_ratio' => rateb_image_stability_aspect_ratio($width, $height),
+        ];
+        $costCredits = 8.0;
+    } else {
+        $url = 'https://api.stability.ai/v2beta/stable-image/generate/sd3';
+        $fields = [
+            'prompt' => mb_substr($prompt, 0, 10000),
+            'output_format' => 'png',
+            'aspect_ratio' => rateb_image_stability_aspect_ratio($width, $height),
+            'model' => $model,
+            'mode' => 'text-to-image',
+        ];
+        $costCredits = match ($model) {
+            'sd3.5-flash' => 2.5,
+            'sd3.5-large-turbo' => 4.0,
+            'sd3.5-medium' => 3.5,
+            default => 6.5,
+        };
+    }
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: image/*',
+            'Authorization: Bearer ' . $cfg['api_key'],
+        ],
+        CURLOPT_POSTFIELDS => $fields,
+        CURLOPT_TIMEOUT => 120,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+        CURLOPT_HEADER => true,
+    ]);
+    $raw = curl_exec($ch);
+    $errno = curl_errno($ch);
+    $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    curl_close($ch);
+    $durationMs = (int) max(0, round((microtime(true) - $started) * 1000));
+    if ($errno === 28) {
+        return ['ok' => false, 'error' => 'timeout', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    if ($errno !== 0 || !is_string($raw)) {
+        return ['ok' => false, 'error' => 'http_0', 'detail' => 'curl_' . $errno, 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $headers = substr($raw, 0, $headerSize);
+    $body = substr($raw, $headerSize);
+    if ($http < 200 || $http >= 300 || strlen($body) < 32) {
+        return [
+            'ok' => false,
+            'error' => 'http_' . $http,
+            'detail' => rateb_image_provider_sanitize_detail($body !== '' ? $body : $headers),
+            'http' => $http,
+            'duration_ms' => $durationMs,
+        ];
+    }
+    $finish = '';
+    if (preg_match('/^finish-reason:\s*(\S+)/mi', $headers, $m) === 1) {
+        $finish = strtoupper(trim($m[1]));
+    }
+    if ($finish === 'CONTENT_FILTERED') {
+        return ['ok' => false, 'error' => 'content_filtered', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $mime = rateb_image_provider_mime($body) ?? 'image/png';
+    return [
+        'ok' => true,
+        'bytes' => $body,
+        'mime' => $mime,
+        'model' => $model === 'ultra' ? 'stable-image-ultra' : $model,
+        'http' => $http,
+        'cost' => ['stability_credits' => $costCredits, 'currency' => 'stability_credits'],
+        'duration_ms' => $durationMs,
+    ];
+}
+
+/**
+ * @return array{ok:bool,bytes?:string,mime?:string,model?:string,provider?:string,error?:string,detail?:string,http?:int,cost?:array<string,mixed>,duration_ms?:int,skipped?:string,balance?:float}
+ */
+function rateb_image_stability_try(string $prompt, int $width, int $height, int $userId, string $packageType = '', bool $requireBalance = true): array
+{
+    if (!rateb_image_stability_eligible($userId, $packageType)) {
+        return ['ok' => false, 'error' => 'not_configured', 'skipped' => 'ineligible'];
+    }
+    $bal = null;
+    if ($requireBalance) {
+        $bal = rateb_image_stability_balance();
+        if (empty($bal['ok'])) {
+            return ['ok' => false, 'error' => (string) ($bal['error'] ?? 'balance_unavailable'), 'skipped' => 'balance_unverified', 'http' => $bal['http'] ?? null];
+        }
+        $credits = (float) ($bal['credits'] ?? 0);
+        if ($credits <= 0) {
+            return ['ok' => false, 'error' => 'balance_zero', 'skipped' => 'balance_zero', 'balance' => $credits];
+        }
+    }
+    if (!rateb_image_stability_consume_test_slot()) {
+        return ['ok' => false, 'error' => 'not_configured', 'skipped' => 'test_slot_exhausted'];
+    }
+    $r = rateb_image_stability_generate($prompt, $width, $height);
+    $r['provider'] = 'stability';
+    if (is_array($bal) && isset($bal['credits'])) {
+        $r['balance'] = (float) $bal['credits'];
+    }
+    return $r;
+}
+
+// ---------------------------------------------------------------------------
+// Runware — isolated comparison provider (NOT in automatic failover)
+// ---------------------------------------------------------------------------
+
+/** @return array{api_key:string,model:string,test:bool,test_user_id:int} */
+function rateb_image_runware_config(): array
+{
+    $ai = require dirname(__DIR__, 2) . '/config/ai.php';
+    $model = trim((string) ($ai['runware_image_model'] ?? 'ideogram:4.6@0'));
+    // AIR ids look like creator:family@version — keep conservative charset.
+    if ($model === '' || preg_match('/^[A-Za-z0-9:._\-@\/]+$/', $model) !== 1) {
+        $model = 'ideogram:4.6@0';
+    }
+    return [
+        'api_key' => trim((string) ($ai['runware_api_key'] ?? '')),
+        'model' => $model,
+        'test' => !empty($ai['runware_image_test']),
+        'test_user_id' => max(0, (int) ($ai['runware_image_test_user_id'] ?? 0)),
+    ];
+}
+
+function rateb_image_runware_configured(): bool
+{
+    return rateb_image_runware_config()['api_key'] !== '';
+}
+
+function rateb_image_runware_eligible(int $userId, string $packageType = ''): bool
+{
+    if ($userId < 1 || !rateb_image_runware_configured()) {
+        return false;
+    }
+    $cfg = rateb_image_runware_config();
+    if (!$cfg['test'] || $cfg['test_user_id'] < 1 || $userId !== $cfg['test_user_id']) {
+        return false;
+    }
+    $pkg = strtolower(trim($packageType));
+    if ($pkg === '' && function_exists('db') && function_exists('rateb_account_credits')) {
+        $pkg = strtolower((string) (rateb_account_credits(db(), $userId)['package_type'] ?? ''));
+    }
+    return $pkg === 'free';
+}
+
+function rateb_image_runware_test_latch_path(): string
+{
+    $root = dirname(__DIR__, 2) . '/storage';
+    if (!is_dir($root)) {
+        @mkdir($root, 0755, true);
+    }
+    return $root . '/runware-image-test-once.latch';
+}
+
+function rateb_image_runware_consume_test_slot(): bool
+{
+    $path = rateb_image_runware_test_latch_path();
+    if (is_file($path)) {
+        return false;
+    }
+    $fh = @fopen($path, 'x');
+    if ($fh === false) {
+        return false;
+    }
+    fwrite($fh, json_encode([
+        'at' => date('c'),
+        'pid' => getmypid(),
+        'note' => 'one Runware image request reserved',
+    ], JSON_UNESCAPED_UNICODE) . "\n");
+    fclose($fh);
+    return true;
+}
+
+function rateb_image_runware_uuid(): string
+{
+    $data = random_bytes(16);
+    $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
+    $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
+/**
+ * Runware accountManagement getDetails — balance only (no generation; no latch).
+ *
+ * @return array{ok:bool,balance?:float,http?:int,error?:string,detail?:string}
+ */
+function rateb_image_runware_balance(): array
+{
+    if (!rateb_image_runware_configured()) {
+        return ['ok' => false, 'error' => 'not_configured'];
+    }
+    $payload = json_encode([[
+        'taskType' => 'accountManagement',
+        'taskUUID' => rateb_image_runware_uuid(),
+        'operation' => 'getDetails',
+    ]], JSON_UNESCAPED_UNICODE);
+    $ch = curl_init('https://api.runware.ai/v1');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . rateb_image_runware_config()['api_key'],
+        ],
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_TIMEOUT => 25,
+        CURLOPT_CONNECTTIMEOUT => 8,
+        CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+    ]);
+    $body = curl_exec($ch);
+    $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if (!is_string($body) || $http < 200 || $http >= 300) {
+        return [
+            'ok' => false,
+            'error' => 'http_' . $http,
+            'http' => $http,
+            'detail' => is_string($body) ? rateb_image_provider_sanitize_detail($body) : '',
+        ];
+    }
+    $decoded = json_decode($body, true);
+    $row = is_array($decoded['data'][0] ?? null) ? $decoded['data'][0] : null;
+    if (!is_array($row) || !isset($row['balance'])) {
+        return ['ok' => false, 'error' => 'api', 'http' => $http, 'detail' => 'missing_balance_field'];
+    }
+    return ['ok' => true, 'balance' => (float) $row['balance'], 'http' => $http];
+}
+
+function rateb_image_runware_size(int $width, int $height): array
+{
+    // Ideogram/Runware prefer multiples of 32–64; keep near campaign ratio.
+    $w = max(512, min(1536, (int) (round($width / 64) * 64)));
+    $h = max(512, min(1536, (int) (round($height / 64) * 64)));
+    if ($w < 1) {
+        $w = 1024;
+    }
+    if ($h < 1) {
+        $h = 1024;
+    }
+    return [$w, $h];
+}
+
+/**
+ * Official Runware imageInference — one HTTP attempt (base64Data; includeCost=true).
+ *
+ * @return array{ok:bool,bytes?:string,mime?:string,model?:string,error?:string,detail?:string,http?:int,cost?:array<string,mixed>,duration_ms?:int}
+ */
+function rateb_image_runware_generate(string $prompt, int $width, int $height): array
+{
+    $started = microtime(true);
+    if (!rateb_image_runware_configured()) {
+        return ['ok' => false, 'error' => 'not_configured', 'duration_ms' => 0];
+    }
+    $cfg = rateb_image_runware_config();
+    [$w, $h] = rateb_image_runware_size($width, $height);
+    $taskUUID = rateb_image_runware_uuid();
+    $payload = json_encode([[
+        'taskType' => 'imageInference',
+        'taskUUID' => $taskUUID,
+        'model' => $cfg['model'],
+        'positivePrompt' => mb_substr($prompt, 0, 3000),
+        'width' => $w,
+        'height' => $h,
+        'numberResults' => 1,
+        'outputType' => 'base64Data',
+        'includeCost' => true,
+    ]], JSON_UNESCAPED_UNICODE);
+    if ($payload === false) {
+        return ['ok' => false, 'error' => 'encode', 'duration_ms' => 0];
+    }
+    $ch = curl_init('https://api.runware.ai/v1');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $cfg['api_key'],
+        ],
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_TIMEOUT => 150,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+    ]);
+    $body = curl_exec($ch);
+    $errno = curl_errno($ch);
+    $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    $durationMs = (int) max(0, round((microtime(true) - $started) * 1000));
+    if ($errno === 28) {
+        return ['ok' => false, 'error' => 'timeout', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    if ($errno !== 0 || !is_string($body)) {
+        return ['ok' => false, 'error' => 'http_0', 'detail' => 'curl_' . $errno, 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    if ($http < 200 || $http >= 300) {
+        return [
+            'ok' => false,
+            'error' => 'http_' . $http,
+            'detail' => rateb_image_provider_sanitize_detail($body),
+            'http' => $http,
+            'duration_ms' => $durationMs,
+        ];
+    }
+    $decoded = json_decode($body, true);
+    $row = is_array($decoded['data'][0] ?? null) ? $decoded['data'][0] : null;
+    if (!is_array($row)) {
+        return ['ok' => false, 'error' => 'api', 'detail' => 'empty_data', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $b64 = (string) ($row['imageBase64Data'] ?? '');
+    if ($b64 === '' && is_string($row['imageDataURI'] ?? null)) {
+        $uri = (string) $row['imageDataURI'];
+        if (preg_match('/^data:image\/[a-zA-Z0-9+.-]+;base64,(.+)$/', $uri, $m) === 1) {
+            $b64 = $m[1];
+        }
+    }
+    if ($b64 === '') {
+        return ['ok' => false, 'error' => 'empty', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $bytes = base64_decode($b64, true);
+    if ($bytes === false || strlen($bytes) < 32) {
+        return ['ok' => false, 'error' => 'empty', 'http' => $http, 'duration_ms' => $durationMs];
+    }
+    $mime = rateb_image_provider_mime($bytes) ?? 'image/png';
+    $costUsd = isset($row['cost']) ? (float) $row['cost'] : null;
+    return [
+        'ok' => true,
+        'bytes' => $bytes,
+        'mime' => $mime,
+        'model' => $cfg['model'],
+        'http' => $http,
+        'cost' => $costUsd !== null ? ['usd' => $costUsd, 'currency' => 'USD'] : [],
+        'duration_ms' => $durationMs,
+    ];
+}
+
+/**
+ * @return array{ok:bool,bytes?:string,mime?:string,model?:string,provider?:string,error?:string,detail?:string,http?:int,cost?:array<string,mixed>,duration_ms?:int,skipped?:string,balance?:float}
+ */
+function rateb_image_runware_try(string $prompt, int $width, int $height, int $userId, string $packageType = '', bool $requireBalance = true): array
+{
+    if (!rateb_image_runware_eligible($userId, $packageType)) {
+        return ['ok' => false, 'error' => 'not_configured', 'skipped' => 'ineligible'];
+    }
+    $bal = null;
+    if ($requireBalance) {
+        $bal = rateb_image_runware_balance();
+        if (empty($bal['ok'])) {
+            return ['ok' => false, 'error' => (string) ($bal['error'] ?? 'balance_unavailable'), 'skipped' => 'balance_unverified', 'http' => $bal['http'] ?? null];
+        }
+        $credits = (float) ($bal['balance'] ?? 0);
+        if ($credits <= 0) {
+            return ['ok' => false, 'error' => 'balance_zero', 'skipped' => 'balance_zero', 'balance' => $credits];
+        }
+    }
+    if (!rateb_image_runware_consume_test_slot()) {
+        return ['ok' => false, 'error' => 'not_configured', 'skipped' => 'test_slot_exhausted'];
+    }
+    $r = rateb_image_runware_generate($prompt, $width, $height);
+    $r['provider'] = 'runware';
+    if (is_array($bal) && isset($bal['balance'])) {
+        $r['balance'] = (float) $bal['balance'];
+    }
     return $r;
 }
 

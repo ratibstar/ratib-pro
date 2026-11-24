@@ -42,4 +42,14 @@ return [
     // Temporary FREE-plan test gate. Off unless explicitly enabled for the authorized user.
     'openai_image_test' => trim((string) (getenv('RATEB_IMAGE_OPENAI_TEST') ?: '')) === '1',
     'openai_image_test_user_id' => (int) trim((string) (getenv('RATEB_IMAGE_OPENAI_TEST_USER_ID') ?: '66')),
+    // Stability AI — isolated FREE-plan comparison tests only. Key ONLY from STABILITY_API_KEY.
+    'stability_api_key' => trim((string) (getenv('STABILITY_API_KEY') ?: '')),
+    'stability_image_model' => trim((string) (getenv('RATEB_STABILITY_IMAGE_MODEL') ?: 'ultra')),
+    'stability_image_test' => trim((string) (getenv('RATEB_IMAGE_STABILITY_TEST') ?: '')) === '1',
+    'stability_image_test_user_id' => (int) trim((string) (getenv('RATEB_IMAGE_STABILITY_TEST_USER_ID') ?: '66')),
+    // Runware — isolated FREE-plan comparison tests only. Key ONLY from RUNWARE_API_KEY.
+    'runware_api_key' => trim((string) (getenv('RUNWARE_API_KEY') ?: '')),
+    'runware_image_model' => trim((string) (getenv('RATEB_RUNWARE_IMAGE_MODEL') ?: 'ideogram:4.6@0')),
+    'runware_image_test' => trim((string) (getenv('RATEB_IMAGE_RUNWARE_TEST') ?: '')) === '1',
+    'runware_image_test_user_id' => (int) trim((string) (getenv('RATEB_IMAGE_RUNWARE_TEST_USER_ID') ?: '66')),
 ];
