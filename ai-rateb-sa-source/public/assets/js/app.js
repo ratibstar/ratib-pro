@@ -1271,12 +1271,7 @@
           if (loader && payload.pending) {
             var waitSec = Number(payload.wait || 0);
             var queuePos = Number(payload.queue_position || 0);
-            // Mirror server fail-fast so the spinner never runs to the 15-minute timeout.
-            if (waitSec >= 60 || queuePos >= 20) {
-              var crowded = new Error(dict[language].image_queued);
-              crowded.code = 'image_queued';
-              throw crowded;
-            }
+            // Do not abort while queued — overall deadline is payload.expires_at (job TTL).
             var waitLabel = language === 'ar' ? 'جاري تجهيز الصورة' : 'Preparing the image';
             if (waitSec >= 30 || queuePos >= 5) {
               var mins = Math.max(1, Math.ceil(waitSec / 60));

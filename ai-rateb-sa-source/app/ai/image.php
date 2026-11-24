@@ -166,14 +166,9 @@ if (($sync['error_class'] ?? '') === 'fatal') {
 
 $models = ai_horde_request('GET', 'https://aihorde.net/api/v2/status/models?type=image', null, 8);
 $modelList = json_decode($models['body'], true);
+// Prefer Flux when online (select_models sorts Flux first); do not Flux-only-lock marketing
+// campaigns — that cancels valid jobs when only a few Flux workers are up.
 $preferred = rateb_image_model_preferences((string) ($promptData['category'] ?? 'other'));
-// Marketing campaigns: Flux only when online — SD clones gibberish poster grids.
-if (rateb_image_is_marketing_brief($promptContext['facts'] ?? [])) {
-    $fluxOnly = array_values(array_filter($preferred, static fn(string $name): bool => stripos($name, 'flux') !== false));
-    if ($fluxOnly !== []) {
-        $preferred = $fluxOnly;
-    }
-}
 $counts = [];
 if (is_array($modelList)) {
     foreach ($modelList as $row) {
@@ -1186,8 +1181,9 @@ function ai_image_plan(array $facts): array
 
 function ai_horde_queue_too_long(int $wait, int $queue): bool
 {
-    // User rule: never keep customers waiting more than ~1 minute on free Horde.
-    return $wait >= 60 || $queue >= 20;
+    // Do not cancel merely because a job is still queued — few Flux workers often wait >60s.
+    // Pathological free-queue only; overall wait is still bounded by rateb_image_job_ttl().
+    return $wait >= 900 || $queue >= 200;
 }
 
 function ai_horde_cancel_job(string $jobId): void

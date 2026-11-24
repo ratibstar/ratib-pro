@@ -2811,7 +2811,11 @@ function rateb_image_caption_hard_reject(array $facts, string $caption): ?string
     // Empty polaroid/photo frames or blank stationery spreads are not campaign creatives.
     $blankFrames = preg_match('/\b(polaroid|empty frames?|blank frames?|photo frames?|white frames?|scattered (white )?papers?|pieces of paper)\b/u', $caption) === 1
         && preg_match('/\b(flyer|brochure|poster|pamphlet|leaflet|mockup|social media|advert|campaign|designed)\b/u', $caption) !== 1;
-    $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk;
+    // Restaurant/food heroes are product photos — do not require flyer/mockup "creative outputs".
+    // (Default creative_direction "صورة إعلانية…" otherwise flags every food brief as marketing stationery.)
+    $foodHero = preg_match('/مطعم|وجبات|وجبة|برجر|بيتزا|شاورما|طعام|مشوي|restaurant|burger|pizza|meal|grill/u', $source) === 1
+        && preg_match('/\b(food|meal|dish|plate|meat|burger|grill(?:ed)?|restaurant|pizza|shawarma|bread|salad)\b/u', $caption) === 1;
+    $missingCreative = $isMarketing && !$creativeOutputs && !$printedDesk && !$foodHero;
     $spaceStock = preg_match('/\b(earth from space|planet earth|outer space|from orbit|galaxy|astronaut|satellite view)\b/u', $caption) === 1;
     $furnitureShowroom = preg_match('/\b(furniture|conference (table|room|chairs?)|dining (table|chairs?|room)|office chairs?|pink chairs?|sofa set|showroom)\b/u', $caption) === 1;
     if ($abstract || $trading || $dashboardOnly || ($isMarketing && $writtenPaper) || $missingCreative || ($isMarketing && $peopleHeavy) || ($isMarketing && $homeDecor) || ($isMarketing && $bathroom) || ($isMarketing && $metalWall) || ($isMarketing && $blankScreens) || ($isMarketing && $emptyDesk) || ($isMarketing && $giftCardFlat) || ($isMarketing && $plantDominant) || ($isMarketing && $blankFrames) || ($isMarketing && $hasTypography) || ($isMarketing && $deviceUi) || ($isMarketing && $spaceStock) || ($isMarketing && $furnitureShowroom)) {
@@ -3203,8 +3207,8 @@ function rateb_image_prompt_log(array $entry): void
 
 function rateb_image_job_ttl(): int
 {
-    // Hard cap: never spin the spinner / Horde poll longer than one minute.
-    return 60;
+    // Bounded overall wait for Horde polling (seconds). Must leave room for real Flux queues.
+    return 300;
 }
 
 function rateb_image_job_active(int $createdAt, int $now): bool
