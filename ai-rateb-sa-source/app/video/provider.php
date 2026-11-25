@@ -66,15 +66,35 @@ function rateb_video_env(string $name): string
         'RATEB_VIDEO_PROVIDER' => 'video_provider',
         'RATEB_PRIVATE_VIDEO_URL' => 'private_video_url',
         'RATEB_PRIVATE_VIDEO_TOKEN' => 'private_video_token',
+        'RATEB_VIDEO_FREE_ONLY' => 'video_free_only',
+        'AGNES_API_KEY' => 'agnes_api_key',
+        'RATEB_AGNES_VIDEO_MODEL' => 'agnes_video_model',
+        'RATEB_AGNES_FREE_ENTITLEMENT' => 'agnes_free_entitlement',
+        'REPLICATE_API_TOKEN' => 'replicate_api_token',
+        'REPLICATE_API_KEY' => 'replicate_api_key',
+        'RATEB_REPLICATE_VIDEO_MODEL' => 'replicate_video_model',
+        'RATEB_REPLICATE_FREE_ENTITLEMENT' => 'replicate_free_entitlement',
+        'RUNWARE_API_KEY' => 'runware_api_key',
+        'RATEB_RUNWARE_VIDEO_MODEL' => 'runware_video_model',
+        'RATEB_RUNWARE_FREE_ENTITLEMENT' => 'runware_free_entitlement',
     ];
     $key = $map[$name] ?? '';
     return $key === '' ? '' : trim((string) ($local[$key] ?? ''));
 }
+
+require_once __DIR__ . '/free-quota.php';
+require_once __DIR__ . '/free-adapters.php';
+require_once __DIR__ . '/free-manager.php';
+
 function rateb_video_provider(): RatebVideoProvider
 {
     $choice = strtolower(trim((string) rateb_video_env('RATEB_VIDEO_PROVIDER')));
     if ($choice === 'private') {
         return new PrivateVideoProvider();
+    }
+    // Free-only online chain (Agnes → Replicate → Runware). Runway stays disabled here.
+    if ($choice === 'free' || $choice === 'free_chain' || rateb_video_free_only_mode()) {
+        return new FreeOnlineVideoManager();
     }
     return new RunwayVideoProvider();
 }

@@ -492,8 +492,9 @@ function admin_provider_rows(array $cfg): array
         ['id' => 'groq', 'label' => 'Groq', 'configured' => $groq, 'selected' => !$deepseek && $groq, 'note' => 'Text route when DeepSeek is unset. Key presence is not a live health check.'],
         ['id' => 'horde', 'label' => 'AI Horde', 'configured' => admin_secret_present((string) ($cfg['horde_present'] ?? '')), 'selected' => false, 'note' => 'Image calls require workers at request time. Configuration is not uptime.'],
         ['id' => 'sawtak', 'label' => 'Sawtak TTS', 'configured' => admin_secret_present((string) ($cfg['sawtak_present'] ?? '')), 'selected' => false, 'note' => 'Arabic speech. No Orpheus integration exists in this application.'],
-        ['id' => 'runway', 'label' => 'Runway', 'configured' => admin_secret_present((string) ($cfg['runway_present'] ?? '')), 'selected' => (string) ($cfg['video_provider'] ?? '') !== 'private', 'note' => 'Default video adapter. Selected does not mean the last job succeeded.'],
+        ['id' => 'runway', 'label' => 'Runway', 'configured' => admin_secret_present((string) ($cfg['runway_present'] ?? '')), 'selected' => !in_array((string) ($cfg['video_provider'] ?? ''), ['private', 'free', 'free_chain'], true) && (string) ($cfg['video_free_only'] ?? '') !== '1', 'note' => 'Paid default video adapter. Disabled while free-only chain is active.'],
         ['id' => 'wan', 'label' => 'Private Wan adapter', 'configured' => admin_secret_present((string) ($cfg['wan_url_present'] ?? '')) && admin_secret_present((string) ($cfg['wan_token_present'] ?? '')), 'selected' => (string) ($cfg['video_provider'] ?? '') === 'private', 'note' => 'Separate HTTP process. This panel does not probe it.'],
+        ['id' => 'free_chain', 'label' => 'Free online chain (Agnes→Replicate→Runware)', 'configured' => admin_secret_present((string) ($cfg['agnes_present'] ?? '')) || admin_secret_present((string) ($cfg['replicate_present'] ?? '')) || admin_secret_present((string) ($cfg['runware_video_present'] ?? '')), 'selected' => in_array((string) ($cfg['video_provider'] ?? ''), ['free', 'free_chain'], true) || (string) ($cfg['video_free_only'] ?? '') === '1', 'note' => 'FREE_AVAILABLE requires key + verified free entitlement flag. Key presence alone is not free quota.'],
     ];
     return $rows;
 }
@@ -516,7 +517,11 @@ function admin_provider_snapshot(): array
         'runway_present' => $flag((string) rateb_video_env('RUNWAY_API_KEY')),
         'wan_url_present' => $flag((string) rateb_video_env('RATEB_PRIVATE_VIDEO_URL')),
         'wan_token_present' => $flag((string) rateb_video_env('RATEB_PRIVATE_VIDEO_TOKEN')),
+        'agnes_present' => $flag((string) rateb_video_env('AGNES_API_KEY')),
+        'replicate_present' => $flag((string) (rateb_video_env('REPLICATE_API_TOKEN') ?: rateb_video_env('REPLICATE_API_KEY'))),
+        'runware_video_present' => $flag((string) rateb_video_env('RUNWARE_API_KEY')),
         'video_provider' => strtolower(trim((string) rateb_video_env('RATEB_VIDEO_PROVIDER'))),
+        'video_free_only' => strtolower(trim((string) rateb_video_env('RATEB_VIDEO_FREE_ONLY'))),
     ]);
 }
 

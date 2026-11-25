@@ -349,7 +349,14 @@ function rateb_video_approved(PDO $pdo, int $campaignId, int $userId): ?array
 function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array $copyRows, array $images, int $seconds = 5): array
 {
     $provider = rateb_video_provider();
-    $providerName = $provider->configured() ? $provider->name() : 'local';
+    if ($provider instanceof FreeOnlineVideoManager || rateb_video_free_only_mode()) {
+        if (!$provider instanceof FreeOnlineVideoManager || !$provider->hasFreeAvailable()) {
+            return ['ok' => false, 'code' => 'no_free_video_provider', 'job_id' => 0];
+        }
+        $providerName = 'free_chain';
+    } else {
+        $providerName = $provider->configured() ? $provider->name() : 'local';
+    }
     if ((string) ($strategyRow['approval_status'] ?? '') !== 'approved') {
         return ['ok' => false, 'code' => 'missing_copy', 'job_id' => 0];
     }
@@ -454,7 +461,14 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                     throw new RuntimeException('missing_image');
                 }
                 $sceneRatio = (string) ($scene['ratio'] ?? '9:16');
-                if (!$provider->configured() || (string) ($job['provider'] ?? '') === 'local') {
+                $jobProvider = (string) ($job['provider'] ?? '');
+                $freeOnlyJob = $jobProvider === 'free_chain' || rateb_video_free_only_mode();
+                // Free-only online jobs never use local Ken Burns / FFmpeg slideshow fallback.
+                if ($freeOnlyJob) {
+                    if (!$provider instanceof FreeOnlineVideoManager || !$provider->configured()) {
+                        throw new RuntimeException('no_free_video_provider');
+                    }
+                } elseif (!$provider->configured() || $jobProvider === 'local') {
                     $localFrame = rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $sceneRatio, $localFrame);
                     $scenes[$index]['status'] = 'ready';
                     $scenes[$index]['local'] = true;
@@ -472,7 +486,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
                         rateb_video_ratio()
                     );
                 } catch (RuntimeException $providerError) {
-                    if ($providerError->getMessage() !== 'rejected_credit') {
+                    if ($freeOnlyJob || $providerError->getMessage() !== 'rejected_credit') {
                         throw $providerError;
                     }
                     $localFrame = rateb_video_local_clip($campaign, $job, $index, $row, (int) $scene['duration'], $sceneRatio, $localFrame);
@@ -534,7 +548,7 @@ function rateb_video_advance(PDO $pdo, array $job, array $campaign): array
         $job['error_code'] = '';
         return $job;
     } catch (RuntimeException $error) {
-        $code = in_array($error->getMessage(), ['not_configured', 'auth', 'rejected', 'rejected_image', 'rejected_model', 'rejected_credit', 'timeout', 'provider', 'invalid', 'missing_image', 'storage', 'watermark'], true)
+        $code = in_array($error->getMessage(), ['not_configured', 'auth', 'rejected', 'rejected_image', 'rejected_model', 'rejected_credit', 'timeout', 'provider', 'invalid', 'missing_image', 'storage', 'watermark', 'no_free_video_provider', 'http_429'], true)
             ? $error->getMessage()
             : 'provider';
         if ($error->getMessage() === 'deferred') {
@@ -734,6 +748,8 @@ function rateb_video_message(string $code, bool $arabic): string
         'video_too_long' => 'مدة خطتك لا تكفي لمشهد الفيديو.',
         'video_paid' => '١٥ و٢٠ و٣٠ ثانية متاحة في الباقات المدفوعة.',
         'video_free_used' => 'استخدمت الفيديوين المجانيين لهذا الشهر.',
+        'no_free_video_provider' => 'لا يوجد مزوّد فيديو أونلاين مجاني متاح حاليًا (أو انتهت الحصص المجانية).',
+        'http_429' => 'المزوّد مشغول أو تجاوز الحد. جرّب لاحقًا.',
         'credits' => 'رصيد النقاط غير كافٍ، اضغط هنا لترقية الباقة',
         'package' => 'هذه الميزة غير متاحة في الباقة المجانية، اضغط هنا لترقية الباقة',
         'storage' => 'تعذر حفظ الفيديو.',
@@ -756,6 +772,8 @@ function rateb_video_message(string $code, bool $arabic): string
         'video_too_long' => 'Your plan duration is too short for a video scene.',
         'video_paid' => '15, 20, and 30 seconds are available on paid plans.',
         'video_free_used' => 'The two free videos for this month have been used.',
+        'no_free_video_provider' => 'No free online video provider is available (or free quotas are exhausted).',
+        'http_429' => 'The provider is busy or rate-limited. Try again later.',
         'credits' => 'Not enough credits. Click here to upgrade.',
         'package' => 'This feature is not in the free package. Click here to upgrade.',
         'storage' => 'The video could not be saved.',
