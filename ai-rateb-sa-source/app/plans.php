@@ -3207,8 +3207,8 @@ function rateb_image_prompt_log(array $entry): void
 
 function rateb_image_job_ttl(): int
 {
-    // Bounded overall wait for Horde polling (seconds). Must leave room for real Flux queues.
-    return 300;
+    // Free Flux Horde queues often need 10–20 minutes; keep FE/backend TTL aligned.
+    return 1200;
 }
 
 function rateb_image_job_active(int $createdAt, int $now): bool

@@ -19,7 +19,7 @@ check(rateb_image_job_active($now - 45, $now), 'image job stays active inside th
 check(rateb_image_job_active($now - rateb_image_job_ttl(), $now), 'image job stays active through the server lifetime');
 check(!rateb_image_job_active($now - rateb_image_job_ttl() - 1, $now), 'image job expires after the server lifetime');
 check(!rateb_image_job_active(0, $now), 'image job without a start time is not active');
-check(rateb_image_job_ttl() === 300, 'image job lifetime allows a bounded multi-minute Horde wait');
+check(rateb_image_job_ttl() === 1200, 'image job lifetime allows a bounded multi-minute Horde wait');
 
 check(rateb_video_stage_complete(true, false), 'approved generated video completes the stage');
 check(rateb_video_stage_complete(false, true), 'uploaded video completes the stage');

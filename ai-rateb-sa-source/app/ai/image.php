@@ -504,6 +504,17 @@ function ai_image_try_finish_sync(
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed', 'provider' => $provider], JSON_UNESCAPED_UNICODE);
         return;
     }
+    if (rateb_image_is_censor_placeholder($bytes)) {
+        ai_image_release($userId, '', $usageId, 'failed');
+        http_response_code(502);
+        echo json_encode([
+            'error' => rateb_ui_error('image_provider'),
+            'code' => 'image_censored_placeholder',
+            'state' => 'failed',
+            'provider' => $provider,
+        ], JSON_UNESCAPED_UNICODE);
+        return;
+    }
     $jobId = sprintf(
         '%08x-%04x-4%03x-%04x-%012x',
         random_int(0, 0xffffffff),
@@ -717,6 +728,16 @@ function ai_horde_finish_job(array $campaign, string $jobId): void
         ai_image_release($userId, $jobId, $usageId, 'failed');
         http_response_code(502);
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if (rateb_image_is_censor_placeholder($bytes)) {
+        ai_image_release($userId, $jobId, $usageId, 'failed');
+        http_response_code(502);
+        echo json_encode([
+            'error' => rateb_ui_error('image_provider'),
+            'code' => 'image_censored_placeholder',
+            'state' => 'failed',
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     }
     if (rateb_watermark_required(db(), (int) $_SESSION['user_id'])) {
@@ -1258,9 +1279,10 @@ function ai_image_plan(array $facts): array
 
 function ai_horde_queue_too_long(int $wait, int $queue): bool
 {
-    // Do not cancel merely because a job is still queued — few Flux workers often wait >60s.
-    // Pathological free-queue only; overall wait is still bounded by rateb_image_job_ttl().
-    return $wait >= 900 || $queue >= 200;
+    // Do not cancel on queue depth alone — free Flux workers routinely sit behind queue >200.
+    // Only treat extreme wait estimates as pathological; overall bound remains rateb_image_job_ttl().
+    unset($queue);
+    return $wait >= 900;
 }
 
 function ai_horde_cancel_job(string $jobId): void

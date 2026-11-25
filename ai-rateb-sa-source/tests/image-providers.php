@@ -24,6 +24,10 @@ check(!in_array('openai', $syncOrder, true), 'sync order excludes openai (provid
 check(rateb_image_provider_mime("\xFF\xD8\xFF\xE0test") === 'image/jpeg', 'jpeg magic is detected');
 check(rateb_image_provider_mime("\x89PNG\r\n\x1a\nxxxx") === 'image/png', 'png magic is detected');
 check(rateb_image_provider_mime('hello') === null, 'non-image bytes are rejected');
+check(function_exists('rateb_image_is_censor_placeholder'), 'censor placeholder detector exists');
+check(rateb_image_is_censor_placeholder('hello') === false, 'tiny non-image is not a censor placeholder');
+$censorAscii = str_repeat('x', 600) . 'CENSORED NSFW content detected';
+check(rateb_image_is_censor_placeholder($censorAscii) === true, 'embedded CENSORED/NSFW marker is rejected');
 
 check(function_exists('rateb_image_generate_sync'), 'sync generate helper exists');
 check(function_exists('rateb_image_cf_configured'), 'cloudflare config helper exists');

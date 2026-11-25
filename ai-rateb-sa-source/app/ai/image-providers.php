@@ -988,6 +988,70 @@ function rateb_image_provider_mime(string $bytes): ?string
 }
 
 /**
+ * Reject AI Horde NSFW censor placeholders (and known C85 fixture) before gallery/preview storage.
+ * Defense-in-depth beyond generation['censored'] JSON flag.
+ */
+function rateb_image_is_censor_placeholder(string $bytes): bool
+{
+    if ($bytes === '' || strlen($bytes) < 500) {
+        return false;
+    }
+    // Campaign 85 evidence: Horde returned this exact CENSORED WebP as a "successful" generation.
+    static $known = [
+        '088b955e93d61d82d7b6f1be34506517847c7661ce6130c2f30ef5f710d0b2ca',
+    ];
+    $hash = hash('sha256', $bytes);
+    if (in_array($hash, $known, true)) {
+        return true;
+    }
+    // ASCII strings embedded in some placeholder encodes.
+    if (stripos($bytes, 'CENSORED') !== false && stripos($bytes, 'NSFW') !== false) {
+        return true;
+    }
+    if (!function_exists('imagecreatefromstring')) {
+        return false;
+    }
+    $img = @imagecreatefromstring($bytes);
+    if ($img === false) {
+        return false;
+    }
+    $w = imagesx($img);
+    $h = imagesy($img);
+    if ($w < 64 || $h < 64) {
+        imagedestroy($img);
+        return false;
+    }
+    // Sample corners + center: near-black canvas typical of Horde censor cards.
+    $points = [
+        [max(0, (int) ($w * 0.08)), max(0, (int) ($h * 0.08))],
+        [max(0, (int) ($w * 0.92)), max(0, (int) ($h * 0.08))],
+        [max(0, (int) ($w * 0.08)), max(0, (int) ($h * 0.92))],
+        [max(0, (int) ($w * 0.92)), max(0, (int) ($h * 0.92))],
+        [(int) ($w / 2), (int) ($h * 0.22)],
+    ];
+    $blackish = 0;
+    foreach ($points as [$x, $y]) {
+        $rgb = imagecolorat($img, $x, $y);
+        $r = ($rgb >> 16) & 0xFF;
+        $g = ($rgb >> 8) & 0xFF;
+        $b = $rgb & 0xFF;
+        if ($r < 28 && $g < 28 && $b < 28) {
+            $blackish++;
+        }
+    }
+    // Center band often has white serif text on censor cards.
+    $cx = (int) ($w / 2);
+    $cy = (int) ($h / 2);
+    $mid = imagecolorat($img, $cx, $cy);
+    $mr = ($mid >> 16) & 0xFF;
+    $mg = ($mid >> 8) & 0xFF;
+    $mb = $mid & 0xFF;
+    $brightMid = ($mr > 180 && $mg > 180 && $mb > 180);
+    imagedestroy($img);
+    return $blackish >= 4 && $brightMid && strlen($bytes) < 80000;
+}
+
+/**
  * Caption sync image bytes via Horde interrogate (base64), short deadline.
  */
 function rateb_image_provider_caption_bytes(string $bytes, string $mime, int $deadlineSec = 20): string
