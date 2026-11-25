@@ -13,20 +13,34 @@ function check(bool $ok, string $name): void
     }
 }
 
-foreach ([
+$envNames = [
     'RUNWAY_API_KEY', 'RATEB_VIDEO_PROVIDER', 'RATEB_VIDEO_FREE_ONLY',
     'AGNES_API_KEY', 'RATEB_AGNES_FREE_ENTITLEMENT',
     'REPLICATE_API_TOKEN', 'REPLICATE_API_KEY', 'RATEB_REPLICATE_FREE_ENTITLEMENT',
     'RUNWARE_API_KEY', 'RATEB_RUNWARE_FREE_ENTITLEMENT',
     'RATEB_PRIVATE_VIDEO_URL', 'RATEB_PRIVATE_VIDEO_TOKEN',
-] as $env) {
+];
+// Prime CLI secrets prepend once, then override so later empty getenv() cannot reload live keys.
+rateb_video_free_only_mode();
+foreach ($envNames as $env) {
     putenv($env);
+    unset($_ENV[$env], $_SERVER[$env]);
 }
+putenv('RATEB_VIDEO_FREE_ONLY=0');
+putenv('RATEB_VIDEO_PROVIDER=runway');
+putenv('RATEB_AGNES_FREE_ENTITLEMENT=0');
+putenv('RATEB_REPLICATE_FREE_ENTITLEMENT=0');
+putenv('RATEB_RUNWARE_FREE_ENTITLEMENT=0');
+putenv('AGNES_API_KEY=__UNSET__');
+
 
 check(rateb_video_free_only_mode() === false, 'free-only off when unset');
 check(rateb_video_provider() instanceof RunwayVideoProvider, 'default provider remains runway when free-only off');
 
 putenv('RATEB_VIDEO_FREE_ONLY=1');
+putenv('RATEB_VIDEO_PROVIDER=free_chain');
+putenv('RATEB_AGNES_FREE_ENTITLEMENT=0');
+putenv('AGNES_API_KEY=__UNSET__');
 $manager = rateb_video_provider();
 check($manager instanceof FreeOnlineVideoManager, 'free-only selects free_chain manager');
 check($manager->configured() === false, 'manager unconfigured without verified free providers');
@@ -39,7 +53,7 @@ check(($statuses[0]['free_available'] ?? true) === false, 'agnes not free withou
 check(($statuses[0]['quota_status'] ?? '') === 'UNKNOWN', 'agnes quota unknown without verification');
 
 putenv('AGNES_API_KEY=agnes-test-key-not-real');
-putenv('RATEB_AGNES_FREE_ENTITLEMENT');
+putenv('RATEB_AGNES_FREE_ENTITLEMENT=0');
 $agnes = rateb_video_free_provider_status('agnes', false);
 check($agnes['configured'] === true && $agnes['free_available'] === false, 'agnes key alone is not FREE_AVAILABLE');
 
@@ -50,9 +64,9 @@ check($agnesOk['free_available'] === true && $agnesOk['eligible'] === true, 'agn
 $manager2 = rateb_video_provider();
 check($manager2 instanceof FreeOnlineVideoManager && $manager2->hasFreeAvailable() === true, 'manager becomes configured when a free provider is verified');
 
-putenv('RATEB_AGNES_FREE_ENTITLEMENT');
-putenv('AGNES_API_KEY');
-putenv('RATEB_VIDEO_FREE_ONLY');
+putenv('RATEB_AGNES_FREE_ENTITLEMENT=0');
+putenv('AGNES_API_KEY=__UNSET__');
+putenv('RATEB_VIDEO_FREE_ONLY=0');
 check(rateb_video_message('no_free_video_provider', false) !== '', 'no_free_video_provider message exists');
 check(str_contains((string) file_get_contents(__DIR__ . '/../app/video/engine.php'), 'no_free_video_provider'), 'engine blocks free-only without providers');
 check(str_contains((string) file_get_contents(__DIR__ . '/../app/video/engine.php'), 'freeOnlyJob'), 'engine disables local fallback for free-only jobs');

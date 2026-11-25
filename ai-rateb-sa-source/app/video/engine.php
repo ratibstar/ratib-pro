@@ -393,9 +393,20 @@ function rateb_video_start(PDO $pdo, array $campaign, array $strategyRow, array 
     foreach ($scenes as $scene) {
         $seconds += (int) $scene['duration'];
     }
-    $gate = rateb_usage_begin($pdo, (int) $campaign['user_id'], (int) $campaign['id'], 'video', $seconds);
-    if (!$gate['ok']) {
-        return ['ok' => false, 'code' => (string) $gate['code'], 'job_id' => 0];
+    // Verified free Agnes-only jobs skip RATEB reserve/charge. All other providers
+    // (Runway, private, local, multi-provider free chain) keep normal billing.
+    if ($providerName === 'free_chain' && rateb_video_free_agnes_no_credit()) {
+        $gate = [
+            'ok' => true,
+            'code' => '',
+            'id' => 0,
+            'watermark' => (int) ($plan['watermark'] ?? 0) === 1,
+        ];
+    } else {
+        $gate = rateb_usage_begin($pdo, (int) $campaign['user_id'], (int) $campaign['id'], 'video', $seconds);
+        if (!$gate['ok']) {
+            return ['ok' => false, 'code' => (string) $gate['code'], 'job_id' => 0];
+        }
     }
     $insert = $pdo->prepare('INSERT INTO video_jobs (campaign_id, user_id, status, provider, storyboard, usage_id, watermark, approval_status) VALUES (?, ?, \'queued\', ?, ?, ?, ?, \'draft\')');
     $insert->execute([
@@ -417,8 +428,10 @@ function rateb_video_fail(PDO $pdo, array $job, string $code): void
         (int) $job['id'],
         (int) $job['user_id'],
     ]);
-    rateb_usage_finish($pdo, (int) $job['usage_id'], 'failed');
-    if ($update->rowCount() === 1) {
+    $usageId = (int) ($job['usage_id'] ?? 0);
+    rateb_usage_finish($pdo, $usageId, 'failed');
+    // Free Agnes jobs have usage_id=0 (no charge). Never invent a refund for them.
+    if ($update->rowCount() === 1 && $usageId > 0) {
         rateb_refund_credits((int) $job['user_id'], 'video_storyboard', (int) ($job['campaign_id'] ?? 0) ?: null);
     }
 }

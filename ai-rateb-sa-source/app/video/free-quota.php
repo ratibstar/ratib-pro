@@ -42,6 +42,29 @@ function rateb_video_free_entitlement_flag(string $provider): bool
 }
 
 /**
+ * True only for free-only mode when Agnes is the sole FREE_AVAILABLE provider.
+ * Used to skip RATEB point reserve/charge; never applies to Runway/private/local
+ * or to free-chain jobs that still have another eligible free provider.
+ */
+function rateb_video_free_agnes_no_credit(): bool
+{
+    if (!rateb_video_free_only_mode()) {
+        return false;
+    }
+    $agnes = rateb_video_free_provider_status('agnes', false);
+    if (empty($agnes['free_available']) || empty($agnes['eligible'])) {
+        return false;
+    }
+    foreach (['replicate', 'runware'] as $other) {
+        $status = rateb_video_free_provider_status($other, false);
+        if (!empty($status['eligible'])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * @return array{
  *   provider:string,
  *   configured:bool,
