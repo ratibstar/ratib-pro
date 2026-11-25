@@ -118,8 +118,6 @@ if ($syncPrompt === '') {
     $syncPrompt = trim((string) preg_replace('/\s*###.*$/su', '', $prompt));
 }
 $syncPromptFinal = $syncPrompt !== '' ? $syncPrompt : $prompt;
-$factsForGate = is_array($promptContext['facts'] ?? null) ? $promptContext['facts'] : [];
-$isMarketingSync = rateb_image_is_marketing_brief($factsForGate);
 $sync = rateb_image_generate_sync($syncPromptFinal, $ratioSize[0], $ratioSize[1]);
 rateb_image_prompt_log([
     'campaign_id' => $campaignId,
@@ -134,22 +132,10 @@ rateb_image_prompt_log([
     'attempts' => (array) ($sync['attempts'] ?? []),
 ]);
 if (!empty($sync['ok'])) {
-    $acceptSync = true;
-    if ($isMarketingSync) {
-        // Marketing gate once — do not re-run the whole provider chain on caption miss.
-        $caption = rateb_image_provider_caption_bytes((string) ($sync['bytes'] ?? ''), (string) ($sync['mime'] ?? ''), 8);
-        if ($caption !== '' && rateb_image_caption_hard_reject($factsForGate, $caption) !== null) {
-            $acceptSync = false;
-        } elseif ($caption !== '' && !rateb_image_caption_hard_accept($factsForGate, $caption)
-            && preg_match('/\b(mockup|flyer|poster|brochure|storyboard|social media|campaign|studio|creative)\b/i', $caption) !== 1) {
-            $acceptSync = false;
-        }
-    }
-    if ($acceptSync) {
-        // Sync already produced bytes — never fall through to Horde after acceptance.
-        ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now);
-        exit;
-    }
+    // Sync already produced bytes (CF / Pollinations). Finish here with caption gates —
+    // never fall through to Horde after a successful free sync (busy Horde was masking CF).
+    ai_image_try_finish_sync($campaign, $userId, $usageId, $promptContext, $promptData, $sync, $now);
+    exit;
 }
 if (($sync['error_class'] ?? '') === 'fatal') {
     ai_image_release($userId, '', $usageId, 'failed');
@@ -502,7 +488,7 @@ function ai_image_try_finish_sync(
         ai_image_release($userId, '', $usageId, 'failed');
         http_response_code(502);
         echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed', 'provider' => $provider], JSON_UNESCAPED_UNICODE);
-        return;
+        exit;
     }
     if (rateb_image_is_censor_placeholder($bytes)) {
         ai_image_release($userId, '', $usageId, 'failed');
@@ -513,7 +499,7 @@ function ai_image_try_finish_sync(
             'state' => 'failed',
             'provider' => $provider,
         ], JSON_UNESCAPED_UNICODE);
-        return;
+        exit;
     }
     $jobId = sprintf(
         '%08x-%04x-4%03x-%04x-%012x',
@@ -545,10 +531,20 @@ function ai_image_try_finish_sync(
             'provider' => $provider,
             'reason' => 'caption_unavailable',
         ], JSON_UNESCAPED_UNICODE);
-        return;
+        exit;
     }
     $hard = rateb_image_caption_hard_reject($facts, $caption);
     if ($hard !== null) {
+        rateb_image_prompt_log([
+            'campaign_id' => (int) $campaign['id'],
+            'user_id' => $userId,
+            'usage_id' => $usageId,
+            'job_id' => $jobId,
+            'provider' => $provider,
+            'status' => 'caption_hard_reject',
+            'image_caption' => $caption,
+            'validation_reason' => $hard,
+        ]);
         ai_image_release($userId, '', $usageId, 'failed');
         http_response_code(422);
         echo json_encode([
@@ -558,7 +554,7 @@ function ai_image_try_finish_sync(
             'provider' => $provider,
             'reason' => $hard,
         ], JSON_UNESCAPED_UNICODE);
-        return;
+        exit;
     }
     $checked = ai_image_relevance_check($facts, $caption);
     if (($checked['status'] ?? '') === 'relevant') {
@@ -575,7 +571,7 @@ function ai_image_try_finish_sync(
             'provider' => $provider,
             'reason' => (string) ($checked['reason'] ?? 'relevance_not_established'),
         ], JSON_UNESCAPED_UNICODE);
-        return;
+        exit;
     }
     rateb_image_prompt_log([
         'campaign_id' => (int) $campaign['id'],
@@ -608,7 +604,7 @@ function ai_image_try_finish_sync(
         ai_image_release($userId, '', $usageId, 'failed');
         http_response_code(500);
         echo json_encode(['error' => rateb_ui_error('image_storage'), 'code' => 'image_storage', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
-        return;
+        exit;
     }
     ai_image_release($userId, '', $usageId, 'completed');
     echo json_encode([
@@ -620,6 +616,7 @@ function ai_image_try_finish_sync(
         'media_id' => $mediaId,
         'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '#images',
     ], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 function ai_horde_finish_job(array $campaign, string $jobId): void

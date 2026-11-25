@@ -97,39 +97,45 @@ $genericMarketingPlan = [
 ];
 $groundedMarketingPlan = rateb_image_plan_ground_marketing_service($genericMarketingPlan, $groundedFacts);
 check(($groundedMarketingPlan['original_art_subject'] ?? '') === $genericMarketingPlan['subject'], 'grounding keeps the original art-director subject for audit');
-check(!str_contains(strtolower($groundedMarketingPlan['subject']), 'dashboard'), 'grounding strips dashboard tokens instead of inventing a stock scene');
-check(str_contains(strtolower($groundedMarketingPlan['subject']), 'platform') || str_contains(strtolower($groundedMarketingPlan['subject']), 'ad'), 'grounding preserves campaign-aligned wording from the art director');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'dashboard'), 'grounding keeps campaign dashboard heroes for AI marketing platforms');
+check(str_contains(strtolower($groundedMarketingPlan['subject']), 'platform') || str_contains(strtolower($groundedMarketingPlan['subject']), 'ad') || str_contains(strtolower($groundedMarketingPlan['subject']), 'dashboard'), 'grounding preserves campaign-aligned wording from the art director');
 check(($groundedMarketingPlan['grounding'] ?? '') === 'enriched' || ($groundedMarketingPlan['grounding'] ?? '') === 'failed', 'grounding reports enriched or failed — never a silent generic rewrite');
 check(str_contains(strtolower($groundedMarketingPlan['mood']), 'innovative') || str_contains(strtolower($groundedMarketingPlan['mood']), 'creative') || str_contains(strtolower($groundedMarketingPlan['mood']), 'premium') || str_contains(strtolower($groundedMarketingPlan['mood']), 'saudi'), 'marketing mood is steered by the brief');
-check(str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'accent') || str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'saudi') || str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'creative'), 'marketing elements receive campaign identity cues');
+check(str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'accent') || str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'saudi') || str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'dashboard') || str_contains(strtolower(implode(' ', (array) $groundedMarketingPlan['elements'])), 'ui'), 'marketing elements receive campaign identity cues');
 $keptCreativePlan = rateb_image_plan_ground_marketing_service([
     'sufficient' => true,
     'category' => 'digital_service',
-    'subject' => 'professional photograph of finished social media ad mockups with photo imagery',
-    'elements' => ['finished social media ad mockups', 'storyboard cards'],
-    'setting' => 'creative studio surface',
+    'industry' => 'marketing_saas',
+    'subject' => 'premium enterprise hero advertisement with futuristic digital campaign dashboard and abstract cyan navy UI cards',
+    'elements' => ['futuristic digital campaign dashboard', 'abstract cyan navy UI campaign cards'],
+    'setting' => 'premium enterprise technology environment',
     'mood' => 'innovative',
     'avoid' => [],
     'evidence' => 'منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية',
 ], $groundedFacts);
-check(str_contains(strtolower($keptCreativePlan['subject']), 'mockup') || str_contains(strtolower($keptCreativePlan['subject']), 'social'), 'a usable creative art-director scene is kept');
-check(str_contains(strtolower($keptCreativePlan['subject']), 'professional photograph of finished social media ad mockups'), 'grounding must not replace a detailed creative plan with a stock summary');
+check(str_contains(strtolower($keptCreativePlan['subject']), 'dashboard') || str_contains(strtolower($keptCreativePlan['subject']), 'ui'), 'a usable dashboard art-director scene is kept');
+check(str_contains(strtolower($keptCreativePlan['subject']), 'futuristic digital campaign dashboard'), 'grounding must not replace a detailed dashboard plan with a stock summary');
 $guardedCreative = rateb_image_plan_ground_marketing_service([
     'sufficient' => true,
     'category' => 'digital_service',
-    'subject' => 'professional photograph of finished social media ad mockups, no chairs, no conference table, no earth, no space',
-    'elements' => ['finished social media ad mockups', 'storyboard cards'],
-    'setting' => 'creative studio surface',
+    'industry' => 'marketing_saas',
+    'subject' => 'premium RATEB AI campaign dashboard with abstract UI cards, no chairs, no conference table, no earth, no space',
+    'elements' => ['futuristic digital campaign dashboard', 'abstract UI campaign cards'],
+    'setting' => 'premium enterprise technology environment',
     'mood' => 'innovative',
     'avoid' => [],
     'evidence' => 'منصة تنشئ إعلانات وصور وفيديوهات للحملات التسويقية',
 ], $groundedFacts, 1);
-check(str_contains(strtolower($guardedCreative['subject']), 'mockup'), 'no-chair guards do not wipe the creative subject');
+check(str_contains(strtolower($guardedCreative['subject']), 'dashboard'), 'no-chair guards do not wipe the dashboard subject');
 check(str_contains(strtolower($guardedCreative['subject']), 'close product'), 'variant role is appended without replacing the plan');
 check(str_contains(strtolower(rateb_image_marketing_subject_from_facts($groundedFacts, 1)['subject']), 'close product'), 'variant 1 marketing subject uses close-detail role');
+check(str_contains(strtolower(rateb_image_marketing_subject_from_facts($groundedFacts, 0)['subject']), 'dashboard'), 'default marketing subject is a campaign dashboard hero');
 $usablePlan = ($groundedMarketingPlan['sufficient'] ?? false) === true ? $groundedMarketingPlan : $keptCreativePlan;
+$usablePlan['industry'] = 'marketing_saas';
 $groundedMarketingPrompt = rateb_image_prompt_compose($usablePlan, $groundedFacts, '1:1', 0);
-check(str_contains($groundedMarketingPrompt, 'analytics dashboard') && str_contains($groundedMarketingPrompt, 'neon orb') && str_contains($groundedMarketingPrompt, 'bathroom'), 'the grounded marketing prompt excludes dashboards, neon orbs, and bathroom stock');
+check(str_contains($groundedMarketingPrompt, ' ### '), 'composed prompt uses positive ### negative format');
+check(str_contains($groundedMarketingPrompt, 'neon orb') && str_contains($groundedMarketingPrompt, 'bathroom') && str_contains($groundedMarketingPrompt, 'food'), 'the grounded marketing prompt negatives block neon orbs, bathroom stock, and food');
+check(str_contains(strtolower(explode(' ### ', $groundedMarketingPrompt)[0] ?? ''), 'dashboard'), 'positive half keeps the campaign dashboard');
 check(rateb_image_prompt_integrity($groundedFacts, $groundedMarketingPrompt, $usablePlan) === null, 'composed prompt passes campaign integrity');
 $fpA = rateb_image_campaign_fingerprint(
     ['id' => 80, 'title' => 'RATEB AI', 'product_name' => 'منصة RATEB AI', 'description' => 'منصة تنشئ إعلانات', 'objective' => 'عملاء', 'target_customer' => 'فرق', 'status' => 'in_progress'],
@@ -145,13 +151,14 @@ $fpB = rateb_image_campaign_fingerprint(
 );
 check($fpA === $fpB, 'campaign fingerprint is stable when campaign rows are unchanged');
 $syncPrompt = rateb_image_sync_prompt($usablePlan, $groundedFacts, 0);
-check(!str_contains(strtolower($syncPrompt), 'blank paper') || str_contains(strtolower($syncPrompt), 'no blank paper'), 'sync prompt blocks blank paper');
-check(str_contains(strtolower($syncPrompt), 'mockup') || str_contains(strtolower($syncPrompt), 'storyboard') || str_contains(strtolower($syncPrompt), 'social') || str_contains(strtolower($syncPrompt), 'platform') || str_contains(strtolower($syncPrompt), 'creative'), 'sync prompt keeps campaign visual concept');
+check(!str_contains(strtolower($syncPrompt), 'blank paper') || str_contains(strtolower($syncPrompt), 'no blank paper') || str_contains(strtolower($syncPrompt), 'no printed flyers'), 'sync prompt blocks blank paper / printed flyers');
+check(str_contains(strtolower($syncPrompt), 'dashboard') || str_contains(strtolower($syncPrompt), 'platform') || str_contains(strtolower($syncPrompt), 'rateb') || str_contains(strtolower($syncPrompt), 'ui'), 'sync prompt keeps campaign dashboard visual concept');
 check(rateb_image_sync_prompt($usablePlan, $groundedFacts, 0) !== rateb_image_sync_prompt($usablePlan, $groundedFacts, 1), 'sync variants differ by composition role');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a desk with posters covered in arabic writing and a cactus') !== null, 'typography and cactus captions are hard-rejected');
 check(rateb_image_caption_hard_reject($groundedFacts, 'earth from space with city lights') !== null, 'space stock is hard-rejected for marketing campaigns');
 check(rateb_image_caption_hard_reject($groundedFacts, 'a conference room with pink chairs around a wooden table') !== null, 'furniture showrooms are hard-rejected for marketing campaigns');
-check(rateb_image_caption_hard_accept($groundedFacts, 'colorful advertising posters and printed marketing flyers on a wooden desk'), 'campaign creative flat-lays are hard-accepted');
+check(rateb_image_caption_hard_accept($groundedFacts, 'a futuristic campaign dashboard with cyan and navy UI cards'), 'campaign dashboard heroes are hard-accepted');
+check(rateb_image_caption_hard_accept($groundedFacts, 'colorful advertising posters and printed marketing flyers on a wooden desk'), 'legacy campaign creative flat-lays remain hard-accepted');
 $accountingPlan = rateb_image_plan_ground_marketing_service(
     ['category' => 'digital_service', 'subject' => 'accounting software dashboard', 'elements' => []],
     ['product' => 'برنامج محاسبة يدير الفواتير والمخزون']
