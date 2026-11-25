@@ -67,15 +67,22 @@ try {
         if (!rateb_image_job_allows_new_reservation($decision)) {
             return ['jobs' => $decision['jobs'], 'result' => $decision];
         }
-        $gate = rateb_usage_begin(db(), $userId, $campaignId, 'image');
-        if (!$gate['ok']) {
-            $decision['action'] = 'denied';
-            $decision['code'] = (string) $gate['code'];
-            return ['jobs' => $decision['jobs'], 'result' => $decision];
+        // Verified free Cloudflare/Horde under free-only mode: skip RATEB reserve/charge.
+        if (rateb_image_free_no_credit()) {
+            $gate = ['ok' => true, 'code' => '', 'id' => 0];
+        } else {
+            $gate = rateb_usage_begin(db(), $userId, $campaignId, 'image');
+            if (!$gate['ok']) {
+                $decision['action'] = 'denied';
+                $decision['code'] = (string) $gate['code'];
+                return ['jobs' => $decision['jobs'], 'result' => $decision];
+            }
         }
         $decision = rateb_image_jobs_claim($decision['jobs'], $userId, $campaignId, $postedJobId, $now, (int) $gate['id']);
         if (!rateb_image_job_allows_new_reservation($decision)) {
-            rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+            if ((int) $gate['id'] > 0) {
+                rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+            }
             return ['jobs' => $decision['jobs'], 'result' => $decision];
         }
         $reservedId = (int) $gate['id'];
@@ -100,7 +107,8 @@ if ((string) ($decision['action'] ?? '') === 'denied') {
 }
 ai_image_dispatch($campaign, $decision, $postedJobId, $now);
 $usageId = (int) ($decision['usage_id'] ?? 0);
-if ($usageId < 1 || !rateb_image_job_allows_new_reservation($decision)) {
+$freeImageNoCredit = rateb_image_free_no_credit();
+if ((!$freeImageNoCredit && $usageId < 1) || !rateb_image_job_allows_new_reservation($decision)) {
     http_response_code(503);
     echo json_encode(['error' => rateb_ui_error('image_provider'), 'code' => 'image_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -354,6 +362,9 @@ function ai_image_release(int $userId, string $jobId, int $usageId, string $stat
         }
     }
     foreach (array_unique($usageIds) as $id) {
+        if ((int) $id < 1) {
+            continue; // free-no-credit jobs never charged — never invent settle/refund
+        }
         rateb_reservation_settle(db(), (int) $id, $userId, $status, 'ai_image');
     }
 }
@@ -380,6 +391,10 @@ function ai_image_try_openai_provider4(
     int $now,
     string $hordeReason
 ): bool {
+    // Free-only zero-credit path never falls through to paid OpenAI.
+    if (rateb_image_free_no_credit()) {
+        return false;
+    }
     $pkg = (string) (rateb_account_credits(db(), $userId)['package_type'] ?? '');
     if (!rateb_image_openai_eligible($userId, $pkg)) {
         return false;
@@ -427,6 +442,9 @@ function ai_image_try_openai_provider4(
 function ai_image_settle_dropped(int $userId, array $decision): void
 {
     foreach ($decision['finish'] ?? [] as $usageId) {
+        if ((int) $usageId < 1) {
+            continue;
+        }
         rateb_reservation_settle(db(), (int) $usageId, $userId, 'failed', 'ai_image');
     }
 }

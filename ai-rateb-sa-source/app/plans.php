@@ -3561,8 +3561,12 @@ function rateb_image_jobs_decode(string $raw): array
             continue;
         }
         $job = rateb_image_job_normalize($job);
+        // Keep free-no-credit claims (usage_id=0) while they still have an active phase.
         if ($job['usage_id'] < 1 && $job['job_id'] === '') {
-            continue;
+            $phase = (string) ($job['phase'] ?? '');
+            if (!in_array($phase, ['submitting', 'pending', 'processing'], true)) {
+                continue;
+            }
         }
         $jobs[rateb_image_job_key($job)] = $job;
     }
@@ -3746,7 +3750,9 @@ function rateb_image_job_allows_new_reservation(array $decision): bool
 function rateb_image_jobs_claim(array $jobs, int $userId, int $campaignId, string $postedJobId, int $now, int $usageId): array
 {
     $decision = rateb_image_jobs_decide($jobs, $userId, $campaignId, $postedJobId, $now);
-    if ($decision['action'] !== 'begin' || $usageId < 1) {
+    // usage_id=0 is allowed only for verified free-image zero-credit claims.
+    $allowZero = function_exists('rateb_image_free_no_credit') && rateb_image_free_no_credit();
+    if ($decision['action'] !== 'begin' || $usageId < 0 || ($usageId < 1 && !$allowZero)) {
         return $decision;
     }
     $decision['usage_id'] = $usageId;

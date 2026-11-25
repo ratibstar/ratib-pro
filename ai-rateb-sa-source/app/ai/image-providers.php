@@ -33,10 +33,15 @@ function rateb_image_provider_order(): array
  */
 function rateb_image_sync_provider_order(): array
 {
-    return array_values(array_filter(
+    $order = array_values(array_filter(
         rateb_image_provider_order(),
         static fn(string $p): bool => !in_array($p, ['horde', 'openai'], true)
     ));
+    // Free-only zero-credit path: Cloudflare Flux Schnell only (no Pollinations).
+    if (rateb_image_free_no_credit()) {
+        return array_values(array_filter($order, static fn(string $p): bool => $p === 'cloudflare'));
+    }
+    return $order;
 }
 
 /** @return array{account_id:string,token:string,model:string} */
@@ -58,6 +63,37 @@ function rateb_image_cf_configured(): bool
 {
     $c = rateb_image_cf_config();
     return $c['account_id'] !== '' && $c['token'] !== '';
+}
+
+function rateb_image_horde_configured(): bool
+{
+    $ai = require dirname(__DIR__, 2) . '/config/ai.php';
+    $key = trim((string) ($ai['horde_api_key'] ?? ''));
+    return $key !== '' && $key !== '0000000000';
+}
+
+/**
+ * Free-only image credit bypass (mirrors Agnes free-video pattern).
+ * True only when RATEB free-only mode is on AND a verified free image provider
+ * (Cloudflare Flux Schnell and/or Stable Horde) is configured. Paid providers
+ * (OpenAI / Stability / Runware / Pollinations billing paths) stay on normal credits.
+ */
+function rateb_image_free_no_credit(): bool
+{
+    if (function_exists('rateb_video_free_only_mode')) {
+        if (!rateb_video_free_only_mode()) {
+            return false;
+        }
+    } else {
+        $flag = strtolower(trim((string) getenv('RATEB_VIDEO_FREE_ONLY')));
+        if (!in_array($flag, ['1', 'on', 'true', 'yes'], true)) {
+            $choice = strtolower(trim((string) getenv('RATEB_VIDEO_PROVIDER')));
+            if (!in_array($choice, ['free', 'free_chain'], true)) {
+                return false;
+            }
+        }
+    }
+    return rateb_image_cf_configured() || rateb_image_horde_configured();
 }
 
 /**
