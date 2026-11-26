@@ -83,12 +83,17 @@ function rateb_video_clips_for_images(int $seconds, int $imageCount): array
     if ($base === []) {
         return [];
     }
+    // Free online providers (Agnes etc.): one coherent provider job per duration.
+    // Never slice a 5s free clip into five 1-second API creates.
+    if (function_exists('rateb_video_free_only_mode') && rateb_video_free_only_mode()) {
+        return $base;
+    }
     $imageCount = max(1, $imageCount);
     $total = array_sum($base);
     if ($imageCount === 1) {
         return $base;
     }
-    // ~1–2s beats that cycle the gallery at least twice when duration allows.
+    // Local/slideshow path only: ~1–2s beats that cycle the gallery.
     $beat = $total <= 5 ? 1 : 2;
     $target = $imageCount * 2;
     if ($total >= $imageCount * $beat * 2) {
@@ -198,20 +203,25 @@ function rateb_video_storyboard(array $campaign, array $strategy, array $copyPar
     }
     $purpose = mb_substr($purpose, 0, 180);
     $voiceLines = rateb_video_split_lines($spokenCopy !== '' ? $spokenCopy : $purpose, count($clips));
-    $ratio = '1:1';
-    foreach ($images as $imageRow) {
-        if (str_contains((string) ($imageRow['original_name'] ?? ''), '9x16')) {
-            $ratio = '9:16';
-            break;
+    $freeOnly = function_exists('rateb_video_free_only_mode') && rateb_video_free_only_mode();
+    $ratio = $freeOnly ? '9:16' : '1:1';
+    if (!$freeOnly) {
+        foreach ($images as $imageRow) {
+            if (str_contains((string) ($imageRow['original_name'] ?? ''), '9x16')) {
+                $ratio = '9:16';
+                break;
+            }
         }
     }
     $scenes = [];
     foreach ($clips as $i => $clip) {
         $image = $images[$i % count($images)];
-        $motion = $motions[$i % count($motions)];
+        $motion = $freeOnly
+            ? 'gentle cinematic camera push-in, natural speaking gesture, premium modern office lighting, realistic humans, no text'
+            : $motions[$i % count($motions)];
         $visual = rateb_visual_prompt(
             array_merge([$motion], rateb_visual_lines($campaign, $strategy, $copyLine, $brand, $prefer)),
-            'No written text and no logo.',
+            'No written text and no logo. No cartoon. No food.',
             400
         );
         $scenes[] = [

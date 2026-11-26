@@ -66,6 +66,13 @@ check(count($three) === 6 && array_sum(array_column($three, 'duration')) === 10,
 check(array_column($three, 'image_id') === [4, 9, 12, 4, 9, 12], 'attached images cycle so the gallery repeats');
 check(max(array_column($three, 'duration')) <= 2, 'slideshow beats stay short for faster switching');
 check(rateb_video_clips_for_images(5, 3) === [1, 1, 1, 1, 1], 'five seconds uses one-second beats across a repeated gallery');
+putenv('RATEB_VIDEO_FREE_ONLY=1');
+putenv('RATEB_VIDEO_PROVIDER=free_chain');
+check(rateb_video_clips_for_images(5, 3) === [5], 'free-only five seconds stays one coherent 5s job');
+$freeShort = rateb_video_storyboard(['id' => 1], ['creative_direction' => 'Modern RATEB office'], ['headline'], [['id' => 4], ['id' => 9]], 5);
+check(count($freeShort) === 1 && $freeShort[0]['duration'] === 5 && $freeShort[0]['ratio'] === '9:16', 'free-only storyboard is one 9:16 five-second scene');
+putenv('RATEB_VIDEO_FREE_ONLY');
+putenv('RATEB_VIDEO_PROVIDER');
 $full = rateb_video_storyboard(['id' => 1], ['core_message' => 'Message'], ['copy'], $images, 30);
 check(count($full) >= 4 && array_sum(array_column($full, 'duration')) === 30, 'thirty seconds still totals thirty with a looping slideshow');
 check(rateb_video_clips(15) === [10, 5], 'fifteen seconds is a ten-second scene plus five');
