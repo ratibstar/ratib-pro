@@ -30,9 +30,9 @@ if (is_file($secretFile)) {
     echo 'secrets_bytes=' . strlen($raw) . PHP_EOL;
     echo 'secrets_starts_with_php=' . (str_starts_with(ltrim($raw), '<?php') ? 'yes' : 'no') . PHP_EOL;
     foreach ([
-        'DEEPSEEK_API_KEY', 'RATEB_AI_API_KEY', 'HORDE_API_KEY', 'SAWTAK_API_KEY',
+        'DEEPSEEK_API_KEY', 'RATEB_AI_API_KEY', 'HORDE_API_KEY', 'SAWTAK_API_KEY', 'EASYVOICE_API_KEY',
         'MOYASAR_SECRET_KEY', 'MOYASAR_WEBHOOK_SECRET', 'RUNWAY_API_KEY',
-        'deepseek_api_key', 'api_key', 'horde_api_key', 'sawtak_api_key',
+        'deepseek_api_key', 'api_key', 'horde_api_key', 'sawtak_api_key', 'easyvoice_api_key',
         'moyasar_secret_key', 'moyasar_webhook_secret', 'runway_api_key',
     ] as $needle) {
         echo 'secrets_mentions.' . $needle . '=' . (str_contains($raw, $needle) ? 'yes' : 'no') . PHP_EOL;
@@ -46,6 +46,7 @@ $ai = require dirname(__DIR__) . '/config/ai.php';
 $show('resolved.text_api_key', $ai['api_key'] ?? '');
 $show('resolved.horde', $ai['horde_api_key'] ?? '');
 $show('resolved.sawtak', $ai['sawtak_api_key'] ?? '');
+$show('resolved.easyvoice', $ai['easyvoice_api_key'] ?? '');
 $show('resolved.moyasar_secret', $ai['moyasar_secret_key'] ?? '');
 $show('resolved.moyasar_webhook', $ai['moyasar_webhook_secret'] ?? '');
 echo 'resolved.text_provider=' . (string) ($ai['provider'] ?? '') . PHP_EOL;

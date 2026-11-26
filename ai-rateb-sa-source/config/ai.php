@@ -27,6 +27,8 @@ return [
     'api_key' => $deepseek !== '' ? $deepseek : $legacy,
     'horde_api_key' => trim((string) (getenv('HORDE_API_KEY') ?: ($local['horde_api_key'] ?? ''))),
     'sawtak_api_key' => trim((string) (getenv('SAWTAK_API_KEY') ?: ($local['sawtak_api_key'] ?? ''))),
+    // EasyVoice Free TTS — key ONLY from EASYVOICE_API_KEY (server secrets). Never from ai.local.php / Git.
+    'easyvoice_api_key' => trim((string) (getenv('EASYVOICE_API_KEY') ?: '')),
     'moyasar_secret_key' => trim((string) (getenv('MOYASAR_SECRET_KEY') ?: ($local['moyasar_secret_key'] ?? ''))),
     'moyasar_webhook_secret' => trim((string) (getenv('MOYASAR_WEBHOOK_SECRET') ?: ($local['moyasar_webhook_secret'] ?? ''))),
     // Image providers (failover order). Cloudflare Workers AI Flux is free-tier + fast when configured.

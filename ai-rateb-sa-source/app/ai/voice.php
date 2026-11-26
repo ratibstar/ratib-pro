@@ -5,6 +5,7 @@ require_once __DIR__ . '/../bootstrap.php';
 require_once __DIR__ . '/../media/library.php';
 require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/sawtak.php';
+require_once __DIR__ . '/easyvoice.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 rateb_feature_require('feature_ai_voice');
@@ -47,21 +48,74 @@ if (!rateb_voice_text_is_arabic($spoken)) {
 $ai = require __DIR__ . '/../../config/ai.php';
 $sawtakKey = trim((string) ($ai['sawtak_api_key'] ?? ''));
 $wanted = (string) ($_POST['voice'] ?? '');
-$selected = rateb_sawtak_find($wanted);
+$easyvoiceVoice = rateb_easyvoice_find($wanted);
+$useEasyvoice = $easyvoiceVoice !== null && rateb_easyvoice_configured();
+$selected = $useEasyvoice ? $easyvoiceVoice : rateb_sawtak_find($wanted);
 $voiceStatus = (string) ($selected['status'] ?? '');
 if ($selected === null || ($voiceStatus !== '' && $voiceStatus !== 'ready')) {
     http_response_code(422);
     echo json_encode(['error' => ui_language() === 'ar' ? 'اختر صوتاً جاهزاً من الكتالوج.' : 'Choose a ready voice from the catalog.', 'code' => 'invalid', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-if ($sawtakKey === '') {
+if (!$useEasyvoice && $sawtakKey === '') {
     http_response_code(503);
     echo json_encode(['error' => ui_language() === 'ar' ? 'توليد الكلام يحتاج مفتاح Sawtak على الخادم. المعاينة تعمل بدون توليد.' : 'Speech generation needs the Sawtak key on the server. Preview works without generating speech.', 'code' => 'not_configured', 'state' => 'unavailable'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 $script = $spoken;
-
 $userId = (int) $_SESSION['user_id'];
+
+// EasyVoice Free path: no RATEB reservation / debit (provider free daily pool only).
+if ($useEasyvoice) {
+    $usage = rateb_easyvoice_get_usage();
+    $need = mb_strlen($script, 'UTF-8');
+    if (
+        !$usage['ok']
+        || (string) ($usage['plan'] ?? '') !== 'free'
+        || (int) ($usage['limit'] ?? 0) !== 5000
+        || (int) ($usage['remaining'] ?? 0) < $need
+        || $need > 5000
+    ) {
+        http_response_code(503);
+        echo json_encode([
+            'error' => ui_language() === 'ar'
+                ? 'حصة EasyVoice المجانية غير متاحة حالياً.'
+                : 'EasyVoice free quota is not available right now.',
+            'code' => 'easyvoice_quota',
+            'state' => 'unavailable',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $speech = rateb_easyvoice_speech($script, (string) $selected['id'], 'mp3', $tempo);
+    if (!$speech['ok'] || $speech['bytes'] === '') {
+        http_response_code(502);
+        echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    try {
+        media_store_bytes(
+            $campaign,
+            'audio',
+            'ai',
+            $lang === 'ar' ? 'voiceover-ar.mp3' : 'voiceover-en.mp3',
+            $speech['mime'] !== '' ? $speech['mime'] : 'audio/mpeg',
+            $speech['bytes']
+        );
+    } catch (Throwable $error) {
+        http_response_code(500);
+        echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    rateb_store_voice_script((int) $campaign['id'], $spoken);
+    echo json_encode([
+        'ok' => true,
+        'state' => 'ready',
+        'provider' => 'easyvoice',
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '&play=1#voice',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 rateb_reservation_sweep(db(), $userId, 'voice', 'saudi_voice', rateb_voice_reservation_max_age());
 $gate = rateb_usage_begin(db(), $userId, (int) $campaign['id'], 'voice');
 if (!$gate['ok']) {
