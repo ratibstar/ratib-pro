@@ -6,6 +6,72 @@ declare(strict_types=1);
  * Generation methods must only be called after FREE_AVAILABLE verification.
  */
 
+/**
+ * Public site origin used when staging images for providers that cannot accept data URIs.
+ */
+function rateb_video_public_origin(): string
+{
+    $env = trim((string) getenv('RATEB_PUBLIC_BASE'));
+    if ($env !== '') {
+        return rtrim($env, '/');
+    }
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    if ($host !== '' && preg_match('/^[a-z0-9.-]+$/i', $host) === 1) {
+        $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        return ($https ? 'https://' : 'http://') . $host;
+    }
+    return 'https://ai.rateb.sa';
+}
+
+/**
+ * Agnes Flash reference mode only accepts https:// image URLs.
+ * data:image URIs from the RATEB engine are staged under public/assets/video-refs/.
+ */
+function rateb_video_agnes_https_image(string $src): string
+{
+    $src = trim($src);
+    if (str_starts_with($src, 'https://')) {
+        return $src;
+    }
+    if (!preg_match('#^data:image/(jpeg|jpg|png|webp);base64,#i', $src, $match)) {
+        throw new RuntimeException('rejected_image');
+    }
+    $comma = strpos($src, ',');
+    if ($comma === false) {
+        throw new RuntimeException('rejected_image');
+    }
+    $bin = base64_decode(substr($src, $comma + 1), true);
+    if ($bin === false || strlen($bin) < 64 || strlen($bin) > 8_000_000) {
+        throw new RuntimeException('rejected_image');
+    }
+    $ext = strtolower($match[1]);
+    if ($ext === 'jpg') {
+        $ext = 'jpeg';
+    }
+    if ($ext === 'jpeg') {
+        $ext = 'jpg';
+    }
+    $dir = dirname(__DIR__, 2) . '/public/assets/video-refs';
+    if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+        throw new RuntimeException('storage');
+    }
+    // Drop staged refs older than 48h (best-effort; ignore failures).
+    $cutoff = time() - 172800;
+    foreach (glob($dir . '/*.{jpg,png,webp}', GLOB_BRACE) ?: [] as $old) {
+        $mtime = @filemtime($old);
+        if (is_int($mtime) && $mtime < $cutoff) {
+            @unlink($old);
+        }
+    }
+    $name = bin2hex(random_bytes(16)) . '.' . $ext;
+    $path = $dir . '/' . $name;
+    if (file_put_contents($path, $bin, LOCK_EX) === false) {
+        throw new RuntimeException('storage');
+    }
+    @chmod($path, 0644);
+    return rateb_video_public_origin() . '/public/assets/video-refs/' . $name;
+}
+
 final class AgnesVideoProvider implements RatebVideoProvider
 {
     public function name(): string
@@ -66,10 +132,29 @@ final class AgnesVideoProvider implements RatebVideoProvider
 
     public function generateFromImage(string $imageDataUri, string $prompt, int $seconds, string $ratio): array
     {
+        // Agnes reference mode requires fetchable HTTPS URLs (not data: URIs).
+        return $this->generateFromReferences([rateb_video_agnes_https_image($imageDataUri)], $prompt, $seconds, $ratio);
+    }
+
+    /**
+     * Reference-mode generation with one or more publicly reachable HTTPS image URLs.
+     * Flash allows at most 5 reference images; data URIs are staged to a public HTTPS path.
+     *
+     * @param list<string> $httpsImageUrls
+     * @return array{task_id:string}
+     */
+    public function generateFromReferences(array $httpsImageUrls, string $prompt, int $seconds, string $ratio): array
+    {
         $seconds = max(4, min(12, $seconds));
-        // Agnes reference mode needs publicly reachable image URLs; data URIs are not accepted.
-        // Prefer keyframe first_frame when a temporary public URL is unavailable: reject rather than bill incorrectly.
-        if (!str_starts_with($imageDataUri, 'https://')) {
+        $images = [];
+        foreach ($httpsImageUrls as $url) {
+            $url = rateb_video_agnes_https_image(trim((string) $url));
+            $images[] = $url;
+            if (count($images) >= 5) {
+                break;
+            }
+        }
+        if ($images === []) {
             throw new RuntimeException('rejected_image');
         }
         return $this->create([
@@ -79,7 +164,7 @@ final class AgnesVideoProvider implements RatebVideoProvider
             'seconds' => (string) $seconds,
             'size' => '720P',
             'aspect_ratio' => $this->aspect($ratio),
-            'images' => [$imageDataUri],
+            'images' => $images,
             'n' => 1,
         ]);
     }
@@ -178,6 +263,13 @@ final class AgnesVideoProvider implements RatebVideoProvider
                 throw new RuntimeException('rejected_credit');
             }
             throw new RuntimeException(str_contains($blob, 'image') ? 'rejected_image' : 'rejected');
+        }
+        if ($code === 503) {
+            $blob = is_string($body) ? strtolower($body) : '';
+            // Official Agnes capacity signal — not a RATEB billing failure.
+            if (str_contains($blob, 'video_queue_full') || str_contains($blob, 'queue is full')) {
+                throw new RuntimeException('http_429');
+            }
         }
         if (!is_string($body) || $code < 200 || $code >= 300) {
             throw new RuntimeException('provider');

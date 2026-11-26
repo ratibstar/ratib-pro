@@ -77,5 +77,21 @@ check($agnesProvider->modelId() === 'agnes-video-2.5-flash', 'default Agnes mode
 $replicate = new ReplicateVideoProvider();
 check($replicate->modelId() === 'minimax/video-01', 'default Replicate model is minimax/video-01');
 
+$httpsPassthrough = rateb_video_agnes_https_image('https://ai.rateb.sa/public/assets/free-refs/c89/scene1-ddc205b8701c7aa9.jpg');
+check($httpsPassthrough === 'https://ai.rateb.sa/public/assets/free-refs/c89/scene1-ddc205b8701c7aa9.jpg', 'Agnes helper keeps https URLs');
+$rejected = false;
+try {
+    rateb_video_agnes_https_image('data:text/plain;base64,YQ==');
+} catch (RuntimeException $e) {
+    $rejected = $e->getMessage() === 'rejected_image';
+}
+check($rejected, 'Agnes helper rejects non-image data URIs');
+$tinyJpeg = base64_encode(hex2bin('ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707070909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c231c1c2837292c30313434341f27393d38323c2e333432ffdb0043010909090c0b0c180d0d1832211c213232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232323232ffc00011080001000103011100021100031101ffc4001500010100000000000000000000000000000000ffc40014100100000000000000000000000000000000ffda000c0301000210031000003f00bf80ffd9') ?: '');
+$staged = rateb_video_agnes_https_image('data:image/jpeg;base64,' . $tinyJpeg);
+check(str_starts_with($staged, 'https://') && str_contains($staged, '/public/assets/video-refs/'), 'Agnes helper stages data URI to public https path');
+$stagedPath = dirname(__DIR__) . '/public/assets/video-refs/' . basename(parse_url($staged, PHP_URL_PATH) ?: '');
+check(is_file($stagedPath), 'staged Agnes ref file exists on disk');
+@unlink($stagedPath);
+
 echo $failures === 0 ? "RESULT=PASS\n" : "RESULT=FAIL\n";
 exit($failures === 0 ? 0 : 1);
