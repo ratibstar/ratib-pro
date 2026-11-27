@@ -96,13 +96,39 @@ if ($useNamaa) {
     $ttsInput = rateb_tts_normalize_pronunciation($script);
     $speech = rateb_namaa_speech($ttsInput);
     if (!$speech['ok'] || $speech['bytes'] === '') {
-        http_response_code(502);
-        echo json_encode([
-            'error' => ui_language() === 'ar'
-                ? 'تعذر توليد الصوت عبر ناما. لم يُستخدم مزود بديل.'
-                : 'NAMAA speech failed. No alternate provider was used.',
+        $err = (string) ($speech['error'] ?? 'provider');
+        $arabic = ui_language() === 'ar';
+        $map = [
+            'quota' => [
+                'ar' => 'حصة ZeroGPU اليومية لناما ممتلئة حالياً. حاول لاحقاً. لم يُستخدم مزود بديل.',
+                'en' => 'NAMAA ZeroGPU daily quota is exhausted. Try later. No alternate provider was used.',
+                'code' => 'namaa_quota',
+                'http' => 503,
+            ],
+            'queue' => [
+                'ar' => 'طابور ناما غير متاح حالياً. حاول لاحقاً. لم يُستخدم مزود بديل.',
+                'en' => 'NAMAA queue is unavailable right now. Try later. No alternate provider was used.',
+                'code' => 'namaa_queue',
+                'http' => 503,
+            ],
+            'unauthorized' => [
+                'ar' => 'تعذر التحقق من خادم ناما. لم يُستخدم مزود بديل.',
+                'en' => 'NAMAA authentication failed. No alternate provider was used.',
+                'code' => 'namaa_unauthorized',
+                'http' => 503,
+            ],
+        ];
+        $chosen = $map[$err] ?? [
+            'ar' => 'تعذر توليد الصوت عبر ناما. لم يُستخدم مزود بديل.',
+            'en' => 'NAMAA speech failed. No alternate provider was used.',
             'code' => 'namaa_provider',
-            'state' => 'failed',
+            'http' => 502,
+        ];
+        http_response_code((int) $chosen['http']);
+        echo json_encode([
+            'error' => $arabic ? $chosen['ar'] : $chosen['en'],
+            'code' => $chosen['code'],
+            'state' => 'unavailable',
             'provider' => 'namaa',
         ], JSON_UNESCAPED_UNICODE);
         exit;

@@ -11,10 +11,16 @@ function rateb_namaa_inference_url(): string
     return rtrim(trim((string) (getenv('NAMAA_INFERENCE_URL') ?: '')), '/');
 }
 
+function rateb_namaa_inference_secret(): string
+{
+    return trim((string) (getenv('NAMAA_INFERENCE_SECRET') ?: ''));
+}
+
 function rateb_namaa_configured(): bool
 {
     $url = rateb_namaa_inference_url();
-    if ($url === '') {
+    $secret = rateb_namaa_inference_secret();
+    if ($url === '' || $secret === '') {
         return false;
     }
     // Refuse the public demo Space — not a production inference backend.
@@ -22,6 +28,7 @@ function rateb_namaa_configured(): bool
         || stripos($url, 'huggingface.co/spaces/omarelshehy') !== false) {
         return false;
     }
+
     return true;
 }
 
@@ -69,8 +76,41 @@ function rateb_namaa_find(string $id): ?array
 }
 
 /**
- * Call a dedicated NAMAA inference HTTP endpoint.
- * Expected: POST JSON { "text": "...", "language_id": "ar" } → audio bytes or { "audio_base64": "..." }.
+ * @return array{ok:bool,bytes:string,mime:string,error:string}
+ */
+function rateb_namaa_http_json(string $url, string $method, ?string $body, array $headers, int $timeout = 120): array
+{
+    $ch = curl_init($url);
+    if ($ch === false) {
+        return ['ok' => false, 'status' => 0, 'body' => '', 'ctype' => '', 'error' => 'curl'];
+    }
+    $opts = [
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => $timeout,
+        CURLOPT_FOLLOWLOCATION => true,
+    ];
+    if ($body !== null) {
+        $opts[CURLOPT_POSTFIELDS] = $body;
+    }
+    curl_setopt_array($ch, $opts);
+    $resp = curl_exec($ch);
+    $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $ctype = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+    curl_close($ch);
+
+    return [
+        'ok' => is_string($resp) && $status >= 200 && $status < 300,
+        'status' => $status,
+        'body' => is_string($resp) ? $resp : '',
+        'ctype' => $ctype,
+        'error' => '',
+    ];
+}
+
+/**
+ * Call dedicated NAMAA Gradio ZeroGPU Space (or compatible /tts JSON endpoint).
  *
  * @return array{ok:bool,bytes:string,mime:string,error:string}
  */
@@ -80,33 +120,122 @@ function rateb_namaa_speech(string $text): array
     if (!rateb_namaa_configured()) {
         return $empty;
     }
-    $url = rateb_namaa_inference_url() . '/tts';
-    $payload = json_encode([
-        'text' => $text,
-        'language_id' => 'ar',
-    ], JSON_UNESCAPED_UNICODE);
+    $base = rateb_namaa_inference_url();
+    $secret = rateb_namaa_inference_secret();
+    $authHeaders = [
+        'Content-Type: application/json',
+        'Accept: application/json, text/event-stream, audio/wav, audio/mpeg',
+        'X-Rateb-Namaa-Secret: ' . $secret,
+    ];
+
+    // Preferred Gradio queue API used by ZeroGPU Spaces.
+    $payload = json_encode(['data' => [$text]], JSON_UNESCAPED_UNICODE);
     if ($payload === false) {
         return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'encode'];
     }
-    $ch = curl_init($url);
-    if ($ch === false) {
-        return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'curl'];
+    $submit = rateb_namaa_http_json($base . '/gradio_api/call/tts', 'POST', $payload, $authHeaders, 60);
+    if (!$submit['ok']) {
+        $bodyLower = strtolower($submit['body']);
+        if ($submit['status'] === 429 || str_contains($bodyLower, 'quota') || str_contains($bodyLower, 'gpu quota')) {
+            return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'quota'];
+        }
+        if ($submit['status'] === 401 || $submit['status'] === 403 || str_contains($bodyLower, 'unauthorized')) {
+            return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'unauthorized'];
+        }
+        // Fallback: simple JSON /tts for non-Gradio dedicated hosts.
+        $legacy = rateb_namaa_http_json(
+            $base . '/tts',
+            'POST',
+            json_encode(['text' => $text, 'language_id' => 'ar'], JSON_UNESCAPED_UNICODE) ?: '{}',
+            $authHeaders,
+            120
+        );
+        if (!$legacy['ok']) {
+            if ($legacy['status'] === 429) {
+                return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'quota'];
+            }
+
+            return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'provider'];
+        }
+
+        return rateb_namaa_decode_audio_response($legacy['body'], $legacy['ctype']);
     }
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: audio/wav, audio/mpeg, application/json'],
-        CURLOPT_POSTFIELDS => $payload,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 120,
-    ]);
-    $body = curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $ctype = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-    curl_close($ch);
-    if (!is_string($body) || $body === '' || $code < 200 || $code >= 300) {
+
+    $event = json_decode($submit['body'], true);
+    $eventId = is_array($event) ? (string) ($event['event_id'] ?? '') : '';
+    if ($eventId === '') {
         return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'provider'];
     }
-    if (stripos($ctype, 'application/json') !== false) {
+
+    $poll = rateb_namaa_http_json(
+        $base . '/gradio_api/call/tts/' . rawurlencode($eventId),
+        'GET',
+        null,
+        [
+            'Accept: text/event-stream',
+            'X-Rateb-Namaa-Secret: ' . $secret,
+        ],
+        180
+    );
+    if (!$poll['ok'] && $poll['body'] === '') {
+        return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'queue'];
+    }
+    $sse = $poll['body'];
+    $lower = strtolower($sse);
+    if (str_contains($lower, 'quota') || str_contains($lower, 'gpu quota')) {
+        return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'quota'];
+    }
+    if (str_contains($lower, 'unauthorized')) {
+        return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'unauthorized'];
+    }
+    if (!preg_match('/event:\s*complete\s*\ndata:\s*(\[.*?\])\s*(?:\n|$)/s', $sse, $m)) {
+        if (str_contains($lower, 'event: error')) {
+            return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'provider'];
+        }
+
+        return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'queue'];
+    }
+    $data = json_decode($m[1], true);
+    if (!is_array($data) || $data === []) {
+        return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'provider'];
+    }
+    $file = $data[0] ?? null;
+    $fileUrl = '';
+    if (is_string($file)) {
+        $fileUrl = $file;
+    } elseif (is_array($file)) {
+        $fileUrl = (string) ($file['url'] ?? $file['path'] ?? '');
+    }
+    if ($fileUrl === '') {
+        return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'provider'];
+    }
+    if (str_starts_with($fileUrl, '/')) {
+        $fileUrl = $base . $fileUrl;
+    } elseif (!str_starts_with($fileUrl, 'http')) {
+        $fileUrl = $base . '/gradio_api/file=' . ltrim($fileUrl, '/');
+    }
+
+    $audio = rateb_namaa_http_json($fileUrl, 'GET', null, [
+        'X-Rateb-Namaa-Secret: ' . $secret,
+        'Accept: audio/wav, audio/mpeg, */*',
+    ], 60);
+    if (!$audio['ok'] || $audio['body'] === '') {
+        return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'provider'];
+    }
+    $mime = 'audio/wav';
+    if (stripos($audio['ctype'], 'mpeg') !== false || stripos($audio['ctype'], 'mp3') !== false) {
+        $mime = 'audio/mpeg';
+    }
+
+    return ['ok' => true, 'bytes' => $audio['body'], 'mime' => $mime, 'error' => ''];
+}
+
+/**
+ * @return array{ok:bool,bytes:string,mime:string,error:string}
+ */
+function rateb_namaa_decode_audio_response(string $body, string $ctype): array
+{
+    if (stripos($ctype, 'application/json') !== false || (str_starts_with(ltrim($body), '{') && str_contains($body, 'audio'))) {
         $json = json_decode($body, true);
         $b64 = is_array($json) ? (string) ($json['audio_base64'] ?? $json['audio'] ?? '') : '';
         if ($b64 === '') {
@@ -116,11 +245,10 @@ function rateb_namaa_speech(string $text): array
         if ($bytes === false || $bytes === '') {
             return ['ok' => false, 'bytes' => '', 'mime' => '', 'error' => 'provider'];
         }
-        $mime = (string) ($json['mime'] ?? 'audio/wav');
+        $mime = is_array($json) ? (string) ($json['mime'] ?? 'audio/wav') : 'audio/wav';
 
         return ['ok' => true, 'bytes' => $bytes, 'mime' => $mime !== '' ? $mime : 'audio/wav', 'error' => ''];
     }
-
     $mime = 'audio/wav';
     if (stripos($ctype, 'mpeg') !== false || stripos($ctype, 'mp3') !== false) {
         $mime = 'audio/mpeg';
