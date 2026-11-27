@@ -145,13 +145,44 @@ function rateb_easyvoice_get_usage(): array
 }
 
 /**
+ * Provider-supported Arabic advertising delivery defaults (EasyVoice docs).
+ * - speed: 0.5–2.0 (supported on ar_*)
+ * - ev_tone / ev_volume_db: supported EQ/gain controls
+ * - ev_pitch: IGNORED on Arabic ar_* (do not rely on it)
+ * - SSML: break tags only; prosody/emphasis are NOT interpreted
+ * Free energetic Arabic voices beyond ar_m1/ar_f1 are Pro-only.
+ *
+ * @return array{speed:float,ev_tone:string,ev_volume_db:float}
+ */
+function rateb_easyvoice_ad_delivery_defaults(): array
+{
+    return [
+        'speed' => 1.2,
+        'ev_tone' => 'bright',
+        'ev_volume_db' => 1.5,
+    ];
+}
+
+/**
+ * Delivery text prep for Arabic TTS input only.
+ * Evidence (media 274 ASR): EasyVoice Arabic spoke "<break …>" literally, so break
+ * markup is NOT applied for ar_*. Natural punctuation alone is kept.
+ * Docs advertise break tags broadly, but Arabic Supertonic did not honor them safely.
+ */
+function rateb_easyvoice_prepare_delivery_input(string $text): string
+{
+    return trim($text);
+}
+
+/**
  * Free-plan speech: OpenAI-compatible POST /api/v1/audio/speech.
  * Caller must pre-check free plan + remaining quota + free voice + input length.
- * Pronunciation dictionary is applied to the spoken input only (not campaign copy).
+ * Pronunciation dictionary + delivery markup apply to spoken input only (not campaign copy).
  *
- * @return array{ok:bool,http:int,bytes:string,mime:string,error:string,spoken_input?:string}
+ * @param array{speed?:float,ev_tone?:string,ev_volume_db?:float,prepare_delivery?:bool} $options
+ * @return array{ok:bool,http:int,bytes:string,mime:string,error:string,spoken_input?:string,request?:array<string,mixed>}
  */
-function rateb_easyvoice_speech(string $input, string $voice = 'ar_m1', string $format = 'mp3', float $speed = 1.0): array
+function rateb_easyvoice_speech(string $input, string $voice = 'ar_m1', string $format = 'mp3', float $speed = 0.0, array $options = []): array
 {
     require_once __DIR__ . '/tts-pronunciation.php';
 
@@ -168,7 +199,12 @@ function rateb_easyvoice_speech(string $input, string $voice = 'ar_m1', string $
     if (!rateb_easyvoice_is_free_voice($voice)) {
         return $fail(0, 'voice_not_free');
     }
+    $defaults = rateb_easyvoice_ad_delivery_defaults();
+    $prepare = ($options['prepare_delivery'] ?? true) === true;
     $input = rateb_tts_normalize_pronunciation(trim($input));
+    if ($prepare) {
+        $input = rateb_easyvoice_prepare_delivery_input($input);
+    }
     if ($input === '') {
         return $fail(0, 'empty_input');
     }
@@ -176,18 +212,31 @@ function rateb_easyvoice_speech(string $input, string $voice = 'ar_m1', string $
     if ($chars > 5000) {
         return $fail(0, 'input_over_daily_pool');
     }
+    $speed = isset($options['speed']) ? (float) $options['speed'] : ($speed > 0 ? $speed : (float) $defaults['speed']);
     if ($speed < 0.5 || $speed > 2.0) {
         $speed = max(0.5, min(2.0, $speed));
     }
+    $tone = (string) ($options['ev_tone'] ?? $defaults['ev_tone']);
+    if (!in_array($tone, ['neutral', 'warm', 'bright', 'bass'], true)) {
+        $tone = 'bright';
+    }
+    $volumeDb = (float) ($options['ev_volume_db'] ?? $defaults['ev_volume_db']);
+    if ($volumeDb < -6 || $volumeDb > 6) {
+        $volumeDb = max(-6.0, min(6.0, $volumeDb));
+    }
     $format = in_array($format, ['mp3', 'wav'], true) ? $format : 'mp3';
     $key = rateb_easyvoice_api_key();
-    $payload = json_encode([
+    // Do NOT send ev_pitch for Arabic — provider documents it as ignored on ar_*.
+    $payloadArr = [
         'model' => 'kokoro-82m',
         'input' => $input,
         'voice' => $voice,
         'response_format' => $format,
         'speed' => $speed,
-    ], JSON_UNESCAPED_UNICODE);
+        'ev_tone' => $tone,
+        'ev_volume_db' => $volumeDb,
+    ];
+    $payload = json_encode($payloadArr, JSON_UNESCAPED_UNICODE);
     $ch = curl_init('https://easyvoice.ae/api/v1/audio/speech');
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
@@ -209,18 +258,25 @@ function rateb_easyvoice_speech(string $input, string $voice = 'ar_m1', string $
         return $fail($http, 'provider');
     }
     $bytes = (string) $audio;
+    $meta = ['spoken_input' => $input, 'request' => [
+        'voice' => $voice,
+        'speed' => $speed,
+        'ev_tone' => $tone,
+        'ev_volume_db' => $volumeDb,
+        // intentional omission: ev_pitch unsupported/ignored on ar_*
+    ]];
     if ($format === 'wav' && str_starts_with($bytes, 'RIFF')) {
-        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/wav', 'error' => '', 'spoken_input' => $input];
+        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/wav', 'error' => ''] + $meta;
     }
     // MP3: ID3 or frame sync
     if ($format === 'mp3' && (str_starts_with($bytes, 'ID3') || (strlen($bytes) > 2 && (ord($bytes[0]) & 0xFF) === 0xFF))) {
-        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/mpeg', 'error' => '', 'spoken_input' => $input];
+        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/mpeg', 'error' => ''] + $meta;
     }
     if (str_contains($ctype, 'audio/mpeg') || str_contains($ctype, 'audio/mp3')) {
-        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/mpeg', 'error' => '', 'spoken_input' => $input];
+        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/mpeg', 'error' => ''] + $meta;
     }
     if (str_contains($ctype, 'audio/wav') && str_starts_with($bytes, 'RIFF')) {
-        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/wav', 'error' => '', 'spoken_input' => $input];
+        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/wav', 'error' => ''] + $meta;
     }
     return $fail($http, 'bad_audio');
 }

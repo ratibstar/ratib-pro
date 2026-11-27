@@ -68,8 +68,9 @@ $userId = (int) $_SESSION['user_id'];
 
 // EasyVoice Free path: no RATEB reservation / debit (provider free daily pool only).
 if ($useEasyvoice) {
-    // Pronunciation swaps apply to EasyVoice input only — $spoken / approved copy stay unchanged.
+    // Pronunciation + delivery markup apply to EasyVoice input only — approved copy unchanged.
     $ttsInput = rateb_tts_normalize_pronunciation($script);
+    $ttsInput = rateb_easyvoice_prepare_delivery_input($ttsInput);
     $usage = rateb_easyvoice_get_usage();
     $need = mb_strlen($ttsInput, 'UTF-8');
     if (
@@ -89,7 +90,14 @@ if ($useEasyvoice) {
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $speech = rateb_easyvoice_speech($ttsInput, (string) $selected['id'], 'mp3', $tempo);
+    // Advertising delivery: moderately faster than flat corporate 1.0; keep UI tempo as a floor.
+    $ad = rateb_easyvoice_ad_delivery_defaults();
+    $deliverySpeed = max((float) $ad['speed'], (float) $tempo);
+    $speech = rateb_easyvoice_speech($ttsInput, (string) $selected['id'], 'mp3', $deliverySpeed, [
+        'ev_tone' => (string) $ad['ev_tone'],
+        'ev_volume_db' => (float) $ad['ev_volume_db'],
+        'prepare_delivery' => false,
+    ]);
     if (!$speech['ok'] || $speech['bytes'] === '') {
         http_response_code(502);
         echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);

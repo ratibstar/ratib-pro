@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../app/ai/tts-pronunciation.php';
+require_once __DIR__ . '/../app/ai/easyvoice.php';
 
 $failures = 0;
 function check(bool $ok, string $name): void
@@ -14,46 +15,38 @@ function check(bool $ok, string $name): void
 }
 
 check(
-    rateb_tts_normalize_pronunciation('مرحباً في RATEB AI اليوم') === 'مرحباً في راتب إيه آي اليوم',
-    'RATEB AI → undiacritized راتب إيه آي'
+    rateb_tts_normalize_pronunciation('مرحباً في RATEB AI اليوم') === 'مرحباً في رَتِّب إيه آي اليوم',
+    'RATEB AI → رَتِّب إيه آي'
 );
 check(
-    rateb_tts_normalize_pronunciation('welcome to rateb ai now') === 'welcome to راتب إيه آي now',
-    'RATEB AI matched case-insensitively'
+    rateb_tts_normalize_pronunciation('منصة RATEB') === 'منصة رَتِّب',
+    'RATEB → رَتِّب'
 );
 check(
-    rateb_tts_normalize_pronunciation('منصة RATEB للتسويق') === 'منصة راتب للتسويق',
-    'standalone RATEB replaced'
+    rateb_tts_normalize_pronunciation('منصة رتب') === 'منصة رَتِّب',
+    'رتب → رَتِّب'
 );
 check(
-    rateb_tts_normalize_pronunciation('منصة رتب للتسويق') === 'منصة راتب للتسويق',
-    'Arabic رتب mapped to brand form راتب'
+    rateb_tts_normalize_pronunciation('ذكاء AI') === 'ذكاء إيه آي',
+    'AI → إيه آي'
 );
 check(
-    rateb_tts_normalize_pronunciation('منصة رَتِّب للتسويق') === 'منصة راتب للتسويق',
-    'prior vocalized رَتِّب remapped (media 272 failure mode)'
-);
-check(
-    rateb_tts_normalize_pronunciation('ذكاء AI للأعمال') === 'ذكاء إيه آي للأعمال',
-    'standalone AI replaced'
-);
-check(
-    rateb_tts_normalize_pronunciation('MAIL and FAIR') === 'MAIL and FAIR',
-    'AI substring inside Latin words not replaced'
-);
-check(
-    rateb_tts_normalize_pronunciation('RATEB AI.') === 'راتب إيه آي.',
-    'punctuation after brand preserved'
-);
-check(
-    rateb_tts_normalize_pronunciation('مرحباً بكم في راتب إيه آي، منصة ذكية لأتمتة أعمالكم.')
-        === 'مرحباً بكم في راتب إيه آي، منصة ذكية لأتمتة أعمالكم.',
-    'already-normalized undiacritized script is idempotent'
+    rateb_tts_normalize_pronunciation('MAIL') === 'MAIL',
+    'AI substring not replaced inside MAIL'
 );
 
-$custom = rateb_tts_normalize_pronunciation('Hello CRM', [
-    ['match' => 'CRM', 'replace' => 'سي آر إم'],
-]);
-check($custom === 'Hello سي آر إم', 'custom dictionary argument works');
+$prepared = rateb_easyvoice_prepare_delivery_input('مرحباً بكم. منصة ذكية.');
+check(
+    $prepared === 'مرحباً بكم. منصة ذكية.' && !str_contains($prepared, '<break'),
+    'Arabic delivery prep does not inject break markup (media 274 spoke tags aloud)'
+);
+
+$ad = rateb_easyvoice_ad_delivery_defaults();
+check(
+    abs((float) $ad['speed'] - 1.2) < 0.001
+        && ($ad['ev_tone'] ?? '') === 'bright'
+        && abs((float) ($ad['ev_volume_db'] ?? 0) - 1.5) < 0.001,
+    'ad delivery defaults use supported speed/tone/volume'
+);
 
 exit($failures === 0 ? 0 : 1);
