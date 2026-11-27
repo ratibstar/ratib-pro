@@ -32,7 +32,7 @@ function rateb_site_header(string $here, bool $loggedIn, bool $popup = false): v
         }
     }
     echo '<header class="site-bar"><div class="site-shell">';
-    echo '<button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Menu"><span></span><span></span><span></span></button>';
+    echo '<button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="' . (ui_language() === 'ar' ? 'القائمة' : 'Menu') . '"><span></span><span></span><span></span></button>';
     echo '<nav class="site-nav" id="site-nav">';
     foreach ($groups as $index => $group) {
         if ($index > 0) {

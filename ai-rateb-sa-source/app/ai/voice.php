@@ -6,6 +6,7 @@ require_once __DIR__ . '/../media/library.php';
 require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/sawtak.php';
 require_once __DIR__ . '/easyvoice.php';
+require_once __DIR__ . '/namaa.php';
 require_once __DIR__ . '/tts-pronunciation.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
@@ -13,7 +14,7 @@ rateb_feature_require('feature_ai_voice');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'الطريقة غير مسموحة.' : 'Method not allowed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 $csrf = (string) ($_POST['csrf'] ?? $_POST['csrf_token'] ?? '');
@@ -49,24 +50,89 @@ if (!rateb_voice_text_is_arabic($spoken)) {
 $ai = require __DIR__ . '/../../config/ai.php';
 $sawtakKey = trim((string) ($ai['sawtak_api_key'] ?? ''));
 $wanted = (string) ($_POST['voice'] ?? '');
-$easyvoiceVoice = rateb_easyvoice_find($wanted);
-$useEasyvoice = $easyvoiceVoice !== null && rateb_easyvoice_configured();
-$selected = $useEasyvoice ? $easyvoiceVoice : rateb_sawtak_find($wanted);
+if ($wanted === '' || $wanted === 'auto') {
+    $wanted = 'namaa_saudi_m1';
+}
+$namaaVoice = rateb_namaa_find($wanted);
+$easyvoiceVoice = $namaaVoice === null ? rateb_easyvoice_find($wanted) : null;
+$useNamaa = $namaaVoice !== null;
+$useEasyvoice = !$useNamaa && $easyvoiceVoice !== null && rateb_easyvoice_configured();
+$selected = $useNamaa ? $namaaVoice : ($useEasyvoice ? $easyvoiceVoice : rateb_sawtak_find($wanted));
 $voiceStatus = (string) ($selected['status'] ?? '');
-if ($selected === null || ($voiceStatus !== '' && $voiceStatus !== 'ready')) {
+if ($selected === null) {
     http_response_code(422);
     echo json_encode(['error' => ui_language() === 'ar' ? 'اختر صوتاً جاهزاً من الكتالوج.' : 'Choose a ready voice from the catalog.', 'code' => 'invalid', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-if (!$useEasyvoice && $sawtakKey === '') {
+// NAMAA is the target provider: never silently fall back to EasyVoice/Sawtak.
+if ($useNamaa) {
+    if (!rateb_namaa_configured()) {
+        http_response_code(503);
+        echo json_encode([
+            'error' => ui_language() === 'ar'
+                ? 'صوت ناما السعودي هو المزود المستهدف، ويحتاج خادم استدلال مخصّص. غير مفعّل حالياً، ولن نستخدم مزوداً بديلاً تلقائياً.'
+                : 'NAMAA Saudi voice is the target provider and needs a dedicated inference host. It is not enabled, and no alternate provider will be used automatically.',
+            'code' => 'namaa_not_configured',
+            'state' => 'unavailable',
+            'provider' => 'namaa',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+} elseif ($voiceStatus !== '' && $voiceStatus !== 'ready') {
+    http_response_code(422);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'اختر صوتاً جاهزاً من الكتالوج.' : 'Choose a ready voice from the catalog.', 'code' => 'invalid', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+if (!$useNamaa && !$useEasyvoice && $sawtakKey === '') {
     http_response_code(503);
-    echo json_encode(['error' => ui_language() === 'ar' ? 'توليد الكلام يحتاج مفتاح Sawtak على الخادم. المعاينة تعمل بدون توليد.' : 'Speech generation needs the Sawtak key on the server. Preview works without generating speech.', 'code' => 'not_configured', 'state' => 'unavailable'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['error' => ui_language() === 'ar' ? 'توليد الكلام يحتاج مزود صوت مُعدّ على الخادم.' : 'Speech generation needs a configured voice provider on the server.', 'code' => 'not_configured', 'state' => 'unavailable'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 $script = $spoken;
 $userId = (int) $_SESSION['user_id'];
 
-// EasyVoice Free path: no RATEB reservation / debit (provider free daily pool only).
+// NAMAA dedicated inference — no RATEB debit here; no demo Space; no EasyVoice fallback.
+if ($useNamaa) {
+    $ttsInput = rateb_tts_normalize_pronunciation($script);
+    $speech = rateb_namaa_speech($ttsInput);
+    if (!$speech['ok'] || $speech['bytes'] === '') {
+        http_response_code(502);
+        echo json_encode([
+            'error' => ui_language() === 'ar'
+                ? 'تعذر توليد الصوت عبر ناما. لم يُستخدم مزود بديل.'
+                : 'NAMAA speech failed. No alternate provider was used.',
+            'code' => 'namaa_provider',
+            'state' => 'failed',
+            'provider' => 'namaa',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $ext = stripos($speech['mime'], 'mpeg') !== false || stripos($speech['mime'], 'mp3') !== false ? 'mp3' : 'wav';
+    try {
+        media_store_bytes(
+            $campaign,
+            'audio',
+            'ai',
+            $lang === 'ar' ? ('voiceover-ar.' . $ext) : ('voiceover-en.' . $ext),
+            $speech['mime'] !== '' ? $speech['mime'] : 'audio/wav',
+            $speech['bytes']
+        );
+    } catch (Throwable $error) {
+        http_response_code(500);
+        echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    rateb_store_voice_script((int) $campaign['id'], $spoken);
+    echo json_encode([
+        'ok' => true,
+        'state' => 'ready',
+        'provider' => 'namaa',
+        'redirect' => '/campaign.php?id=' . (int) $campaign['id'] . '&play=1#voice',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// EasyVoice Free path: only when the user explicitly selected an EasyVoice voice.
 if ($useEasyvoice) {
     // Pronunciation + delivery markup apply to EasyVoice input only — approved copy unchanged.
     $ttsInput = rateb_tts_normalize_pronunciation($script);

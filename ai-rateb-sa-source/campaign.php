@@ -259,7 +259,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RATEB AI — <?= $arabic ? 'الحملة' : 'Campaign' ?></title>
+<title><?= $arabic ? 'رَتِّب إيه آي — الحملة' : 'RATEB AI — Campaign' ?></title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/public/assets/css/theme.css">
 <link rel="stylesheet" href="/public/assets/css/app.css?v=nav88">
@@ -359,7 +359,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
         <?php elseif ($featVoice && $key === 'voice' && $copyGate): ?>
           <button class="<?= $campaignVoices !== [] ? 'quiet' : 'primary' ?> stage-go" type="submit" form="voiceForm"<?= $voiceEnglishBlocked ? ' disabled' : '' ?>><?= $arabic ? 'ولّد الصوت المختار' : 'Generate the selected voice' ?></button>
         <?php elseif ($featVideo && $key === 'video' && $copyGate && !$approvedVideo): ?>
-          <button class="primary stage-go" type="submit" form="videoGenerate"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ($arabic ? 'جاري إنشاء الفيديو...' : 'Creating the video...') : ($arabic ? 'إنشاء فيديو RATEB' : 'Create the RATEB video') ?></button>
+          <button class="primary stage-go" type="submit" form="videoGenerate"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ($arabic ? 'جاري إنشاء الفيديو...' : 'Creating the video...') : ($arabic ? 'إنشاء فيديو رَتِّب' : 'Create the RATEB video') ?></button>
         <?php endif; ?>
       </li>
     <?php endforeach; ?>
@@ -479,7 +479,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   <section class="panel" id="copy" data-panel="copy">
     <h2 data-i18n="copy_title"><?= $arabic ? 'نصوص الحملة' : 'Campaign copy' ?></h2>
     <?php if (!$strategyGate): ?>
-      <p class="empty" data-i18n="copy_locked"><?= $arabic ? 'اعتمد الاستراتيجية أولًا، ثم يكتب RATEB النصوص.' : 'Approve the strategy first, then RATEB writes the copy.' ?></p>
+      <p class="empty" data-i18n="copy_locked"><?= $arabic ? 'اعتمد الاستراتيجية أولًا، ثم يكتب رَتِّب النصوص.' : 'Approve the strategy first, then RATEB writes the copy.' ?></p>
     <?php else: ?>
       <?php if ($copyRows === []): ?>
         <p class="empty" data-i18n="no_copy"><?= $arabic ? 'النصوص جاهزة للكتابة من الاستراتيجية المعتمدة.' : 'Copy is ready to write from the approved strategy.' ?></p>
@@ -684,7 +684,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <option value="soft"><?= $arabic ? 'هادئ ولطيف' : 'Soft' ?></option>
           </select>
         </label>
-        <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة العامة. ٢) RATEB يقرأ الكلام المعتمد بهذا الصوت.' : '1) Choose a voice and play its public sample. 2) RATEB reads the approved words in that voice.' ?></p>
+        <p class="muted"><?= $arabic ? '١) اختر الصوت واسمع العينة. ٢) رَتِّب يقرأ الكلام المعتمد بصوت ناما السعودي المستهدف.' : '1) Choose a voice and play its sample. 2) RATEB reads the approved words with the target Saudi NAMAA voice.' ?></p>
         <?php if ($voiceEnglishBlocked): ?>
           <p class="notice is-error"><?= e(rateb_ui_error('voice_english')) ?></p>
         <?php endif; ?>
@@ -792,7 +792,7 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
       </article>
     <?php endif; ?>
     <?php else: ?>
-      <p class="muted"><?= $arabic ? 'إنشاء فيديو RATEB غير متاح حاليًا. ارفع فيديو من جهازك.' : 'RATEB video creation is unavailable. Upload a video from your device.' ?></p>
+      <p class="muted"><?= $arabic ? 'إنشاء فيديو رَتِّب غير متاح حاليًا. ارفع فيديو من جهازك.' : 'RATEB video creation is unavailable. Upload a video from your device.' ?></p>
     <?php endif; ?>
     <h3><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></h3>
     <p class="muted"><?= $arabic ? 'الفيديو المرفوع يكمل هذه المرحلة.' : 'An uploaded video completes this stage.' ?></p>
@@ -849,14 +849,14 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <article class="ready-video is-upload">
               <p class="eyebrow"><?= $arabic ? 'فيديو مرفوع' : 'Uploaded video' ?></p>
               <?php if ($featVideo): ?>
-              <p class="muted"><?= $arabic ? 'هذا ملفك كما رفعته. إنشاء فيديو RATEB يركّب الصورة والصوت المعتمد في ملف جديد.' : 'This is the file you uploaded. Creating the RATEB video builds a new file from the approved image and voice.' ?></p>
+              <p class="muted"><?= $arabic ? 'هذا ملفك كما رفعته. إنشاء فيديو رَتِّب يركّب الصورة والصوت المعتمد في ملف جديد.' : 'This is the file you uploaded. Creating the RATEB video builds a new file from the approved image and voice.' ?></p>
               <?php rateb_campaign_duration_select($videoDurations, $arabic); ?>
               <p class="muted"><?= $arabic ? '٥ و١٠ ثوانٍ مجاناً لفيديوين في الشهر. ١٥ و٢٠ و٣٠ ثانية في الباقات المدفوعة.' : '5 and 10 seconds are free for two videos a month. 15, 20, and 30 seconds are on paid plans.' ?></p>
               <?php endif; ?>
               <?php foreach ($uploadedVideos as $item): ?>
                 <video controls playsinline preload="metadata" src="/app/media/file.php?id=<?= (int) $item['id'] ?>"></video>
                 <p class="ready-actions">
-                  <?php if ($featVideo): ?><button class="primary" type="submit" form="videoGenerate"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ($arabic ? 'جاري إنشاء الفيديو...' : 'Creating the video...') : ($arabic ? 'إنشاء فيديو RATEB' : 'Create the RATEB video') ?></button><?php endif; ?>
+                  <?php if ($featVideo): ?><button class="primary" type="submit" form="videoGenerate"<?= $videoConfigured ? '' : ' disabled' ?>><?= $videoJob && in_array((string) $videoJob['status'], ['queued', 'processing'], true) ? ($arabic ? 'جاري إنشاء الفيديو...' : 'Creating the video...') : ($arabic ? 'إنشاء فيديو رَتِّب' : 'Create the RATEB video') ?></button><?php endif; ?>
                   <a class="quiet" href="/app/media/file.php?id=<?= (int) $item['id'] ?>" download><?= $arabic ? 'تنزيل الملف المرفوع' : 'Download the uploaded file' ?></a>
                 </p>
               <?php endforeach; ?>
@@ -917,6 +917,6 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
   </form>
   <div id="demo-stage"></div>
 </dialog>
-<script src="/public/assets/js/app.js?v=nav91"></script>
+<script src="/public/assets/js/app.js?v=namaa-ar1"></script>
 </body>
 </html>

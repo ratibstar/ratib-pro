@@ -495,7 +495,7 @@
       product: 'المنتج / الخدمة',
       price: 'السعر',
       campaign_language: 'لغة الحملة',
-      lang_auto: 'خل RATEB يختار',
+      lang_auto: 'خل رَتِّب يختار',
       lang_ar: 'العربية',
       lang_en: 'الإنجليزية',
       lang_bilingual: 'العربية والإنجليزية',
@@ -507,7 +507,7 @@
       idea_optional: 'المرفقات اختيارية. تقدر تكمل بدون ملفات.',
       understood_title: 'فهمت فكرتك 👌',
       confirm_start: '🚀 اعتمد وابدأ',
-      reading_title: 'RATEB يفهم فكرتك...',
+      reading_title: 'رَتِّب يفهم فكرتك...',
       read_product: 'فهم المنتج',
       read_objective: 'فهم الهدف',
       read_audience: 'فهم الجمهور',
@@ -559,7 +559,7 @@
       video_one: 'يمكن إرفاق فيديو واحد.',
       video_long: 'الفيديو أطول من ٤٠ ثانية.',
       video_uploading: 'جاري رفع الفيديو...',
-      video_shortening: 'الفيديو أطول من ٤٠ ثانية. RATEB يختصره الآن.',
+      video_shortening: 'الفيديو أطول من ٤٠ ثانية. رَتِّب يختصره الآن.',
       video_unknown: 'تعذر التحقق من مدة الفيديو.',
       plan_images: 'عدد الصور يتجاوز حد خطتك.',
       plan_videos: 'خطتك لا تسمح بفيديو.',
@@ -583,7 +583,7 @@
       feature_whatsapp_title: 'واتساب',
       feature_whatsapp_body: 'ولّد رسائل واتساب ترويجية موجهة لعملائك.',
       welcome_back: 'مرحباً بعودتك',
-      login_lead: 'سجّل الدخول إلى مساحة حملات رتب للذكاء الاصطناعي.',
+      login_lead: 'سجّل الدخول إلى مساحة حملات رَتِّب إيه آي.',
       email: 'البريد الإلكتروني',
       password: 'كلمة المرور',
       login_button: 'تسجيل الدخول',
@@ -653,7 +653,7 @@
       image_available: 'الصورة: متاحة',
       voice_available: 'الصوت: متاح',
       generate_image: 'توليد صورة (اختياري)',
-      generating_image: 'RATEB يجهّز الصورة...',
+      generating_image: 'رَتِّب يجهّز الصورة...',
       start_images: 'توليد صورة (اختياري)',
       another_image: 'صورة أخرى',
       images_need_copy: 'اعتمد النص أولًا، ثم ابدأ الصور.',
@@ -674,7 +674,7 @@
       upload_audio: 'رفع صوت',
       upload: 'رفع',
       generate_voice: 'توليد التعليق الصوتي',
-      generating_voice: 'RATEB يسجّل الصوت...',
+      generating_voice: 'رَتِّب يسجّل الصوت...',
       start_voice: 'ابدأ الصوت',
       another_voice: 'صوت آخر',
       voice_provider: 'تعذر توليد الصوت. حاول مرة أخرى.',
@@ -684,7 +684,7 @@
       voice_need_copy: 'اعتمد النص أولًا، ثم ابدأ الصوت.',
       attach_video: 'أرفق فيديو',
       attach_video_button: 'أرفق الفيديو',
-      video_no_provider: 'أرفق فيديو بأي مدة. إذا كان أطول من ٤٠ ثانية يختصره RATEB.',
+      video_no_provider: 'أرفق فيديو بأي مدة. إذا كان أطول من ٤٠ ثانية يختصره رَتِّب.',
       no_media: 'لا توجد وسائط بعد.',
       download: 'تنزيل',
       delete: 'حذف',
@@ -720,7 +720,7 @@
       edit_placeholder: 'اكتب وصف الحملة مباشرة، أو مثال: غيّر الموقع إلى جدة',
       edit_example: 'اكتب الوصف الجديد مباشرة، أو اطلب تغييراً محدداً مثل: غيّر الموقع إلى جدة.',
       update_idea: 'حدّث الفكرة',
-      updating_idea: 'RATEB يحدّث الفكرة...',
+      updating_idea: 'رَتِّب يحدّث الفكرة...',
       strategy_title: 'استراتيجية الحملة',
       strategy_positioning: 'الفكرة الرئيسية',
       strategy_core_message: 'الرسالة الأساسية',
@@ -736,12 +736,12 @@
       regenerate: 'إعادة توليد',
       start_copy: 'ابدأ كتابة الإعلان',
       regenerate_copy: 'إعادة توليد',
-      generating_strategy: 'RATEB يكتب الاستراتيجية...',
-      generating_copy: 'RATEB يكتب النصوص...',
+      generating_strategy: 'رَتِّب يكتب الاستراتيجية...',
+      generating_copy: 'رَتِّب يكتب النصوص...',
       write_slow: 'الكتابة تأخرت. حاول مرة أخرى.',
       regen_confirm: 'هذا يستبدل النتيجة المعتمدة. تبي تكمل؟',
       copy_title: 'نصوص الحملة',
-      copy_locked: 'اعتمد الاستراتيجية أولًا، ثم يكتب RATEB النصوص.',
+      copy_locked: 'اعتمد الاستراتيجية أولًا، ثم يكتب رَتِّب النصوص.',
       no_copy: 'النصوص جاهزة للكتابة من الاستراتيجية المعتمدة.',
       write_copy: 'ابدأ كتابة الإعلان',
       copy_button: 'نسخ',
@@ -834,8 +834,8 @@
       nav_samples: 'أمثلة',
       nav_pricing: 'الباقات والأسعار',
       nav_create: 'ماذا ينشئ',
-      gallery_title: 'شاهد ماذا يمكن لـ RATEB AI أن يصنع',
-      gallery_note: 'أمثلة على الصيغ التي يجهّزها RATEB AI.',
+      gallery_title: 'شاهد ماذا يمكن لـ رَتِّب إيه آي أن يصنع',
+      gallery_note: 'أمثلة على الصيغ التي يجهّزها رَتِّب إيه آي.',
       nav_contact: 'تواصل',
       nav_privacy: 'الخصوصية',
       nav_terms: 'الشروط',
@@ -861,7 +861,7 @@
       account_password_match: 'تأكيد كلمة المرور غير متطابق.',
       account_set_password_lead: 'حسابك دخل عبر مزود خارجي. يمكنك تعيين كلمة مرور للدخول بالبريد.',
       account_save_failed: 'تعذر الحفظ. حاول مرة أخرى.',
-      footer_copy: '© RATEB AI. مساحة حملات للمسوّقين في السعودية.',
+      footer_copy: '© رَتِّب إيه آي. مساحة حملات للمسوّقين في السعودية.',
       contact_title: 'كيف نساعدك؟',
       contact_lead: 'للاستفسارات عن الحساب أو الحملات أو الباقات، أرسل رسالتك وسنرد عبر البريد.',
       contact_message: 'الرسالة',
@@ -888,7 +888,7 @@
       flow_strategy: 'استراتيجية',
       workspace_title: 'مساحة الحملة كما تعمل فعلاً',
       formats_title: 'قوالب تتحدث بها الحملة',
-      home_create_title: 'ماذا يستطيع RATEB AI أن يصنع؟',
+      home_create_title: 'ماذا يستطيع رَتِّب إيه آي أن يصنع؟',
       pricing_title: 'الباقات',
       plan_free: 'الباقة التجريبية',
       plan_free_credits: 'نقطة ترحيبية',
@@ -1588,6 +1588,7 @@
           }
           var voices = payload.voices || [];
           library._voices = voices;
+          var defaultVoiceId = payload.default_voice || 'namaa_saudi_m1';
           var countryNames = { SD: 'السودان', JO: 'الأردن', PS: 'فلسطين', TN: 'تونس', IQ: 'العراق', OM: 'عُمان', SA: 'السعودية', EG: 'مصر', YE: 'اليمن', SY: 'سوريا', KW: 'الكويت', BH: 'البحرين', QA: 'قطر', AE: 'الإمارات', LB: 'لبنان', LY: 'ليبيا', MA: 'المغرب', DZ: 'الجزائر', MSA: 'العربية الفصحى' };
           var dialectNames = { Darfur: 'دارفور', Mafraq: 'المفرق', Tunisian: 'تونسية', Tunis: 'تونس', Hebron: 'الخليل', Mosul: 'الموصل', Muscat: 'مسقط', Yemeni: 'يمنية', Gaza: 'غزة', Najdi: 'نجدية', Cairo: 'القاهرة', Maan: 'معان', Hijazi: 'حجازية', Kuwaiti: 'كويتية', 'Modern Standard Arabic': 'فصحى', Saudi: 'سعودية', Tihami: 'تهامية', Idlib: 'إدلب', Bahraini: 'بحرينية', Karak: 'الكرك', Irbid: 'إربد', Galilee: 'الجليل', Sudanese: 'سودانية', Qatari: 'قطرية', Emirati: 'إماراتية', Khartoum: 'الخرطوم', Syrian: 'سورية', Sanaa: 'صنعاء', 'Central Sudan': 'وسط السودان', Taiz: 'تعز', Aleppo: 'حلب', 'Port Said': 'بورسعيد', Amman: 'عمّان', Palestinian: 'فلسطينية', 'Northern Syria': 'شمال سوريا', Jordanian: 'أردنية', 'Southern Tunisia': 'جنوب تونس', 'Southern Lebanon': 'جنوب لبنان', Nablus: 'نابلس', Quneitra: 'القنيطرة', Moroccan: 'مغربية', Iraqi: 'عراقية', Zarqa: 'الزرقاء', 'Northern Jordan': 'شمال الأردن', Omani: 'عُمانية', 'Eastern Saudi Arabia': 'الشرقية', 'Northern Yemen': 'شمال اليمن', Suwayda: 'السويداء', Homs: 'حمص', Hauran: 'حوران', Tripoli: 'طرابلس', Jazira: 'الجزيرة', Balqa: 'البلقاء', Aden: 'عدن', Asiri: 'عسيرية', Baghdad: 'بغداد', Ajloun: 'عجلون', 'Inland Oman': 'داخلية عُمان', Libyan: 'ليبية', Beheira: 'البحيرة', Qassim: 'القصيم', Misrata: 'مصراتة', Fayoum: 'الفيوم', Beirut: 'بيروت', Egyptian: 'مصرية', Najran: 'نجران', Hail: 'حائل', Ghor: 'الغور', 'Abu Dhabi': 'أبوظبي', Sharjah: 'الشارقة', 'Southern Saudi Arabia': 'جنوب السعودية', Jawf: 'الجوف', 'Al Ain': 'العين', Yafai: 'يافع', Barqa: 'برقة', Socotra: 'سقطرى', 'Northern Palestine': 'شمال فلسطين', 'West Bank': 'الضفة', Casablanca: 'الدار البيضاء', Kairouan: 'القيروان', Sfax: 'صفاقس', 'Coastal Tunisia': 'الساحل التونسي', Oran: 'وهران', 'Saharan Algeria': 'صحراء الجزائر', Algerian: 'جزائرية', Algiers: 'الجزائر العاصمة', 'Inland Tunisia': 'داخلية تونس', 'Northern Morocco': 'شمال المغرب', 'Southern Palestine': 'جنوب فلسطين', Rabat: 'الرباط', Dubai: 'دبي', 'Central Palestine': 'وسط فلسطين', Alexandria: 'الإسكندرية', Manama: 'المنامة' };
           var codeCountry = { sa: 'SA', saudi: 'SA', eg: 'EG', ae: 'AE', lb: 'LB', bh: 'BH', jo: 'JO', pal: 'PS', ps: 'PS', iq: 'IQ', sy: 'SY', tn: 'TN', ye: 'YE', dz: 'DZ', kw: 'KW', ly: 'LY', ma: 'MA', om: 'OM', sd: 'SD', qa: 'QA', msa: 'MSA' };
@@ -1653,7 +1654,7 @@
               return true;
             });
             if (!matched.length) {
-              if (note) note.textContent = language === 'ar' ? 'لا يوجد صوت جاهز في هذه اللهجة. اختر لهجة أخرى.' : 'No ready voice in this dialect. Choose another one.';
+              if (note) note.textContent = language === 'ar' ? 'لا يوجد صوت في هذه اللهجة. اختر لهجة أخرى.' : 'No voice in this dialect. Choose another one.';
               return;
             }
             matched.forEach(function (voice) {
@@ -1664,19 +1665,42 @@
               input.name = 'voice';
               input.value = voice.id;
               input.setAttribute('data-voice-id', voice.id);
+              if (voice.id === defaultVoiceId) input.checked = true;
               var name = document.createElement('bdi');
-              name.textContent = voice.name || voice.id;
+              var labelText = voice.name || voice.id;
+              if (voice.status === 'setup' && language === 'ar') labelText += ' — قيد التجهيز';
+              else if (voice.status === 'setup') labelText += ' — setup';
+              name.textContent = labelText;
               label.appendChild(input);
               label.appendChild(name);
               picks.appendChild(label);
             });
             var chosen = picks.querySelector('input:checked');
+            var preferred = picks.querySelector('input[value="' + defaultVoiceId + '"]');
             var firstVoice = picks.querySelector('input[name="voice"]');
-            if (!chosen && firstVoice) firstVoice.checked = true;
+            if (!chosen && preferred) preferred.checked = true;
+            else if (!chosen && firstVoice) firstVoice.checked = true;
+            var selected = matched.find(function (v) { return v.id === ((picks.querySelector('input:checked') || {}).value); });
+            if (selected && selected.status === 'setup' && note) {
+              note.textContent = language === 'ar'
+                ? 'صوت ناما السعودي هو المستهدف. يحتاج خادم استدلال مخصّص — بدون تحويل تلقائي لمزود آخر.'
+                : 'NAMAA Saudi is the target voice. It needs a dedicated inference host — no automatic fallback.';
+            }
           };
           countrySelect.addEventListener('change', function () { fillDialects(); draw(); });
           dialectSelect.addEventListener('change', draw);
           searchInput.addEventListener('input', draw);
+          if (countries.SA) {
+            countrySelect.value = 'SA';
+          }
+          fillDialects();
+          if (countrySelect.value === 'SA') {
+            if ([].some.call(dialectSelect.options, function (o) { return o.value === 'saudi-najdi'; })) {
+              dialectSelect.value = 'saudi-najdi';
+            } else if (dialectSelect.options.length > 1) {
+              dialectSelect.selectedIndex = 1;
+            }
+          }
           draw();
         });
       }).catch(function () {

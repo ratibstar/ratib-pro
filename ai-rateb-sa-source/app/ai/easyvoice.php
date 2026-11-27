@@ -20,10 +20,12 @@ function rateb_easyvoice_api_key(): string
 /** Free-tier Arabic MSA voices only (docs: ar_m1 / ar_f1). */
 function rateb_easyvoice_free_arabic_voices(): array
 {
+    $arabic = function_exists('ui_language') && ui_language() === 'ar';
+
     return [
         [
             'id' => 'ar_m1',
-            'name' => 'EasyVoice Arabic Male 1',
+            'name' => $arabic ? 'صوت عربي فصيح — ذكر' : 'EasyVoice Arabic Male 1',
             'status' => 'ready',
             'dialect' => 'msa',
             'gender' => 'male',
@@ -32,7 +34,7 @@ function rateb_easyvoice_free_arabic_voices(): array
             'preview_url' => null,
             'sharing_status' => 'public',
             'liked_by_count' => null,
-            'description' => 'Neutral MSA male — free EasyVoice tier',
+            'description' => $arabic ? 'صوت عربي فصيح محايد' : 'Neutral MSA male — free EasyVoice tier',
             'preview_text' => null,
             'continuation_status' => null,
             'created_at' => null,
@@ -40,7 +42,7 @@ function rateb_easyvoice_free_arabic_voices(): array
         ],
         [
             'id' => 'ar_f1',
-            'name' => 'EasyVoice Arabic Female 1',
+            'name' => $arabic ? 'صوت عربي فصيح — أنثى' : 'EasyVoice Arabic Female 1',
             'status' => 'ready',
             'dialect' => 'msa',
             'gender' => 'female',
@@ -49,7 +51,7 @@ function rateb_easyvoice_free_arabic_voices(): array
             'preview_url' => null,
             'sharing_status' => 'public',
             'liked_by_count' => null,
-            'description' => 'Neutral MSA female — free EasyVoice tier',
+            'description' => $arabic ? 'صوت عربي فصيح محايد' : 'Neutral MSA female — free EasyVoice tier',
             'preview_text' => null,
             'continuation_status' => null,
             'created_at' => null,
