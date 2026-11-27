@@ -6,6 +6,7 @@ require_once __DIR__ . '/../media/library.php';
 require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/sawtak.php';
 require_once __DIR__ . '/easyvoice.php';
+require_once __DIR__ . '/tts-pronunciation.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 rateb_feature_require('feature_ai_voice');
@@ -67,8 +68,10 @@ $userId = (int) $_SESSION['user_id'];
 
 // EasyVoice Free path: no RATEB reservation / debit (provider free daily pool only).
 if ($useEasyvoice) {
+    // Pronunciation swaps apply to EasyVoice input only — $spoken / approved copy stay unchanged.
+    $ttsInput = rateb_tts_normalize_pronunciation($script);
     $usage = rateb_easyvoice_get_usage();
-    $need = mb_strlen($script, 'UTF-8');
+    $need = mb_strlen($ttsInput, 'UTF-8');
     if (
         !$usage['ok']
         || (string) ($usage['plan'] ?? '') !== 'free'
@@ -86,7 +89,7 @@ if ($useEasyvoice) {
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $speech = rateb_easyvoice_speech($script, (string) $selected['id'], 'mp3', $tempo);
+    $speech = rateb_easyvoice_speech($ttsInput, (string) $selected['id'], 'mp3', $tempo);
     if (!$speech['ok'] || $speech['bytes'] === '') {
         http_response_code(502);
         echo json_encode(['error' => rateb_ui_error('voice_provider'), 'code' => 'voice_provider', 'state' => 'failed'], JSON_UNESCAPED_UNICODE);

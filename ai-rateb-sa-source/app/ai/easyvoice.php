@@ -147,11 +147,14 @@ function rateb_easyvoice_get_usage(): array
 /**
  * Free-plan speech: OpenAI-compatible POST /api/v1/audio/speech.
  * Caller must pre-check free plan + remaining quota + free voice + input length.
+ * Pronunciation dictionary is applied to the spoken input only (not campaign copy).
  *
- * @return array{ok:bool,http:int,bytes:string,mime:string,error:string}
+ * @return array{ok:bool,http:int,bytes:string,mime:string,error:string,spoken_input?:string}
  */
 function rateb_easyvoice_speech(string $input, string $voice = 'ar_m1', string $format = 'mp3', float $speed = 1.0): array
 {
+    require_once __DIR__ . '/tts-pronunciation.php';
+
     $fail = static fn (int $http, string $error): array => [
         'ok' => false,
         'http' => $http,
@@ -165,7 +168,7 @@ function rateb_easyvoice_speech(string $input, string $voice = 'ar_m1', string $
     if (!rateb_easyvoice_is_free_voice($voice)) {
         return $fail(0, 'voice_not_free');
     }
-    $input = trim($input);
+    $input = rateb_tts_normalize_pronunciation(trim($input));
     if ($input === '') {
         return $fail(0, 'empty_input');
     }
@@ -207,17 +210,17 @@ function rateb_easyvoice_speech(string $input, string $voice = 'ar_m1', string $
     }
     $bytes = (string) $audio;
     if ($format === 'wav' && str_starts_with($bytes, 'RIFF')) {
-        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/wav', 'error' => ''];
+        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/wav', 'error' => '', 'spoken_input' => $input];
     }
     // MP3: ID3 or frame sync
     if ($format === 'mp3' && (str_starts_with($bytes, 'ID3') || (strlen($bytes) > 2 && (ord($bytes[0]) & 0xFF) === 0xFF))) {
-        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/mpeg', 'error' => ''];
+        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/mpeg', 'error' => '', 'spoken_input' => $input];
     }
     if (str_contains($ctype, 'audio/mpeg') || str_contains($ctype, 'audio/mp3')) {
-        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/mpeg', 'error' => ''];
+        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/mpeg', 'error' => '', 'spoken_input' => $input];
     }
     if (str_contains($ctype, 'audio/wav') && str_starts_with($bytes, 'RIFF')) {
-        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/wav', 'error' => ''];
+        return ['ok' => true, 'http' => $http, 'bytes' => $bytes, 'mime' => 'audio/wav', 'error' => '', 'spoken_input' => $input];
     }
     return $fail($http, 'bad_audio');
 }
