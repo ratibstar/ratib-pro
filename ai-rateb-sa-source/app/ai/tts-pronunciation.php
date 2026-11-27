@@ -5,6 +5,11 @@ declare(strict_types=1);
  * Arabic TTS pronunciation normalization (spoken input only).
  * Does not mutate campaign copy, UI text, or stored approved outputs.
  *
+ * EasyVoice Arabic (Supertonic / ar_*): documented path is phonetic MSA in the input.
+ * Official docs: undiacritized MSA is the tested path; heavy tashkeel can worsen output.
+ * Phoneme tags [word](/ipa/) are documented for Kokoro-style English — not verified for ar_*.
+ * Evidence from media 272 ASR: vocalized "رَتِّب" was spoken/heard as "رتيب" (wrong).
+ *
  * Dictionary entries: longest matches first. Latin matches are case-insensitive.
  * Optional extra rules via RATEB_TTS_PRONUNCIATION_JSON (JSON object: match => replace).
  */
@@ -12,10 +17,13 @@ declare(strict_types=1);
 /** @return list<array{match:string,replace:string}> */
 function rateb_tts_pronunciation_dictionary(): array
 {
+    // Undiacritized brand form "راتب" (not "رَتِّب") — matches EasyVoice Arabic guidance.
     $defaults = [
-        ['match' => 'RATEB AI', 'replace' => 'رَتِّب إيه آي'],
-        ['match' => 'RATEB', 'replace' => 'رَتِّب'],
-        ['match' => 'رتب', 'replace' => 'رَتِّب'],
+        ['match' => 'RATEB AI', 'replace' => 'راتب إيه آي'],
+        ['match' => 'RATEB', 'replace' => 'راتب'],
+        ['match' => 'رَتِّب إيه آي', 'replace' => 'راتب إيه آي'],
+        ['match' => 'رَتِّب', 'replace' => 'راتب'],
+        ['match' => 'رتب', 'replace' => 'راتب'],
         ['match' => 'AI', 'replace' => 'إيه آي'],
     ];
 

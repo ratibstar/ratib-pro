@@ -14,20 +14,24 @@ function check(bool $ok, string $name): void
 }
 
 check(
-    rateb_tts_normalize_pronunciation('مرحباً في RATEB AI اليوم') === 'مرحباً في رَتِّب إيه آي اليوم',
-    'RATEB AI phrase replaced case-sensitively as whole brand'
+    rateb_tts_normalize_pronunciation('مرحباً في RATEB AI اليوم') === 'مرحباً في راتب إيه آي اليوم',
+    'RATEB AI → undiacritized راتب إيه آي'
 );
 check(
-    rateb_tts_normalize_pronunciation('welcome to rateb ai now') === 'welcome to رَتِّب إيه آي now',
+    rateb_tts_normalize_pronunciation('welcome to rateb ai now') === 'welcome to راتب إيه آي now',
     'RATEB AI matched case-insensitively'
 );
 check(
-    rateb_tts_normalize_pronunciation('منصة RATEB للتسويق') === 'منصة رَتِّب للتسويق',
+    rateb_tts_normalize_pronunciation('منصة RATEB للتسويق') === 'منصة راتب للتسويق',
     'standalone RATEB replaced'
 );
 check(
-    rateb_tts_normalize_pronunciation('منصة رتب للتسويق') === 'منصة رَتِّب للتسويق',
-    'Arabic رتب replaced with vocalized form'
+    rateb_tts_normalize_pronunciation('منصة رتب للتسويق') === 'منصة راتب للتسويق',
+    'Arabic رتب mapped to brand form راتب'
+);
+check(
+    rateb_tts_normalize_pronunciation('منصة رَتِّب للتسويق') === 'منصة راتب للتسويق',
+    'prior vocalized رَتِّب remapped (media 272 failure mode)'
 );
 check(
     rateb_tts_normalize_pronunciation('ذكاء AI للأعمال') === 'ذكاء إيه آي للأعمال',
@@ -38,13 +42,13 @@ check(
     'AI substring inside Latin words not replaced'
 );
 check(
-    rateb_tts_normalize_pronunciation('RATEB AI.') === 'رَتِّب إيه آي.',
+    rateb_tts_normalize_pronunciation('RATEB AI.') === 'راتب إيه آي.',
     'punctuation after brand preserved'
 );
 check(
-    rateb_tts_normalize_pronunciation('مرحباً بكم في رَتِّب إيه آي، منصة ذكية لأتمتة أعمالكم.')
-        === 'مرحباً بكم في رَتِّب إيه آي، منصة ذكية لأتمتة أعمالكم.',
-    'already-normalized script is idempotent'
+    rateb_tts_normalize_pronunciation('مرحباً بكم في راتب إيه آي، منصة ذكية لأتمتة أعمالكم.')
+        === 'مرحباً بكم في راتب إيه آي، منصة ذكية لأتمتة أعمالكم.',
+    'already-normalized undiacritized script is idempotent'
 );
 
 $custom = rateb_tts_normalize_pronunciation('Hello CRM', [
