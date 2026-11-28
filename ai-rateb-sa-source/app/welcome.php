@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-const RATEB_WELCOME_CREDITS = 50;
+const RATEB_WELCOME_CREDITS = 30;
+const RATEB_WELCOME_FREE_IMAGES = 3;
 
 /**
  * Email grant hashes are HMAC-SHA-256 over the trimmed, lowercased address.
@@ -154,7 +155,7 @@ function rateb_welcome_apply(PDO $pdo, int $userId, string $email, bool $emailVe
         $credits = 0;
         if ($decision === 'grant') {
             $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, NULL, \'welcome\', 1, \'completed\', \'welcome\', 0, ?)')->execute([$userId, 'welcome:' . $userId]);
-            $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([RATEB_WELCOME_CREDITS, $userId]);
+            $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ?, free_images_remaining = GREATEST(COALESCE(free_images_remaining, 0), ?) WHERE id = ?')->execute([RATEB_WELCOME_CREDITS, RATEB_WELCOME_FREE_IMAGES, $userId]);
             $credits = RATEB_WELCOME_CREDITS;
         }
         $pdo->prepare('INSERT INTO welcome_grants (user_id, email_hash, device_hash, status, credits) VALUES (?, ?, ?, ?, ?)')->execute([
@@ -235,7 +236,7 @@ function rateb_welcome_release(PDO $pdo, int $userId, int $adminId): bool
             return false;
         }
         $pdo->prepare('INSERT INTO usage_events (user_id, campaign_id, operation, units, status, event_type, credits_deducted, idempotency_key) VALUES (?, NULL, \'welcome\', 1, \'completed\', \'welcome\', 0, ?)')->execute([$userId, 'welcome:' . $userId]);
-        $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ? WHERE id = ?')->execute([RATEB_WELCOME_CREDITS, $userId]);
+        $pdo->prepare('UPDATE users SET credits_balance = credits_balance + ?, free_images_remaining = GREATEST(COALESCE(free_images_remaining, 0), ?) WHERE id = ?')->execute([RATEB_WELCOME_CREDITS, RATEB_WELCOME_FREE_IMAGES, $userId]);
         $updated = $pdo->prepare("UPDATE welcome_grants SET status = 'granted', credits = ? WHERE user_id = ? AND status = 'review'");
         $updated->execute([RATEB_WELCOME_CREDITS, $userId]);
         if ($updated->rowCount() !== 1) {

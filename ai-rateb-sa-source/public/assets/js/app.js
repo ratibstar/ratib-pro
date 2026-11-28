@@ -987,30 +987,37 @@
     });
     document.querySelectorAll('[data-stage-credit]').forEach(function (node) {
       var kind = node.getAttribute('data-stage-credit') || '';
-      var count = node.getAttribute('data-count') || '0';
       var cost = node.getAttribute('data-cost') || '0';
       if (kind === 'images') {
         if (node.classList.contains('stage-credit-line')) {
           node.textContent = language === 'ar'
-            ? 'رصيد الصور من نقاطك: يكفي تقريباً ' + count + ' صور (' + cost + ' نقطة لكل صورة).'
-            : 'Image budget from your points: about ' + count + ' images (' + cost + ' pts each).';
+            ? ('تكلفة هذه المرحلة: ' + cost + ' نقطة لكل صورة مولَّدة.')
+            : ('Stage cost: ' + cost + ' points per generated image.');
         } else {
           node.innerHTML = language === 'ar'
-            ? '<strong>' + count + ' صور متاحة</strong><span>كل صورة = ' + cost + ' نقطة</span>'
-            : '<strong>' + count + ' images left</strong><span>' + cost + ' pts per image</span>';
+            ? ('<strong>' + cost + ' نقطة / صورة</strong>')
+            : ('<strong>' + cost + ' pts / image</strong>');
         }
       } else if (kind === 'video') {
+        var story = (document.querySelector('[data-campaign-points-total]') || {}).getAttribute
+          ? (document.querySelector('[data-campaign-points-total]').getAttribute('data-price-storyboard') || '20')
+          : '20';
         if (node.classList.contains('stage-credit-line')) {
           node.textContent = language === 'ar'
-            ? 'رصيد الفيديو من نقاطك: يكفي تقريباً ' + count + ' فيديوهات (' + cost + ' نقطة لكل فيديو).'
-            : 'Video budget from your points: about ' + count + ' videos (' + cost + ' pts each).';
-        } else {
-          node.innerHTML = language === 'ar'
-            ? '<strong>' + count + ' فيديو متاح</strong><span>كل فيديو = ' + cost + ' نقطة</span>'
-            : '<strong>' + count + ' videos left</strong><span>' + cost + ' pts per video</span>';
+            ? ('تكلفة الفيديو: ' + story + ' نقطة للستوري بورد + ' + cost + ' نقطة لكل 5 ثوانٍ.')
+            : ('Video cost: ' + story + ' pts storyboard + ' + cost + ' pts per 5 seconds.');
         }
+      } else if (kind === 'idea') {
+        node.innerHTML = '<strong>' + (language === 'ar' ? 'مجاني' : 'Free') + '</strong>';
+      } else if (kind === 'strategy') {
+        node.innerHTML = '<strong>' + cost + (language === 'ar' ? ' نقطة' : ' pts') + '</strong>';
+      } else if (kind === 'voice') {
+        node.innerHTML = '<strong>' + cost + (language === 'ar' ? ' نقطة / دقيقة' : ' pts / min') + '</strong>';
       }
     });
+    if (typeof window.ratebRecalcCampaignPoints === 'function') {
+      window.ratebRecalcCampaignPoints();
+    }
     document.querySelectorAll('.credit-wallet[data-credit-tip-ar]').forEach(function (node) {
       var tip = language === 'ar' ? node.getAttribute('data-credit-tip-ar') : node.getAttribute('data-credit-tip-en');
       if (tip) {
@@ -2291,4 +2298,39 @@
       });
     });
   }
+
+  function ratebRecalcCampaignPoints() {
+    var box = document.querySelector('[data-campaign-points-total]');
+    if (!box) return;
+    var strategy = Number(box.getAttribute('data-price-strategy') || 5);
+    var image = Number(box.getAttribute('data-price-image') || 10);
+    var storyboard = Number(box.getAttribute('data-price-storyboard') || 20);
+    var voiceMin = Number(box.getAttribute('data-price-voice-min') || 5);
+    var video5 = Number(box.getAttribute('data-price-video-5s') || 30);
+    var images = Math.max(0, Number(box.getAttribute('data-images') || 1));
+    var videoSeconds = Math.max(0, Number(box.getAttribute('data-video-seconds') || 30));
+    var durationSelect = document.querySelector('[data-video-seconds]');
+    if (durationSelect && durationSelect.value) {
+      videoSeconds = Math.max(0, Number(durationSelect.value) || videoSeconds);
+      box.setAttribute('data-video-seconds', String(videoSeconds));
+    }
+    var voiceSeconds = videoSeconds;
+    var total = strategy
+      + (images * image)
+      + storyboard
+      + (voiceMin * Math.max(1, Math.ceil(voiceSeconds / 60)))
+      + (video5 * Math.max(1, Math.ceil(videoSeconds / 5)));
+    var value = box.querySelector('[data-points-total-value]');
+    if (value) value.textContent = String(total);
+    else {
+      box.innerHTML = (document.documentElement.lang === 'ar' || language === 'ar')
+        ? ('إجمالي نقاط الحملة: <strong data-points-total-value>' + total + '</strong> نقطة')
+        : ('Campaign points total: <strong data-points-total-value>' + total + '</strong> pts');
+    }
+  }
+  window.ratebRecalcCampaignPoints = ratebRecalcCampaignPoints;
+  document.querySelectorAll('[data-video-seconds]').forEach(function (node) {
+    node.addEventListener('change', ratebRecalcCampaignPoints);
+  });
+  ratebRecalcCampaignPoints();
 })();

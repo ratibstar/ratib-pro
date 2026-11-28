@@ -648,7 +648,12 @@ a,.button,button,.card,.panel,.kpi,.campaign-tile,.showcase-card,.format,.creati
 .build-stages button.is-active{outline:2px solid color-mix(in srgb,#6d28d9 65%,transparent);outline-offset:2px}
 .build-stages small{color:var(--muted);font-size:12px;font-weight:700}
 .build-stages .is-done small{color:rgba(255,255,255,.82)}
-.workspace-top{margin-bottom:8px}
+.workspace-top{margin-bottom:8px;position:relative}
+.campaign-points-total{position:absolute;top:0;left:0;margin:0;padding:10px 14px;border-radius:14px;border:1px solid rgba(94,234,212,.45);background:rgba(13,148,136,.22);color:#ecfeff;font-weight:800;font-size:15px;line-height:1.35;text-align:left;direction:rtl;max-width:min(420px,70vw);z-index:2;box-shadow:0 8px 20px rgba(8,47,73,.22)}
+.campaign-points-total strong{color:#a5f3fc;font-size:1.08em}
+[data-theme=light] .campaign-points-total{border-color:rgba(13,148,136,.35);background:rgba(204,251,241,.92);color:#0f766e;box-shadow:0 4px 12px rgba(15,118,110,.12)}
+[data-theme=light] .campaign-points-total strong{color:#0f766e}
+body.page-campaign .workspace-head{padding-top:52px}
 .strategy-card,.copy-card,.idea-edit{border:1px solid var(--border);border-radius:22px;padding:22px;margin:18px 0;background:var(--surface)}
 .strategy-card h3,.copy-card h3{margin:18px 0 8px}
 .strategy-card h3:first-of-type{margin-top:8px}

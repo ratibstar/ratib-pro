@@ -240,13 +240,82 @@ function rateb_video_duration_options(array $plan): array
 
 function rateb_get_feature_cost(string $type): int
 {
+    $pricing = rateb_campaign_points_pricing();
     return match ($type) {
-        'text_campaign' => 5,
-        'ai_image' => 10,
-        'saudi_voice' => 15,
-        'video_storyboard' => 20,
+        'text_campaign' => (int) $pricing['strategy_copy'],
+        'ai_image' => (int) $pricing['image'],
+        'saudi_voice' => (int) $pricing['voice_per_minute'],
+        'video_storyboard' => (int) $pricing['storyboard'],
         default => 0,
     };
+}
+
+/**
+ * Configurable campaign-step point prices (admin/env overrides).
+ *
+ * @return array{
+ *   idea:int,strategy_copy:int,image:int,storyboard:int,
+ *   voice_per_minute:int,video_per_5s:int
+ * }
+ */
+function rateb_campaign_points_pricing(): array
+{
+    static $cached = null;
+    if (is_array($cached)) {
+        return $cached;
+    }
+    $intEnv = static function (string $name, int $default): int {
+        $raw = trim((string) (getenv($name) ?: ''));
+        if ($raw === '' || !preg_match('/^-?\d+$/', $raw)) {
+            return $default;
+        }
+        return max(0, (int) $raw);
+    };
+    $cached = [
+        'idea' => $intEnv('RATEB_POINTS_IDEA', 0),
+        'strategy_copy' => $intEnv('RATEB_POINTS_STRATEGY_COPY', 5),
+        'image' => $intEnv('RATEB_POINTS_IMAGE', 10),
+        'storyboard' => $intEnv('RATEB_POINTS_STORYBOARD', 20),
+        'voice_per_minute' => $intEnv('RATEB_POINTS_VOICE_PER_MINUTE', 5),
+        'video_per_5s' => $intEnv('RATEB_POINTS_VIDEO_PER_5S', 30),
+    ];
+    return $cached;
+}
+
+/**
+ * Estimated total points for selected campaign steps (display only — not a debit).
+ *
+ * @param array{images?:int,voice_seconds?:int,video_seconds?:int,include_strategy?:bool,include_storyboard?:bool,include_voice?:bool,include_video?:bool} $opts
+ * @return array{total:int,breakdown:array<string,int>,pricing:array<string,int>}
+ */
+function rateb_campaign_points_estimate(array $opts = []): array
+{
+    $pricing = rateb_campaign_points_pricing();
+    $images = max(0, (int) ($opts['images'] ?? 1));
+    $voiceSeconds = max(0, (int) ($opts['voice_seconds'] ?? 30));
+    $videoSeconds = max(0, (int) ($opts['video_seconds'] ?? 30));
+    $includeStrategy = ($opts['include_strategy'] ?? true) !== false;
+    $includeStoryboard = ($opts['include_storyboard'] ?? true) !== false;
+    $includeVoice = ($opts['include_voice'] ?? true) !== false;
+    $includeVideo = ($opts['include_video'] ?? true) !== false;
+
+    $breakdown = [
+        'idea' => (int) $pricing['idea'],
+        'strategy_copy' => $includeStrategy ? (int) $pricing['strategy_copy'] : 0,
+        'images' => $images * (int) $pricing['image'],
+        'storyboard' => $includeStoryboard ? (int) $pricing['storyboard'] : 0,
+        'voice' => $includeVoice
+            ? (int) $pricing['voice_per_minute'] * max(1, (int) ceil($voiceSeconds / 60))
+            : 0,
+        'video' => $includeVideo
+            ? (int) $pricing['video_per_5s'] * max(1, (int) ceil($videoSeconds / 5))
+            : 0,
+    ];
+    return [
+        'total' => array_sum($breakdown),
+        'breakdown' => $breakdown,
+        'pricing' => $pricing,
+    ];
 }
 
 function rateb_account_credits(PDO $pdo, int $userId): array
@@ -779,6 +848,7 @@ function rateb_usage_begin(PDO $pdo, int $userId, ?int $campaignId, string $oper
     $cost = $feature !== '' ? rateb_get_feature_cost($feature) : 0;
     $watermark = false;
     $id = 0;
+    $usedFreeImage = false;
     $pdo->beginTransaction();
     try {
         $plan = rateb_lock_plan($pdo, $userId);
@@ -795,6 +865,21 @@ function rateb_usage_begin(PDO $pdo, int $userId, ?int $campaignId, string $oper
             if ($durationCode !== '') {
                 $pdo->rollBack();
                 return ['ok' => false, 'code' => $durationCode, 'id' => 0];
+            }
+        }
+        // Trial free-image allowance is separate from the points wallet.
+        if ($operation === 'image' && $cost > 0) {
+            try {
+                $freeImg = $pdo->prepare('SELECT free_images_remaining FROM users WHERE id = ? FOR UPDATE');
+                $freeImg->execute([$userId]);
+                $remaining = (int) $freeImg->fetchColumn();
+                if ($remaining > 0) {
+                    $pdo->prepare('UPDATE users SET free_images_remaining = free_images_remaining - 1 WHERE id = ? AND free_images_remaining > 0')->execute([$userId]);
+                    $cost = 0;
+                    $usedFreeImage = true;
+                }
+            } catch (Throwable $e) {
+                // Column may be absent until schema migrate; fall through to wallet charge.
             }
         }
         if ($cost > 0) {
@@ -816,14 +901,14 @@ function rateb_usage_begin(PDO $pdo, int $userId, ?int $campaignId, string $oper
         }
         throw $error;
     }
-    if ($feature !== '' && $cost > 0 && $id > 0) {
+    if ($feature !== '' && $cost > 0 && $id > 0 && empty($usedFreeImage)) {
         $charged = rateb_reservation_charge($pdo, $id, $userId, $feature, $campaignId);
         if ($charged !== 'ok') {
             rateb_usage_finish($pdo, $id, 'failed');
             return ['ok' => false, 'code' => $charged === 'credits' ? 'credits' : 'plan_inactive', 'id' => 0];
         }
     }
-    return ['ok' => true, 'code' => '', 'id' => $id, 'watermark' => $watermark];
+    return ['ok' => true, 'code' => '', 'id' => $id, 'watermark' => $watermark, 'free_image' => !empty($usedFreeImage)];
 }
 
 function rateb_usage_finish(PDO $pdo, int $eventId, string $status): void

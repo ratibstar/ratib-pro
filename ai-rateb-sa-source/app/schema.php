@@ -114,6 +114,9 @@ function ensure_campaign_schema(PDO $pdo): void
     if (!isset($userColumns['credits_balance'])) {
         $pdo->exec("ALTER TABLE users ADD COLUMN credits_balance INT NOT NULL DEFAULT 50");
     }
+    if (!isset($userColumns['free_images_remaining'])) {
+        $pdo->exec('ALTER TABLE users ADD COLUMN free_images_remaining INT NOT NULL DEFAULT 3');
+    }
     if (!isset($userColumns['subscription_expires_at'])) {
         $pdo->exec("ALTER TABLE users ADD COLUMN subscription_expires_at DATETIME NULL");
     }
