@@ -6,6 +6,7 @@ require_once __DIR__ . '/../media/library.php';
 require_once __DIR__ . '/../plans.php';
 require_once __DIR__ . '/../watermark.php';
 require_once __DIR__ . '/image-providers.php';
+require_once __DIR__ . '/gemini-nano.php';
 require_login();
 header('Content-Type: application/json; charset=utf-8');
 rateb_feature_require('feature_ai_image');
@@ -28,6 +29,13 @@ $campaign = media_owned_campaign((int) ($_POST['campaign_id'] ?? 0));
 $now = time();
 $userId = (int) $_SESSION['user_id'];
 $campaignId = (int) $campaign['id'];
+$providerChoice = strtolower(trim((string) ($_POST['image_provider'] ?? '')));
+if (in_array($providerChoice, ['nanobanana21', 'gemini_nano', 'gemini-nano-banana-2.1'], true)) {
+    // Dedicated Nano Banana 2.1 path: no RATEB credit debit; hard paid-entitlement gate inside adapter.
+    set_time_limit(120);
+    rateb_gemini_nano_handle_campaign_image($campaign);
+    exit;
+}
 $postedJobId = strtolower(trim((string) ($_POST['job_id'] ?? '')));
 rateb_reservation_sweep(db(), $userId, 'image', 'ai_image', rateb_image_reservation_max_age());
 try {
@@ -71,17 +79,17 @@ try {
         if (rateb_image_free_no_credit()) {
             $gate = ['ok' => true, 'code' => '', 'id' => 0];
         } else {
-            $gate = rateb_usage_begin(db(), $userId, $campaignId, 'image');
-            if (!$gate['ok']) {
-                $decision['action'] = 'denied';
-                $decision['code'] = (string) $gate['code'];
-                return ['jobs' => $decision['jobs'], 'result' => $decision];
+        $gate = rateb_usage_begin(db(), $userId, $campaignId, 'image');
+        if (!$gate['ok']) {
+            $decision['action'] = 'denied';
+            $decision['code'] = (string) $gate['code'];
+            return ['jobs' => $decision['jobs'], 'result' => $decision];
             }
         }
         $decision = rateb_image_jobs_claim($decision['jobs'], $userId, $campaignId, $postedJobId, $now, (int) $gate['id']);
         if (!rateb_image_job_allows_new_reservation($decision)) {
             if ((int) $gate['id'] > 0) {
-                rateb_usage_finish(db(), (int) $gate['id'], 'failed');
+            rateb_usage_finish(db(), (int) $gate['id'], 'failed');
             }
             return ['jobs' => $decision['jobs'], 'result' => $decision];
         }

@@ -1248,15 +1248,21 @@
         button.disabled = true;
         button.classList.add('is-busy');
       }
+      var providerSelect = imageForm.querySelector('[name="image_provider"]');
+      var imageProvider = ((providerSelect && providerSelect.value) || 'auto').toLowerCase();
+      var isNanoBanana = imageProvider === 'nanobanana21' || imageProvider === 'gemini_nano' || imageProvider === 'gemini-nano-banana-2.1';
       if (loader) {
         loader.hidden = false;
-        loader.innerHTML = '<span class="loader" aria-hidden="true"></span>' + (language === 'ar' ? 'جاري تجهيز الصورة' : 'Preparing the image');
+        loader.innerHTML = '<span class="loader" aria-hidden="true"></span>' + (isNanoBanana
+          ? (language === 'ar' ? 'جاري التوليد عبر نانو بانانا 2.1' : 'Generating with Nano Banana 2.1')
+          : (language === 'ar' ? 'جاري تجهيز الصورة' : 'Preparing the image'));
       }
       if (status) {
         status.className = 'notice stage-status';
         status.textContent = '';
       }
       var ttl = Number(imageForm.getAttribute('data-job-ttl') || 60);
+      if (isNanoBanana) ttl = Math.max(ttl, 100);
       var deadline = Date.now() + (ttl * 1000);
       var jobId = '';
       try {
@@ -1290,7 +1296,7 @@
         }
         if (!payload.ok) throw new Error(payload.error || dict[language].image_failed);
         if (loader) loader.hidden = true;
-        showGeneratedImage(imageForm, payload.media_id);
+        showGeneratedImage(imageForm, payload.media_id, payload.provider || imageProvider, payload.model || '');
         imageForm.removeAttribute('data-running');
         if (button) {
           button.disabled = false;
@@ -1318,7 +1324,7 @@
     };
   }
 
-  function showGeneratedImage(form, mediaId) {
+  function showGeneratedImage(form, mediaId, provider, model) {
     var panel = document.getElementById('images');
     if (!panel || !mediaId) {
       location.reload();
@@ -1336,7 +1342,13 @@
     var arabic = document.documentElement.lang === 'ar' || language === 'ar';
     var card = document.createElement('article');
     card.className = 'media-card';
+    var badges = '';
+    if (provider === 'nanobanana21' || provider === 'gemini_nano') {
+      badges = '<p class="badge">Nano Banana 2.1</p>';
+      if (model) badges += '<p class="badge">' + String(model).replace(/[<>&"]/g, '') + '</p>';
+    }
     card.innerHTML = '<button type="button" class="image-preview" data-kind="image"><img alt=""></button>'
+      + badges
       + '<form method="post" action="/app/media/delete.php"><input type="hidden" name="csrf"><input type="hidden" name="id"><input type="hidden" name="panel" value="images"><button type="submit" class="quiet"></button></form>'
       + '<form method="post" action="/app/media/approve.php"><input type="hidden" name="csrf"><input type="hidden" name="id"><button type="submit" class="primary"></button></form>';
     var src = '/app/media/file.php?id=' + mediaId;
@@ -1409,12 +1421,14 @@
   async function requestImage(form, jobId) {
     var body = new FormData(form);
     if (jobId) body.set('job_id', jobId);
-    if (!jobId) {
+    var provider = ((form.querySelector('[name="image_provider"]') || {}).value || 'auto').toLowerCase();
+    var isNanoBanana = provider === 'nanobanana21' || provider === 'gemini_nano' || provider === 'gemini-nano-banana-2.1';
+    if (!jobId && !isNanoBanana) {
       var poster = await drawAdPoster(form);
       if (poster) body.set('poster', poster, 'ad-poster.png');
     }
     var controller = new AbortController();
-    var timer = setTimeout(function () { controller.abort(); }, 30000);
+    var timer = setTimeout(function () { controller.abort(); }, isNanoBanana ? 100000 : 30000);
     try {
       var response = await fetch('/app/ai/image.php', { method: 'POST', body: body, signal: controller.signal });
       clearTimeout(timer);

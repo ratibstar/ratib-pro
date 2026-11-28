@@ -349,6 +349,13 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <input type="hidden" name="campaign_id" value="<?= $id ?>">
             <input type="hidden" name="headline" value="<?= e($imageHeadline) ?>">
             <input type="hidden" name="product" value="<?= e($product) ?>">
+            <label class="stage-field">
+              <span><?= $arabic ? 'مزود الصورة' : 'Image provider' ?></span>
+              <select name="image_provider" aria-label="<?= $arabic ? 'مزود الصورة' : 'Image provider' ?>">
+                <option value="auto"><?= $arabic ? 'تلقائي (المزودون الحاليون)' : 'Automatic (existing providers)' ?></option>
+                <option value="nanobanana21">Nano Banana 2.1 · نانو بانانا 2.1 (Google Gemini)</option>
+              </select>
+            </label>
             <select name="ratio">
               <option value="1:1"><?= $arabic ? '1:1 مربع للمنشورات' : '1:1 square post' ?></option>
               <option value="4:5"><?= $arabic ? '4:5 عمودي لإنستغرام' : '4:5 Instagram portrait' ?></option>
@@ -634,8 +641,13 @@ function rateb_campaign_duration_select(array $options, bool $arabic): void
             <button type="button" class="image-preview" data-kind="image" data-src="/app/media/file.php?id=<?= (int) $item['id'] ?>">
               <img src="/app/media/file.php?id=<?= (int) $item['id'] ?>" alt="">
             </button>
-            <?php if (preg_match('/ratio-(1x1|4x5|9x16)/', (string) ($item['original_name'] ?? ''), $ratioMatch)): ?>
+            <?php
+              $origName = (string) ($item['original_name'] ?? '');
+              if (preg_match('/ratio-(1x1|4x5|9x16)/', $origName, $ratioMatch)): ?>
               <p class="badge"><?= e(str_replace('x', ':', $ratioMatch[1])) ?></p>
+            <?php endif;
+              if (str_contains($origName, 'nanobanana21')): ?>
+              <p class="badge">Nano Banana 2.1</p>
             <?php endif; ?>
             <form method="post" action="/app/media/delete.php">
               <input type="hidden" name="csrf" value="<?= $csrf ?>">

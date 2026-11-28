@@ -54,4 +54,7 @@ return [
     'runware_image_model' => trim((string) (getenv('RATEB_RUNWARE_IMAGE_MODEL') ?: 'ideogram:4.6@0')),
     'runware_image_test' => trim((string) (getenv('RATEB_IMAGE_RUNWARE_TEST') ?: '')) === '1',
     'runware_image_test_user_id' => (int) trim((string) (getenv('RATEB_IMAGE_RUNWARE_TEST_USER_ID') ?: '66')),
+    // Google Gemini Nano Banana 2.1 — explicit provider only. Key ONLY from GEMINI_API_KEY.
+    'gemini_api_key' => trim((string) (getenv('GEMINI_API_KEY') ?: '')),
+    'gemini_nano_model' => trim((string) (getenv('RATEB_GEMINI_NANO_MODEL') ?: 'gemini-nano-banana-2.1')),
 ];
